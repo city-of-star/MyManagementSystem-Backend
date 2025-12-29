@@ -5,7 +5,7 @@ import com.mms.common.core.annotations.RequiresPermission;
 import com.mms.common.core.response.Response;
 import com.mms.usercenter.common.auth.dto.*;
 import com.mms.usercenter.common.auth.vo.UserVo;
-import com.mms.common.core.constants.security.PermissionConstants;
+import com.mms.common.core.constants.usercenter.PermissionConstants;
 import com.mms.usercenter.service.auth.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

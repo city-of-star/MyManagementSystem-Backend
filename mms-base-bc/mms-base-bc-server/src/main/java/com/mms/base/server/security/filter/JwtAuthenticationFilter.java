@@ -2,7 +2,7 @@ package com.mms.base.server.security.filter;
 
 import com.mms.base.feign.usercenter.UserAuthorityFeign;
 import com.mms.common.core.constants.gateway.GatewayConstants;
-import com.mms.common.core.constants.security.UserCenterConstants;
+import com.mms.common.core.constants.usercenter.UserAuthorityConstants;
 import com.mms.base.feign.usercenter.dto.UserAuthorityDto;
 import com.mms.common.core.response.Response;
 import jakarta.servlet.FilterChain;
@@ -63,8 +63,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        Set<String> roles = loadStringSet(UserCenterConstants.UserAuthority.USER_ROLE_PREFIX + userId);
-        Set<String> permissions = loadStringSet(UserCenterConstants.UserAuthority.USER_PERMISSION_PREFIX + userId);
+        Set<String> roles = loadStringSet(UserAuthorityConstants.USER_ROLE_PREFIX + userId);
+        Set<String> permissions = loadStringSet(UserAuthorityConstants.USER_PERMISSION_PREFIX + userId);
 
         // 缓存缺失时回源用户中心
         if (CollectionUtils.isEmpty(roles) && CollectionUtils.isEmpty(permissions)) {
@@ -82,7 +82,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         Set<GrantedAuthority> authorities = new HashSet<>();
         if (!CollectionUtils.isEmpty(roles)) {
             authorities.addAll(roles.stream()
-                    .map(role -> new SimpleGrantedAuthority(UserCenterConstants.UserAuthority.ROLE_PREFIX + role))
+                    .map(role -> new SimpleGrantedAuthority(UserAuthorityConstants.ROLE_PREFIX + role))
                     .toList());
         }
         if (!CollectionUtils.isEmpty(permissions)) {
@@ -140,15 +140,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private void cacheAuthorities(String userId, Set<String> roles, Set<String> permissions) {
         redisTemplate.opsForValue().set(
-                UserCenterConstants.UserAuthority.USER_ROLE_PREFIX + userId,
+                UserAuthorityConstants.USER_ROLE_PREFIX + userId,
                 defaultSet(roles),
-                UserCenterConstants.UserAuthority.ROLE_PERMISSION_CACHE_TTL_MINUTES,
+                UserAuthorityConstants.ROLE_PERMISSION_CACHE_TTL_MINUTES,
                 java.util.concurrent.TimeUnit.MINUTES
         );
         redisTemplate.opsForValue().set(
-                UserCenterConstants.UserAuthority.USER_PERMISSION_PREFIX + userId,
+                UserAuthorityConstants.USER_PERMISSION_PREFIX + userId,
                 defaultSet(permissions),
-                UserCenterConstants.UserAuthority.ROLE_PERMISSION_CACHE_TTL_MINUTES,
+                UserAuthorityConstants.ROLE_PERMISSION_CACHE_TTL_MINUTES,
                 java.util.concurrent.TimeUnit.MINUTES
         );
     }

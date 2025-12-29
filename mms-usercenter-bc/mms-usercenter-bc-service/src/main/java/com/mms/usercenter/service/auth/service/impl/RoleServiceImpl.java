@@ -2,7 +2,7 @@ package com.mms.usercenter.service.auth.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.mms.common.core.enums.ErrorCode;
+import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
 import com.mms.usercenter.common.auth.dto.RoleAssignPermissionDto;

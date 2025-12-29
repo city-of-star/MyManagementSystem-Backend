@@ -1,9 +1,9 @@
 package com.mms.common.security.utils;
 
-import com.mms.common.core.enums.ErrorCode;
+import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.security.constants.JwtConstants;
-import com.mms.common.security.enums.TokenType;
+import com.mms.common.core.enums.jwt.TokenType;
 import io.jsonwebtoken.Claims;
 import lombok.AllArgsConstructor;
 import org.springframework.util.StringUtils;

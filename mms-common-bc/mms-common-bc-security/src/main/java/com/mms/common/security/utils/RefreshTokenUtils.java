@@ -26,14 +26,12 @@ public class RefreshTokenUtils {
 
     /**
      * 将Refresh Token存储到Redis
-     * 使用用户名作为key，实现单点登录控制（一个用户只能有一个有效的refresh token）
      *
      * @param username      用户名
-     * @param refreshToken  Refresh Token字符串
-     * @param refreshClaims Refresh Token的Claims（用于获取过期时间）
+     * @param refreshClaims Refresh Token的Claims（用于获取过期时间和jti）
      */
-    public void storeRefreshToken(String username, String refreshToken, Claims refreshClaims) {
-        if (!StringUtils.hasText(username) || !StringUtils.hasText(refreshToken) || refreshClaims == null) {
+    public void storeRefreshToken(String username, Claims refreshClaims) {
+        if (!StringUtils.hasText(username) || refreshClaims == null) {
             return;
         }
 
@@ -54,14 +52,14 @@ public class RefreshTokenUtils {
         // value存储refresh token的jti，用于后续验证
         String key = JwtConstants.CacheKeys.REFRESH_TOKEN_PREFIX + username;
         String jti = refreshClaims.getId();
-        redisTemplate.opsForValue().set(key, jti != null ? jti : refreshToken, ttl, TimeUnit.MILLISECONDS);
+        redisTemplate.opsForValue().set(key, jti, ttl, TimeUnit.MILLISECONDS);
     }
 
     /**
      * 从Redis获取Refresh Token的jti
      *
      * @param username 用户名
-     * @return Refresh Token的jti，如果不存在或Redis未配置则返回null
+     * @return Refresh Token的jti，如果不存在则返回null
      */
     public String getRefreshTokenJti(String username) {
         if (!StringUtils.hasText(username)) {

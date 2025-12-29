@@ -9,7 +9,7 @@ package com.mms.common.core.constants.scan;
  * @author li.hongyu
  * @date 2025-11-06 16:53:34
  */
-public class FeignScanConstant {
+public class FeignScanConstants {
 
     /**
      * Base 服务的 Feign 客户端扫描路径

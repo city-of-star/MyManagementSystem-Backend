@@ -1,4 +1,4 @@
-package com.mms.common.security.enums;
+package com.mms.common.core.enums.jwt;
 
 /**
  * 实现功能【Token类型枚举】

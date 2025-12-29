@@ -9,7 +9,7 @@ package com.mms.common.core.constants.scan;
  * @author li.hongyu
  * @date 2025-11-06 16:52:48
  */
-public class MapperScanConstant {
+public class MapperScanConstants {
 
     /**
      * Base 服务的 Mapper 扫描路径

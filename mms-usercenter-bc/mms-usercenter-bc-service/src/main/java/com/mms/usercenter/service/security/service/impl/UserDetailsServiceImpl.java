@@ -1,6 +1,6 @@
 package com.mms.usercenter.service.security.service.impl;
 
-import com.mms.common.core.enums.ErrorCode;
+import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.security.entity.SecurityUser;

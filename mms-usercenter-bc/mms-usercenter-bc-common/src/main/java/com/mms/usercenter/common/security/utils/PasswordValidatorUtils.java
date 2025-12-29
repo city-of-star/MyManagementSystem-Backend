@@ -1,6 +1,6 @@
 package com.mms.usercenter.common.security.utils;
 
-import com.mms.common.core.enums.ErrorCode;
+import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import org.springframework.util.StringUtils;
 

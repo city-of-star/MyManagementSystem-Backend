@@ -1,13 +1,13 @@
 package com.mms.usercenter.service.auth.service.impl;
 
-import com.mms.common.core.enums.ErrorCode;
+import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
 import com.mms.common.security.constants.JwtConstants;
 import com.mms.common.security.utils.RefreshTokenUtils;
 import com.mms.common.security.utils.TokenBlacklistUtils;
 import com.mms.common.security.utils.JwtUtils;
-import com.mms.common.security.enums.TokenType;
+import com.mms.common.core.enums.jwt.TokenType;
 import com.mms.common.security.utils.TokenValidatorUtils;
 import com.mms.common.web.context.UserContextUtils;
 import com.mms.usercenter.common.auth.dto.LoginDto;
@@ -74,8 +74,7 @@ public class AuthServiceImpl implements AuthService {
 
             // 验证用户是否存在
             if (user == null) {
-                // 用户名不存在时，只记录日志，不增加失败次数（避免用户名枚举攻击）
-                recordLoginLog(null, dto.getUsername(), 0, "用户不存在");
+                // 用户名不存在时，直接抛出异常，不增加失败次数（避免用户名枚举攻击）
                 throw new BusinessException(ErrorCode.LOGIN_FAILED);
             }
 
@@ -118,9 +117,9 @@ public class AuthServiceImpl implements AuthService {
             String accessToken = jwtUtils.generateAccessToken(user.getId(), dto.getUsername());
             String refreshToken = jwtUtils.generateRefreshToken(user.getId(), dto.getUsername());
 
-            // 将Refresh Token存储到Redis（实现单点登录控制）
+            // 将 Refresh Token 存储到 Redis
             Claims refreshClaims = jwtUtils.parseToken(refreshToken);
-            refreshTokenUtils.storeRefreshToken(dto.getUsername(), refreshToken, refreshClaims);
+            refreshTokenUtils.storeRefreshToken(dto.getUsername(), refreshClaims);
 
             // 记录登录成功日志
             recordLoginLog(user.getId(), user.getUsername(), 1, "登录成功");
@@ -142,16 +141,16 @@ public class AuthServiceImpl implements AuthService {
         // 提取用户名、用户ID
         String username = Optional.ofNullable(refreshClaims.get(JwtConstants.Claims.USERNAME))
                 .map(Object::toString)
-                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN, "Token中缺少用户名信息"));
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN));
         Long userId = Optional.ofNullable(refreshClaims.get(JwtConstants.Claims.USER_ID))
                 .map(Object::toString)
                 .filter(StringUtils::hasText)
                 .map(Long::valueOf)
-                .orElse(null);
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN));
 
-        // 验证Refresh Token是否在Redis中存在且有效（实现单点登录控制）
+        // 验证Refresh Token是否在Redis中存在且有效
         if (!refreshTokenUtils.isRefreshTokenValid(username, refreshClaims)) {
-            throw new BusinessException(ErrorCode.INVALID_TOKEN, "Refresh Token已失效，请重新登录");
+            throw new BusinessException(ErrorCode.LOGIN_EXPIRED);
         }
 
         // 将旧的Refresh Token加入黑名单
@@ -163,7 +162,7 @@ public class AuthServiceImpl implements AuthService {
 
         // 将新的Refresh Token存储到Redis（替换旧的）
         Claims newRefreshClaims = jwtUtils.parseToken(newRefreshToken);
-        refreshTokenUtils.storeRefreshToken(username, newRefreshToken, newRefreshClaims);
+        refreshTokenUtils.storeRefreshToken(username, newRefreshClaims);
 
         return buildLoginVo(newAccessToken, newRefreshToken);
     }

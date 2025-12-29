@@ -2,7 +2,7 @@ package com.mms.base.controller.system;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.common.core.annotations.RequiresPermission;
-import com.mms.common.core.constants.security.PermissionConstants;
+import com.mms.common.core.constants.usercenter.PermissionConstants;
 import com.mms.common.core.response.Response;
 import com.mms.base.common.system.dto.*;
 import com.mms.base.common.system.vo.DictTypeVo;

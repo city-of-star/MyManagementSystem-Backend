@@ -1,4 +1,4 @@
-package com.mms.common.core.enums;
+package com.mms.common.core.enums.error;
 
 import lombok.Getter;
 

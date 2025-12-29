@@ -1,7 +1,7 @@
 package com.mms.common.security.utils;
 
 import com.mms.common.security.constants.JwtConstants;
-import com.mms.common.security.enums.TokenType;
+import com.mms.common.core.enums.jwt.TokenType;
 import io.jsonwebtoken.Claims;
 import lombok.AllArgsConstructor;
 import org.springframework.data.redis.core.RedisTemplate;

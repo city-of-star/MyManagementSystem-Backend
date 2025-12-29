@@ -9,7 +9,7 @@ package com.mms.common.core.constants.scan;
  * @author li.hongyu
  * @date 2025-11-06 16:54:16
  */
-public class PackageScanConstant {
+public final class PackageScanConstants {
 
     /**
      * 公共模块的包扫描路径
@@ -31,4 +31,10 @@ public class PackageScanConstant {
      */
     public static final String GATEWAY_PACKAGE_SCAN = "com.mms.gateway";
 
+    /**
+     * 私有构造函数，防止实例化
+     */
+    private PackageScanConstants() {
+        throw new UnsupportedOperationException("常量类不允许实例化");
+    }
 }

@@ -33,7 +33,7 @@ public class GatewayWhitelistConfig {
     public GatewayWhitelistConfig() {
         // 基础健康与登录
         this.paths.add("/actuator/**");                // Spring Boot Actuator 端点
-        this.paths.add("/health");                // Spring Boot health 端点
+        this.paths.add("/health");                     // Spring Boot health 端点
         this.paths.add("/usercenter/auth/login");      // 用户中心登录
         this.paths.add("/usercenter/auth/refresh");    // 用户中心刷新
         

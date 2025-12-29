@@ -9,12 +9,12 @@ package com.mms.common.core.constants.gateway;
  * @author li.hongyu
  * @date 2025-12-01 14:46:18
  */
-public class GatewayConstants {
+public final class GatewayConstants {
 
     /**
      * 请求头常量（网关透传/链路相关）
      */
-    public static class Headers {
+    public static final class Headers {
         /**
          * TraceId 请求头
          */
@@ -54,22 +54,36 @@ public class GatewayConstants {
          * 登录地点请求头（透传到下游服务）
          */
         public static final String LOGIN_LOCATION = "X-Login-Location";
+
+        /**
+         * 私有构造函数，防止实例化
+         */
+        private Headers() {
+            throw new UnsupportedOperationException("常量类不允许实例化");
+        }
     }
 
     /**
      * MDC 常量
      */
-    public static class Mdc {
+    public static final class Mdc {
         /**
          * TraceId 在 MDC 中的键名
          */
         public static final String TRACE_ID = "traceId";
+
+        /**
+         * 私有构造函数，防止实例化
+         */
+        private Mdc() {
+            throw new UnsupportedOperationException("常量类不允许实例化");
+        }
     }
 
     /**
      * 过滤器顺序常量
      */
-    public static class FilterOrder {
+    public static final class FilterOrder {
         /**
          * 全局异常处理器的执行顺序（最高优先级，确保最先处理异常）
          */
@@ -89,6 +103,13 @@ public class GatewayConstants {
          * JwtAuthFilter 的执行顺序（在 ClientIpFilter 之后）
          */
         public static final int JWT_AUTH_FILTER = CLIENT_IP_FILTER + 100;
+
+        /**
+         * 私有构造函数，防止实例化
+         */
+        private FilterOrder() {
+            throw new UnsupportedOperationException("常量类不允许实例化");
+        }
     }
 
     /**

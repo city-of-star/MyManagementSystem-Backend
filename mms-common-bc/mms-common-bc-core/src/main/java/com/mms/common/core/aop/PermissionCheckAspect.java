@@ -1,7 +1,7 @@
 package com.mms.common.core.aop;
 
 import com.mms.common.core.annotations.RequiresPermission;
-import com.mms.common.core.enums.ErrorCode;
+import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.annotation.Aspect;

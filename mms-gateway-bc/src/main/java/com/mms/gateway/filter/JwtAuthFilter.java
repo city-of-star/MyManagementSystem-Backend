@@ -1,9 +1,9 @@
 package com.mms.gateway.filter;
 
-import com.mms.common.core.enums.ErrorCode;
+import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.security.constants.JwtConstants;
-import com.mms.common.security.enums.TokenType;
+import com.mms.common.core.enums.jwt.TokenType;
 import com.mms.common.security.utils.ReactiveTokenValidatorUtils;
 import com.mms.gateway.config.GatewayWhitelistConfig;
 import com.mms.common.core.constants.gateway.GatewayConstants;
@@ -76,11 +76,11 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
                     // 从 Token 中获取 userId
                     String userId = Optional.ofNullable(claims.get(JwtConstants.Claims.USER_ID))
                             .map(Object::toString)
-                            .orElse(null);
+                            .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN));
                     // 从 Token 中获取 username
                     String username = Optional.ofNullable(claims.get(JwtConstants.Claims.USERNAME))
                             .map(Object::toString)
-                            .orElse(null);
+                            .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN));
                     // 从 Token 中获取 jti（Token 标识）
                     String jti = claims.getId();
                     // 从 Token 中获取 expiration（Token 过期时间）

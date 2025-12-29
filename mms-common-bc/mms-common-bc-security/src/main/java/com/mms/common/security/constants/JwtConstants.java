@@ -1,7 +1,5 @@
 package com.mms.common.security.constants;
 
-import org.springframework.http.HttpHeaders;
-
 /**
  * 实现功能【JWT常量类】
  * <p>
@@ -11,7 +9,7 @@ import org.springframework.http.HttpHeaders;
  * @author li.hongyu
  * @date 2025-12-05 09:42:26
  */
-public class JwtConstants {
+public final class JwtConstants {
 
     /**
      * 请求头常量
@@ -26,6 +24,13 @@ public class JwtConstants {
          * Bearer Token 前缀
          */
         public static final String BEARER_PREFIX = "Bearer ";
+
+        /**
+         * 私有构造函数，防止实例化
+         */
+        private Headers() {
+            throw new UnsupportedOperationException("常量类不允许实例化");
+        }
     }
 
     /**
@@ -46,6 +51,13 @@ public class JwtConstants {
          * JWT Claims中的Token类型键
          */
         public static final String TOKEN_TYPE = "tokenType";
+
+        /**
+         * 私有构造函数，防止实例化
+         */
+        private Claims() {
+            throw new UnsupportedOperationException("常量类不允许实例化");
+        }
     }
 
     /**
@@ -61,6 +73,13 @@ public class JwtConstants {
          * Redis中Refresh Token存储的key前缀
          */
         public static final String REFRESH_TOKEN_PREFIX = "mms:auth:refresh:";
+
+        /**
+         * 私有构造函数，防止实例化
+         */
+        private CacheKeys() {
+            throw new UnsupportedOperationException("常量类不允许实例化");
+        }
     }
 
     /**

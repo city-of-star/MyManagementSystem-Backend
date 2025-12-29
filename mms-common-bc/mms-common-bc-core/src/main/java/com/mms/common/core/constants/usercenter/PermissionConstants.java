@@ -1,4 +1,4 @@
-package com.mms.common.core.constants.security;
+package com.mms.common.core.constants.usercenter;
 
 /**
  * 实现功能【权限常量类】
@@ -106,5 +106,11 @@ public final class PermissionConstants {
     public static final String DICT_UPDATE = "dict:update";
     public static final String DICT_DELETE = "dict:delete";
 
+    /**
+     * 私有构造函数，防止实例化
+     */
+    private PermissionConstants() {
+        throw new UnsupportedOperationException("常量类不允许实例化");
+    }
 }
 

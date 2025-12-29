@@ -1,6 +1,6 @@
 package com.mms.usercenter.service.security.service.impl;
 
-import com.mms.common.core.constants.security.UserCenterConstants;
+import com.mms.common.core.constants.usercenter.UserAuthorityConstants;
 import com.mms.usercenter.common.security.vo.UserAuthorityVo;
 import com.mms.usercenter.service.auth.mapper.PermissionMapper;
 import com.mms.usercenter.service.auth.mapper.RoleMapper;
@@ -70,7 +70,7 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
         }
 
         // 构建缓存键
-        String cacheKey = UserCenterConstants.UserAuthority.USER_ROLE_PREFIX + userId;
+        String cacheKey = UserAuthorityConstants.USER_ROLE_PREFIX + userId;
 
         // 先尝试从缓存获取
         Set<String> cachedRoles = convertToStringSet(redisTemplate.opsForValue().get(cacheKey));
@@ -109,7 +109,7 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
         }
 
         // 构建缓存键
-        String cacheKey = UserCenterConstants.UserAuthority.USER_PERMISSION_PREFIX + userId;
+        String cacheKey = UserAuthorityConstants.USER_PERMISSION_PREFIX + userId;
 
         // 先尝试从缓存获取
         Set<String> cachedPermissions = convertToStringSet(redisTemplate.opsForValue().get(cacheKey));
@@ -183,7 +183,7 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
             redisTemplate.opsForValue().set(
                     key,
                     values,
-                    UserCenterConstants.UserAuthority.ROLE_PERMISSION_CACHE_TTL_MINUTES,
+                    UserAuthorityConstants.ROLE_PERMISSION_CACHE_TTL_MINUTES,
                     TimeUnit.MINUTES
             );
         }
@@ -200,7 +200,7 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
             redisTemplate.opsForValue().set(
                     key,
                     new HashSet<>(),
-                    UserCenterConstants.UserAuthority.ROLE_PERMISSION_CACHE_TTL_MINUTES,
+                    UserAuthorityConstants.ROLE_PERMISSION_CACHE_TTL_MINUTES,
                     TimeUnit.MINUTES
             );
         }

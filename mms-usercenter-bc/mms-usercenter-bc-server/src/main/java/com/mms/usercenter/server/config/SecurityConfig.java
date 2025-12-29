@@ -59,22 +59,18 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // 配置请求授权规则
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/auth/login",           // 登录
-                                "/auth/refresh",         // 刷新
-                                "/authority/**",         // 内部权限查询
-                                "/actuator/**",          // Spring Boot Actuator 端点
-                                "/doc.html",             // Knife4j 主页面
-                                "/v3/api-docs/**",       // OpenAPI 文档
-                                "/webjars/**",           // Knife4j 静态资源
-                                "/swagger-resources/**", // Swagger 资源
-                                "/favicon.ico"           // favicon 图标
-                        ).permitAll()
-                        
-                        // 其他所有请求都需要认证
-                        // 注意：这里说的"认证"不是验证 JWT（网关已做），而是要求 SecurityContext 中有用户信息
-                        // 如果 SecurityContext 中没有用户信息，请求会被拒绝（返回 403）
-                        .anyRequest().authenticated()
+                    .requestMatchers(
+                        "/auth/login",
+                        "/auth/refresh",
+                        "/authority/**",
+                        "/actuator/**",
+                        "/doc.html",
+                        "/v3/api-docs/**",
+                        "/webjars/**",
+                        "/swagger-resources/**",
+                        "/favicon.ico"
+                    ).permitAll()
+                    .anyRequest().authenticated()
                 )
                 // 添加自定义 JWT 认证过滤器
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

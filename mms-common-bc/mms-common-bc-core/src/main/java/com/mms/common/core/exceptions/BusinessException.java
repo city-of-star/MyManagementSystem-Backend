@@ -1,6 +1,6 @@
 package com.mms.common.core.exceptions;
 
-import com.mms.common.core.enums.ErrorCode;
+import com.mms.common.core.enums.error.ErrorCode;
 import lombok.Getter;
 import java.io.Serial;
 
