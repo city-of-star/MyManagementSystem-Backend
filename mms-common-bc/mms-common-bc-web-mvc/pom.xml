@@ -21,6 +21,13 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- 依赖 mms-common-bc-security 模块（用于网关签名验证） -->
+        <dependency>
+            <groupId>com.mms</groupId>
+            <artifactId>mms-common-bc-security</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
         <!-- Spring Web -->
         <dependency>
             <groupId>org.springframework</groupId>

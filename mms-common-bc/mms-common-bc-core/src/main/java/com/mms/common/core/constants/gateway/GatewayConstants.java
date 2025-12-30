@@ -56,6 +56,16 @@ public final class GatewayConstants {
         public static final String LOGIN_LOCATION = "X-Login-Location";
 
         /**
+         * 网关签名请求头（透传到下游服务，用于验证请求来源）
+         */
+        public static final String GATEWAY_SIGNATURE = "X-Gateway-Signature";
+
+        /**
+         * 网关签名时间戳请求头（透传到下游服务，用于防重放攻击）
+         */
+        public static final String GATEWAY_TIMESTAMP = "X-Gateway-Timestamp";
+
+        /**
          * 私有构造函数，防止实例化
          */
         private Headers() {

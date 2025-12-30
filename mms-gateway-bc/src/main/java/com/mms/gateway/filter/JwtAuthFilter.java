@@ -7,6 +7,7 @@ import com.mms.common.core.enums.jwt.TokenType;
 import com.mms.common.security.utils.ReactiveTokenValidatorUtils;
 import com.mms.gateway.config.GatewayWhitelistConfig;
 import com.mms.common.core.constants.gateway.GatewayConstants;
+import com.mms.gateway.service.GatewaySignatureService;
 import com.mms.gateway.utils.GatewayResponseUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -47,6 +48,10 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     @Resource
     private ReactiveTokenValidatorUtils reactiveTokenValidatorUtils;
 
+    // 网关签名服务
+    @Resource
+    private GatewaySignatureService gatewaySignatureService;
+
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
@@ -86,7 +91,12 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
                     // 从 Token 中获取 expiration（Token 过期时间）
                     Date expiration = claims.getExpiration();
 
-                    // 将用户信息透传到下游服务
+                    // 生成网关签名（使用RSA私钥）
+                    String[] signatureResult = gatewaySignatureService.generateSignature(userId, username, jti);
+                    String signature = signatureResult[0];
+                    String timestamp = signatureResult[1];
+
+                    // 将用户信息和签名透传到下游服务
                     ServerHttpRequest mutatedRequest = request.mutate()
                             .headers(httpHeaders -> {
                                 if (StringUtils.hasText(userId)) {
@@ -105,6 +115,9 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
                                     // 将 expiration 添加到请求头，供下游服务使用（用于黑名单TTL计算）
                                     httpHeaders.set(GatewayConstants.Headers.TOKEN_EXP, String.valueOf(expiration.getTime()));
                                 }
+                                // 添加网关签名和时间戳
+                                httpHeaders.set(GatewayConstants.Headers.GATEWAY_SIGNATURE, signature);
+                                httpHeaders.set(GatewayConstants.Headers.GATEWAY_TIMESTAMP, timestamp);
                             })
                             .build();
 

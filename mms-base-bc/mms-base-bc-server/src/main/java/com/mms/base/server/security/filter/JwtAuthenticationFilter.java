@@ -5,6 +5,7 @@ import com.mms.common.core.constants.gateway.GatewayConstants;
 import com.mms.common.core.constants.usercenter.UserAuthorityConstants;
 import com.mms.base.feign.usercenter.dto.UserAuthorityDto;
 import com.mms.common.core.response.Response;
+import com.mms.common.web.security.GatewaySignatureValidator;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -29,15 +30,16 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * 实现功能【下游服务认证填充过滤器】
+ * 实现功能【网关签名验证过滤器】
  * <p>
+ * - 验证网关签名（使用RSA公钥），确保请求来自网关且未被篡改
  * - 网关已完成 JWT 校验，并透传 userId/username
- * - 这里根据 userId 从 Redis 读取角色/权限，组装 Authentication 填充到 SecurityContext
+ * - 根据 userId 从 Redis 读取角色/权限，组装 Authentication 填充到 SecurityContext
  * - 便于 PermissionCheckAspect 正常获取权限
  * <p>
  *
  * @author li.hongyu
- * @date 2025-12-23 20:05:32
+ * @date 2025-01-XX
  */
 @Component
 @RequiredArgsConstructor
@@ -45,6 +47,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final UserAuthorityFeign userAuthorityFeign;
+    private final GatewaySignatureValidator gatewaySignatureValidator;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -56,12 +59,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+        // 获取用户ID和用户名
         String userId = request.getHeader(GatewayConstants.Headers.USER_ID);
         String username = request.getHeader(GatewayConstants.Headers.USER_NAME);
+
+        // 如果没有用户ID，说明是白名单请求，直接放行
         if (!StringUtils.hasText(userId)) {
             filterChain.doFilter(request, response);
             return;
         }
+
+        // 验证网关签名（使用RSA公钥）
+        // 如果签名验证失败，会抛出BusinessException
+        gatewaySignatureValidator.validate(request);
 
         Set<String> roles = loadStringSet(UserAuthorityConstants.USER_ROLE_PREFIX + userId);
         Set<String> permissions = loadStringSet(UserAuthorityConstants.USER_PERMISSION_PREFIX + userId);

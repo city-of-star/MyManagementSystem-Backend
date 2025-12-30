@@ -2,14 +2,11 @@ package com.mms.usercenter.server.security.filter;
 
 import com.mms.common.core.constants.gateway.GatewayConstants;
 import com.mms.common.core.enums.error.ErrorCode;
-import com.mms.common.core.enums.jwt.TokenType;
 import com.mms.common.core.exceptions.BusinessException;
-import com.mms.common.security.constants.JwtConstants;
-import com.mms.common.security.utils.TokenValidatorUtils;
+import com.mms.common.web.security.GatewaySignatureValidator;
 import com.mms.usercenter.common.security.entity.SecurityUser;
 import com.mms.usercenter.server.config.SecurityWhitelistConfig;
 import com.mms.usercenter.service.security.service.impl.UserDetailsServiceImpl;
-import io.jsonwebtoken.Claims;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -24,26 +21,25 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Optional;
 
 /**
- * 实现功能【JWT 认证过滤器】
+ * 实现功能【网关签名验证过滤器】
  * <p>
  * 作用说明：
- * 1. 优先从Authorization头获取token并进行轻量级验证（签名、过期、黑名单）
- * 2. 验证网关透传的用户信息与token一致（防止请求头被篡改）
- * 3. 如果没有token，向后兼容从网关透传的Header读取用户名（信任网关）
+ * 1. 检查请求路径是否在白名单中，如果是则直接放行
+ * 2. 验证网关签名（使用RSA公钥），确保请求来自网关且未被篡改
+ * 3. 从请求头获取用户信息（网关已验证并透传）
  * 4. 调用 UserDetailsService 加载用户详情和权限信息
  * 5. 创建 Authentication 对象并设置到 SecurityContext
  * 6. 为后续的方法级权限控制（@PreAuthorize）和 SecurityUtils 提供支持
  * <p>
  * 安全架构：
- * - 网关层（JwtAuthFilter）：完整验证JWT token（签名、过期、黑名单），透传token和用户信息
- * - 服务层（本过滤器）：轻量级验证token，验证用户信息一致性，加载权限
- * - 这是混合验证架构：网关做完整验证，服务层做轻量级验证和一致性校验
+ * - 网关层（JwtAuthFilter）：完整验证JWT token（签名、过期、黑名单），使用RSA私钥生成签名
+ * - 服务层（本过滤器）：验证网关签名（RSA公钥），信任网关透传的用户信息，加载权限
+ * - 数字签名架构：网关做完整验证并签名，服务层做签名验证，防止请求头篡改和绕过网关
  *
  * @author li.hongyu
- * @date 2025-12-09 11:42:40
+ * @date 2025-01-XX
  */
 @Slf4j
 @Component
@@ -51,7 +47,7 @@ import java.util.Optional;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final UserDetailsServiceImpl userDetailsService;
-    private final TokenValidatorUtils tokenValidatorUtils;
+    private final GatewaySignatureValidator gatewaySignatureValidator;
     private final SecurityWhitelistConfig whitelistConfig;
 
     /**
@@ -59,9 +55,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * <p>
      * 执行流程：
      * 1. 检查 SecurityContext 中是否已有认证信息（避免重复处理）
-     * 2. 检查请求路径是否在白名单中，如果是则直接放行（不需要token）
-     * 3. 从Authorization头获取token并进行验证
-     * 4. 验证网关透传的用户名与token一致（防止请求头被篡改）
+     * 2. 检查请求路径是否在白名单中，如果是则直接放行（不需要签名验证）
+     * 3. 验证网关签名（使用RSA公钥），确保请求来自网关且未被篡改
+     * 4. 从请求头获取用户信息（网关已验证并透传）
      * 5. 加载用户详情和权限
      * 6. 创建 Authentication 对象并设置到 SecurityContext
      * 7. 继续过滤器链
@@ -80,36 +76,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 获取请求路径
         String requestPath = request.getRequestURI();
 
-        // 检查是否在白名单中，如果是则直接放行（不需要token验证）
+        // 检查是否在白名单中，如果是则直接放行（不需要签名验证）
         if (whitelistConfig.isWhitelisted(requestPath)) {
             log.debug("请求路径在白名单中，直接放行: {}", requestPath);
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 从Authorization头获取token
-        String authHeader = request.getHeader(JwtConstants.Headers.AUTHORIZATION);
+        // 验证网关签名（使用RSA公钥）
+        // 如果签名验证失败，会抛出BusinessException
+        gatewaySignatureValidator.validate(request);
 
-        // 没有token，则抛出【无效的认证头】异常
-        if (!StringUtils.hasText(authHeader)) {
-            throw new BusinessException(ErrorCode.INVALID_AUTH_HEADER);
-        }
-
-        // 提取并验证token
-        String token = TokenValidatorUtils.extractTokenFromHeader(authHeader);
-        Claims claims = tokenValidatorUtils.parseAndValidate(token, TokenType.ACCESS);
-
-        // 从token中提取用户名
-        String username = Optional.ofNullable(claims.get(JwtConstants.Claims.USERNAME))
-                .map(Object::toString)
-                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN));
-
-        // 获取网关透传的用户名，如果为null，说明是白名单或者被人伪造，白名单不用验证，被人伪造的话导致为null的话不用管，直接用token里面的用户名就可以了
-        String headerUsername = request.getHeader(GatewayConstants.Headers.USER_NAME);
-
-        // 验证网关透传的用户名是否与token一致（防止请求头被篡改）
-        if (StringUtils.hasText(headerUsername) && !username.equals(headerUsername)) {
-            log.warn("下游服务验证token时，用户名不一致，token中的username: {}, 请求头中的username: {}", username, headerUsername);
+        // 从请求头获取用户名（网关已验证并透传）
+        String username = request.getHeader(GatewayConstants.Headers.USER_NAME);
+        if (!StringUtils.hasText(username)) {
+            log.warn("网关签名验证通过，但请求头中缺少用户名: {}", requestPath);
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
 

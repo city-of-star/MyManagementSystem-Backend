@@ -222,6 +222,33 @@ public interface UserCenterFeignClient {
 
 具体业务配置（数据库连接、JWT密钥等）需在Nacos配置中心配置。
 
+### 网关签名配置
+
+网关使用RSA数字签名机制，确保请求来自网关且未被篡改：
+
+1. **生成RSA密钥对**：
+   ```bash
+   # 运行密钥生成工具类
+   java -cp target/classes com.mms.common.security.utils.RsaKeyGenerator
+   ```
+
+2. **配置网关签名密钥**（在Nacos的`public-DEV.yaml`或`gateway-DEV.yaml`中）：
+   ```yaml
+   gateway:
+     signature:
+       # RSA私钥（Base64编码的PKCS#8格式），仅网关持有
+       private-key: <生成的私钥>
+       # RSA公钥（Base64编码的X.509格式），各下游服务持有
+       public-key: <生成的公钥>
+       # 签名时间戳有效期（毫秒），默认5分钟，用于防重放攻击
+       timestamp-validity: 300000
+   ```
+
+3. **安全架构**：
+   - **网关层**：完整验证JWT token（签名、过期、黑名单），使用RSA私钥对用户信息生成数字签名
+   - **服务层**：验证网关签名（RSA公钥），信任网关透传的用户信息，加载权限
+   - **优势**：防止请求头篡改、防止绕过网关直接访问、轻量级验证、高性能
+
 ## 目录说明
 
 - `mysql/`: 数据库初始化脚本
