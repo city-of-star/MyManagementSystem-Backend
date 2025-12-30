@@ -4,8 +4,8 @@ import com.mms.common.core.constants.gateway.GatewayConstants;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.web.security.GatewaySignatureValidator;
+import com.mms.common.web.utils.WhitelistUtils;
 import com.mms.usercenter.common.security.entity.SecurityUser;
-import com.mms.usercenter.server.config.SecurityWhitelistConfig;
 import com.mms.usercenter.service.security.service.impl.UserDetailsServiceImpl;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -48,7 +48,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final UserDetailsServiceImpl userDetailsService;
     private final GatewaySignatureValidator gatewaySignatureValidator;
-    private final SecurityWhitelistConfig whitelistConfig;
+    private final WhitelistUtils whitelistUtils;
 
     /**
      * 过滤器核心逻辑
@@ -76,15 +76,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 获取请求路径
         String requestPath = request.getRequestURI();
 
-        // 检查是否在白名单中，如果是则直接放行（不需要签名验证）
-        if (whitelistConfig.isWhitelisted(requestPath)) {
-            log.debug("请求路径在白名单中，直接放行: {}", requestPath);
+        // 白名单请求：不需要签名验证，直接放行
+        if (whitelistUtils.isWhitelisted(request)) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        // 验证网关签名（使用RSA公钥）
-        // 如果签名验证失败，会抛出BusinessException
+        // 验证网关签名
         gatewaySignatureValidator.validate(request);
 
         // 从请求头获取用户名（网关已验证并透传）

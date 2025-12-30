@@ -1,8 +1,7 @@
 package com.mms.gateway.config;
 
+import com.mms.common.security.properties.WhitelistProperties;
 import com.mms.gateway.utils.GatewayPathMatcherUtils;
-import lombok.Getter;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.ArrayList;
@@ -17,47 +16,33 @@ import java.util.List;
  * @author li.hongyu
  * @date 2025-12-01 15:36:17
  */
-@Getter
 @Configuration
-@ConfigurationProperties(prefix = "gateway.whitelist")
 public class GatewayWhitelistConfig {
 
     /**
      * 白名单路径列表
      */
-    private List<String> paths = new ArrayList<>();
+    private final List<String> paths = new ArrayList<>();
 
     /**
      * 默认白名单路径（如果配置文件中没有配置，则使用默认值）
      */
-    public GatewayWhitelistConfig() {
-        // 基础健康与登录
-        this.paths.add("/actuator/**");                // Spring Boot Actuator 端点
-        this.paths.add("/health");                     // Spring Boot health 端点
-        this.paths.add("/usercenter/auth/login");      // 用户中心登录
-        this.paths.add("/usercenter/auth/refresh");    // 用户中心刷新
-        
-        // Swagger/Knife4j 相关路径
-        this.paths.add("/usercenter/doc.html");             // 用户中心 Knife4j 主页面
-        this.paths.add("/usercenter/v3/api-docs/**");       // 用户中心 OpenAPI 文档
-        this.paths.add("/usercenter/webjars/**");           // 用户中心 Knife4j 静态资源
-        this.paths.add("/usercenter/swagger-resources/**"); // 用户中心 Swagger 资源
-        this.paths.add("/usercenter/favicon.ico");          // 用户中心 favicon 图标
-        
-        this.paths.add("/base/doc.html");             // Base 服务 Knife4j 主页面
-        this.paths.add("/base/v3/api-docs/**");       // Base 服务 OpenAPI 文档
-        this.paths.add("/base/webjars/**");           // Base 服务 Knife4j 静态资源
-        this.paths.add("/base/swagger-resources/**"); // Base 服务 Swagger 资源
-        this.paths.add("/base/favicon.ico");          // Base 服务 favicon 图标
-    }
+    public GatewayWhitelistConfig(WhitelistProperties whitelistProperties) {
+        // 公共白名单：为每个下游服务加前缀
+        for (String p : whitelistProperties.getCommon()) {
+            this.paths.add("/usercenter" + p);
+            this.paths.add("/base" + p);
+        }
 
-    /**
-     * 设置白名单路径列表
-     *
-     * @param paths 白名单路径列表
-     */
-    public void setPaths(List<String> paths) {
-        this.paths = paths != null ? paths : new ArrayList<>();
+        // usercenter 专属
+        for (String p : whitelistProperties.getUsercenter()) {
+            this.paths.add("/usercenter" + p);
+        }
+
+        // base 专属
+        for (String p : whitelistProperties.getBase()) {
+            this.paths.add("/base" + p);
+        }
     }
 
     /**

@@ -1,6 +1,7 @@
 package com.mms.base.server.config;
 
 import com.mms.base.server.security.filter.JwtAuthenticationFilter;
+import com.mms.common.web.utils.WhitelistUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,6 +31,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final WhitelistUtils whitelistUtils;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -37,14 +39,7 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(
-                                "/actuator/**",          // Spring Boot Actuator 端点
-                                "/doc.html",             // Knife4j 主页面
-                                "/v3/api-docs/**",       // OpenAPI 文档
-                                "/webjars/**",           // Knife4j 静态资源
-                                "/swagger-resources/**", // Swagger 资源
-                                "/favicon.ico"           // favicon 图标
-                        ).permitAll()
+                        .requestMatchers(whitelistUtils.getSecurityWhitelistPatterns()).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

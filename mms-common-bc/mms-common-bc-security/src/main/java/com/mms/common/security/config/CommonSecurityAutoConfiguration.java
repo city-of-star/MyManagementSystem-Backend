@@ -2,6 +2,7 @@ package com.mms.common.security.config;
 
 import com.mms.common.security.properties.GatewaySignatureProperties;
 import com.mms.common.security.properties.JwtProperties;
+import com.mms.common.security.properties.WhitelistProperties;
 import com.mms.common.security.utils.JwtUtils;
 import com.mms.common.security.utils.ReactiveTokenValidatorUtils;
 import com.mms.common.security.utils.RefreshTokenUtils;
@@ -29,7 +30,7 @@ import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
  */
 @Configuration
 @ConditionalOnClass(Jwts.class)  // 只有在项目中引入了 jjwt 依赖时此配置类才生效
-@EnableConfigurationProperties({JwtProperties.class, GatewaySignatureProperties.class})  // 在此类当中注入配置属性Bean
+@EnableConfigurationProperties({JwtProperties.class, GatewaySignatureProperties.class, WhitelistProperties.class})  // 在此类当中注入配置属性Bean
 public class CommonSecurityAutoConfiguration {
 
 	/**

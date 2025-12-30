@@ -31,9 +31,13 @@ spring:
           uri: lb://usercenter
           predicates:
             - Path=/usercenter/**
+          filters:
+            - StripPrefix=1
         
         - id: base-route
           uri: lb://base
           predicates:
             - Path=/base/**
+          filters:
+            - StripPrefix=1
 

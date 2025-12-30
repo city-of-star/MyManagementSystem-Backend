@@ -54,6 +54,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+        // 检查是否已有认证信息
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
             filterChain.doFilter(request, response);
             return;
@@ -69,14 +70,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        // 验证网关签名（使用RSA公钥）
-        // 如果签名验证失败，会抛出BusinessException
+        // 验证网关签名
         gatewaySignatureValidator.validate(request);
 
+        // 从 Redis 中加载用户角色和权限
         Set<String> roles = loadStringSet(UserAuthorityConstants.USER_ROLE_PREFIX + userId);
         Set<String> permissions = loadStringSet(UserAuthorityConstants.USER_PERMISSION_PREFIX + userId);
 
-        // 缓存缺失时回源用户中心
+        // 缓存缺失时，从用户中心获取
         if (CollectionUtils.isEmpty(roles) && CollectionUtils.isEmpty(permissions)) {
             Long userIdLong = parseUserId(userId);
             if (userIdLong != null) {
@@ -89,6 +90,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
+        // 将权限信息注入到 SpringSecurity 框架上下文，以启用方法级别的权限
         Set<GrantedAuthority> authorities = new HashSet<>();
         if (!CollectionUtils.isEmpty(roles)) {
             authorities.addAll(roles.stream()

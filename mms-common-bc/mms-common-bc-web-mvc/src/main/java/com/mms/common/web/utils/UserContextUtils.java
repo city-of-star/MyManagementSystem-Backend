@@ -1,4 +1,4 @@
-package com.mms.common.web.context;
+package com.mms.common.web.utils;
 
 import com.mms.common.core.constants.gateway.GatewayConstants;
 import com.mms.common.core.context.UserContext;
