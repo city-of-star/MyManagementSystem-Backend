@@ -28,6 +28,19 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Feign 核心（仅用于 RequestInterceptor 等类型声明，由各业务服务实际引入 starter） -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-openfeign-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Feign Core -->
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-core</artifactId>
+        </dependency>
+
         <!-- Spring Web -->
         <dependency>
             <groupId>org.springframework</groupId>
