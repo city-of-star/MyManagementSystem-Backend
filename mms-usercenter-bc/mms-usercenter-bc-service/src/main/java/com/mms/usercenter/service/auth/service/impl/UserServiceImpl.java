@@ -178,21 +178,33 @@ public class UserServiceImpl implements UserService {
             if (user == null) {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
             }
-            // 检查用户名是否被其他用户使用
+            // 检查用户名是否被其他用户使用（排除当前用户）
             if (StringUtils.hasText(dto.getUsername()) && !dto.getUsername().equals(user.getUsername())) {
-                if (existsByUsername(dto.getUsername())) {
+                LambdaQueryWrapper<UserEntity> usernameWrapper = new LambdaQueryWrapper<>();
+                usernameWrapper.eq(UserEntity::getUsername, dto.getUsername())
+                        .eq(UserEntity::getDeleted, 0)
+                        .ne(UserEntity::getId, dto.getId());
+                if (userMapper.selectCount(usernameWrapper) > 0) {
                     throw new BusinessException(ErrorCode.USERNAME_EXISTS);
                 }
             }
-            // 检查邮箱是否被其他用户使用
+            // 检查邮箱是否被其他用户使用（排除当前用户）
             if (StringUtils.hasText(dto.getEmail()) && !dto.getEmail().equals(user.getEmail())) {
-                if (existsByEmail(dto.getEmail())) {
+                LambdaQueryWrapper<UserEntity> emailWrapper = new LambdaQueryWrapper<>();
+                emailWrapper.eq(UserEntity::getEmail, dto.getEmail())
+                        .eq(UserEntity::getDeleted, 0)
+                        .ne(UserEntity::getId, dto.getId());
+                if (userMapper.selectCount(emailWrapper) > 0) {
                     throw new BusinessException(ErrorCode.EMAIL_EXISTS);
                 }
             }
-            // 检查手机号是否被其他用户使用
+            // 检查手机号是否被其他用户使用（排除当前用户）
             if (StringUtils.hasText(dto.getPhone()) && !dto.getPhone().equals(user.getPhone())) {
-                if (existsByPhone(dto.getPhone())) {
+                LambdaQueryWrapper<UserEntity> phoneWrapper = new LambdaQueryWrapper<>();
+                phoneWrapper.eq(UserEntity::getPhone, dto.getPhone())
+                        .eq(UserEntity::getDeleted, 0)
+                        .ne(UserEntity::getId, dto.getId());
+                if (userMapper.selectCount(phoneWrapper) > 0) {
                     throw new BusinessException(ErrorCode.PHONE_EXISTS);
                 }
             }

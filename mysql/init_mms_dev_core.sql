@@ -47,8 +47,6 @@ CREATE TABLE IF NOT EXISTS `user` (
     `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_username` (`username`),
-    UNIQUE KEY `uk_email` (`email`),
-    UNIQUE KEY `uk_phone` (`phone`),
     KEY `idx_status` (`status`),
     KEY `idx_deleted` (`deleted`),
     KEY `idx_create_time` (`create_time`),
