@@ -1,4 +1,4 @@
-package com.mms.common.core.annotations;
+package com.mms.common.security.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -15,8 +15,8 @@ import java.lang.annotation.Target;
  *
  * 使用示例：
  * <pre>
- * &#64;RequiresPermission("user:view")
- * public Page&lt;UserVo&gt; getUserPage(...) { ... }
+ * @RequiresPermission("user:view")
+ * public Page<UserVo> getUserPage(...) { ... }
  * </pre>
  *
  * @author li.hongyu

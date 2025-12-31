@@ -25,18 +25,13 @@ import java.time.format.DateTimeFormatter;
  * 应用启动完成后打印应用基本信息
  * 统一支持网关服务和业务服务，根据应用名称自动识别服务类型
  * <p>
- * 设计说明：
- * - 网关服务：不打印 Swagger 地址（网关通常不提供 Swagger）
- * - 业务服务：打印通过网关访问的 Swagger 地址
- * - 不打印路由配置和白名单配置（保持启动日志简洁，详细配置可通过 Actuator 端点查看）
- * <p>
  *
  * @author li.hongyu
  * @date 2025-12-10 16:12:56
  */
 @Slf4j
 @Component
-public class StartupLogger implements ApplicationListener<ApplicationReadyEvent> {
+public class ApplicationStartupLogger implements ApplicationListener<ApplicationReadyEvent> {
 
     @Value("${spring.application.name:application}")
     private String applicationName;

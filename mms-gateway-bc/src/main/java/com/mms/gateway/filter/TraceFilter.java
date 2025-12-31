@@ -44,7 +44,7 @@ public class TraceFilter implements GlobalFilter, Ordered {
 
 	@Override
 	public int getOrder() {
-		// 在 GatewayExceptionHandler 之后执行
+		// 在 GatewayExceptionAdvice 之后执行
 		return GatewayConstants.FilterOrder.TRACE_FILTER;
 	}
 }

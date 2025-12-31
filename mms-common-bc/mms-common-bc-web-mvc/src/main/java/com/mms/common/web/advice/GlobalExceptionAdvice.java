@@ -30,7 +30,7 @@ import java.util.Set;
  */
 @Slf4j
 @RestControllerAdvice
-public class GlobalExceptionHandler {
+public class GlobalExceptionAdvice {
 
     /**
      * 处理业务异常(HTTP 400)

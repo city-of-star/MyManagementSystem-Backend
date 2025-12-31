@@ -5,7 +5,7 @@ import com.mms.common.core.constants.gateway.GatewayConstants;
 import com.mms.common.core.constants.usercenter.UserAuthorityConstants;
 import com.mms.base.feign.usercenter.dto.UserAuthorityDto;
 import com.mms.common.core.response.Response;
-import com.mms.common.web.security.GatewaySignatureValidator;
+import com.mms.common.security.service.GatewaySignatureVerificationService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -47,7 +47,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final RedisTemplate<String, Object> redisTemplate;
     private final UserAuthorityFeign userAuthorityFeign;
-    private final GatewaySignatureValidator gatewaySignatureValidator;
+    private final GatewaySignatureVerificationService gatewaySignatureVerificationService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -71,7 +71,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         // 验证网关签名
-        gatewaySignatureValidator.validate(request);
+        gatewaySignatureVerificationService.validate(request);
 
         // 从 Redis 中加载用户角色和权限
         Set<String> roles = loadStringSet(UserAuthorityConstants.USER_ROLE_PREFIX + userId);

@@ -1,8 +1,8 @@
-package com.mms.common.core.aop;
+package com.mms.common.security.aop;
 
-import com.mms.common.core.annotations.RequiresPermission;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
+import com.mms.common.security.annotations.RequiresPermission;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;

@@ -10,6 +10,7 @@ import java.util.List;
  * 实现功能【网关路径匹配工具类】
  * <p>
  * 统一处理路径匹配逻辑，支持白名单匹配
+ * 基于Spring Web的路径模式匹配，支持通配符和路径变量
  * </p>
  *
  * @author li.hongyu
@@ -24,6 +25,12 @@ public class GatewayPathMatcherUtils {
 
     /**
      * 检查路径是否匹配白名单中的任意一个模式
+     * 1. 精确匹配: "/api/users" - 只匹配完全相同的路径
+     * 2. 单层通配符: "/api/*" - 匹配/api下的所有单层路径
+     * 3. 多层通配符: "/api/**" - 匹配/api下的所有路径（包括多级子路径）
+     * 4. 路径变量: "/api/users/{id}" - 匹配路径中的动态部分
+     * 5. 正则表达式: "/api/users/{id:\\d+}" - 使用正则约束路径变量
+     * 6. 扩展名匹配: "*.html" - 匹配所有html文件
      *
      * @param path      待检查的路径
      * @param whitelist 白名单路径模式列表
@@ -42,23 +49,6 @@ public class GatewayPathMatcherUtils {
             }
         }
         return false;
-    }
-
-    /**
-     * 检查路径是否匹配指定的模式
-     *
-     * @param path    待检查的路径
-     * @param pattern 路径模式（支持 PathPattern 语法）
-     * @return 如果匹配则返回 true，否则返回 false
-     */
-    public static boolean matches(String path, String pattern) {
-        if (path == null || pattern == null) {
-            return false;
-        }
-
-        PathContainer pathContainer = PathContainer.parsePath(path);
-        PathPattern compiledPattern = PATH_PATTERN_PARSER.parse(pattern);
-        return compiledPattern.matches(pathContainer);
     }
 
     /**

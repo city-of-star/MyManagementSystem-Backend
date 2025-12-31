@@ -25,7 +25,7 @@ public class GatewayWhitelistConfig {
     private final List<String> paths = new ArrayList<>();
 
     /**
-     * 默认白名单路径（如果配置文件中没有配置，则使用默认值）
+     * 从配置中加载
      */
     public GatewayWhitelistConfig(WhitelistProperties whitelistProperties) {
         // 公共白名单：为每个下游服务加前缀

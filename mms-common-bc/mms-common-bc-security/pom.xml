@@ -11,7 +11,7 @@
 
     <artifactId>mms-common-bc-security</artifactId>
     <name>MMS Common BC Security</name>
-    <description>公共安全组件（JWT等）</description>
+    <description>公共安全组件</description>
 
     <dependencies>
 
@@ -26,6 +26,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-autoconfigure</artifactId>
+        </dependency>
+
+        <!-- Spring Security Core（用于权限校验切面，访问 Authentication / GrantedAuthority 等类型） -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-core</artifactId>
         </dependency>
 
         <!-- lombok -->
@@ -55,6 +61,19 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-redis</artifactId>
+        </dependency>
+
+        <!-- Jakarta Servlet API -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- AspectJ Weaver（用于 AOP 切面，如权限校验切面） -->
+        <dependency>
+            <groupId>org.aspectj</groupId>
+            <artifactId>aspectjweaver</artifactId>
         </dependency>
 
     </dependencies>

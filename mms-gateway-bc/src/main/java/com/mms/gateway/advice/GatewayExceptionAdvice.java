@@ -1,4 +1,4 @@
-package com.mms.gateway.handler;
+package com.mms.gateway.advice;
 
 import com.mms.common.core.constants.gateway.GatewayConstants;
 import com.mms.gateway.utils.GatewayExceptionUtils;
@@ -24,7 +24,7 @@ import reactor.core.publisher.Mono;
  */
 @Slf4j
 @Component
-public class GatewayExceptionHandler implements ErrorWebExceptionHandler, Ordered {
+public class GatewayExceptionAdvice implements ErrorWebExceptionHandler, Ordered {
 
 	@Override
 	public Mono<Void> handle(ServerWebExchange exchange, Throwable ex) {

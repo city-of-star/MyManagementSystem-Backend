@@ -1,7 +1,7 @@
 package com.mms.usercenter.controller.auth;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.mms.common.core.annotations.RequiresPermission;
+import com.mms.common.security.annotations.RequiresPermission;
 import com.mms.common.core.response.Response;
 import com.mms.usercenter.common.auth.dto.PermissionBatchDeleteDto;
 import com.mms.usercenter.common.auth.dto.PermissionCreateDto;

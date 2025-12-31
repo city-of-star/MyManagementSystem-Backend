@@ -1,14 +1,13 @@
-package com.mms.common.web.security;
+package com.mms.common.security.service;
 
 import com.mms.common.core.constants.gateway.GatewayConstants;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.security.properties.GatewaySignatureProperties;
 import com.mms.common.security.utils.GatewaySignatureUtils;
-import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 /**
@@ -16,16 +15,18 @@ import org.springframework.util.StringUtils;
  * <p>
  * 下游服务使用RSA公钥验证网关签名，确保请求来自网关且未被篡改
  * </p>
+ * <p>
+ * 注意：此服务仅在 Servlet 环境（业务服务）中生效，网关（WebFlux）环境不会创建此 Bean
+ * </p>
  *
  * @author li.hongyu
  * @date 2025-12-30 11:42:40
  */
 @Slf4j
-@Component
-public class GatewaySignatureValidator {
+@AllArgsConstructor
+public class GatewaySignatureVerificationService {
 
-    @Resource
-    private GatewaySignatureProperties signatureProperties;
+    private final GatewaySignatureProperties signatureProperties;
 
     /**
      * 验证网关签名
@@ -76,8 +77,6 @@ public class GatewaySignatureValidator {
             log.warn("网关签名验证失败: 签名不匹配 - userId={}, username={}", userId, username);
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
-
-        log.debug("网关签名验证成功: userId={}, username={}", userId, username);
     }
 }
 

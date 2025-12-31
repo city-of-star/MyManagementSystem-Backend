@@ -3,12 +3,14 @@ package com.mms.common.security.config;
 import com.mms.common.security.properties.GatewaySignatureProperties;
 import com.mms.common.security.properties.JwtProperties;
 import com.mms.common.security.properties.WhitelistProperties;
+import com.mms.common.security.service.GatewaySignatureVerificationService;
 import com.mms.common.security.utils.JwtUtils;
 import com.mms.common.security.utils.ReactiveTokenValidatorUtils;
 import com.mms.common.security.utils.RefreshTokenUtils;
 import com.mms.common.security.utils.TokenBlacklistUtils;
 import com.mms.common.security.utils.TokenValidatorUtils;
 import io.jsonwebtoken.Jwts;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -31,7 +33,7 @@ import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 @Configuration
 @ConditionalOnClass(Jwts.class)  // 只有在项目中引入了 jjwt 依赖时此配置类才生效
 @EnableConfigurationProperties({JwtProperties.class, GatewaySignatureProperties.class, WhitelistProperties.class})  // 在此类当中注入配置属性Bean
-public class CommonSecurityAutoConfiguration {
+public class JwtSecurityAutoConfiguration {
 
 	/**
 	 * 创建 JwtUtils Bean
@@ -91,6 +93,20 @@ public class CommonSecurityAutoConfiguration {
 			JwtUtils jwtUtils,
 			TokenBlacklistUtils tokenBlacklistUtils) {
 		return new TokenValidatorUtils(jwtUtils, tokenBlacklistUtils);
+	}
+
+	/**
+	 * 创建 GatewaySignatureVerificationService Bean
+	 * 仅在 Servlet 环境（业务服务）中创建，网关（WebFlux）环境不创建
+	 * 需要配置 gateway.signature.public-key 属性
+	 */
+	@Bean
+	@ConditionalOnMissingBean
+	@ConditionalOnClass(HttpServletRequest.class)
+	@ConditionalOnProperty(prefix = "gateway.signature", name = "public-key")
+	public GatewaySignatureVerificationService gatewaySignatureVerificationService(
+			GatewaySignatureProperties gatewaySignatureProperties) {
+		return new GatewaySignatureVerificationService(gatewaySignatureProperties);
 	}
 }
 

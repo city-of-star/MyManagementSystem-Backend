@@ -3,7 +3,7 @@ package com.mms.usercenter.server.security.filter;
 import com.mms.common.core.constants.gateway.GatewayConstants;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
-import com.mms.common.web.security.GatewaySignatureValidator;
+import com.mms.common.security.service.GatewaySignatureVerificationService;
 import com.mms.common.web.utils.WhitelistUtils;
 import com.mms.usercenter.common.security.entity.SecurityUser;
 import com.mms.usercenter.service.security.service.impl.UserDetailsServiceImpl;
@@ -47,7 +47,7 @@ import java.io.IOException;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final UserDetailsServiceImpl userDetailsService;
-    private final GatewaySignatureValidator gatewaySignatureValidator;
+    private final GatewaySignatureVerificationService gatewaySignatureVerificationService;
     private final WhitelistUtils whitelistUtils;
 
     /**
@@ -83,7 +83,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         // 验证网关签名
-        gatewaySignatureValidator.validate(request);
+        gatewaySignatureVerificationService.validate(request);
 
         // 从请求头获取用户名（网关已验证并透传）
         String username = request.getHeader(GatewayConstants.Headers.USER_NAME);

@@ -1,3 +1,3 @@
-com.mms.common.security.config.CommonSecurityAutoConfiguration
+com.mms.common.security.config.JwtSecurityAutoConfiguration
 
 
