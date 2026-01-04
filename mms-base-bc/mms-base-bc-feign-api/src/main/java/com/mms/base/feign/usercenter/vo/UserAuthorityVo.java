@@ -1,4 +1,4 @@
-package com.mms.base.feign.usercenter.dto;
+package com.mms.base.feign.usercenter.vo;
 
 import lombok.Data;
 
@@ -8,7 +8,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 @Data
-public class UserAuthorityDto implements Serializable {
+public class UserAuthorityVo implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;

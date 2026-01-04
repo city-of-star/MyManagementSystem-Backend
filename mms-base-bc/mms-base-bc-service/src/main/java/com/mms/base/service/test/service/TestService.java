@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.base.common.test.dto.TestDTO;
 import com.mms.base.common.test.entity.TestEntity;
 
+import java.util.Map;
+
 /**
  * 实现功能【测试服务】
  *
@@ -12,7 +14,7 @@ import com.mms.base.common.test.entity.TestEntity;
  */
 public interface TestService {
 
-    String test();
+    Map<String, Object> test();
 
     Page<TestEntity> getPage(TestDTO dto);
 }

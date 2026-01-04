@@ -8,6 +8,8 @@ import com.mms.common.core.response.Response;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 /**
  * 实现功能【测试基础功能】
  *
@@ -22,7 +24,7 @@ public class TestController {
     private TestService testService;
 
     @GetMapping("/1")
-    public Response<String> test1() {
+    public Response<Map<String, Object>> test1() {
         return Response.success(testService.test());
     }
 

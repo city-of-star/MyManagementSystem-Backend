@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 实现功能【用户权限服务实现类】
+ * 实现功能【用户权限服务 Controller】
  * <p>
- * - 内部接口：提供用户角色/权限查询
+ * 内部接口：提供用户角色/权限查询
  * </p>
  *
  * @author li.hongyu

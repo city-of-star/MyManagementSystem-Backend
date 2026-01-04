@@ -3,7 +3,7 @@ package com.mms.base.server.security.filter;
 import com.mms.base.feign.usercenter.UserAuthorityFeign;
 import com.mms.common.core.constants.gateway.GatewayConstants;
 import com.mms.common.core.constants.usercenter.UserAuthorityConstants;
-import com.mms.base.feign.usercenter.dto.UserAuthorityDto;
+import com.mms.base.feign.usercenter.vo.UserAuthorityVo;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.response.Response;
@@ -108,7 +108,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // 缓存缺失时，从用户中心获取
         if (CollectionUtils.isEmpty(roles) && CollectionUtils.isEmpty(permissions)) {
-            Response<UserAuthorityDto> resp = userAuthorityFeign.getUserAuthorities(username);
+            Response<UserAuthorityVo> resp = userAuthorityFeign.getUserAuthorities(username);
             if (resp != null && Response.SUCCESS_CODE == resp.getCode() && resp.getData() != null) {
                 roles = resp.getData().getRoles() == null ? Collections.emptySet() : resp.getData().getRoles();
                 permissions = resp.getData().getPermissions() == null ? Collections.emptySet() : resp.getData().getPermissions();
