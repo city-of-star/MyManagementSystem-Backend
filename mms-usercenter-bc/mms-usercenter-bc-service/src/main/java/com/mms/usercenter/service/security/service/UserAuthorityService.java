@@ -14,8 +14,8 @@ import com.mms.usercenter.common.security.vo.UserAuthorityVo;
 public interface UserAuthorityService {
 
     /**
-     * 根据用户ID查询角色与权限（带缓存）
+     * 根据用户名查询角色与权限（带缓存）
      */
-    UserAuthorityVo getUserAuthorities(Long userId);
+    UserAuthorityVo getUserAuthorities(String username);
 }
 

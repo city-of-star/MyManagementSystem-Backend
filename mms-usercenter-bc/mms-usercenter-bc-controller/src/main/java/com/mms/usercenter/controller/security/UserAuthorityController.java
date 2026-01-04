@@ -28,10 +28,10 @@ public class UserAuthorityController {
 
     private final UserAuthorityService userAuthorityService;
 
-    @Operation(summary = "根据用户ID获取角色与权限")
-    @GetMapping("/{userId}")
-    public Response<UserAuthorityVo> getUserAuthorities(@PathVariable Long userId) {
-        return Response.success(userAuthorityService.getUserAuthorities(userId));
+    @Operation(summary = "根据用户名获取角色与权限")
+    @GetMapping("/{username}")
+    public Response<UserAuthorityVo> getUserAuthorities(@PathVariable String username) {
+        return Response.success(userAuthorityService.getUserAuthorities(username));
     }
 }
 

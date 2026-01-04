@@ -13,7 +13,7 @@ import java.util.List;
 public interface PermissionMapper extends BaseMapper<PermissionEntity> {
 
     /**
-     * 根据用户ID查询该用户拥有的权限编码集合
+     * 根据用户名查询该用户拥有的权限编码集合
      */
-    List<String> selectPermissionCodesByUserId(Long userId);
+    List<String> selectPermissionCodesByUsername(String username);
 }

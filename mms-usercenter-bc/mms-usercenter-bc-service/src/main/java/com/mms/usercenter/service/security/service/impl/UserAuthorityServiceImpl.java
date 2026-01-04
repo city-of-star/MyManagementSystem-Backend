@@ -44,16 +44,15 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
      * 获取用户权限信息（包含角色和权限）
      * 采用读写分离的事务，提高查询性能
      *
-     * @param userId 用户ID
+     * @param username 用户名
      * @return UserAuthorityVo 用户权限信息对象
      */
     @Override
     @Transactional(readOnly = true)
-    public UserAuthorityVo getUserAuthorities(Long userId) {
+    public UserAuthorityVo getUserAuthorities(String username) {
         UserAuthorityVo vo = new UserAuthorityVo();
-        vo.setUserId(userId);
-        vo.setRoles(loadUserRoles(userId));
-        vo.setPermissions(loadUserPermissions(userId));
+        vo.setRoles(loadUserRoles(username));
+        vo.setPermissions(loadUserPermissions(username));
         return vo;
     }
 
@@ -61,16 +60,16 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
      * 加载用户角色集合
      * 采用缓存优先策略：先查缓存，缓存不存在再查数据库
      *
-     * @param userId 用户ID
+     * @param username 用户名
      * @return 用户角色编码集合
      */
-    private Set<String> loadUserRoles(Long userId) {
-        if (userId == null) {
+    private Set<String> loadUserRoles(String username) {
+        if (!StringUtils.hasText(username)) {
             return Collections.emptySet();
         }
 
         // 构建缓存键
-        String cacheKey = UserAuthorityConstants.USER_ROLE_PREFIX + userId;
+        String cacheKey = UserAuthorityConstants.USER_ROLE_PREFIX + username;
 
         // 先尝试从缓存获取
         Set<String> cachedRoles = convertToStringSet(redisTemplate.opsForValue().get(cacheKey));
@@ -79,7 +78,7 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
         }
 
         // 缓存未命中，查询数据库
-        List<String> roleCodeList = roleMapper.selectRoleCodesByUserId(userId);
+        List<String> roleCodeList = roleMapper.selectRoleCodesByUsername(username);
         if (CollectionUtils.isEmpty(roleCodeList)) {
             // 空结果也进行缓存，防止缓存穿透
             cacheEmptySet(cacheKey);
@@ -100,16 +99,16 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
      * 加载用户权限集合
      * 采用缓存优先策略：先查缓存，缓存不存在再查数据库
      *
-     * @param userId 用户ID
+     * @param username 用户名
      * @return 用户权限编码集合
      */
-    private Set<String> loadUserPermissions(Long userId) {
-        if (userId == null) {
+    private Set<String> loadUserPermissions(String username) {
+        if (!StringUtils.hasText(username)) {
             return Collections.emptySet();
         }
 
         // 构建缓存键
-        String cacheKey = UserAuthorityConstants.USER_PERMISSION_PREFIX + userId;
+        String cacheKey = UserAuthorityConstants.USER_PERMISSION_PREFIX + username;
 
         // 先尝试从缓存获取
         Set<String> cachedPermissions = convertToStringSet(redisTemplate.opsForValue().get(cacheKey));
@@ -118,7 +117,7 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
         }
 
         // 缓存未命中，查询数据库
-        List<String> permissionCodeList = permissionMapper.selectPermissionCodesByUserId(userId);
+        List<String> permissionCodeList = permissionMapper.selectPermissionCodesByUsername(username);
         if (CollectionUtils.isEmpty(permissionCodeList)) {
             // 空结果也进行缓存，防止缓存穿透
             cacheEmptySet(cacheKey);

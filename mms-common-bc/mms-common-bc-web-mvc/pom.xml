@@ -47,6 +47,12 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
+        <!-- Spring Cloud Context（用于配置刷新事件监听） -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-context</artifactId>
+        </dependency>
+
         <!-- Feign Core（仅用于 RequestInterceptor 等类型声明，运行时由业务服务提供） -->
         <dependency>
             <groupId>io.github.openfeign</groupId>

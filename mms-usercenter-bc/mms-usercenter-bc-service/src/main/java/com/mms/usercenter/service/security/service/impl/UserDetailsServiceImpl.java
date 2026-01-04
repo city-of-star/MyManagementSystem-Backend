@@ -54,7 +54,7 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         securityUser.setLastLoginTime(user.getLastLoginTime());
 
         // 角色、权限查询（缓存）
-        UserAuthorityVo authorities = userAuthorityService.getUserAuthorities(user.getId());
+        UserAuthorityVo authorities = userAuthorityService.getUserAuthorities(user.getUsername());
         securityUser.setRoles(authorities.getRoles());
         securityUser.setPermissions(authorities.getPermissions());
 

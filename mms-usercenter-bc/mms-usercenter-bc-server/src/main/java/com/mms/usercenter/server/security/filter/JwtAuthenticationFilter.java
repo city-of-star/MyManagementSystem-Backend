@@ -73,9 +73,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        // 获取请求路径
-        String requestPath = request.getRequestURI();
-
         // 白名单请求：不需要签名验证，直接放行
         if (whitelistUtils.isWhitelisted(request)) {
             filterChain.doFilter(request, response);
@@ -88,7 +85,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 从请求头获取用户名（网关已验证并透传）
         String username = request.getHeader(GatewayConstants.Headers.USER_NAME);
         if (!StringUtils.hasText(username)) {
-            log.warn("网关签名验证通过，但请求头中缺少用户名: {}", requestPath);
+            log.warn("网关签名验证通过，但请求头中缺少用户名: {}", request.getRequestURI());
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
 

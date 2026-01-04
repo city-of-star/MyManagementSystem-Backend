@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 @FeignClient(name = "usercenter", path = "/usercenter/authority")
 public interface UserAuthorityFeign {
 
-    @GetMapping("/{userId}")
-    Response<UserAuthorityDto> getUserAuthorities(@PathVariable("userId") Long userId);
+    @GetMapping("/{username}")
+    Response<UserAuthorityDto> getUserAuthorities(@PathVariable("username") String username);
 }
 

@@ -13,13 +13,13 @@ public final class UserAuthorityConstants {
 
     /**
      * 用户角色集合缓存前缀
-     * 示例：mms:usercenter:roles:{userId}
+     * 示例：mms:usercenter:roles:{username}
      */
     public static final String USER_ROLE_PREFIX = "mms:usercenter:roles:";
 
     /**
      * 用户权限集合缓存前缀
-     * 示例：mms:usercenter:perms:{userId}
+     * 示例：mms:usercenter:perms:{username}
      */
     public static final String USER_PERMISSION_PREFIX = "mms:usercenter:perms:";
 

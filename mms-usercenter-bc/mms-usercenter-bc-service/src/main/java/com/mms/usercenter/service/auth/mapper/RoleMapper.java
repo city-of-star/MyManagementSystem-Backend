@@ -13,7 +13,7 @@ import java.util.List;
 public interface RoleMapper extends BaseMapper<RoleEntity> {
 
     /**
-     * 根据用户ID查询该用户拥有的角色编码集合
+     * 根据用户名查询该用户拥有的角色编码集合
      */
-    List<String> selectRoleCodesByUserId(Long userId);
+    List<String> selectRoleCodesByUsername(String username);
 }

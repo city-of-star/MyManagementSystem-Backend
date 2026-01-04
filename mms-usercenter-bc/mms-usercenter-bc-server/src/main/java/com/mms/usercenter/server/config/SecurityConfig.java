@@ -65,7 +65,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // 配置请求授权规则
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(whitelistUtils.getSecurityWhitelistPatterns()).permitAll()
+                        .requestMatchers(whitelistUtils.getWhitelistPatterns()).permitAll()
                         .anyRequest().authenticated()
                 )
                 // 添加自定义 JWT 认证过滤器
