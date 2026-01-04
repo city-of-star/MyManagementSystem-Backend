@@ -182,7 +182,7 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
             redisTemplate.opsForValue().set(
                     key,
                     values,
-                    UserAuthorityConstants.ROLE_PERMISSION_CACHE_TTL_MINUTES,
+                    UserAuthorityConstants.AUTHORITY_CACHE_TTL_MINUTES,
                     TimeUnit.MINUTES
             );
         }
@@ -199,7 +199,7 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
             redisTemplate.opsForValue().set(
                     key,
                     new HashSet<>(),
-                    UserAuthorityConstants.ROLE_PERMISSION_CACHE_TTL_MINUTES,
+                    UserAuthorityConstants.AUTHORITY_CACHE_TTL_MINUTES,
                     TimeUnit.MINUTES
             );
         }

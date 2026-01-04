@@ -31,7 +31,7 @@ public final class UserAuthorityConstants {
     /**
      * 角色、权限缓存默认过期时间（分钟）
      */
-    public static final long ROLE_PERMISSION_CACHE_TTL_MINUTES = 30L;
+    public static final long AUTHORITY_CACHE_TTL_MINUTES = 30L;
 
     /**
      * 私有构造函数，防止实例化

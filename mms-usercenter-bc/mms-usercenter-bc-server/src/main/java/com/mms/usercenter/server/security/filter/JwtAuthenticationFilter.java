@@ -82,8 +82,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 验证网关签名
         gatewaySignatureVerificationService.validate(request);
 
-        // 从请求头获取用户名（网关已验证并透传）
+        // 获取用户名
         String username = request.getHeader(GatewayConstants.Headers.USER_NAME);
+
+        // 网关签名验证通过后，必须要有用户名
         if (!StringUtils.hasText(username)) {
             log.warn("网关签名验证通过，但请求头中缺少用户名: {}", request.getRequestURI());
             throw new BusinessException(ErrorCode.INVALID_TOKEN);

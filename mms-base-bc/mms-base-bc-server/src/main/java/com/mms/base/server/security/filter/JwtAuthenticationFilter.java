@@ -110,9 +110,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (CollectionUtils.isEmpty(roles) && CollectionUtils.isEmpty(permissions)) {
             Response<UserAuthorityDto> resp = userAuthorityFeign.getUserAuthorities(username);
             if (resp != null && Response.SUCCESS_CODE == resp.getCode() && resp.getData() != null) {
-                roles = defaultSet(resp.getData().getRoles());
-                permissions = defaultSet(resp.getData().getPermissions());
-                cacheAuthorities(username, roles, permissions);
+                roles = resp.getData().getRoles() == null ? Collections.emptySet() : resp.getData().getRoles();
+                permissions = resp.getData().getPermissions() == null ? Collections.emptySet() : resp.getData().getPermissions();
             }
         }
 
@@ -163,23 +162,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return Collections.singleton(cached.toString());
     }
 
+    /**
+     *
+     */
     private Set<String> defaultSet(Set<String> set) {
         return set == null ? Collections.emptySet() : set;
     }
 
-    private void cacheAuthorities(String username, Set<String> roles, Set<String> permissions) {
-        redisTemplate.opsForValue().set(
-                UserAuthorityConstants.USER_ROLE_PREFIX + username,
-                defaultSet(roles),
-                UserAuthorityConstants.ROLE_PERMISSION_CACHE_TTL_MINUTES,
-                java.util.concurrent.TimeUnit.MINUTES
-        );
-        redisTemplate.opsForValue().set(
-                UserAuthorityConstants.USER_PERMISSION_PREFIX + username,
-                defaultSet(permissions),
-                UserAuthorityConstants.ROLE_PERMISSION_CACHE_TTL_MINUTES,
-                java.util.concurrent.TimeUnit.MINUTES
-        );
-    }
 }
 
