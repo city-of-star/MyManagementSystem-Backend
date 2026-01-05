@@ -10,6 +10,7 @@
     </parent>
 
     <artifactId>mms-common-bc-all</artifactId>
+    <packaging>pom</packaging>
     <name>MMS Common BC All</name>
     <description>Common模块聚合包，包含common下的所有子模块，方便其他服务统一引入</description>
 
