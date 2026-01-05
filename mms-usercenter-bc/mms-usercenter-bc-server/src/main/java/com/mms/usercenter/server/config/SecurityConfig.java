@@ -1,6 +1,6 @@
 package com.mms.usercenter.server.config;
 
-import com.mms.common.security.utils.WhitelistUtils;
+import com.mms.common.security.utils.ServiceWhitelistUtils;
 import com.mms.usercenter.server.security.filter.JwtAuthenticationFilter;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -46,7 +46,7 @@ public class SecurityConfig {
     /**
      * 白名单工具
      */
-    private final WhitelistUtils whitelistUtils;
+    private final ServiceWhitelistUtils serviceWhitelistUtils;
 
     /**
      * 配置安全过滤器链
@@ -65,7 +65,7 @@ public class SecurityConfig {
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 // 配置请求授权规则
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(whitelistUtils.getWhitelistPatterns()).permitAll()
+                        .requestMatchers(serviceWhitelistUtils.getWhitelistPatternStrings()).permitAll()
                         .anyRequest().authenticated()
                 )
                 // 添加自定义 JWT 认证过滤器

@@ -1,7 +1,7 @@
 package com.mms.base.server.config;
 
 import com.mms.base.server.security.filter.JwtAuthenticationFilter;
-import com.mms.common.security.utils.WhitelistUtils;
+import com.mms.common.security.utils.ServiceWhitelistUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -32,7 +32,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
-    private final WhitelistUtils whitelistUtils;
+    private final ServiceWhitelistUtils serviceWhitelistUtils;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -40,7 +40,7 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(whitelistUtils.getWhitelistPatterns()).permitAll()
+                        .requestMatchers(serviceWhitelistUtils.getWhitelistPatternStrings()).permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);

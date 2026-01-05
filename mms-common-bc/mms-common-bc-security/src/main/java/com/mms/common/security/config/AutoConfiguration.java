@@ -4,11 +4,8 @@ import com.mms.common.security.properties.GatewaySignatureProperties;
 import com.mms.common.security.properties.JwtProperties;
 import com.mms.common.security.properties.WhitelistProperties;
 import com.mms.common.security.service.GatewaySignatureVerificationService;
-import com.mms.common.security.utils.JwtUtils;
-import com.mms.common.security.utils.ReactiveTokenValidatorUtils;
-import com.mms.common.security.utils.RefreshTokenUtils;
-import com.mms.common.security.utils.TokenBlacklistUtils;
-import com.mms.common.security.utils.TokenValidatorUtils;
+import com.mms.common.security.utils.*;
+import com.mms.common.security.utils.ServiceWhitelistUtils;
 import io.jsonwebtoken.Jwts;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -33,7 +30,7 @@ import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
 @Configuration
 @ConditionalOnClass(Jwts.class)  // 只有在项目中引入了 jjwt 依赖时此配置类才生效
 @EnableConfigurationProperties({JwtProperties.class, GatewaySignatureProperties.class, WhitelistProperties.class})  // 在此类当中注入配置属性Bean
-public class JwtSecurityAutoConfiguration {
+public class AutoConfiguration {
 
 	/**
 	 * 创建 JwtUtils Bean
@@ -107,6 +104,18 @@ public class JwtSecurityAutoConfiguration {
 	public GatewaySignatureVerificationService gatewaySignatureVerificationService(
 			GatewaySignatureProperties gatewaySignatureProperties) {
 		return new GatewaySignatureVerificationService(gatewaySignatureProperties);
+	}
+
+	/**
+	 * 创建 ServiceWhitelistUtils Bean
+	 * 仅在 Servlet 环境（业务服务）中创建，网关（WebFlux）环境不创建
+	 * 网关使用 GatewayWhitelistConfig，业务服务使用 ServiceWhitelistUtils
+	 */
+	@Bean
+	@ConditionalOnMissingBean
+	@ConditionalOnClass(HttpServletRequest.class)
+	public ServiceWhitelistUtils whitelistUtils(WhitelistProperties whitelistProperties) {
+		return new ServiceWhitelistUtils(whitelistProperties);
 	}
 }
 
