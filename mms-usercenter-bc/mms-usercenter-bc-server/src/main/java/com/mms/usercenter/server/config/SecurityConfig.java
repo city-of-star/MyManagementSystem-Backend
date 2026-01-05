@@ -1,6 +1,6 @@
 package com.mms.usercenter.server.config;
 
-import com.mms.common.web.utils.WhitelistUtils;
+import com.mms.common.security.utils.WhitelistUtils;
 import com.mms.usercenter.server.security.filter.JwtAuthenticationFilter;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;

@@ -1,7 +1,7 @@
 package com.mms.base.server.config;
 
 import com.mms.base.server.security.filter.JwtAuthenticationFilter;
-import com.mms.common.web.utils.WhitelistUtils;
+import com.mms.common.security.utils.WhitelistUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

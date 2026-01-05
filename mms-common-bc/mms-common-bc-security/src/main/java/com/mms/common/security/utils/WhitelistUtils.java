@@ -1,7 +1,6 @@
-package com.mms.common.web.utils;
+package com.mms.common.security.utils;
 
 import com.mms.common.security.properties.WhitelistProperties;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -116,9 +115,8 @@ public class WhitelistUtils {
      * 会自动去掉 context-path，再与 whitelist.* 中的模式进行匹配。
      * </p>
      */
-    public boolean isWhitelisted(HttpServletRequest request) {
-        String uri = request.getRequestURI(); // 例如 /usercenter/doc.html 或 /doc.html
-        String path = stripContextPath(uri);
+    public boolean isWhitelisted(String url) {
+        String path = stripContextPath(url);
 
         for (String pattern : getWhitelistPatterns()) {
             if (PATH_MATCHER.match(pattern, path)) {

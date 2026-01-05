@@ -8,7 +8,7 @@ import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.response.Response;
 import com.mms.common.security.service.GatewaySignatureVerificationService;
-import com.mms.common.web.utils.WhitelistUtils;
+import com.mms.common.security.utils.WhitelistUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -85,7 +85,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         // 白名单请求：不需要签名验证，直接放行
-        if (whitelistUtils.isWhitelisted(request)) {
+        if (whitelistUtils.isWhitelisted(request.getRequestURI())) {
             filterChain.doFilter(request, response);
             return;
         }

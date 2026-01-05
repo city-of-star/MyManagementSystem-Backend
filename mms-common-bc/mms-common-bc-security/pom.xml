@@ -34,6 +34,12 @@
             <artifactId>spring-security-core</artifactId>
         </dependency>
 
+        <!-- Spring Cloud Context（用于配置刷新事件监听） -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-context</artifactId>
+        </dependency>
+
         <!-- lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
