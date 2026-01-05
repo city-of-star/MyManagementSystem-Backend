@@ -115,7 +115,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        // 将权限信息注入到 SpringSecurity 框架上下文，以启用方法级别的权限
+        // 组装用户权限
         Set<GrantedAuthority> authorities = new HashSet<>();
         if (!CollectionUtils.isEmpty(roles)) {
             authorities.addAll(roles.stream()
@@ -128,11 +128,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .collect(Collectors.toSet()));
         }
 
+        // 创建 Authentication 对象，并添加用户名和权限
         UsernamePasswordAuthenticationToken authentication =
                 new UsernamePasswordAuthenticationToken(username, null, authorities);
+
+        // 设置认证详情（IP 地址、Session ID 等）
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+        // 设置到 SecurityContext
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
+        // 继续过滤器链
         filterChain.doFilter(request, response);
     }
 

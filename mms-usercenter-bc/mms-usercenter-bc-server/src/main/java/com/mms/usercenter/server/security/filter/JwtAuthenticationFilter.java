@@ -94,7 +94,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 加载用户详情和权限
         SecurityUser userDetails = (SecurityUser) userDetailsService.loadUserByUsername(username);
 
-        // 创建 Authentication 对象
+        // 创建 Authentication 对象，并添加用户信息和权限
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                 userDetails, null, userDetails.getAuthorities());
 
