@@ -5,7 +5,7 @@ import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.security.constants.JwtConstants;
 import com.mms.common.core.enums.jwt.TokenType;
 import com.mms.common.security.utils.ReactiveTokenValidatorUtils;
-import com.mms.gateway.utils.GatewayWhitelistUtils;
+import com.mms.gateway.service.GatewayWhitelistService;
 import com.mms.common.core.constants.gateway.GatewayConstants;
 import com.mms.gateway.service.GatewaySignatureService;
 import com.mms.gateway.utils.GatewayResponseUtils;
@@ -42,7 +42,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
 
     // 白名单配置
     @Resource
-    private GatewayWhitelistUtils whitelistConfig;
+    private GatewayWhitelistService gatewayWhitelistService;
 
     // Reactive Token验证器
     @Resource
@@ -58,7 +58,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         String path = request.getURI().getPath();
 
         // 白名单直接放行
-        if (whitelistConfig.isWhitelisted(path)) {
+        if (gatewayWhitelistService.isWhitelisted(path)) {
             return chain.filter(exchange);
         }
 

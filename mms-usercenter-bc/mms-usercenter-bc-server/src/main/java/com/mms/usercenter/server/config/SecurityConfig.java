@@ -1,6 +1,6 @@
 package com.mms.usercenter.server.config;
 
-import com.mms.common.security.utils.ServiceWhitelistUtils;
+import com.mms.common.security.service.ServiceWhitelistService;
 import com.mms.usercenter.server.security.filter.JwtAuthenticationFilter;
 import lombok.AllArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -46,7 +46,7 @@ public class SecurityConfig {
     /**
      * 白名单工具
      */
-    private final ServiceWhitelistUtils serviceWhitelistUtils;
+    private final ServiceWhitelistService serviceWhitelistUtils;
 
     /**
      * 配置安全过滤器链

@@ -1,4 +1,4 @@
-package com.mms.common.security.utils;
+package com.mms.common.security.service;
 
 import com.mms.common.security.properties.WhitelistProperties;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,7 @@ import java.util.List;
  * @date 2025-12-30 16:44:56
  */
 @RequiredArgsConstructor
-public class ServiceWhitelistUtils extends AbstractWhitelistUtils {
+public class ServiceWhitelistService extends AbstractWhitelistService {
 
     private final WhitelistProperties whitelistProperties;
 

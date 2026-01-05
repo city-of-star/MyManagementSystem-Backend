@@ -5,7 +5,7 @@ import com.mms.common.security.properties.JwtProperties;
 import com.mms.common.security.properties.WhitelistProperties;
 import com.mms.common.security.service.GatewaySignatureVerificationService;
 import com.mms.common.security.utils.*;
-import com.mms.common.security.utils.ServiceWhitelistUtils;
+import com.mms.common.security.service.ServiceWhitelistService;
 import io.jsonwebtoken.Jwts;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -107,15 +107,15 @@ public class AutoConfiguration {
 	}
 
 	/**
-	 * 创建 ServiceWhitelistUtils Bean
+	 * 创建 ServiceWhitelistService Bean
 	 * 仅在 Servlet 环境（业务服务）中创建，网关（WebFlux）环境不创建
-	 * 网关使用 GatewayWhitelistConfig，业务服务使用 ServiceWhitelistUtils
+	 * 网关使用 GatewayWhitelistConfig，业务服务使用 ServiceWhitelistService
 	 */
 	@Bean
 	@ConditionalOnMissingBean
 	@ConditionalOnClass(HttpServletRequest.class)
-	public ServiceWhitelistUtils whitelistUtils(WhitelistProperties whitelistProperties) {
-		return new ServiceWhitelistUtils(whitelistProperties);
+	public ServiceWhitelistService whitelistUtils(WhitelistProperties whitelistProperties) {
+		return new ServiceWhitelistService(whitelistProperties);
 	}
 }
 

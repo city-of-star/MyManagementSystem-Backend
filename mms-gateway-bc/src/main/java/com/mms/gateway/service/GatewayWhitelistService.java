@@ -1,7 +1,7 @@
-package com.mms.gateway.utils;
+package com.mms.gateway.service;
 
 import com.mms.common.security.properties.WhitelistProperties;
-import com.mms.common.security.utils.AbstractWhitelistUtils;
+import com.mms.common.security.service.AbstractWhitelistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
@@ -22,7 +22,7 @@ import java.util.List;
 @Configuration
 @RequiredArgsConstructor
 @EnableConfigurationProperties(WhitelistProperties.class)
-public class GatewayWhitelistUtils extends AbstractWhitelistUtils {
+public class GatewayWhitelistService extends AbstractWhitelistService {
 
     private final WhitelistProperties whitelistProperties;
 

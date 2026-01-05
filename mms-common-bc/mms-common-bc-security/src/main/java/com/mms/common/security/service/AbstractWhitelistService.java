@@ -1,4 +1,4 @@
-package com.mms.common.security.utils;
+package com.mms.common.security.service;
 
 import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +24,7 @@ import java.util.concurrent.atomic.AtomicReference;
  * @date 2025-01-XX
  */
 @Slf4j
-public abstract class AbstractWhitelistUtils {
+public abstract class AbstractWhitelistService {
 
     /**
      * 路径模式解析器（线程安全）
