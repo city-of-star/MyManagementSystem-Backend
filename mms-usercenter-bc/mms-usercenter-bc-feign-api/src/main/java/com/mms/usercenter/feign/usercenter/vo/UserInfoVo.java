@@ -1,4 +1,4 @@
-package com.mms.base.feign.usercenter.vo;
+package com.mms.usercenter.feign.usercenter.vo;
 
 import lombok.Data;
 
@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  * </p>
  *
  * @author li.hongyu
- * @date 2025-01-XX
+ * @date 2025-01-01 11:14:04
  */
 @Data
 public class UserInfoVo implements Serializable {

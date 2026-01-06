@@ -1,4 +1,4 @@
-package com.mms.base.feign.usercenter.vo;
+package com.mms.usercenter.feign.usercenter.vo;
 
 import lombok.Data;
 

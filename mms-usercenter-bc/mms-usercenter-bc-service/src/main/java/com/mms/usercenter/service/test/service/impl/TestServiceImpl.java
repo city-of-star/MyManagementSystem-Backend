@@ -1,7 +1,7 @@
 package com.mms.usercenter.service.test.service.impl;
 
+import com.mms.base.feign.test.TestFeign;
 import com.mms.usercenter.service.test.service.TestService;
-import com.mms.usercenter.feign.test.BaseTestFeign;
 import jakarta.annotation.Resource;
 import org.springframework.stereotype.Service;
 
@@ -15,11 +15,11 @@ import org.springframework.stereotype.Service;
 public class TestServiceImpl implements TestService {
 
     @Resource
-    private BaseTestFeign baseTestFeign;
+    private TestFeign testFeign;
 
     @Override
     public String test() {
-        String baseResult = baseTestFeign.test1();
+        String baseResult = testFeign.test1();
         return "测试成功 -> base返回: " + baseResult;
     }
 }

@@ -60,6 +60,13 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <!-- Feign模块依赖管理 -->
+            <dependency>
+                <groupId>com.mms</groupId>
+                <artifactId>mms-base-bc-feign-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 

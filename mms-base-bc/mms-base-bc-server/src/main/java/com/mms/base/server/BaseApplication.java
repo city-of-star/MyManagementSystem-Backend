@@ -11,7 +11,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @EnableDiscoveryClient
 @MapperScan(MapperScanConstants.BASE_MAPPER_SCAN)
-@EnableFeignClients(basePackages = {FeignScanConstants.BASE_FEIGN_SCAN})
+@EnableFeignClients(basePackages = {FeignScanConstants.USERCENTER_FEIGN_SCAN})
 @SpringBootApplication(scanBasePackages = {PackageScanConstants.BASE_PACKAGE_SCAN, PackageScanConstants.COMMON_PACKAGE_SCAN})
 public class BaseApplication {
     public static void main(String[] args) {

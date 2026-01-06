@@ -1,14 +1,14 @@
 package com.mms.base.server.security.filter;
 
-import com.mms.base.feign.usercenter.UserAuthorityFeign;
 import com.mms.common.core.constants.gateway.GatewayConstants;
 import com.mms.common.core.constants.usercenter.UserAuthorityConstants;
-import com.mms.base.feign.usercenter.vo.UserAuthorityVo;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.response.Response;
 import com.mms.common.security.service.GatewaySignatureVerificationService;
 import com.mms.common.security.service.ServiceWhitelistService;
+import com.mms.usercenter.feign.usercenter.UserAuthorityFeign;
+import com.mms.usercenter.feign.usercenter.vo.UserAuthorityVo;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -49,7 +49,7 @@ import java.util.stream.Collectors;
  * - 数字签名架构：网关做完整验证并签名，服务层做签名验证，防止请求头篡改和绕过网关
  *
  * @author li.hongyu
- * @date 2025-01-XX
+ * @date 2025-01-04 11:15:36
  */
 @Slf4j
 @Component
