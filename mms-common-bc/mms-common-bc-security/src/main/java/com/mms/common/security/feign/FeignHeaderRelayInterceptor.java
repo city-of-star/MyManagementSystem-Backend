@@ -1,4 +1,4 @@
-package com.mms.common.web.feign;
+package com.mms.common.security.feign;
 
 import com.mms.common.core.constants.gateway.GatewayConstants;
 import com.mms.common.security.constants.JwtConstants;
@@ -6,7 +6,6 @@ import feign.RequestInterceptor;
 import feign.RequestTemplate;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
@@ -24,7 +23,6 @@ import java.util.List;
  * @date 2025-12-30 17:47:37
  */
 @Slf4j
-@Component
 public class FeignHeaderRelayInterceptor implements RequestInterceptor {
 
     /**
@@ -45,19 +43,17 @@ public class FeignHeaderRelayInterceptor implements RequestInterceptor {
 
     @Override
     public void apply(RequestTemplate template) {
+
+        // 检查是否有用户信息
         ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
         if (attributes == null) {
-            // 不在 HTTP 请求上下文中（例如定时任务触发的 Feign 调用），跳过
-            log.info("Feign请求头透传：不在HTTP请求上下文，跳过 | 目标: {} {}", 
-                    template.method(), template.url());
+            // 目前暂无【定时任务触发的 Feign 调用】的需求
+            // 后期如果有这个需求，可以在此处使用 HMAC 加一个凭证
+            // 然后下游服务器在发现没有网关签名的时候再验证这个凭证就好了
             return;
         }
 
         HttpServletRequest request = attributes.getRequest();
-        String targetUrl = template.method() + " " + template.url();
-        
-        // 统计透传的头信息
-        String traceId = null;
 
         // 透传 Authorization 头
         String authHeader = request.getHeader(JwtConstants.Headers.AUTHORIZATION);
@@ -70,20 +66,8 @@ public class FeignHeaderRelayInterceptor implements RequestInterceptor {
             String value = request.getHeader(headerName);
             if (StringUtils.hasText(value)) {
                 template.header(headerName, value);
-                
-                // 记录关键头信息用于排查
-                if (GatewayConstants.Headers.TRACE_ID.equals(headerName)) {
-                    traceId = value;
-                }
             }
         }
-
-        // 记录透传摘要信息
-        StringBuilder logMsg = new StringBuilder("Feign请求头透传 | 目标: ").append(targetUrl);
-        if (traceId != null) {
-            logMsg.append(" | TraceId: ").append(traceId);
-        }
-        log.info(logMsg.toString());
     }
 }
 

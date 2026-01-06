@@ -35,6 +35,10 @@ public class GatewaySignatureVerificationService {
      * @throws BusinessException 如果签名验证失败
      */
     public void validate(HttpServletRequest request) {
+        String path = request.getRequestURI();
+        String method = request.getMethod();
+        String traceId = request.getHeader(GatewayConstants.Headers.TRACE_ID);
+        
         // 从请求头获取用户信息和签名
         String userId = request.getHeader(GatewayConstants.Headers.USER_ID);
         String username = request.getHeader(GatewayConstants.Headers.USER_NAME);
@@ -46,8 +50,9 @@ public class GatewaySignatureVerificationService {
         if (!StringUtils.hasText(userId) || !StringUtils.hasText(username) ||
                 !StringUtils.hasText(tokenJti) || !StringUtils.hasText(signature) ||
                 !StringUtils.hasText(timestampStr)) {
-            log.warn("网关签名验证失败: 缺少必要字段 - userId={}, username={}, tokenJti={}, signature={}, timestamp={}",
-                    userId, username, tokenJti, signature != null ? "存在" : "缺失", timestampStr);
+            log.warn("网关签名验证失败: traceId={}, path={}, method={}, reason=确实请求头, userId={}, username={}, tokenJti={}, signature={}, timestamp={}",
+                    traceId, path, method, userId, username, tokenJti, 
+                    signature != null ? "存在" : "缺失", timestampStr);
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
 
@@ -56,7 +61,8 @@ public class GatewaySignatureVerificationService {
         try {
             timestamp = Long.parseLong(timestampStr);
         } catch (NumberFormatException e) {
-            log.warn("网关签名验证失败: 时间戳格式错误 - {}", timestampStr);
+            log.warn("网关签名验证失败: traceId={}, path={}, method={}, reason=无效的过期时间格式, timestamp={}",
+                    traceId, path, method, timestampStr);
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
 
@@ -64,8 +70,8 @@ public class GatewaySignatureVerificationService {
         long currentTime = System.currentTimeMillis();
         long timeDiff = Math.abs(currentTime - timestamp);
         if (timeDiff > signatureProperties.getTimestampValidity()) {
-            log.warn("网关签名验证失败: 时间戳过期 - timestamp={}, currentTime={}, diff={}ms",
-                    timestamp, currentTime, timeDiff);
+            log.warn("网关签名验证失败: traceId={}, path={}, method={}, reason=签名已过期, timestamp={}, currentTime={}, diff={}ms, userId={}, username={}",
+                    traceId, path, method, timestamp, currentTime, timeDiff, userId, username);
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
 
@@ -74,7 +80,8 @@ public class GatewaySignatureVerificationService {
                 userId, username, tokenJti, timestamp, signature, signatureProperties.getPublicKey());
 
         if (!isValid) {
-            log.warn("网关签名验证失败: 签名不匹配 - userId={}, username={}", userId, username);
+            log.warn("网关签名验证失败: traceId={}, path={}, method={}, reason=签名不匹配, userId={}, username={}, tokenJti={}",
+                    traceId, path, method, userId, username, tokenJti);
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
     }

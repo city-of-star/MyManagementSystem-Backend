@@ -6,11 +6,6 @@ import com.mms.base.common.test.entity.TestEntity;
 import com.mms.base.service.test.mapper.TestMapper;
 import com.mms.base.service.test.service.TestService;
 import com.mms.common.core.exceptions.ServerException;
-import com.mms.common.core.response.Response;
-import com.mms.usercenter.feign.api.UserAuthorityFeign;
-import com.mms.usercenter.feign.api.UserInfoFeign;
-import com.mms.usercenter.feign.api.vo.UserAuthorityVo;
-import com.mms.usercenter.feign.api.vo.UserInfoVo;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -31,19 +26,10 @@ public class TestServiceImpl implements TestService {
     @Resource
     private TestMapper testMapper;
 
-    @Resource
-    private UserInfoFeign userInfoFeign;
-
-    @Resource
-    private UserAuthorityFeign userAuthorityFeign;
-
     @Override
     public Map<String, Object> test() {
-        Response<UserInfoVo> res1 =  userInfoFeign.getUserById(1L);
-        Response<UserAuthorityVo> res2 = userAuthorityFeign.getUserAuthorities("admin");
         Map<String, Object> res = new HashMap<>();
-        res.put("info", res1.getData());
-        res.put("authority", res2.getData());
+        res.put("message", "success");
         return res;
     }
 

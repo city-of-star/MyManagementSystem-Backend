@@ -67,6 +67,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
 
+        String path = request.getRequestURI();
+        String method = request.getMethod();
+        String traceId = request.getHeader(GatewayConstants.Headers.TRACE_ID);
+
         // 检查是否已有认证信息
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
             filterChain.doFilter(request, response);
@@ -74,25 +78,39 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         // 白名单请求：不需要签名验证，直接放行
-        if (serviceWhitelistUtils.isWhitelisted(request.getRequestURI())) {
+        if (serviceWhitelistUtils.isWhitelisted(path)) {
+            log.debug("网关签名验证跳过: traceId={}, path={}, method={}, reason=whitelist", 
+                    traceId, path, method);
             filterChain.doFilter(request, response);
             return;
         }
 
         // 验证网关签名
-        gatewaySignatureVerificationService.validate(request);
+        try {
+            gatewaySignatureVerificationService.validate(request);
+        } catch (BusinessException e) {
+            // 签名验证失败，日志由验证服务记录
+            throw e;
+        }
 
-        // 获取用户名
+        // 获取用户名和用户ID
         String username = request.getHeader(GatewayConstants.Headers.USER_NAME);
+        String userId = request.getHeader(GatewayConstants.Headers.USER_ID);
 
         // 网关签名验证通过后，必须要有用户名
         if (!StringUtils.hasText(username)) {
-            log.warn("网关签名验证通过，但请求头中缺少用户名: {}", request.getRequestURI());
+            log.warn("网关签名验证通过但缺少用户名: traceId={}, path={}, method={}, userId={}", 
+                    traceId, path, method, userId);
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
 
         // 加载用户详情和权限
         SecurityUser userDetails = (SecurityUser) userDetailsService.loadUserByUsername(username);
+
+        // 记录认证成功日志
+        log.info("网关签名验证成功: traceId={}, path={}, method={}, userId={}, username={}, roles={}", 
+                traceId, path, method, userId, username, 
+                userDetails.getAuthorities() != null ? userDetails.getAuthorities().size() : 0);
 
         // 创建 Authentication 对象，并添加用户信息和权限
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(

@@ -55,7 +55,8 @@ public class GatewaySignatureUtils {
             // Base64编码返回
             return Base64.getEncoder().encodeToString(signBytes);
         } catch (Exception e) {
-            log.error("网关签名失败: userId={}, username={}", userId, username, e);
+            log.error("网关签名生成失败: userId={}, username={}, tokenJti={}, error={}", 
+                    userId, username, tokenJti, e.getMessage(), e);
             throw new ServerException("网关签名失败", e);
         }
     }
@@ -89,9 +90,15 @@ public class GatewaySignatureUtils {
             signature.update(content.getBytes(StandardCharsets.UTF_8));
 
             // 验证签名
-            return signature.verify(signBytes);
+            boolean isValid = signature.verify(signBytes);
+            if (!isValid) {
+                log.warn("网关签名验证失败: userId={}, username={}, tokenJti={}, reason=签名不匹配",
+                        userId, username, tokenJti);
+            }
+            return isValid;
         } catch (Exception e) {
-            log.warn("签名验证失败: userId={}, username={}, error={}", userId, username, e.getMessage());
+            log.warn("网关签名验证异常: userId={}, username={}, tokenJti={}, error={}", 
+                    userId, username, tokenJti, e.getMessage());
             return false;
         }
     }

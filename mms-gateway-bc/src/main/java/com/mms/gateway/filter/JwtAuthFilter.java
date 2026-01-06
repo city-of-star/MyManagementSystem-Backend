@@ -9,6 +9,7 @@ import com.mms.gateway.service.GatewayWhitelistService;
 import com.mms.common.core.constants.gateway.GatewayConstants;
 import com.mms.gateway.service.GatewaySignatureService;
 import com.mms.gateway.utils.GatewayResponseUtils;
+import com.mms.gateway.utils.GatewayMdcUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -56,9 +57,12 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
+        String method = request.getMethod() != null ? request.getMethod().name() : "UNKNOWN";
+        String traceId = GatewayMdcUtils.getTraceIdFromMdc();
 
         // 白名单直接放行
         if (gatewayWhitelistService.isWhitelisted(path)) {
+            log.debug("JWT认证跳过: path={}, method={}, reason=whitelist", path, method);
             return chain.filter(exchange);
         }
 
@@ -71,7 +75,8 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             token = reactiveTokenValidatorUtils.extractTokenFromHeader(authHeader);
         } catch (BusinessException e) {
             // 认证头格式错误，直接返回错误响应
-            log.warn("JWT认证失败: {} - {}", path, e.getMessage());
+            log.warn("JWT认证失败: traceId={}, path={}, method={}, reason={}", 
+                    traceId, path, method, e.getMessage());
             return GatewayResponseUtils.writeError(exchange, HttpStatus.UNAUTHORIZED, e.getMessage());
         }
         
@@ -95,6 +100,10 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
                     String[] signatureResult = gatewaySignatureService.generateSignature(userId, username, jti);
                     String signature = signatureResult[0];
                     String timestamp = signatureResult[1];
+
+                    // 记录认证成功日志
+                    log.info("JWT认证成功: traceId={}, path={}, method={}, userId={}, username={}, jti={}", 
+                            traceId, path, method, userId, username, jti);
 
                     // 将用户信息和签名透传到下游服务
                     ServerHttpRequest mutatedRequest = request.mutate()
@@ -126,12 +135,14 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
                 })
                 .onErrorResume(BusinessException.class, e -> {
                     // Token验证失败（业务异常：过期、无效、黑名单等）
-                    log.warn("JWT认证失败: {} - {}", path, e.getMessage());
+                    log.warn("JWT认证失败: traceId={}, path={}, method={}, reason={}", 
+                            traceId, path, method, e.getMessage());
                     return GatewayResponseUtils.writeError(exchange, HttpStatus.UNAUTHORIZED, e.getMessage());
                 })
                 .onErrorResume(e -> {
                     // Token验证失败（系统异常）
-                    log.error("JWT认证异常: {} - {}", path, e.getMessage(), e);
+                    log.error("JWT认证异常: traceId={}, path={}, method={}, error={}", 
+                            traceId, path, method, e.getMessage(), e);
                     return GatewayResponseUtils.writeError(exchange, HttpStatus.UNAUTHORIZED, ErrorCode.LOGIN_EXPIRED.getMessage());
                 });
     }

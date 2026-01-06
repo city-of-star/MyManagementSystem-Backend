@@ -78,7 +78,7 @@ public class ReactiveTokenValidatorUtils {
                     if (Boolean.TRUE.equals(exists)) {
                         return Mono.error(new BusinessException(ErrorCode.LOGIN_EXPIRED));
                     }
-                    // Token不在黑名单中，验证通过
+                    // Token不在黑名单中，验证通过（黑名单检查通过，无需额外日志，由调用方记录）
                     return Mono.just(claims);
                 });
     }

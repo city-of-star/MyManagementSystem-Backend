@@ -47,13 +47,6 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
-        <!-- Feign Core（仅用于 RequestInterceptor 等类型声明，运行时由业务服务提供） -->
-        <dependency>
-            <groupId>io.github.openfeign</groupId>
-            <artifactId>feign-core</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
         <!-- Knife4j文档 -->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>

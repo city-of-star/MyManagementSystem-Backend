@@ -34,6 +34,7 @@ public class GatewaySignatureService {
         long timestamp = System.currentTimeMillis();
         String signature = GatewaySignatureUtils.sign(
                 userId, username, tokenJti, timestamp, signatureProperties.getPrivateKey());
+        // 签名生成成功，日志由调用方记录，避免重复日志
         return new String[]{signature, String.valueOf(timestamp)};
     }
 }

@@ -40,6 +40,13 @@
             <artifactId>spring-cloud-context</artifactId>
         </dependency>
 
+        <!-- Feign Core（仅用于 RequestInterceptor 等类型声明，运行时由业务服务提供） -->
+        <dependency>
+            <groupId>io.github.openfeign</groupId>
+            <artifactId>feign-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
         <!-- lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
