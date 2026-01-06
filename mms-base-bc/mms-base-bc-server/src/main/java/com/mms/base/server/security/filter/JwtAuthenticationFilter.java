@@ -90,19 +90,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // 白名单请求：不需要签名验证，直接放行
         if (serviceWhitelistService.isWhitelisted(path)) {
-            log.debug("网关签名验证跳过: traceId={}, path={}, method={}, reason=whitelist", 
+            log.debug("网关签名验证跳过: traceId={}, path={}, method={}, reason=白名单",
                     traceId, path, method);
             filterChain.doFilter(request, response);
             return;
         }
 
         // 验证网关签名
-        try {
-            gatewaySignatureVerificationService.validate(request);
-        } catch (BusinessException e) {
-            // 签名验证失败，日志由验证服务记录
-            throw e;
-        }
+        gatewaySignatureVerificationService.validate(request);
 
         // 获取用户名和用户ID
         String username = request.getHeader(GatewayConstants.Headers.USER_NAME);
@@ -140,11 +135,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .map(SimpleGrantedAuthority::new)
                     .collect(Collectors.toSet()));
         }
-
-        // 记录认证成功日志
-        log.info("网关签名验证成功: traceId={}, path={}, method={}, userId={}, username={}, roles={}, permissions={}", 
-                traceId, path, method, userId, username, 
-                roles != null ? roles.size() : 0, permissions != null ? permissions.size() : 0);
 
         // 创建 Authentication 对象，并添加用户名和权限
         UsernamePasswordAuthenticationToken authentication =

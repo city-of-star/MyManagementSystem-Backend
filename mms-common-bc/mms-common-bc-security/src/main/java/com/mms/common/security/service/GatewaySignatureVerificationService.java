@@ -84,6 +84,9 @@ public class GatewaySignatureVerificationService {
                     traceId, path, method, userId, username, tokenJti);
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
+
+        // 记录验证成功日志
+        log.info("网关签名验证成功: traceId={}, path={}, method={}, username={}", traceId, path, method, username);
     }
 }
 
