@@ -62,7 +62,6 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
 
         // 白名单直接放行
         if (gatewayWhitelistService.isWhitelisted(path)) {
-            log.debug("JWT认证跳过: path={}, method={}, reason=whitelist", path, method);
             return chain.filter(exchange);
         }
 
@@ -102,8 +101,8 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
                     String timestamp = signatureResult[1];
 
                     // 记录认证成功日志
-                    log.info("JWT认证成功: traceId={}, path={}, method={}, userId={}, username={}, jti={}", 
-                            traceId, path, method, userId, username, jti);
+                    log.info("JWT认证成功: traceId={}, path={}, method={}, username={}, token={}",
+                            traceId, path, method, username, token);
 
                     // 将用户信息和签名透传到下游服务
                     ServerHttpRequest mutatedRequest = request.mutate()

@@ -79,8 +79,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // 白名单请求：不需要签名验证，直接放行
         if (serviceWhitelistUtils.isWhitelisted(path)) {
-            log.debug("网关签名验证跳过: traceId={}, path={}, method={}, reason=白名单",
-                    traceId, path, method);
             filterChain.doFilter(request, response);
             return;
         }
