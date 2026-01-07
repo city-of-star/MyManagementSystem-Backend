@@ -165,14 +165,11 @@ public class SqlLogInterceptor implements Interceptor {
         
         // 9. 处理表名和字段名 - 使用黄色（类似XML属性名）
         // 注意：这个需要在关键字之后处理，避免关键字被误匹配
-        // 由于SQL已经格式化，我们通过上下文来识别表名和字段名
-        // 匹配跟在关键字后面的标识符（表名/字段名）
+        // 仅突出表名和WHERE/ON中的字段，SELECT列表不再上色以减少干扰
         // FROM/JOIN后面的表名
         sql = sql.replaceAll("(?i)(FROM|JOIN)\\s+([a-z_][a-z0-9_]*)", "$1 " + ANSI_YELLOW + "$2" + ANSI_RESET);
-        // SELECT后面的字段名（已格式化为多行，每行一个字段）
-        sql = sql.replaceAll("(?i)^\\s+([a-z_][a-z0-9_]*)(,|$)", "  " + ANSI_YELLOW + "$1" + ANSI_RESET + "$2");
-        // WHERE条件中的字段名
-        sql = sql.replaceAll("(?i)(WHERE|AND|OR)\\s+([a-z_][a-z0-9_]*)\\s*[=<>!]", "$1 " + ANSI_YELLOW + "$2" + ANSI_RESET);
+        // WHERE/AND/OR/ON 条件中的字段名
+        sql = sql.replaceAll("(?i)(WHERE|AND|OR|ON)\\s+([a-z_][a-z0-9_]*)\\s*[=<>!]", "$1 " + ANSI_YELLOW + "$2" + ANSI_RESET);
         
         return sql;
     }
@@ -206,18 +203,15 @@ public class SqlLogInterceptor implements Interceptor {
         sql = sql.replaceAll("(?i)\\s+(AND)\\s+", "\n  AND ");
         sql = sql.replaceAll("(?i)\\s+(OR)\\s+", "\n  OR ");
         
-        // 4. 处理SELECT字段列表 - 在SELECT后添加换行和缩进
-        sql = sql.replaceAll("(?i)(SELECT)\\s+", "$1\n  ");
-        // 处理字段列表中的逗号，在逗号后添加换行和缩进（但不在括号内）
-        sql = sql.replaceAll("(?i)(,\\s*)([^,\\n\\s]+)", "$1\n  $2");
-        
-        // 5. 处理ORDER BY和GROUP BY - 添加换行和缩进
+        // 4. 处理ORDER BY和GROUP BY - 添加换行和缩进
         sql = sql.replaceAll("(?i)(ORDER BY|GROUP BY)\\s+", "$1\n  ");
         // 处理ORDER BY/GROUP BY中的逗号
         sql = sql.replaceAll("(?i)(ORDER BY|GROUP BY)\\s+([^,\\n]+),", "$1\n  $2,\n  ");
         
-        // 6. 处理SET中的逗号
+        // 5. 处理SET中的逗号
         sql = sql.replaceAll("(?i)(SET)\\s+([^,\\n]+),", "$1\n  $2,\n  ");
+        
+        // 注意：SELECT字段列表保持在一行，不进行换行处理
         
         // 7. 清理多余的空行
         sql = sql.replaceAll("\n\\s*\n", "\n");
