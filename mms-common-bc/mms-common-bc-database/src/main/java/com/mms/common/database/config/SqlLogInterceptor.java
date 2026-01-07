@@ -236,7 +236,8 @@ public class SqlLogInterceptor implements Interceptor {
         } else {
             result = "null";
         }
-        return sql.replaceFirst("\\?", result);
+        // 使用quoteReplacement避免值中包含$或\导致的分组越界
+        return sql.replaceFirst("\\?", java.util.regex.Matcher.quoteReplacement(result));
     }
 
     @Override

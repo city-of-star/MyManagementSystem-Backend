@@ -143,7 +143,7 @@ CREATE TABLE IF NOT EXISTS `role` (
 CREATE TABLE IF NOT EXISTS `permission` (
     `id` bigint NOT NULL AUTO_INCREMENT COMMENT '权限ID',
     `parent_id` bigint NOT NULL DEFAULT 0 COMMENT '父权限ID，0表示顶级权限',
-    `permission_type` varchar(32) NOT NULL COMMENT '权限类型：menu-菜单，button-按钮，api-接口',
+    `permission_type` varchar(32) NOT NULL COMMENT '权限类型：catalog-目录，menu-菜单，button-按钮，api-接口',
     `permission_name` varchar(64) NOT NULL COMMENT '权限名称',
     `permission_code` varchar(128) NOT NULL COMMENT '权限编码（唯一标识）',
     `path` varchar(255) DEFAULT NULL COMMENT '路由路径（菜单类型使用）',
@@ -317,7 +317,7 @@ INSERT IGNORE INTO `permission` (`id`, `parent_id`, `permission_type`, `permissi
                                  `path`, `component`, `icon`, `sort_order`, `visible`, `status`, `deleted`, `create_time`, `update_time`)
 VALUES
     -- 系统管理（父菜单）
-    (1, 0, 'menu', '系统管理', 'system:manage', '/system', 'Layout', 'system', 1, 1, 1, 0, NOW(), NOW()),
+    (1, 0, 'catalog', '系统管理', 'system:manage', '/system', 'Layout', 'system', 1, 1, 1, 0, NOW(), NOW()),
 
     -- 用户管理（菜单 + 按钮）
     (2, 1, 'menu', '用户管理', 'system:user:manage', '/system/userPage', 'system/user/UserPage', 'user', 10, 1, 1, 0, NOW(), NOW()),
@@ -460,6 +460,7 @@ VALUES
     (3, '系统角色', 'system', 1, 'danger', 0, 1, '系统内置角色，不可删除', 0, NOW(), NOW()),
     (3, '自定义角色', 'custom', 2, 'success', 1, 1, '用户自定义角色', 0, NOW(), NOW()),
     -- 权限类型
+    (4, '目录', 'catalog', 0, 'warning', 0, 1, '目录权限', 0, NOW(), NOW()),
     (4, '菜单', 'menu', 1, 'primary', 0, 1, '菜单权限', 0, NOW(), NOW()),
     (4, '按钮', 'button', 2, 'success', 0, 1, '按钮权限', 0, NOW(), NOW()),
     (4, '接口', 'api', 3, 'warning', 0, 1, '接口权限', 0, NOW(), NOW()),

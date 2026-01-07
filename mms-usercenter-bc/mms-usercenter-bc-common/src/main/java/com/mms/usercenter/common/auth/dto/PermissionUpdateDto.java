@@ -21,7 +21,7 @@ public class PermissionUpdateDto {
     @Schema(description = "父权限ID，0表示顶级权限", example = "0")
     private Long parentId;
 
-    @Schema(description = "权限类型：menu-菜单，button-按钮，api-接口", example = "menu")
+    @Schema(description = "权限类型：catalog-目录，menu-菜单，button-按钮，api-接口", example = "menu")
     private String permissionType;
 
     @Schema(description = "权限名称", example = "用户管理")

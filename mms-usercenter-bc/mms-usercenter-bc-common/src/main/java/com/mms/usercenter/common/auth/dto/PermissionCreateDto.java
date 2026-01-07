@@ -18,7 +18,7 @@ public class PermissionCreateDto {
     private Long parentId = 0L;
 
     @NotBlank(message = "权限类型不能为空")
-    @Schema(description = "权限类型：menu-菜单，button-按钮，api-接口", example = "menu")
+    @Schema(description = "权限类型：catalog-目录，menu-菜单，button-按钮，api-接口", example = "menu")
     private String permissionType;
 
     @NotBlank(message = "权限名称不能为空")
