@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS `user` (
     `update_by` bigint DEFAULT NULL COMMENT '更新人ID',
     `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_username` (`username`),
+    KEY `idx_username` (`username`),
     KEY `idx_status` (`status`),
     KEY `idx_deleted` (`deleted`),
     KEY `idx_create_time` (`create_time`),
@@ -93,7 +93,7 @@ CREATE TABLE IF NOT EXISTS `dept` (
     `update_by` bigint DEFAULT NULL COMMENT '更新人ID',
     `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_dept_code` (`dept_code`),
+    KEY `idx_dept_code` (`dept_code`),
     KEY `idx_parent_id` (`parent_id`),
     KEY `idx_status` (`status`),
     KEY `idx_deleted` (`deleted`)
@@ -114,7 +114,7 @@ CREATE TABLE IF NOT EXISTS `post` (
     `update_by` bigint DEFAULT NULL COMMENT '更新人ID',
     `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_post_code` (`post_code`),
+    KEY `idx_post_code` (`post_code`),
     KEY `idx_status` (`status`),
     KEY `idx_deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='岗位表';
@@ -134,7 +134,7 @@ CREATE TABLE IF NOT EXISTS `role` (
     `update_by` bigint DEFAULT NULL COMMENT '更新人ID',
     `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_role_code` (`role_code`),
+    KEY `idx_role_code` (`role_code`),
     KEY `idx_status` (`status`),
     KEY `idx_deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色表';
@@ -161,7 +161,7 @@ CREATE TABLE IF NOT EXISTS `permission` (
     `update_by` bigint DEFAULT NULL COMMENT '更新人ID',
     `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_permission_code` (`permission_code`),
+    KEY `idx_permission_code` (`permission_code`),
     KEY `idx_parent_id` (`parent_id`),
     KEY `idx_permission_type` (`permission_type`),
     KEY `idx_status` (`status`),
@@ -241,7 +241,7 @@ CREATE TABLE IF NOT EXISTS `config` (
     `update_by` bigint DEFAULT NULL COMMENT '更新人ID',
     `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_config_key` (`config_key`),
+    KEY `idx_config_key` (`config_key`),
     KEY `idx_status` (`status`),
     KEY `idx_deleted` (`deleted`),
     KEY `idx_config_type` (`config_type`),
@@ -262,7 +262,7 @@ CREATE TABLE IF NOT EXISTS `dict_type` (
     `update_by` bigint DEFAULT NULL COMMENT '更新人ID',
     `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `uk_dict_type_code` (`dict_type_code`),
+    KEY `idx_dict_type_code` (`dict_type_code`),
     KEY `idx_status` (`status`),
     KEY `idx_deleted` (`deleted`),
     KEY `idx_status_deleted` (`status`, `deleted`)
