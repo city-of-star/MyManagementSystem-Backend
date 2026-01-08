@@ -9,6 +9,7 @@ import com.mms.usercenter.common.auth.dto.*;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.auth.entity.UserRoleEntity;
 import com.mms.usercenter.common.auth.vo.UserVo;
+import com.mms.common.core.constants.usercenter.UserAuthorityConstants;
 import com.mms.usercenter.service.auth.mapper.UserMapper;
 import com.mms.usercenter.service.auth.mapper.UserRoleMapper;
 import com.mms.usercenter.service.auth.service.UserService;
@@ -16,6 +17,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -44,6 +46,9 @@ public class UserServiceImpl implements UserService {
 
     @Resource
     private UserRoleMapper userRoleMapper;
+
+    @Resource
+    private RedisTemplate<String, Object> redisTemplate;
 
     @Override
     public Page<UserVo> getUserPage(UserPageQueryDto dto) {
@@ -504,6 +509,8 @@ public class UserServiceImpl implements UserService {
         wrapper.eq(UserRoleEntity::getUserId, userId);
         userRoleMapper.delete(wrapper);
         if (CollectionUtils.isEmpty(roleIds)) {
+            // 即使角色列表为空，也需要清除用户的权限缓存
+            clearUserAuthorityCache(userId);
             return;
         }
         List<UserRoleEntity> entities = new ArrayList<>();
@@ -518,6 +525,35 @@ public class UserServiceImpl implements UserService {
         }
         for (UserRoleEntity entity : entities) {
             userRoleMapper.insert(entity);
+        }
+        // 清除该用户的权限缓存，确保角色变更立即生效
+        clearUserAuthorityCache(userId);
+    }
+
+    /**
+     * 清除指定用户的权限缓存
+     * 当用户角色关联变更时，需要清除该用户的缓存，确保下次请求时重新从数据库加载最新权限
+     *
+     * @param userId 用户ID
+     */
+    private void clearUserAuthorityCache(Long userId) {
+        try {
+            UserEntity user = userMapper.selectById(userId);
+            if (user == null) {
+                log.debug("用户 {} 不存在，无需清除缓存", userId);
+                return;
+            }
+            String username = user.getUsername();
+            if (StringUtils.hasText(username)) {
+                String roleCacheKey = UserAuthorityConstants.USER_ROLE_PREFIX + username;
+                String permissionCacheKey = UserAuthorityConstants.USER_PERMISSION_PREFIX + username;
+                redisTemplate.delete(roleCacheKey);
+                redisTemplate.delete(permissionCacheKey);
+                log.info("已清除用户 {} 的权限缓存", username);
+            }
+        } catch (Exception e) {
+            // 缓存清除失败不应该影响主流程，只记录日志
+            log.error("清除用户 {} 的权限缓存失败：{}", userId, e.getMessage(), e);
         }
     }
 

@@ -18,6 +18,9 @@ import com.mms.usercenter.service.auth.mapper.RolePermissionMapper;
 import com.mms.usercenter.service.auth.service.PermissionService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -25,9 +28,11 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -341,6 +346,142 @@ public class PermissionServiceImpl implements PermissionService {
             log.error("查询权限树失败：{}", e.getMessage(), e);
             throw new ServerException("查询权限树失败", e);
         }
+    }
+
+    @Override
+    public List<PermissionVo> listCurrentUserPermissionTree(String permissionType, Integer status, Integer visible) {
+        try {
+            // 获取当前用户身份
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || authentication.getName() == null) {
+                log.warn("获取当前用户权限树失败：未找到认证信息");
+                return new ArrayList<>();
+            }
+
+            String username = authentication.getName();
+            log.info("查询当前用户 {} 的权限树", username);
+
+            // 获取当前用户的所有权限编码
+            Set<String> userPermissionCodes = authentication.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .filter(authority -> !authority.startsWith("ROLE_")) // 过滤掉角色，只保留权限编码
+                    .collect(Collectors.toSet());
+
+            if (CollectionUtils.isEmpty(userPermissionCodes)) {
+                log.info("用户 {} 没有任何权限，返回空权限树", username);
+                return new ArrayList<>();
+            }
+
+            // 查询所有符合条件的权限
+            LambdaQueryWrapper<PermissionEntity> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(PermissionEntity::getDeleted, 0)
+                    .orderByAsc(PermissionEntity::getParentId)
+                    .orderByAsc(PermissionEntity::getSortOrder)
+                    .orderByDesc(PermissionEntity::getCreateTime);
+            if (StringUtils.hasText(permissionType)) {
+                wrapper.eq(PermissionEntity::getPermissionType, permissionType);
+            }
+            if (status != null) {
+                wrapper.eq(PermissionEntity::getStatus, status);
+            }
+            if (visible != null) {
+                wrapper.eq(PermissionEntity::getVisible, visible);
+            }
+            List<PermissionEntity> allPermissions = permissionMapper.selectList(wrapper);
+            if (CollectionUtils.isEmpty(allPermissions)) {
+                return new ArrayList<>();
+            }
+
+            // 先过滤出用户直接拥有权限的节点（或无权限码的目录/菜单）
+            Set<Long> allowedIds = new HashSet<>();
+            for (PermissionEntity permission : allPermissions) {
+                if (!StringUtils.hasText(permission.getPermissionCode()) ||
+                        userPermissionCodes.contains(permission.getPermissionCode())) {
+                    allowedIds.add(permission.getId());
+                }
+            }
+
+            // 为了保持目录层级，把被保留节点的所有祖先节点也加入
+            if (!allowedIds.isEmpty()) {
+                Map<Long, PermissionEntity> entityMap = allPermissions.stream()
+                        .collect(Collectors.toMap(PermissionEntity::getId, p -> p));
+
+                for (Long id : new ArrayList<>(allowedIds)) {
+                    PermissionEntity current = entityMap.get(id);
+                    while (current != null && current.getParentId() != null && current.getParentId() != 0L) {
+                        Long parentId = current.getParentId();
+                        if (allowedIds.add(parentId)) {
+                            current = entityMap.get(parentId);
+                        } else {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // 将保留的节点转换为 VO
+            List<PermissionVo> filteredVoList = allPermissions.stream()
+                    .filter(p -> allowedIds.contains(p.getId()))
+                    .map(this::convertToVo)
+                    .collect(Collectors.toList());
+
+            // 构建权限树，但只保留用户有权限的节点
+            Map<Long, PermissionVo> voMap = filteredVoList.stream()
+                    .collect(Collectors.toMap(PermissionVo::getId, v -> v));
+            
+            List<PermissionVo> roots = new ArrayList<>();
+            for (PermissionVo vo : filteredVoList) {
+                Long parentId = vo.getParentId() == null ? 0L : vo.getParentId();
+                if (parentId == 0L) {
+                    roots.add(vo);
+                } else {
+                    PermissionVo parent = voMap.get(parentId);
+                    if (parent != null) {
+                        parent.getChildren().add(vo);
+                    } else {
+                        // 父节点不在过滤结果中，但子节点有权限，这种情况不应该出现
+                        // 如果出现，说明父节点没有权限编码，我们仍然添加到根节点
+                        roots.add(vo);
+                    }
+                }
+            }
+
+            // 清理空目录：如果目录节点下没有任何子节点，则移除该目录
+            roots = filterEmptyDirectories(roots);
+            
+            log.info("用户 {} 的权限树构建完成，共 {} 个根节点", username, roots.size());
+            return roots;
+        } catch (Exception e) {
+            log.error("查询当前用户权限树失败：{}", e.getMessage(), e);
+            throw new ServerException("查询当前用户权限树失败", e);
+        }
+    }
+
+    /**
+     * 过滤掉空的目录节点（没有子节点的目录）
+     * 递归处理，确保子目录也被清理
+     */
+    private List<PermissionVo> filterEmptyDirectories(List<PermissionVo> nodes) {
+        if (CollectionUtils.isEmpty(nodes)) {
+            return new ArrayList<>();
+        }
+        
+        List<PermissionVo> filtered = new ArrayList<>();
+        for (PermissionVo node : nodes) {
+            // 如果是目录类型，需要检查是否有子节点
+            if ("directory".equals(node.getPermissionType())) {
+                List<PermissionVo> filteredChildren = filterEmptyDirectories(node.getChildren());
+                if (!CollectionUtils.isEmpty(filteredChildren)) {
+                    node.setChildren(filteredChildren);
+                    filtered.add(node);
+                }
+                // 如果目录下没有子节点，则不添加该目录
+            } else {
+                // 菜单或按钮类型，直接添加
+                filtered.add(node);
+            }
+        }
+        return filtered;
     }
 
     private boolean existsByPermissionCode(String permissionCode) {

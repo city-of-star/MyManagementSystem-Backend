@@ -7,9 +7,11 @@ import com.mms.usercenter.common.auth.dto.RoleAssignPermissionDto;
 import com.mms.usercenter.common.auth.dto.RoleBatchDeleteDto;
 import com.mms.usercenter.common.auth.dto.RoleCreateDto;
 import com.mms.usercenter.common.auth.dto.RolePageQueryDto;
+import com.mms.usercenter.common.auth.dto.RoleRemoveUserDto;
 import com.mms.usercenter.common.auth.dto.RoleStatusSwitchDto;
 import com.mms.usercenter.common.auth.dto.RoleUpdateDto;
 import com.mms.usercenter.common.auth.vo.RoleVo;
+import com.mms.usercenter.common.auth.vo.UserVo;
 import com.mms.common.core.constants.usercenter.PermissionConstants;
 import com.mms.usercenter.service.auth.service.RoleService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -102,5 +104,20 @@ public class RoleController {
     @GetMapping("/{roleId}/permission-ids")
     public Response<List<Long>> listPermissionIds(@PathVariable Long roleId) {
         return Response.success(roleService.listPermissionIdsByRoleId(roleId));
+    }
+
+    @Operation(summary = "查询角色关联的用户列表")
+    @RequiresPermission(PermissionConstants.ROLE_VIEW)
+    @GetMapping("/{roleId}/users")
+    public Response<List<UserVo>> listUsersByRoleId(@PathVariable Long roleId) {
+        return Response.success(roleService.listUsersByRoleId(roleId));
+    }
+
+    @Operation(summary = "移除角色的用户关联")
+    @RequiresPermission(PermissionConstants.ROLE_UPDATE)
+    @PostMapping("/remove-user")
+    public Response<Void> removeUserFromRole(@RequestBody @Valid RoleRemoveUserDto dto) {
+        roleService.removeUserFromRole(dto);
+        return Response.success();
     }
 }

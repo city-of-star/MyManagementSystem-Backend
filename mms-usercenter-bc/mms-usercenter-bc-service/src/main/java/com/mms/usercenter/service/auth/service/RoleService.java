@@ -5,9 +5,11 @@ import com.mms.usercenter.common.auth.dto.RoleAssignPermissionDto;
 import com.mms.usercenter.common.auth.dto.RoleBatchDeleteDto;
 import com.mms.usercenter.common.auth.dto.RoleCreateDto;
 import com.mms.usercenter.common.auth.dto.RolePageQueryDto;
+import com.mms.usercenter.common.auth.dto.RoleRemoveUserDto;
 import com.mms.usercenter.common.auth.dto.RoleStatusSwitchDto;
 import com.mms.usercenter.common.auth.dto.RoleUpdateDto;
 import com.mms.usercenter.common.auth.vo.RoleVo;
+import com.mms.usercenter.common.auth.vo.UserVo;
 
 import java.util.List;
 
@@ -66,5 +68,15 @@ public interface RoleService {
      * 查询角色当前拥有的权限ID列表
      */
     List<Long> listPermissionIdsByRoleId(Long roleId);
+
+    /**
+     * 查询角色关联的用户列表
+     */
+    List<UserVo> listUsersByRoleId(Long roleId);
+
+    /**
+     * 移除角色的用户关联
+     */
+    void removeUserFromRole(RoleRemoveUserDto dto);
 
 }

@@ -88,12 +88,21 @@ public class PermissionController {
         return Response.success();
     }
 
-    @Operation(summary = "查询权限树")
+    @Operation(summary = "查询权限树（全量，用于管理场景）")
     @RequiresPermission(PermissionConstants.PERMISSION_VIEW)
     @GetMapping("/tree")
     public Response<List<PermissionVo>> listPermissionTree(@RequestParam(required = false) String permissionType,
                                                            @RequestParam(required = false) Integer status,
                                                            @RequestParam(required = false) Integer visible) {
         return Response.success(permissionService.listPermissionTree(permissionType, status, visible));
+    }
+
+    @Operation(summary = "查询当前用户的权限树（用于前端菜单展示）", 
+               description = "返回当前登录用户有权限的权限树，不需要权限校验，因为只返回自己的权限")
+    @GetMapping("/tree/current-user")
+    public Response<List<PermissionVo>> listCurrentUserPermissionTree(@RequestParam(required = false) String permissionType,
+                                                                      @RequestParam(required = false) Integer status,
+                                                                      @RequestParam(required = false) Integer visible) {
+        return Response.success(permissionService.listCurrentUserPermissionTree(permissionType, status, visible));
     }
 }
