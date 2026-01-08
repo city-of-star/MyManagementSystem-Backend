@@ -317,10 +317,10 @@ INSERT IGNORE INTO `permission` (`id`, `parent_id`, `permission_type`, `permissi
                                  `path`, `component`, `icon`, `sort_order`, `visible`, `status`, `deleted`, `create_time`, `update_time`)
 VALUES
     -- 系统管理（父菜单）
-    (1, 0, 'catalog', '系统管理', 'system:manage', '/system', 'Layout', 'system', 1, 1, 1, 0, NOW(), NOW()),
+    (1, 0, 'catalog', '系统管理', 'system:manage', null, null, 'system', 1, 1, 1, 0, NOW(), NOW()),
 
     -- 用户管理（菜单 + 按钮）
-    (2, 1, 'menu', '用户管理', 'system:user:manage', '/system/userPage', 'system/user/UserPage', 'user', 10, 1, 1, 0, NOW(), NOW()),
+    (2, 1, 'menu', '用户管理', 'system:user:manage', '/system/userPage', '/system/user/UserPage', 'user', 10, 1, 1, 0, NOW(), NOW()),
     (3, 2, 'button', '用户-查看', 'user:view', NULL, NULL, NULL, 10, 1, 1, 0, NOW(), NOW()),
     (4, 2, 'button', '用户-新增', 'user:create', NULL, NULL, NULL, 11, 1, 1, 0, NOW(), NOW()),
     (5, 2, 'button', '用户-编辑', 'user:update', NULL, NULL, NULL, 12, 1, 1, 0, NOW(), NOW()),
@@ -329,7 +329,7 @@ VALUES
     (8, 2, 'button', '用户-解锁', 'user:unlock', NULL, NULL, NULL, 15, 1, 1, 0, NOW(), NOW()),
 
     -- 角色管理（菜单 + 按钮）
-    (9, 1, 'menu', '角色管理', 'system:role:manage', '/system/rolePage', 'system/role/RolePage', 'peoples', 20, 1, 1, 0, NOW(), NOW()),
+    (9, 1, 'menu', '角色管理', 'system:role:manage', '/system/rolePage', '/system/role/RolePage', 'peoples', 20, 1, 1, 0, NOW(), NOW()),
     (10, 9, 'button', '角色-查看', 'role:view', NULL, NULL, NULL, 20, 1, 1, 0, NOW(), NOW()),
     (11, 9, 'button', '角色-新增', 'role:create', NULL, NULL, NULL, 21, 1, 1, 0, NOW(), NOW()),
     (12, 9, 'button', '角色-编辑', 'role:update', NULL, NULL, NULL, 22, 1, 1, 0, NOW(), NOW()),
@@ -337,21 +337,21 @@ VALUES
     (14, 9, 'button', '角色-分配权限', 'role:assign', NULL, NULL, NULL, 24, 1, 1, 0, NOW(), NOW()),
 
     -- 菜单管理（菜单 + 按钮）
-    (15, 1, 'menu', '菜单管理', 'system:menu:manage', '/system/menuPage', 'system/menu/MenuPage', 'tree-table', 30, 1, 1, 0, NOW(), NOW()),
+    (15, 1, 'menu', '菜单管理', 'system:menu:manage', '/system/menuPage', '/system/menu/MenuPage', 'tree-table', 30, 1, 1, 0, NOW(), NOW()),
     (16, 15, 'button', '权限-查看', 'permission:view', NULL, NULL, NULL, 30, 1, 1, 0, NOW(), NOW()),
     (17, 15, 'button', '权限-新增', 'permission:create', NULL, NULL, NULL, 31, 1, 1, 0, NOW(), NOW()),
     (18, 15, 'button', '权限-编辑', 'permission:update', NULL, NULL, NULL, 32, 1, 1, 0, NOW(), NOW()),
     (19, 15, 'button', '权限-删除', 'permission:delete', NULL, NULL, NULL, 33, 1, 1, 0, NOW(), NOW()),
 
     -- 系统配置管理（菜单 + 按钮）
-    (20, 1, 'menu', '系统配置管理', 'system:config:manage', '/system/configPage', 'system/config/ConfigPage', 'setting', 50, 1, 1, 0, NOW(), NOW()),
+    (20, 1, 'menu', '系统配置管理', 'system:config:manage', '/system/configPage', '/system/config/ConfigPage', 'setting', 50, 1, 1, 0, NOW(), NOW()),
     (21, 20, 'button', '配置-查看', 'config:view', NULL, NULL, NULL, 50, 1, 1, 0, NOW(), NOW()),
     (22, 20, 'button', '配置-新增', 'config:create', NULL, NULL, NULL, 51, 1, 1, 0, NOW(), NOW()),
     (23, 20, 'button', '配置-编辑', 'config:update', NULL, NULL, NULL, 52, 1, 1, 0, NOW(), NOW()),
     (24, 20, 'button', '配置-删除', 'config:delete', NULL, NULL, NULL, 53, 1, 1, 0, NOW(), NOW()),
 
     -- 数据字典管理（菜单 + 按钮）
-    (25, 1, 'menu', '数据字典管理', 'system:dict:manage', '/system/dictPage', 'system/dict/DictPage', 'dict', 60, 1, 1, 0, NOW(), NOW()),
+    (25, 1, 'menu', '数据字典管理', 'system:dict:manage', '/system/dictPage', '/system/dict/DictPage', 'dict', 60, 1, 1, 0, NOW(), NOW()),
     (26, 25, 'button', '字典-查看', 'dict:view', NULL, NULL, NULL, 60, 1, 1, 0, NOW(), NOW()),
     (27, 25, 'button', '字典-新增', 'dict:create', NULL, NULL, NULL, 61, 1, 1, 0, NOW(), NOW()),
     (28, 25, 'button', '字典-编辑', 'dict:update', NULL, NULL, NULL, 62, 1, 1, 0, NOW(), NOW()),
