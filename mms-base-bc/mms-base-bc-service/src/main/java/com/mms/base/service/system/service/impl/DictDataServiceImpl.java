@@ -176,8 +176,6 @@ public class DictDataServiceImpl implements DictDataService {
             entity.setDictLabel(dto.getDictLabel());
             entity.setDictValue(dto.getDictValue());
             entity.setDictSort(dto.getDictSort() == null ? 0 : dto.getDictSort());
-            entity.setCssClass(dto.getCssClass());
-            entity.setListClass(dto.getListClass());
             entity.setIsDefault(dto.getIsDefault() == null ? 0 : dto.getIsDefault());
             entity.setStatus(dto.getStatus() == null ? 1 : dto.getStatus());
             entity.setRemark(dto.getRemark());
@@ -226,12 +224,6 @@ public class DictDataServiceImpl implements DictDataService {
             }
             if (dto.getDictSort() != null) {
                 dictData.setDictSort(dto.getDictSort());
-            }
-            if (StringUtils.hasText(dto.getCssClass())) {
-                dictData.setCssClass(dto.getCssClass());
-            }
-            if (StringUtils.hasText(dto.getListClass())) {
-                dictData.setListClass(dto.getListClass());
             }
             if (dto.getIsDefault() != null) {
                 if (dto.getIsDefault() != 0 && dto.getIsDefault() != 1) {

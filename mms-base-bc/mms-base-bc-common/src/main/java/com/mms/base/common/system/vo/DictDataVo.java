@@ -39,12 +39,6 @@ public class DictDataVo {
     @Schema(description = "排序号", example = "0")
     private Integer dictSort;
 
-    @Schema(description = "CSS类名（用于样式）", example = "success")
-    private String cssClass;
-
-    @Schema(description = "列表样式（success/info/warning/danger等）", example = "success")
-    private String listClass;
-
     @Schema(description = "是否默认值：0-否，1-是", example = "0")
     private Integer isDefault;
 

@@ -50,14 +50,6 @@ public class DictDataEntity implements Serializable {
     @Schema(description = "排序号")
     private Integer dictSort;
 
-    @TableField("css_class")
-    @Schema(description = "CSS类名（用于样式）")
-    private String cssClass;
-
-    @TableField("list_class")
-    @Schema(description = "列表样式（success/info/warning/danger等）")
-    private String listClass;
-
     @TableField("is_default")
     @Schema(description = "是否默认值：0-否，1-是")
     private Integer isDefault;

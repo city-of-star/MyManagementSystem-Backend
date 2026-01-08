@@ -275,8 +275,6 @@ CREATE TABLE IF NOT EXISTS `dict_data` (
     `dict_label` varchar(128) NOT NULL COMMENT '字典标签（显示文本）',
     `dict_value` varchar(128) NOT NULL COMMENT '字典值（实际值）',
     `dict_sort` int NOT NULL DEFAULT 0 COMMENT '排序号',
-    `css_class` varchar(128) DEFAULT NULL COMMENT 'CSS类名（用于样式）',
-    `list_class` varchar(128) DEFAULT NULL COMMENT '列表样式（success/info/warning/danger等）',
     `is_default` tinyint NOT NULL DEFAULT 0 COMMENT '是否默认值：0-否，1-是',
     `status` tinyint NOT NULL DEFAULT 1 COMMENT '状态：0-禁用，1-启用',
     `remark` varchar(512) DEFAULT NULL COMMENT '备注',
@@ -296,9 +294,9 @@ CREATE TABLE IF NOT EXISTS `dict_data` (
 
 -- ==================== 初始化数据 ====================
 
--- 初始化超级管理员用户（密码：admin123）
-INSERT IGNORE INTO `user` (`id`, `username`, `password`, `nickname`, `real_name`, `status`, `locked`, `deleted`, `create_time`, `update_time`)
-VALUES (1, 'admin', '$2a$10$cU5acgjEYlHA.2cql1DmiOVcTKexIR0iKpKAIda0gJyLdKxeE8Lt.', '超级管理员', '超级管理员', 1, 0, 0, NOW(), NOW());
+-- 初始化超级管理员用户（密码：123456）
+INSERT IGNORE INTO `user` (`id`, `username`, `password`, `nickname`, `real_name`, `email`, `phone`, `status`, `locked`, `remark`, `deleted`, `create_time`, `update_time`)
+VALUES (1, 'admin', '$2a$10$cU5acgjEYlHA.2cql1DmiOVcTKexIR0iKpKAIda0gJyLdKxeE8Lt.', '超级管理员', '超级管理员', '2722562862@qq.com', '18255097030', 1, 0, '今天又是一个晴朗的一天', 0, NOW(), NOW());
 
 -- 初始化系统管理员角色
 INSERT IGNORE INTO `role` (`id`, `role_code`, `role_name`, `role_type`, `status`, `deleted`, `create_time`, `update_time`)
@@ -436,37 +434,49 @@ VALUES
     ('file.upload.allowedTypes', 'jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx', 'string', '允许上传的文件类型', 1, 1, '允许上传的文件扩展名，用逗号分隔', 0, NOW(), NOW()),
     ('cache.permission.ttl', '30', 'number', '权限缓存过期时间（分钟）', 1, 1, '用户权限信息在缓存中的过期时间', 0, NOW(), NOW());
 
--- 初始化数据字典类型
+-- 初始化数据字典类型（通用字典类型放在前面）
 INSERT IGNORE INTO `dict_type` (`id`, `dict_type_code`, `dict_type_name`, `status`, `sort_order`, `remark`, `deleted`, `create_time`, `update_time`)
 VALUES
-    (1, 'user_status', '用户状态', 1, 1, '用户账号状态', 0, NOW(), NOW()),
-    (2, 'user_gender', '用户性别', 1, 2, '用户性别选项', 0, NOW(), NOW()),
-    (3, 'role_type', '角色类型', 1, 3, '角色类型分类', 0, NOW(), NOW()),
-    (4, 'permission_type', '权限类型', 1, 4, '权限类型分类', 0, NOW(), NOW()),
-    (5, 'common_status', '通用状态', 1, 5, '通用的启用/禁用状态', 0, NOW(), NOW()),
-    (6, 'yes_no', '是否', 1, 6, '是否选项', 0, NOW(), NOW());
+    -- 通用字典类型（放前面）
+    (1, 'common_status', '通用状态', 1, 1, '通用的启用/禁用状态', 0, NOW(), NOW()),
+    (2, 'yes_no', '是否', 1, 2, '通用布尔值（是/否）', 0, NOW(), NOW()),
+    (3, 'menu_visible', '菜单显示状态', 1, 3, '菜单/权限显示状态', 0, NOW(), NOW()),
+    (4, 'config_type', '参数配置类型', 1, 4, 'system config 中的类型', 0, NOW(), NOW()),
+    -- 业务相关字典类型
+    (5, 'user_lock_status', '用户锁定状态', 1, 10, '用户是否被锁定', 0, NOW(), NOW()),
+    (6, 'user_gender', '用户性别', 1, 11, '用户性别选项', 0, NOW(), NOW()),
+    (7, 'role_type', '角色类型', 1, 12, '角色类型分类', 0, NOW(), NOW()),
+    (8, 'permission_type', '权限类型', 1, 13, '权限类型分类', 0, NOW(), NOW());
 
 -- 初始化数据字典数据
-INSERT IGNORE INTO `dict_data` (`dict_type_id`, `dict_label`, `dict_value`, `dict_sort`, `list_class`, `is_default`, `status`, `remark`, `deleted`, `create_time`, `update_time`)
+INSERT IGNORE INTO `dict_data` (`dict_type_id`, `dict_label`, `dict_value`, `dict_sort`, `is_default`, `status`, `remark`, `deleted`, `create_time`, `update_time`)
 VALUES
-    -- 用户状态
-    (1, '启用', '1', 1, 'success', 1, 1, '用户账号启用', 0, NOW(), NOW()),
-    (1, '禁用', '0', 2, 'danger', 0, 1, '用户账号禁用', 0, NOW(), NOW()),
-    -- 用户性别
-    (2, '未知', '0', 1, 'info', 1, 1, '性别未知', 0, NOW(), NOW()),
-    (2, '男', '1', 2, 'primary', 0, 1, '男性', 0, NOW(), NOW()),
-    (2, '女', '2', 3, 'warning', 0, 1, '女性', 0, NOW(), NOW()),
-    -- 角色类型
-    (3, '系统角色', 'system', 1, 'danger', 0, 1, '系统内置角色，不可删除', 0, NOW(), NOW()),
-    (3, '自定义角色', 'custom', 2, 'success', 1, 1, '用户自定义角色', 0, NOW(), NOW()),
-    -- 权限类型
-    (4, '目录', 'catalog', 0, 'warning', 0, 1, '目录权限', 0, NOW(), NOW()),
-    (4, '菜单', 'menu', 1, 'primary', 0, 1, '菜单权限', 0, NOW(), NOW()),
-    (4, '按钮', 'button', 2, 'success', 0, 1, '按钮权限', 0, NOW(), NOW()),
-    (4, '接口', 'api', 3, 'warning', 0, 1, '接口权限', 0, NOW(), NOW()),
     -- 通用状态
-    (5, '启用', '1', 1, 'success', 1, 1, '启用状态', 0, NOW(), NOW()),
-    (5, '禁用', '0', 2, 'danger', 0, 1, '禁用状态', 0, NOW(), NOW()),
+    (1, '启用', '1', 1, 1, 1, '启用状态', 0, NOW(), NOW()),
+    (1, '禁用', '0', 2, 0, 1, '禁用状态', 0, NOW(), NOW()),
     -- 是否
-    (6, '是', '1', 1, 'success', 0, 1, '是', 0, NOW(), NOW()),
-    (6, '否', '0', 2, 'info', 1, 1, '否', 0, NOW(), NOW());
+    (2, '是', '1', 1, 1, 1, '是 / true', 0, NOW(), NOW()),
+    (2, '否', '0', 2, 0, 1, '否 / false', 0, NOW(), NOW()),
+    -- 菜单显示状态
+    (3, '显示', '1', 1, 1, 1, '菜单在前端展示', 0, NOW(), NOW()),
+    (3, '隐藏', '0', 2, 0, 1, '菜单在前端隐藏', 0, NOW(), NOW()),
+    -- 参数配置类型
+    (4, '字符串', 'string', 1, 1, 1, '字符串类型配置', 0, NOW(), NOW()),
+    (4, '数字', 'number', 2, 0, 1, '数字类型配置', 0, NOW(), NOW()),
+    (4, '布尔', 'boolean', 3, 0, 1, '布尔类型配置', 0, NOW(), NOW()),
+    (4, 'JSON', 'json', 4, 0, 1, 'JSON 类型配置', 0, NOW(), NOW()),
+    -- 用户锁定状态
+    (5, '未锁定', '0', 1, 1, 1, '用户正常', 0, NOW(), NOW()),
+    (5, '已锁定', '1', 2, 0, 1, '用户被锁定', 0, NOW(), NOW()),
+    -- 用户性别
+    (6, '未知', '0', 1, 1, 1, '性别未知', 0, NOW(), NOW()),
+    (6, '男', '1', 2, 0, 1, '男性', 0, NOW(), NOW()),
+    (6, '女', '2', 3, 0, 1, '女性', 0, NOW(), NOW()),
+    -- 角色类型
+    (7, '系统角色', 'system', 1, 0, 1, '系统内置角色，不可删除', 0, NOW(), NOW()),
+    (7, '自定义角色', 'custom', 2, 1, 1, '用户自定义角色', 0, NOW(), NOW()),
+    -- 权限类型
+    (8, '目录', 'catalog', 0, 0, 1, '目录权限', 0, NOW(), NOW()),
+    (8, '菜单', 'menu', 1, 0, 1, '菜单权限', 0, NOW(), NOW()),
+    (8, '按钮', 'button', 2, 0, 1, '按钮权限', 0, NOW(), NOW()),
+    (8, '接口', 'api', 3, 0, 1, '接口权限', 0, NOW(), NOW());

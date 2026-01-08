@@ -36,14 +36,6 @@ public class DictDataUpdateDto {
     @Schema(description = "排序号", example = "0")
     private Integer dictSort;
 
-    @Size(max = 128, message = "CSS类名长度不能超过128个字符")
-    @Schema(description = "CSS类名（用于样式）", example = "success")
-    private String cssClass;
-
-    @Size(max = 128, message = "列表样式长度不能超过128个字符")
-    @Schema(description = "列表样式（success/info/warning/danger等）", example = "success")
-    private String listClass;
-
     @Schema(description = "是否默认值：0-否，1-是", example = "0")
     private Integer isDefault;
 
