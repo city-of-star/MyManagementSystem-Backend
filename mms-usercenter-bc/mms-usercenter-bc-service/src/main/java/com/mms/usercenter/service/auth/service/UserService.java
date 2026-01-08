@@ -137,4 +137,19 @@ public interface UserService {
      * @return true-存在，false-不存在
      */
     boolean existsByPhone(String phone);
+
+    /**
+     * 为用户分配角色（覆盖）
+     *
+     * @param dto 用户分配角色参数
+     */
+    void assignRoles(UserAssignRoleDto dto);
+
+    /**
+     * 查询用户当前拥有的角色ID列表
+     *
+     * @param userId 用户ID
+     * @return 角色ID列表
+     */
+    java.util.List<Long> listRoleIdsByUserId(Long userId);
 }

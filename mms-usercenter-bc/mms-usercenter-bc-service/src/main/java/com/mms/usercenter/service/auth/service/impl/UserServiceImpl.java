@@ -7,8 +7,10 @@ import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
 import com.mms.usercenter.common.auth.dto.*;
 import com.mms.usercenter.common.auth.entity.UserEntity;
+import com.mms.usercenter.common.auth.entity.UserRoleEntity;
 import com.mms.usercenter.common.auth.vo.UserVo;
 import com.mms.usercenter.service.auth.mapper.UserMapper;
+import com.mms.usercenter.service.auth.mapper.UserRoleMapper;
 import com.mms.usercenter.service.auth.service.UserService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -16,9 +18,13 @@ import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * 实现功能【用户服务实现类】
@@ -35,6 +41,9 @@ public class UserServiceImpl implements UserService {
 
     @Resource
     private UserMapper userMapper;
+
+    @Resource
+    private UserRoleMapper userRoleMapper;
 
     @Override
     public Page<UserVo> getUserPage(UserPageQueryDto dto) {
@@ -447,6 +456,68 @@ public class UserServiceImpl implements UserService {
         } catch (Exception e) {
             log.error("检查手机号是否存在失败：{}", e.getMessage(), e);
             throw new ServerException("检查手机号是否存在失败", e);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void assignRoles(UserAssignRoleDto dto) {
+        try {
+            log.info("为用户分配角色，userId：{}，roleIds：{}", dto.getUserId(), dto.getRoleIds());
+            if (dto.getUserId() == null) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "用户ID不能为空");
+            }
+            UserEntity user = userMapper.selectById(dto.getUserId());
+            if (user == null) {
+                throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+            }
+            if (CollectionUtils.isEmpty(dto.getRoleIds())) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "角色ID列表不能为空");
+            }
+            saveUserRoles(dto.getUserId(), dto.getRoleIds());
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("分配用户角色失败：{}", e.getMessage(), e);
+            throw new ServerException("分配用户角色失败", e);
+        }
+    }
+
+    @Override
+    public List<Long> listRoleIdsByUserId(Long userId) {
+        try {
+            log.info("查询用户角色ID列表，userId：{}", userId);
+            LambdaQueryWrapper<UserRoleEntity> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(UserRoleEntity::getUserId, userId);
+            return userRoleMapper.selectList(wrapper).stream()
+                    .map(UserRoleEntity::getRoleId)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("查询用户角色ID列表失败：{}", e.getMessage(), e);
+            throw new ServerException("查询用户角色ID列表失败", e);
+        }
+    }
+
+    private void saveUserRoles(Long userId, List<Long> roleIds) {
+        // 先清空旧关联
+        LambdaQueryWrapper<UserRoleEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserRoleEntity::getUserId, userId);
+        userRoleMapper.delete(wrapper);
+        if (CollectionUtils.isEmpty(roleIds)) {
+            return;
+        }
+        List<UserRoleEntity> entities = new ArrayList<>();
+        // 去重，避免唯一键冲突
+        List<Long> distinctIds = roleIds.stream().distinct().collect(Collectors.toList());
+        for (Long roleId : distinctIds) {
+            UserRoleEntity entity = new UserRoleEntity();
+            entity.setUserId(userId);
+            entity.setRoleId(roleId);
+            entity.setCreateTime(LocalDateTime.now());
+            entities.add(entity);
+        }
+        for (UserRoleEntity entity : entities) {
+            userRoleMapper.insert(entity);
         }
     }
 

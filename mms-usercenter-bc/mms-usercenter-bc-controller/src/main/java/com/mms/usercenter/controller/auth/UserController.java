@@ -143,4 +143,19 @@ public class UserController {
     public Response<Boolean> checkPhone(@PathVariable String phone) {
         return Response.success(userService.existsByPhone(phone));
     }
+
+    @Operation(summary = "为用户分配角色（覆盖）", description = "为用户分配角色，会覆盖原有角色")
+    @RequiresPermission(PermissionConstants.USER_UPDATE)
+    @PostMapping("/assign-roles")
+    public Response<Void> assignRoles(@RequestBody @Valid UserAssignRoleDto dto) {
+        userService.assignRoles(dto);
+        return Response.success();
+    }
+
+    @Operation(summary = "查询用户已分配的角色ID列表", description = "查询用户当前拥有的角色ID列表")
+    @RequiresPermission(PermissionConstants.USER_VIEW)
+    @GetMapping("/{userId}/role-ids")
+    public Response<java.util.List<Long>> listRoleIds(@PathVariable Long userId) {
+        return Response.success(userService.listRoleIdsByUserId(userId));
+    }
 }
