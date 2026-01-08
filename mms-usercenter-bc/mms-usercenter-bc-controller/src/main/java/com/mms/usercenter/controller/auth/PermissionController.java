@@ -6,9 +6,11 @@ import com.mms.common.core.response.Response;
 import com.mms.usercenter.common.auth.dto.PermissionBatchDeleteDto;
 import com.mms.usercenter.common.auth.dto.PermissionCreateDto;
 import com.mms.usercenter.common.auth.dto.PermissionPageQueryDto;
+import com.mms.usercenter.common.auth.dto.PermissionRemoveRoleDto;
 import com.mms.usercenter.common.auth.dto.PermissionStatusSwitchDto;
 import com.mms.usercenter.common.auth.dto.PermissionUpdateDto;
 import com.mms.usercenter.common.auth.vo.PermissionVo;
+import com.mms.usercenter.common.auth.vo.RoleVo;
 import com.mms.common.core.constants.usercenter.PermissionConstants;
 import com.mms.usercenter.service.auth.service.PermissionService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -104,5 +106,20 @@ public class PermissionController {
                                                                       @RequestParam(required = false) Integer status,
                                                                       @RequestParam(required = false) Integer visible) {
         return Response.success(permissionService.listCurrentUserPermissionTree(permissionType, status, visible));
+    }
+
+    @Operation(summary = "查询权限关联的角色列表")
+    @RequiresPermission(PermissionConstants.PERMISSION_VIEW)
+    @GetMapping("/{permissionId}/roles")
+    public Response<List<RoleVo>> listRolesByPermissionId(@PathVariable Long permissionId) {
+        return Response.success(permissionService.listRolesByPermissionId(permissionId));
+    }
+
+    @Operation(summary = "移除权限与角色的关联")
+    @RequiresPermission(PermissionConstants.PERMISSION_UPDATE)
+    @PostMapping("/remove-role")
+    public Response<Void> removeRoleFromPermission(@RequestBody @Valid PermissionRemoveRoleDto dto) {
+        permissionService.removeRoleFromPermission(dto);
+        return Response.success();
     }
 }

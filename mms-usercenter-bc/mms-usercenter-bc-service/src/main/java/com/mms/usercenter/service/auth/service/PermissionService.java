@@ -4,9 +4,11 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.usercenter.common.auth.dto.PermissionBatchDeleteDto;
 import com.mms.usercenter.common.auth.dto.PermissionCreateDto;
 import com.mms.usercenter.common.auth.dto.PermissionPageQueryDto;
+import com.mms.usercenter.common.auth.dto.PermissionRemoveRoleDto;
 import com.mms.usercenter.common.auth.dto.PermissionStatusSwitchDto;
 import com.mms.usercenter.common.auth.dto.PermissionUpdateDto;
 import com.mms.usercenter.common.auth.vo.PermissionVo;
+import com.mms.usercenter.common.auth.vo.RoleVo;
 
 import java.util.List;
 
@@ -74,4 +76,14 @@ public interface PermissionService {
      * @param visible        可选：0/1
      */
     List<PermissionVo> listCurrentUserPermissionTree(String permissionType, Integer status, Integer visible);
+
+    /**
+     * 查询与指定权限关联的角色列表
+     */
+    List<RoleVo> listRolesByPermissionId(Long permissionId);
+
+    /**
+     * 移除权限与角色的关联关系
+     */
+    void removeRoleFromPermission(PermissionRemoveRoleDto dto);
 }

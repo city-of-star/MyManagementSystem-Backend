@@ -5,22 +5,32 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
+import com.mms.common.core.constants.usercenter.UserAuthorityConstants;
 import com.mms.usercenter.common.auth.dto.PermissionBatchDeleteDto;
 import com.mms.usercenter.common.auth.dto.PermissionCreateDto;
 import com.mms.usercenter.common.auth.dto.PermissionPageQueryDto;
+import com.mms.usercenter.common.auth.dto.PermissionRemoveRoleDto;
 import com.mms.usercenter.common.auth.dto.PermissionStatusSwitchDto;
 import com.mms.usercenter.common.auth.dto.PermissionUpdateDto;
 import com.mms.usercenter.common.auth.entity.PermissionEntity;
 import com.mms.usercenter.common.auth.entity.RolePermissionEntity;
+import com.mms.usercenter.common.auth.entity.RoleEntity;
+import com.mms.usercenter.common.auth.entity.UserEntity;
+import com.mms.usercenter.common.auth.entity.UserRoleEntity;
 import com.mms.usercenter.common.auth.vo.PermissionVo;
+import com.mms.usercenter.common.auth.vo.RoleVo;
 import com.mms.usercenter.service.auth.mapper.PermissionMapper;
+import com.mms.usercenter.service.auth.mapper.RoleMapper;
 import com.mms.usercenter.service.auth.mapper.RolePermissionMapper;
+import com.mms.usercenter.service.auth.mapper.UserMapper;
+import com.mms.usercenter.service.auth.mapper.UserRoleMapper;
 import com.mms.usercenter.service.auth.service.PermissionService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -53,6 +63,18 @@ public class PermissionServiceImpl implements PermissionService {
 
     @Resource
     private RolePermissionMapper rolePermissionMapper;
+
+    @Resource
+    private RoleMapper roleMapper;
+
+    @Resource
+    private UserRoleMapper userRoleMapper;
+
+    @Resource
+    private UserMapper userMapper;
+
+    @Resource
+    private RedisTemplate<String, Object> redisTemplate;
 
     @Override
     public Page<PermissionVo> getPermissionPage(PermissionPageQueryDto dto) {
@@ -349,6 +371,76 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
+    public List<RoleVo> listRolesByPermissionId(Long permissionId) {
+        try {
+            log.info("查询权限关联的角色列表，permissionId：{}", permissionId);
+            if (permissionId == null) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "权限ID不能为空");
+            }
+            PermissionEntity permission = permissionMapper.selectById(permissionId);
+            if (permission == null || Objects.equals(permission.getDeleted(), 1)) {
+                throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "权限不存在");
+            }
+            LambdaQueryWrapper<RolePermissionEntity> rpWrapper = new LambdaQueryWrapper<>();
+            rpWrapper.eq(RolePermissionEntity::getPermissionId, permissionId);
+            List<RolePermissionEntity> relations = rolePermissionMapper.selectList(rpWrapper);
+            if (CollectionUtils.isEmpty(relations)) {
+                return new ArrayList<>();
+            }
+            List<Long> roleIds = relations.stream()
+                    .map(RolePermissionEntity::getRoleId)
+                    .distinct()
+                    .collect(Collectors.toList());
+            List<RoleEntity> roleList = roleMapper.selectBatchIds(roleIds);
+            return roleList.stream()
+                    .filter(role -> role != null && !Objects.equals(role.getDeleted(), 1))
+                    .map(this::convertRoleToVo)
+                    .collect(Collectors.toList());
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("查询权限关联的角色列表失败：{}", e.getMessage(), e);
+            throw new ServerException("查询权限关联的角色列表失败", e);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void removeRoleFromPermission(PermissionRemoveRoleDto dto) {
+        try {
+            log.info("移除权限与角色关联，permissionId：{}，roleId：{}", dto.getPermissionId(), dto.getRoleId());
+            if (dto.getPermissionId() == null) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "权限ID不能为空");
+            }
+            if (dto.getRoleId() == null) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "角色ID不能为空");
+            }
+            PermissionEntity permission = permissionMapper.selectById(dto.getPermissionId());
+            if (permission == null || Objects.equals(permission.getDeleted(), 1)) {
+                throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "权限不存在");
+            }
+            RoleEntity role = roleMapper.selectById(dto.getRoleId());
+            if (role == null || Objects.equals(role.getDeleted(), 1)) {
+                throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
+            }
+            LambdaQueryWrapper<RolePermissionEntity> rpWrapper = new LambdaQueryWrapper<>();
+            rpWrapper.eq(RolePermissionEntity::getPermissionId, dto.getPermissionId())
+                    .eq(RolePermissionEntity::getRoleId, dto.getRoleId());
+            int deleted = rolePermissionMapper.delete(rpWrapper);
+            if (deleted == 0) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "角色未关联该权限");
+            }
+            // 清除拥有该角色的用户缓存，确保权限变更生效
+            clearUserAuthorityCacheByRoleId(dto.getRoleId());
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("移除权限与角色关联失败：{}", e.getMessage(), e);
+            throw new ServerException("移除权限与角色关联失败", e);
+        }
+    }
+
+    @Override
     public List<PermissionVo> listCurrentUserPermissionTree(String permissionType, Integer status, Integer visible) {
         try {
             // 获取当前用户身份
@@ -526,5 +618,47 @@ public class PermissionServiceImpl implements PermissionService {
         vo.setUpdateBy(entity.getUpdateBy());
         vo.setUpdateTime(entity.getUpdateTime());
         return vo;
+    }
+
+    private RoleVo convertRoleToVo(RoleEntity role) {
+        if (role == null) {
+            return null;
+        }
+        RoleVo vo = new RoleVo();
+        org.springframework.beans.BeanUtils.copyProperties(role, vo);
+        return vo;
+    }
+
+    /**
+     * 清除拥有指定角色的用户权限缓存，确保角色权限调整即时生效
+     */
+    private void clearUserAuthorityCacheByRoleId(Long roleId) {
+        try {
+            LambdaQueryWrapper<UserRoleEntity> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(UserRoleEntity::getRoleId, roleId);
+            List<UserRoleEntity> userRoleList = userRoleMapper.selectList(wrapper);
+            if (CollectionUtils.isEmpty(userRoleList)) {
+                return;
+            }
+            List<Long> userIds = userRoleList.stream()
+                    .map(UserRoleEntity::getUserId)
+                    .distinct()
+                    .collect(Collectors.toList());
+            List<UserEntity> users = userMapper.selectBatchIds(userIds);
+            for (UserEntity user : users) {
+                if (user == null || Objects.equals(user.getDeleted(), 1)) {
+                    continue;
+                }
+                String username = user.getUsername();
+                if (StringUtils.hasText(username)) {
+                    String roleCacheKey = UserAuthorityConstants.USER_ROLE_PREFIX + username;
+                    String permissionCacheKey = UserAuthorityConstants.USER_PERMISSION_PREFIX + username;
+                    redisTemplate.delete(roleCacheKey);
+                    redisTemplate.delete(permissionCacheKey);
+                }
+            }
+        } catch (Exception e) {
+            log.error("清除角色 {} 关联用户权限缓存失败：{}", roleId, e.getMessage(), e);
+        }
     }
 }
