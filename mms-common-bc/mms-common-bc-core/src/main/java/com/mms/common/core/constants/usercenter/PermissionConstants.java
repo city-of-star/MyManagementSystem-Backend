@@ -34,77 +34,88 @@ package com.mms.common.core.constants.usercenter;
 public final class PermissionConstants {
 
     /**
-     * 系统管理（菜单）
+     * 系统管理（目录）
+     * <p>编码示例：SYSTEM</p>
      */
-    public static final String SYSTEM_MANAGE = "system:manage";
+    public static final String SYSTEM_MANAGE = "SYSTEM";
 
     /**
      * 用户管理（菜单）
+     * <p>目录编码_菜单编码：SYSTEM_USER</p>
      */
-    public static final String SYSTEM_USER_MANAGE = "system:user:manage";
+    public static final String SYSTEM_USER_MANAGE = "SYSTEM_USER";
 
     /**
      * 用户管理（按钮权限）
+     * <p>菜单编码_按钮编码：SYSTEM_USER_VIEW / SYSTEM_USER_CREATE / ...</p>
      */
-    public static final String USER_VIEW = "user:view";
-    public static final String USER_CREATE = "user:create";
-    public static final String USER_UPDATE = "user:update";
-    public static final String USER_DELETE = "user:delete";
-    public static final String USER_RESET_PASSWORD = "user:reset-password";
-    public static final String USER_UNLOCK = "user:unlock";
+    public static final String USER_VIEW = "SYSTEM_USER_VIEW";
+    public static final String USER_CREATE = "SYSTEM_USER_CREATE";
+    public static final String USER_UPDATE = "SYSTEM_USER_UPDATE";
+    public static final String USER_DELETE = "SYSTEM_USER_DELETE";
+    public static final String USER_RESET_PASSWORD = "SYSTEM_USER_RESET_PASSWORD";
+    public static final String USER_UNLOCK = "SYSTEM_USER_UNLOCK";
 
     /**
      * 角色管理（菜单）
+     * <p>目录编码_菜单编码：SYSTEM_ROLE</p>
      */
-    public static final String SYSTEM_ROLE_MANAGE = "system:role:manage";
+    public static final String SYSTEM_ROLE_MANAGE = "SYSTEM_ROLE";
 
     /**
      * 角色管理（按钮权限）
+     * <p>菜单编码_按钮编码：SYSTEM_ROLE_VIEW / ...</p>
      */
-    public static final String ROLE_VIEW = "role:view";
-    public static final String ROLE_CREATE = "role:create";
-    public static final String ROLE_UPDATE = "role:update";
-    public static final String ROLE_DELETE = "role:delete";
-    public static final String ROLE_ASSIGN = "role:assign";
+    public static final String ROLE_VIEW = "SYSTEM_ROLE_VIEW";
+    public static final String ROLE_CREATE = "SYSTEM_ROLE_CREATE";
+    public static final String ROLE_UPDATE = "SYSTEM_ROLE_UPDATE";
+    public static final String ROLE_DELETE = "SYSTEM_ROLE_DELETE";
+    public static final String ROLE_ASSIGN = "SYSTEM_ROLE_ASSIGN";
 
     /**
      * 菜单管理（菜单）
+     * <p>目录编码_菜单编码：SYSTEM_MENU</p>
      */
-    public static final String SYSTEM_MENU_MANAGE = "system:menu:manage";
+    public static final String SYSTEM_MENU_MANAGE = "SYSTEM_MENU";
 
     /**
      * 权限/菜单管理（按钮权限）
+     * <p>菜单编码_按钮编码：SYSTEM_MENU_VIEW / ...</p>
      */
-    public static final String PERMISSION_VIEW = "permission:view";
-    public static final String PERMISSION_CREATE = "permission:create";
-    public static final String PERMISSION_UPDATE = "permission:update";
-    public static final String PERMISSION_DELETE = "permission:delete";
+    public static final String PERMISSION_VIEW = "SYSTEM_MENU_VIEW";
+    public static final String PERMISSION_CREATE = "SYSTEM_MENU_CREATE";
+    public static final String PERMISSION_UPDATE = "SYSTEM_MENU_UPDATE";
+    public static final String PERMISSION_DELETE = "SYSTEM_MENU_DELETE";
 
     /**
      * 系统配置管理（菜单）
+     * <p>目录编码_菜单编码：SYSTEM_CONFIG</p>
      */
-    public static final String SYSTEM_CONFIG_MANAGE = "system:config:manage";
+    public static final String SYSTEM_CONFIG_MANAGE = "SYSTEM_CONFIG";
 
     /**
      * 系统配置管理（按钮权限）
+     * <p>菜单编码_按钮编码：SYSTEM_CONFIG_VIEW / ...</p>
      */
-    public static final String CONFIG_VIEW = "config:view";
-    public static final String CONFIG_CREATE = "config:create";
-    public static final String CONFIG_UPDATE = "config:update";
-    public static final String CONFIG_DELETE = "config:delete";
+    public static final String CONFIG_VIEW = "SYSTEM_CONFIG_VIEW";
+    public static final String CONFIG_CREATE = "SYSTEM_CONFIG_CREATE";
+    public static final String CONFIG_UPDATE = "SYSTEM_CONFIG_UPDATE";
+    public static final String CONFIG_DELETE = "SYSTEM_CONFIG_DELETE";
 
     /**
      * 数据字典管理（菜单）
+     * <p>目录编码_菜单编码：SYSTEM_DICT</p>
      */
-    public static final String SYSTEM_DICT_MANAGE = "system:dict:manage";
+    public static final String SYSTEM_DICT_MANAGE = "SYSTEM_DICT";
 
     /**
      * 数据字典管理（按钮权限）
+     * <p>菜单编码_按钮编码：SYSTEM_DICT_VIEW / ...</p>
      */
-    public static final String DICT_VIEW = "dict:view";
-    public static final String DICT_CREATE = "dict:create";
-    public static final String DICT_UPDATE = "dict:update";
-    public static final String DICT_DELETE = "dict:delete";
+    public static final String DICT_VIEW = "SYSTEM_DICT_VIEW";
+    public static final String DICT_CREATE = "SYSTEM_DICT_CREATE";
+    public static final String DICT_UPDATE = "SYSTEM_DICT_UPDATE";
+    public static final String DICT_DELETE = "SYSTEM_DICT_DELETE";
 
     /**
      * 私有构造函数，防止实例化
