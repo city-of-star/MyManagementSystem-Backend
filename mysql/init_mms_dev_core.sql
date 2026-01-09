@@ -1,5 +1,5 @@
 -- 创建 mms_dev_core 数据库
-CREATE DATABASE IF NOT EXISTS `mms_dev_core` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS `mms_dev_core` CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
 -- 使用该数据库
 USE `mms_dev_core`;
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS `test`
     `update_time` datetime     not null default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP comment '更新时间',
     INDEX `idx_title` (`title`),
     INDEX `idx_create_time` (`create_time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='测试表-用于测试服务基础功能';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='测试表-用于测试服务基础功能';
 
 -- ==================== 用户中心服务相关表 ====================
 
@@ -51,7 +51,7 @@ CREATE TABLE IF NOT EXISTS `user` (
     KEY `idx_deleted` (`deleted`),
     KEY `idx_create_time` (`create_time`),
     KEY `idx_status_deleted` (`status`, `deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='用户表';
 
 -- 2. 用户登录日志表
 CREATE TABLE IF NOT EXISTS `user_login_log` (
@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS `user_login_log` (
     KEY `idx_login_time` (`login_time`),
     KEY `idx_login_status` (`login_status`),
     KEY `idx_user_login_time` (`user_id`, `login_time`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户登录日志表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='用户登录日志表';
 
 -- ==================== 组织权限服务相关表 ====================
 
@@ -97,7 +97,7 @@ CREATE TABLE IF NOT EXISTS `dept` (
     KEY `idx_parent_id` (`parent_id`),
     KEY `idx_status` (`status`),
     KEY `idx_deleted` (`deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='部门表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='部门表';
 
 -- 4. 岗位表
 CREATE TABLE IF NOT EXISTS `post` (
@@ -117,7 +117,7 @@ CREATE TABLE IF NOT EXISTS `post` (
     KEY `idx_post_code` (`post_code`),
     KEY `idx_status` (`status`),
     KEY `idx_deleted` (`deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='岗位表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='岗位表';
 
 -- 5. 角色表
 CREATE TABLE IF NOT EXISTS `role` (
@@ -137,7 +137,7 @@ CREATE TABLE IF NOT EXISTS `role` (
     KEY `idx_role_code` (`role_code`),
     KEY `idx_status` (`status`),
     KEY `idx_deleted` (`deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='角色表';
 
 -- 6. 权限表（菜单/按钮/接口权限）
 CREATE TABLE IF NOT EXISTS `permission` (
@@ -167,7 +167,7 @@ CREATE TABLE IF NOT EXISTS `permission` (
     KEY `idx_status` (`status`),
     KEY `idx_deleted` (`deleted`),
     KEY `idx_status_deleted_type` (`status`, `deleted`, `permission_type`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='权限表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='权限表';
 
 -- 7. 用户角色关联表
 CREATE TABLE IF NOT EXISTS `user_role` (
@@ -180,7 +180,7 @@ CREATE TABLE IF NOT EXISTS `user_role` (
     UNIQUE KEY `uk_user_role` (`user_id`, `role_id`),
     KEY `idx_user_id` (`user_id`),
     KEY `idx_role_id` (`role_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户角色关联表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='用户角色关联表';
 
 -- 8. 角色权限关联表
 CREATE TABLE IF NOT EXISTS `role_permission` (
@@ -193,7 +193,7 @@ CREATE TABLE IF NOT EXISTS `role_permission` (
     UNIQUE KEY `uk_role_permission` (`role_id`, `permission_id`),
     KEY `idx_role_id` (`role_id`),
     KEY `idx_permission_id` (`permission_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='角色权限关联表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='角色权限关联表';
 
 -- 9. 用户部门关联表
 CREATE TABLE IF NOT EXISTS `user_dept` (
@@ -208,7 +208,7 @@ CREATE TABLE IF NOT EXISTS `user_dept` (
     KEY `idx_user_id` (`user_id`),
     KEY `idx_dept_id` (`dept_id`),
     KEY `idx_is_primary` (`is_primary`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户部门关联表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='用户部门关联表';
 
 -- 10. 用户岗位关联表
 CREATE TABLE IF NOT EXISTS `user_post` (
@@ -223,7 +223,7 @@ CREATE TABLE IF NOT EXISTS `user_post` (
     KEY `idx_user_id` (`user_id`),
     KEY `idx_post_id` (`post_id`),
     KEY `idx_is_primary` (`is_primary`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='用户岗位关联表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='用户岗位关联表';
 
 -- 11. 系统配置表（用于系统配置，单个键值对）
 CREATE TABLE IF NOT EXISTS `config` (
@@ -246,7 +246,7 @@ CREATE TABLE IF NOT EXISTS `config` (
     KEY `idx_deleted` (`deleted`),
     KEY `idx_config_type` (`config_type`),
     KEY `idx_status_deleted` (`status`, `deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='系统配置表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='系统配置表';
 
 -- 12. 数据字典类型表（字典分类）
 CREATE TABLE IF NOT EXISTS `dict_type` (
@@ -266,7 +266,7 @@ CREATE TABLE IF NOT EXISTS `dict_type` (
     KEY `idx_status` (`status`),
     KEY `idx_deleted` (`deleted`),
     KEY `idx_status_deleted` (`status`, `deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='数据字典类型表（字典分类）';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='数据字典类型表（字典分类）';
 
 -- 13. 数据字典数据表（字典键值对，用于下拉框等）
 CREATE TABLE IF NOT EXISTS `dict_data` (
@@ -290,7 +290,7 @@ CREATE TABLE IF NOT EXISTS `dict_data` (
     KEY `idx_deleted` (`deleted`),
     KEY `idx_dict_type_status_deleted` (`dict_type_id`, `status`, `deleted`),
     CONSTRAINT `fk_dict_data_type` FOREIGN KEY (`dict_type_id`) REFERENCES `dict_type` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='数据字典数据表（字典键值对）';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='数据字典数据表（字典键值对）';
 
 -- ==================== 初始化数据 ====================
 
