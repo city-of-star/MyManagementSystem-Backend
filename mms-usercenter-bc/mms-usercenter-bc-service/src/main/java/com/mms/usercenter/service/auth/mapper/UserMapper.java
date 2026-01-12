@@ -21,7 +21,7 @@ import org.apache.ibatis.annotations.Param;
 public interface UserMapper extends BaseMapper<UserEntity> {
 
     /**
-     * 根据用户名查询用户（用于登录）
+     * 根据用户名查询用户
      *
      * @param username 用户名
      * @return 用户实体
