@@ -2,6 +2,48 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.mms.usercenter.service.auth.mapper.PermissionMapper">
 
+    <!-- 权限VO字段列表（不包含 deleted） -->
+    <sql id="PermissionVoColumns">
+        id, parent_id, permission_type, permission_name, permission_code,
+        path, component, icon, api_url, api_method, sort_order, visible,
+        status, remark, create_by, create_time, update_by, update_time
+    </sql>
+
+    <!-- 分页查询权限列表 -->
+    <select id="getPermissionPage" resultType="com.mms.usercenter.common.auth.vo.PermissionVo">
+        SELECT
+            <include refid="PermissionVoColumns"/>
+        FROM permission
+        <where>
+            deleted = 0
+            <if test="dto.parentId != null">
+                AND parent_id = #{dto.parentId}
+            </if>
+            <if test="dto.permissionType != null and dto.permissionType != ''">
+                AND permission_type = #{dto.permissionType}
+            </if>
+            <if test="dto.permissionName != null and dto.permissionName != ''">
+                AND permission_name LIKE CONCAT('%', #{dto.permissionName}, '%')
+            </if>
+            <if test="dto.permissionCode != null and dto.permissionCode != ''">
+                AND permission_code LIKE CONCAT('%', #{dto.permissionCode}, '%')
+            </if>
+            <if test="dto.status != null">
+                AND status = #{dto.status}
+            </if>
+            <if test="dto.visible != null">
+                AND visible = #{dto.visible}
+            </if>
+            <if test="dto.createTimeStart != null">
+                AND create_time &gt;= #{dto.createTimeStart}
+            </if>
+            <if test="dto.createTimeEnd != null">
+                AND create_time &lt;= #{dto.createTimeEnd}
+            </if>
+        </where>
+        ORDER BY parent_id ASC, sort_order ASC, create_time DESC
+    </select>
+
     <!-- 根据用户名查询权限编码集合（启用且未删除） -->
     <select id="selectPermissionCodesByUsername" resultType="java.lang.String">
         SELECT DISTINCT p.permission_code

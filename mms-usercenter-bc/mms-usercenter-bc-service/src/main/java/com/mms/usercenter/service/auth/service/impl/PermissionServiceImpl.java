@@ -27,9 +27,7 @@ import com.mms.usercenter.service.auth.mapper.UserRoleMapper;
 import com.mms.usercenter.service.auth.service.PermissionService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
+import com.mms.usercenter.service.security.utils.SecurityUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,12 +36,13 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import org.springframework.beans.BeanUtils;
 
 /**
  * 实现功能【权限服务实现类】
@@ -80,41 +79,8 @@ public class PermissionServiceImpl implements PermissionService {
     public Page<PermissionVo> getPermissionPage(PermissionPageQueryDto dto) {
         try {
             log.info("分页查询权限列表，参数：{}", dto);
-            Page<PermissionEntity> page = new Page<>(dto.getPageNum(), dto.getPageSize());
-            LambdaQueryWrapper<PermissionEntity> wrapper = new LambdaQueryWrapper<>();
-            if (dto.getParentId() != null) {
-                wrapper.eq(PermissionEntity::getParentId, dto.getParentId());
-            }
-            if (StringUtils.hasText(dto.getPermissionType())) {
-                wrapper.eq(PermissionEntity::getPermissionType, dto.getPermissionType());
-            }
-            if (StringUtils.hasText(dto.getPermissionName())) {
-                wrapper.like(PermissionEntity::getPermissionName, dto.getPermissionName());
-            }
-            if (StringUtils.hasText(dto.getPermissionCode())) {
-                wrapper.like(PermissionEntity::getPermissionCode, dto.getPermissionCode());
-            }
-            if (dto.getStatus() != null) {
-                wrapper.eq(PermissionEntity::getStatus, dto.getStatus());
-            }
-            if (dto.getVisible() != null) {
-                wrapper.eq(PermissionEntity::getVisible, dto.getVisible());
-            }
-            if (dto.getCreateTimeStart() != null) {
-                wrapper.ge(PermissionEntity::getCreateTime, dto.getCreateTimeStart());
-            }
-            if (dto.getCreateTimeEnd() != null) {
-                wrapper.le(PermissionEntity::getCreateTime, dto.getCreateTimeEnd());
-            }
-            wrapper.eq(PermissionEntity::getDeleted, 0)
-                    .orderByAsc(PermissionEntity::getParentId)
-                    .orderByAsc(PermissionEntity::getSortOrder)
-                    .orderByDesc(PermissionEntity::getCreateTime);
-            Page<PermissionEntity> entityPage = permissionMapper.selectPage(page, wrapper);
-            Page<PermissionVo> voPage = new Page<>(entityPage.getCurrent(), entityPage.getSize(), entityPage.getTotal());
-            List<PermissionVo> records = entityPage.getRecords().stream().map(this::convertToVo).collect(Collectors.toList());
-            voPage.setRecords(records);
-            return voPage;
+            Page<PermissionVo> page = new Page<>(dto.getPageNum(), dto.getPageSize());
+            return permissionMapper.getPermissionPage(page, dto);
         } catch (Exception e) {
             log.error("分页查询权限列表失败：{}", e.getMessage(), e);
             throw new ServerException("查询权限列表失败", e);
@@ -154,21 +120,14 @@ public class PermissionServiceImpl implements PermissionService {
                 throw new BusinessException(ErrorCode.UNIQUE_CONSTRAINT_ERROR, "权限编码已存在");
             }
             PermissionEntity entity = new PermissionEntity();
+            BeanUtils.copyProperties(dto, entity);
             entity.setParentId(parentId);
-            entity.setPermissionType(dto.getPermissionType());
-            entity.setPermissionName(dto.getPermissionName());
-            entity.setPermissionCode(dto.getPermissionCode());
-            entity.setPath(dto.getPath());
-            entity.setComponent(dto.getComponent());
-            entity.setIcon(dto.getIcon());
-            entity.setApiUrl(dto.getApiUrl());
-            entity.setApiMethod(dto.getApiMethod());
             entity.setSortOrder(dto.getSortOrder() == null ? 0 : dto.getSortOrder());
             entity.setVisible(dto.getVisible() == null ? 1 : dto.getVisible());
             entity.setStatus(dto.getStatus() == null ? 1 : dto.getStatus());
-            entity.setRemark(dto.getRemark());
             entity.setDeleted(0);
             permissionMapper.insert(entity);
+            log.info("创建权限成功，permissionId：{}", entity.getId());
             return convertToVo(entity);
         } catch (BusinessException e) {
             throw e;
@@ -202,6 +161,7 @@ public class PermissionServiceImpl implements PermissionService {
                 }
                 permission.setPermissionCode(dto.getPermissionCode());
             }
+            // 更新字段
             if (StringUtils.hasText(dto.getPermissionType())) {
                 permission.setPermissionType(dto.getPermissionType());
             }
@@ -242,6 +202,7 @@ public class PermissionServiceImpl implements PermissionService {
                 permission.setRemark(dto.getRemark());
             }
             permissionMapper.updateById(permission);
+            log.info("更新权限成功，permissionId：{}", permission.getId());
             return convertToVo(permission);
         } catch (BusinessException e) {
             throw e;
@@ -275,6 +236,7 @@ public class PermissionServiceImpl implements PermissionService {
                 throw new BusinessException(ErrorCode.DATA_IN_USE, "权限存在关联角色，无法删除");
             }
             permissionMapper.deleteById(permissionId);
+            log.info("删除权限成功，permissionId：{}", permissionId);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -317,6 +279,7 @@ public class PermissionServiceImpl implements PermissionService {
             permission.setStatus(dto.getStatus());
             permission.setUpdateTime(LocalDateTime.now());
             permissionMapper.updateById(permission);
+            log.info("切换权限状态成功，permissionId：{}，status：{}", dto.getPermissionId(), dto.getStatus());
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -328,45 +291,52 @@ public class PermissionServiceImpl implements PermissionService {
     @Override
     public List<PermissionVo> listPermissionTree(String permissionType, Integer status, Integer visible) {
         try {
-            log.info("查询权限树");
-            LambdaQueryWrapper<PermissionEntity> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(PermissionEntity::getDeleted, 0)
-                    .orderByAsc(PermissionEntity::getParentId)
-                    .orderByAsc(PermissionEntity::getSortOrder)
-                    .orderByDesc(PermissionEntity::getCreateTime);
-            if (StringUtils.hasText(permissionType)) {
-                wrapper.eq(PermissionEntity::getPermissionType, permissionType);
-            }
-            if (status != null) {
-                wrapper.eq(PermissionEntity::getStatus, status);
-            }
-            if (visible != null) {
-                wrapper.eq(PermissionEntity::getVisible, visible);
-            }
-            List<PermissionEntity> allPermissions = permissionMapper.selectList(wrapper);
+            log.info("查询权限树，入参：permissionType={}，status={}，visible={}", permissionType, status, visible);
+            List<PermissionEntity> allPermissions = queryPermissions(permissionType, status, visible);
             if (CollectionUtils.isEmpty(allPermissions)) {
                 return new ArrayList<>();
             }
-            List<PermissionVo> voList = allPermissions.stream().map(this::convertToVo).collect(Collectors.toList());
-            Map<Long, PermissionVo> voMap = voList.stream().collect(Collectors.toMap(PermissionVo::getId, v -> v));
-            List<PermissionVo> roots = new ArrayList<>();
-            for (PermissionVo vo : voList) {
-                Long parentId = vo.getParentId() == null ? 0L : vo.getParentId();
-                if (parentId == 0L) {
-                    roots.add(vo);
-                } else {
-                    PermissionVo parent = voMap.get(parentId);
-                    if (parent != null) {
-                        parent.getChildren().add(vo);
-                    } else {
-                        roots.add(vo);
-                    }
-                }
-            }
-            return roots;
+            List<PermissionVo> voList = allPermissions.stream().map(this::convertToVo).toList();
+            return buildPermissionTree(voList);
         } catch (Exception e) {
             log.error("查询权限树失败：{}", e.getMessage(), e);
             throw new ServerException("查询权限树失败", e);
+        }
+    }
+
+    @Override
+    public List<PermissionVo> listCurrentUserPermissionTree(String permissionType, Integer status, Integer visible) {
+        try {
+            // 获取当前用户的权限编码集合
+            Set<String> userPermissionCodes = SecurityUtils.getPermissions();
+            if (CollectionUtils.isEmpty(userPermissionCodes)) {
+                log.info("当前用户没有任何权限，返回空权限树");
+                return new ArrayList<>();
+            }
+
+            // 获取当前用户的用户名
+            String username = SecurityUtils.getUsername();
+            log.info("查询用户 {} 的权限树，权限编码数量：{}", username, userPermissionCodes.size());
+
+            // 查询所有符合条件的权限
+            List<PermissionEntity> allPermissions = queryPermissions(permissionType, status, visible);
+            if (CollectionUtils.isEmpty(allPermissions)) {
+                return new ArrayList<>();
+            }
+
+            // 过滤出用户有权限的节点
+            List<PermissionVo> filteredVoList = allPermissions.stream()
+                    .filter(p -> userPermissionCodes.contains(p.getPermissionCode()))
+                    .map(this::convertToVo)
+                    .toList();
+
+            // 构建权限树
+            List<PermissionVo> roots = buildPermissionTree(filteredVoList);
+            log.info("用户 {} 的权限树构建完成，共 {} 个根节点", username, roots.size());
+            return roots;
+        } catch (Exception e) {
+            log.error("查询当前用户权限树失败：{}", e.getMessage(), e);
+            throw new ServerException("查询当前用户权限树失败", e);
         }
     }
 
@@ -390,12 +360,12 @@ public class PermissionServiceImpl implements PermissionService {
             List<Long> roleIds = relations.stream()
                     .map(RolePermissionEntity::getRoleId)
                     .distinct()
-                    .collect(Collectors.toList());
+                    .toList();
             List<RoleEntity> roleList = roleMapper.selectBatchIds(roleIds);
             return roleList.stream()
                     .filter(role -> role != null && !Objects.equals(role.getDeleted(), 1))
                     .map(this::convertRoleToVo)
-                    .collect(Collectors.toList());
+                    .toList();
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -440,142 +410,68 @@ public class PermissionServiceImpl implements PermissionService {
         }
     }
 
-    @Override
-    public List<PermissionVo> listCurrentUserPermissionTree(String permissionType, Integer status, Integer visible) {
-        try {
-            // 获取当前用户身份
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication == null || authentication.getName() == null) {
-                log.warn("获取当前用户权限树失败：未找到认证信息");
-                return new ArrayList<>();
-            }
+    // ==================== 私有工具方法 ====================
 
-            String username = authentication.getName();
-            log.info("查询当前用户 {} 的权限树", username);
-
-            // 获取当前用户的所有权限编码
-            Set<String> userPermissionCodes = authentication.getAuthorities().stream()
-                    .map(GrantedAuthority::getAuthority)
-                    .filter(authority -> !authority.startsWith("ROLE_")) // 过滤掉角色，只保留权限编码
-                    .collect(Collectors.toSet());
-
-            if (CollectionUtils.isEmpty(userPermissionCodes)) {
-                log.info("用户 {} 没有任何权限，返回空权限树", username);
-                return new ArrayList<>();
-            }
-
-            // 查询所有符合条件的权限
-            LambdaQueryWrapper<PermissionEntity> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(PermissionEntity::getDeleted, 0)
-                    .orderByAsc(PermissionEntity::getParentId)
-                    .orderByAsc(PermissionEntity::getSortOrder)
-                    .orderByDesc(PermissionEntity::getCreateTime);
-            if (StringUtils.hasText(permissionType)) {
-                wrapper.eq(PermissionEntity::getPermissionType, permissionType);
-            }
-            if (status != null) {
-                wrapper.eq(PermissionEntity::getStatus, status);
-            }
-            if (visible != null) {
-                wrapper.eq(PermissionEntity::getVisible, visible);
-            }
-            List<PermissionEntity> allPermissions = permissionMapper.selectList(wrapper);
-            if (CollectionUtils.isEmpty(allPermissions)) {
-                return new ArrayList<>();
-            }
-
-            // 先过滤出用户直接拥有权限的节点（或无权限码的目录/菜单）
-            Set<Long> allowedIds = new HashSet<>();
-            for (PermissionEntity permission : allPermissions) {
-                if (!StringUtils.hasText(permission.getPermissionCode()) ||
-                        userPermissionCodes.contains(permission.getPermissionCode())) {
-                    allowedIds.add(permission.getId());
-                }
-            }
-
-            // 为了保持目录层级，把被保留节点的所有祖先节点也加入
-            if (!allowedIds.isEmpty()) {
-                Map<Long, PermissionEntity> entityMap = allPermissions.stream()
-                        .collect(Collectors.toMap(PermissionEntity::getId, p -> p));
-
-                for (Long id : new ArrayList<>(allowedIds)) {
-                    PermissionEntity current = entityMap.get(id);
-                    while (current != null && current.getParentId() != null && current.getParentId() != 0L) {
-                        Long parentId = current.getParentId();
-                        if (allowedIds.add(parentId)) {
-                            current = entityMap.get(parentId);
-                        } else {
-                            break;
-                        }
-                    }
-                }
-            }
-
-            // 将保留的节点转换为 VO
-            List<PermissionVo> filteredVoList = allPermissions.stream()
-                    .filter(p -> allowedIds.contains(p.getId()))
-                    .map(this::convertToVo)
-                    .collect(Collectors.toList());
-
-            // 构建权限树，但只保留用户有权限的节点
-            Map<Long, PermissionVo> voMap = filteredVoList.stream()
-                    .collect(Collectors.toMap(PermissionVo::getId, v -> v));
-            
-            List<PermissionVo> roots = new ArrayList<>();
-            for (PermissionVo vo : filteredVoList) {
-                Long parentId = vo.getParentId() == null ? 0L : vo.getParentId();
-                if (parentId == 0L) {
-                    roots.add(vo);
-                } else {
-                    PermissionVo parent = voMap.get(parentId);
-                    if (parent != null) {
-                        parent.getChildren().add(vo);
-                    } else {
-                        // 父节点不在过滤结果中，但子节点有权限，这种情况不应该出现
-                        // 如果出现，说明父节点没有权限编码，我们仍然添加到根节点
-                        roots.add(vo);
-                    }
-                }
-            }
-
-            // 清理空目录：如果目录节点下没有任何子节点，则移除该目录
-            roots = filterEmptyDirectories(roots);
-            
-            log.info("用户 {} 的权限树构建完成，共 {} 个根节点", username, roots.size());
-            return roots;
-        } catch (Exception e) {
-            log.error("查询当前用户权限树失败：{}", e.getMessage(), e);
-            throw new ServerException("查询当前用户权限树失败", e);
+    /**
+     * 查询权限列表
+     *
+     * @param permissionType 权限类型
+     * @param status         状态
+     * @param visible        是否可见
+     * @return 权限实体列表
+     */
+    private List<PermissionEntity> queryPermissions(String permissionType, Integer status, Integer visible) {
+        LambdaQueryWrapper<PermissionEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(PermissionEntity::getDeleted, 0)
+                .orderByAsc(PermissionEntity::getParentId)
+                .orderByAsc(PermissionEntity::getSortOrder)
+                .orderByDesc(PermissionEntity::getCreateTime);
+        if (StringUtils.hasText(permissionType)) {
+            wrapper.eq(PermissionEntity::getPermissionType, permissionType);
         }
+        if (status != null) {
+            wrapper.eq(PermissionEntity::getStatus, status);
+        }
+        if (visible != null) {
+            wrapper.eq(PermissionEntity::getVisible, visible);
+        }
+        return permissionMapper.selectList(wrapper);
     }
 
     /**
-     * 过滤掉空的目录节点（没有子节点的目录）
-     * 递归处理，确保子目录也被清理
+     * 构建权限树
+     *
+     * @param voList 权限VO列表
+     * @return 权限树根节点列表
      */
-    private List<PermissionVo> filterEmptyDirectories(List<PermissionVo> nodes) {
-        if (CollectionUtils.isEmpty(nodes)) {
+    private List<PermissionVo> buildPermissionTree(List<PermissionVo> voList) {
+        if (CollectionUtils.isEmpty(voList)) {
             return new ArrayList<>();
         }
-        
-        List<PermissionVo> filtered = new ArrayList<>();
-        for (PermissionVo node : nodes) {
-            // 如果是目录类型，需要检查是否有子节点
-            if ("directory".equals(node.getPermissionType())) {
-                List<PermissionVo> filteredChildren = filterEmptyDirectories(node.getChildren());
-                if (!CollectionUtils.isEmpty(filteredChildren)) {
-                    node.setChildren(filteredChildren);
-                    filtered.add(node);
-                }
-                // 如果目录下没有子节点，则不添加该目录
+        Map<Long, PermissionVo> voMap = voList.stream()
+                .collect(Collectors.toMap(PermissionVo::getId, v -> v));
+        List<PermissionVo> roots = new ArrayList<>();
+        for (PermissionVo vo : voList) {
+            Long parentId = vo.getParentId() == null ? 0L : vo.getParentId();
+            if (parentId == 0L) {
+                roots.add(vo);
             } else {
-                // 菜单或按钮类型，直接添加
-                filtered.add(node);
+                PermissionVo parent = voMap.get(parentId);
+                if (parent != null) {
+                    parent.getChildren().add(vo);
+                } else {
+                    // 父节点不在列表中，可能是数据不一致，仍然添加到根节点
+                    log.warn("权限树数据不一致：节点 {} 的父节点 {} 不在权限列表中", vo.getId(), parentId);
+                    roots.add(vo);
+                }
             }
         }
-        return filtered;
+        return roots;
     }
 
+    /**
+     * 判断权限编码是否存在
+     */
     private boolean existsByPermissionCode(String permissionCode) {
         if (!StringUtils.hasText(permissionCode)) {
             return false;
@@ -586,47 +482,15 @@ public class PermissionServiceImpl implements PermissionService {
         return permissionMapper.selectCount(wrapper) > 0;
     }
 
+    /**
+     * 判断权限ID是否存在
+     */
     private boolean existsById(Long id) {
         if (id == null) {
             return false;
         }
         PermissionEntity entity = permissionMapper.selectById(id);
         return entity != null && !Objects.equals(entity.getDeleted(), 1);
-    }
-
-    private PermissionVo convertToVo(PermissionEntity entity) {
-        if (entity == null) {
-            return null;
-        }
-        PermissionVo vo = new PermissionVo();
-        vo.setId(entity.getId());
-        vo.setParentId(entity.getParentId());
-        vo.setPermissionType(entity.getPermissionType());
-        vo.setPermissionName(entity.getPermissionName());
-        vo.setPermissionCode(entity.getPermissionCode());
-        vo.setPath(entity.getPath());
-        vo.setComponent(entity.getComponent());
-        vo.setIcon(entity.getIcon());
-        vo.setApiUrl(entity.getApiUrl());
-        vo.setApiMethod(entity.getApiMethod());
-        vo.setSortOrder(entity.getSortOrder());
-        vo.setVisible(entity.getVisible());
-        vo.setStatus(entity.getStatus());
-        vo.setRemark(entity.getRemark());
-        vo.setCreateBy(entity.getCreateBy());
-        vo.setCreateTime(entity.getCreateTime());
-        vo.setUpdateBy(entity.getUpdateBy());
-        vo.setUpdateTime(entity.getUpdateTime());
-        return vo;
-    }
-
-    private RoleVo convertRoleToVo(RoleEntity role) {
-        if (role == null) {
-            return null;
-        }
-        RoleVo vo = new RoleVo();
-        org.springframework.beans.BeanUtils.copyProperties(role, vo);
-        return vo;
     }
 
     /**
@@ -643,7 +507,7 @@ public class PermissionServiceImpl implements PermissionService {
             List<Long> userIds = userRoleList.stream()
                     .map(UserRoleEntity::getUserId)
                     .distinct()
-                    .collect(Collectors.toList());
+                    .toList();
             List<UserEntity> users = userMapper.selectBatchIds(userIds);
             for (UserEntity user : users) {
                 if (user == null || Objects.equals(user.getDeleted(), 1)) {
@@ -655,10 +519,48 @@ public class PermissionServiceImpl implements PermissionService {
                     String permissionCacheKey = UserAuthorityConstants.USER_PERMISSION_PREFIX + username;
                     redisTemplate.delete(roleCacheKey);
                     redisTemplate.delete(permissionCacheKey);
+                    log.debug("已清除用户 {} 的权限缓存（角色：{}）", username, roleId);
                 }
             }
+            log.info("已清除角色 {} 关联的 {} 个用户的权限缓存", roleId, users.size());
         } catch (Exception e) {
+            // 缓存清除失败不应该影响主流程，只记录日志
             log.error("清除角色 {} 关联用户权限缓存失败：{}", roleId, e.getMessage(), e);
         }
+    }
+
+    // ==================== 实体转换方法 ====================
+
+    /**
+     * 将 PermissionEntity 转换为 PermissionVo
+     *
+     * @param entity 权限实体
+     * @return 权限VO
+     */
+    private PermissionVo convertToVo(PermissionEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+        PermissionVo vo = new PermissionVo();
+        BeanUtils.copyProperties(entity, vo);
+        return vo;
+    }
+
+    /**
+     * 将 RoleEntity 转换为 RoleVo
+     * <p>
+     * 注意：此方法存在于 PermissionServiceImpl 中是为了避免循环依赖。
+     * 当需要查询权限关联的角色时，不能依赖 RoleService，因此在此处进行转换。
+     *
+     * @param entity 角色实体
+     * @return 角色VO
+     */
+    private RoleVo convertRoleToVo(RoleEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+        RoleVo vo = new RoleVo();
+        BeanUtils.copyProperties(entity, vo);
+        return vo;
     }
 }

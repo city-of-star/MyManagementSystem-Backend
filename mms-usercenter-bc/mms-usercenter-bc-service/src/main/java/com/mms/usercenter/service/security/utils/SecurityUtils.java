@@ -1,4 +1,4 @@
-package com.mms.usercenter.common.security.utils;
+package com.mms.usercenter.service.security.utils;
 
 import com.mms.usercenter.common.security.entity.SecurityUser;
 import org.springframework.security.core.Authentication;

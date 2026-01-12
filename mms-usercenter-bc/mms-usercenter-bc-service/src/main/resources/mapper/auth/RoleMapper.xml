@@ -2,6 +2,41 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.mms.usercenter.service.auth.mapper.RoleMapper">
 
+    <!-- 角色VO字段列表（不包含 deleted） -->
+    <sql id="RoleVoColumns">
+        id, role_code, role_name, role_type, sort_order, status,
+        remark, create_by, create_time, update_by, update_time
+    </sql>
+
+    <!-- 分页查询角色列表 -->
+    <select id="getRolePage" resultType="com.mms.usercenter.common.auth.vo.RoleVo">
+        SELECT
+            <include refid="RoleVoColumns"/>
+        FROM role
+        <where>
+            deleted = 0
+            <if test="dto.roleCode != null and dto.roleCode != ''">
+                AND role_code LIKE CONCAT('%', #{dto.roleCode}, '%')
+            </if>
+            <if test="dto.roleName != null and dto.roleName != ''">
+                AND role_name LIKE CONCAT('%', #{dto.roleName}, '%')
+            </if>
+            <if test="dto.roleType != null and dto.roleType != ''">
+                AND role_type = #{dto.roleType}
+            </if>
+            <if test="dto.status != null">
+                AND status = #{dto.status}
+            </if>
+            <if test="dto.createTimeStart != null">
+                AND create_time &gt;= #{dto.createTimeStart}
+            </if>
+            <if test="dto.createTimeEnd != null">
+                AND create_time &lt;= #{dto.createTimeEnd}
+            </if>
+        </where>
+        ORDER BY sort_order ASC, create_time DESC
+    </select>
+
     <!-- 根据用户名查询角色编码集合（启用且未删除） -->
     <select id="selectRoleCodesByUsername" resultType="java.lang.String">
         SELECT DISTINCT r.role_code

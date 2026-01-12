@@ -1,4 +1,4 @@
-package com.mms.usercenter.common.security.utils;
+package com.mms.usercenter.service.auth.utils;
 
 import com.mms.usercenter.common.security.constants.LoginSecurityConstants;
 import com.mms.usercenter.common.security.properties.LoginSecurityProperties;

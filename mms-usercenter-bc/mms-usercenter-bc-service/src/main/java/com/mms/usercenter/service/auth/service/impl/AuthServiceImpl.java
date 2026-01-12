@@ -16,7 +16,7 @@ import com.mms.usercenter.common.auth.dto.RefreshTokenDto;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.auth.vo.LoginVo;
 import com.mms.usercenter.common.security.properties.LoginSecurityProperties;
-import com.mms.usercenter.common.security.utils.LoginSecurityUtils;
+import com.mms.usercenter.service.auth.utils.LoginSecurityUtils;
 import com.mms.usercenter.common.auth.entity.UserLoginLogEntity;
 import com.mms.usercenter.service.auth.mapper.UserMapper;
 import com.mms.usercenter.service.auth.mapper.UserLoginLogMapper;

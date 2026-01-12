@@ -37,7 +37,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * 实现功能【角色服务实现类】
@@ -71,34 +70,8 @@ public class RoleServiceImpl implements RoleService {
     public Page<RoleVo> getRolePage(RolePageQueryDto dto) {
         try {
             log.info("分页查询角色列表，参数：{}", dto);
-            Page<RoleEntity> page = new Page<>(dto.getPageNum(), dto.getPageSize());
-            LambdaQueryWrapper<RoleEntity> wrapper = new LambdaQueryWrapper<>();
-            if (StringUtils.hasText(dto.getRoleCode())) {
-                wrapper.like(RoleEntity::getRoleCode, dto.getRoleCode());
-            }
-            if (StringUtils.hasText(dto.getRoleName())) {
-                wrapper.like(RoleEntity::getRoleName, dto.getRoleName());
-            }
-            if (StringUtils.hasText(dto.getRoleType())) {
-                wrapper.eq(RoleEntity::getRoleType, dto.getRoleType());
-            }
-            if (dto.getStatus() != null) {
-                wrapper.eq(RoleEntity::getStatus, dto.getStatus());
-            }
-            if (dto.getCreateTimeStart() != null) {
-                wrapper.ge(RoleEntity::getCreateTime, dto.getCreateTimeStart());
-            }
-            if (dto.getCreateTimeEnd() != null) {
-                wrapper.le(RoleEntity::getCreateTime, dto.getCreateTimeEnd());
-            }
-            wrapper.eq(RoleEntity::getDeleted, 0)
-                    .orderByAsc(RoleEntity::getSortOrder)
-                    .orderByDesc(RoleEntity::getCreateTime);
-            Page<RoleEntity> entityPage = roleMapper.selectPage(page, wrapper);
-            Page<RoleVo> voPage = new Page<>(entityPage.getCurrent(), entityPage.getSize(), entityPage.getTotal());
-            List<RoleVo> records = entityPage.getRecords().stream().map(this::convertToVo).collect(Collectors.toList());
-            voPage.setRecords(records);
-            return voPage;
+            Page<RoleVo> page = new Page<>(dto.getPageNum(), dto.getPageSize());
+            return roleMapper.getRolePage(page, dto);
         } catch (Exception e) {
             log.error("分页查询角色列表失败：{}", e.getMessage(), e);
             throw new ServerException("查询角色列表失败", e);
@@ -150,6 +123,7 @@ public class RoleServiceImpl implements RoleService {
             if (!CollectionUtils.isEmpty(dto.getPermissionIds())) {
                 saveRolePermissions(role.getId(), dto.getPermissionIds());
             }
+            log.info("创建角色成功，roleId：{}", role.getId());
             return convertToVo(role);
         } catch (BusinessException e) {
             throw e;
@@ -200,6 +174,7 @@ public class RoleServiceImpl implements RoleService {
             if (dto.getPermissionIds() != null) {
                 saveRolePermissions(role.getId(), dto.getPermissionIds());
             }
+            log.info("更新角色成功，roleId：{}", role.getId());
             return convertToVo(role);
         } catch (BusinessException e) {
             throw e;
@@ -235,6 +210,7 @@ public class RoleServiceImpl implements RoleService {
             LambdaQueryWrapper<RolePermissionEntity> rpWrapper = new LambdaQueryWrapper<>();
             rpWrapper.eq(RolePermissionEntity::getRoleId, roleId);
             rolePermissionMapper.delete(rpWrapper);
+            log.info("删除角色成功，roleId：{}", roleId);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -279,6 +255,7 @@ public class RoleServiceImpl implements RoleService {
             // 角色状态变更时，清除拥有该角色的所有用户的权限缓存
             // 因为禁用角色后，用户不应该再拥有该角色的权限
             clearUserAuthorityCacheByRoleId(dto.getRoleId());
+            log.info("切换角色状态成功，roleId：{}，status：{}", dto.getRoleId(), dto.getStatus());
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -319,7 +296,7 @@ public class RoleServiceImpl implements RoleService {
             wrapper.eq(RolePermissionEntity::getRoleId, roleId);
             return rolePermissionMapper.selectList(wrapper).stream()
                     .map(RolePermissionEntity::getPermissionId)
-                    .collect(Collectors.toList());
+                    .toList();
         } catch (Exception e) {
             log.error("查询角色权限ID列表失败：{}", e.getMessage(), e);
             throw new ServerException("查询角色权限ID列表失败", e);
@@ -349,14 +326,14 @@ public class RoleServiceImpl implements RoleService {
             List<Long> userIds = userRoleList.stream()
                     .map(UserRoleEntity::getUserId)
                     .distinct()
-                    .collect(Collectors.toList());
+                    .toList();
             // 查询用户信息
             List<UserEntity> userList = userMapper.selectBatchIds(userIds);
             // 转换为VO
             return userList.stream()
                     .filter(user -> !Objects.equals(user.getDeleted(), 1))
                     .map(this::convertUserToVo)
-                    .collect(Collectors.toList());
+                    .toList();
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -404,6 +381,11 @@ public class RoleServiceImpl implements RoleService {
         }
     }
 
+    // ==================== 私有工具方法 ====================
+
+    /**
+     * 判断角色编码是否存在
+     */
     private boolean existsByRoleCode(String roleCode) {
         if (!StringUtils.hasText(roleCode)) {
             return false;
@@ -414,6 +396,9 @@ public class RoleServiceImpl implements RoleService {
         return roleMapper.selectCount(wrapper) > 0;
     }
 
+    /**
+     * 判断角色名称是否存在
+     */
     private boolean existsByRoleName(String roleName) {
         if (!StringUtils.hasText(roleName)) {
             return false;
@@ -424,6 +409,9 @@ public class RoleServiceImpl implements RoleService {
         return roleMapper.selectCount(wrapper) > 0;
     }
 
+    /**
+     * 保存角色权限关联
+     */
     private void saveRolePermissions(Long roleId, List<Long> permissionIds) {
         // 先清空旧关联
         LambdaQueryWrapper<RolePermissionEntity> wrapper = new LambdaQueryWrapper<>();
@@ -436,7 +424,7 @@ public class RoleServiceImpl implements RoleService {
         }
         List<RolePermissionEntity> entities = new ArrayList<>();
         // 去重，避免唯一键冲突
-        List<Long> distinctIds = permissionIds.stream().distinct().collect(Collectors.toList());
+        List<Long> distinctIds = permissionIds.stream().distinct().toList();
         for (Long permissionId : distinctIds) {
             RolePermissionEntity entity = new RolePermissionEntity();
             entity.setRoleId(roleId);
@@ -444,6 +432,7 @@ public class RoleServiceImpl implements RoleService {
             entity.setCreateTime(LocalDateTime.now());
             entities.add(entity);
         }
+        // 批量插入（如果数据量较大，可以考虑使用 MyBatis-Plus 批量插入插件）
         for (RolePermissionEntity entity : entities) {
             rolePermissionMapper.insert(entity);
         }
@@ -473,7 +462,7 @@ public class RoleServiceImpl implements RoleService {
             List<Long> userIds = userRoleList.stream()
                     .map(UserRoleEntity::getUserId)
                     .distinct()
-                    .collect(Collectors.toList());
+                    .toList();
 
             // 查询用户信息，获取用户名
             List<UserEntity> users = userMapper.selectBatchIds(userIds);
@@ -530,21 +519,38 @@ public class RoleServiceImpl implements RoleService {
         }
     }
 
-    private RoleVo convertToVo(RoleEntity role) {
-        if (role == null) {
+    // ==================== 实体转换方法 ====================
+
+    /**
+     * 将 RoleEntity 转换为 RoleVo
+     *
+     * @param entity 角色实体
+     * @return 角色VO
+     */
+    private RoleVo convertToVo(RoleEntity entity) {
+        if (entity == null) {
             return null;
         }
         RoleVo vo = new RoleVo();
-        BeanUtils.copyProperties(role, vo);
+        BeanUtils.copyProperties(entity, vo);
         return vo;
     }
 
-    private UserVo convertUserToVo(UserEntity user) {
-        if (user == null) {
+    /**
+     * 将 UserEntity 转换为 UserVo
+     * <p>
+     * 注意：此方法存在于 RoleServiceImpl 中是为了避免循环依赖。
+     * 当需要查询角色关联的用户时，不能依赖 UserService，因此在此处进行转换。
+     *
+     * @param entity 用户实体
+     * @return 用户VO
+     */
+    private UserVo convertUserToVo(UserEntity entity) {
+        if (entity == null) {
             return null;
         }
         UserVo vo = new UserVo();
-        BeanUtils.copyProperties(user, vo);
+        BeanUtils.copyProperties(entity, vo);
         return vo;
     }
 }

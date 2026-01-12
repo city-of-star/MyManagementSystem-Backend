@@ -299,12 +299,12 @@ INSERT IGNORE INTO `user` (`id`, `username`, `password`, `nickname`, `real_name`
 VALUES (1, 'admin', '$2a$10$cU5acgjEYlHA.2cql1DmiOVcTKexIR0iKpKAIda0gJyLdKxeE8Lt.', '超级管理员', '超级管理员', '2722562862@qq.com', '18255097030', 1, 0, '今天又是一个晴朗的一天', 0, NOW(), NOW());
 
 -- 初始化系统管理员角色
-INSERT IGNORE INTO `role` (`id`, `role_code`, `role_name`, `role_type`, `status`, `deleted`, `create_time`, `update_time`)
-VALUES (1, 'admin', '超级管理员', 'system', 1, 0, NOW(), NOW());
+INSERT IGNORE INTO `role` (`id`, `role_code`, `role_name`, `role_type`, `sort_order`, `status`, `deleted`, `create_time`, `update_time`)
+VALUES (1, 'admin', '超级管理员', 'system', 1, 1, 0, NOW(), NOW());
 
 -- 初始化普通用户角色
-INSERT IGNORE INTO `role` (`id`, `role_code`, `role_name`, `role_type`, `status`, `deleted`, `create_time`, `update_time`)
-VALUES (2, 'user', '普通用户', 'system', 1, 0, NOW(), NOW());
+INSERT IGNORE INTO `role` (`id`, `role_code`, `role_name`, `role_type`, `sort_order`, `status`, `deleted`, `create_time`, `update_time`)
+VALUES (2, 'user', '普通用户', 'system', 2, 1, 0, NOW(), NOW());
 
 -- 给超级管理员分配角色
 INSERT IGNORE INTO `user_role` (`user_id`, `role_id`, `create_time`)

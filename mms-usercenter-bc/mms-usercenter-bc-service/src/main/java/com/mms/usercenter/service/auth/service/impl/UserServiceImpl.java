@@ -26,7 +26,6 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 实现功能【用户服务实现类】
@@ -496,13 +495,18 @@ public class UserServiceImpl implements UserService {
             wrapper.eq(UserRoleEntity::getUserId, userId);
             return userRoleMapper.selectList(wrapper).stream()
                     .map(UserRoleEntity::getRoleId)
-                    .collect(Collectors.toList());
+                    .toList();
         } catch (Exception e) {
             log.error("查询用户角色ID列表失败：{}", e.getMessage(), e);
             throw new ServerException("查询用户角色ID列表失败", e);
         }
     }
 
+    // ==================== 私有工具方法 ====================
+
+    /**
+     * 保存用户角色关联
+     */
     private void saveUserRoles(Long userId, List<Long> roleIds) {
         // 先清空旧关联
         LambdaQueryWrapper<UserRoleEntity> wrapper = new LambdaQueryWrapper<>();
@@ -510,12 +514,12 @@ public class UserServiceImpl implements UserService {
         userRoleMapper.delete(wrapper);
         if (CollectionUtils.isEmpty(roleIds)) {
             // 即使角色列表为空，也需要清除用户的权限缓存
-            clearUserAuthorityCache(userId);
+            clearUserAuthorityCacheByUserId(userId);
             return;
         }
         List<UserRoleEntity> entities = new ArrayList<>();
         // 去重，避免唯一键冲突
-        List<Long> distinctIds = roleIds.stream().distinct().collect(Collectors.toList());
+        List<Long> distinctIds = roleIds.stream().distinct().toList();
         for (Long roleId : distinctIds) {
             UserRoleEntity entity = new UserRoleEntity();
             entity.setUserId(userId);
@@ -523,11 +527,12 @@ public class UserServiceImpl implements UserService {
             entity.setCreateTime(LocalDateTime.now());
             entities.add(entity);
         }
+        // 批量插入（如果数据量较大，可以考虑使用 MyBatis-Plus 批量插入插件）
         for (UserRoleEntity entity : entities) {
             userRoleMapper.insert(entity);
         }
         // 清除该用户的权限缓存，确保角色变更立即生效
-        clearUserAuthorityCache(userId);
+        clearUserAuthorityCacheByUserId(userId);
     }
 
     /**
@@ -536,7 +541,7 @@ public class UserServiceImpl implements UserService {
      *
      * @param userId 用户ID
      */
-    private void clearUserAuthorityCache(Long userId) {
+    private void clearUserAuthorityCacheByUserId(Long userId) {
         try {
             UserEntity user = userMapper.selectById(userId);
             if (user == null) {
@@ -557,18 +562,20 @@ public class UserServiceImpl implements UserService {
         }
     }
 
+    // ==================== 实体转换方法 ====================
+
     /**
      * 将 UserEntity 转换为 UserVo
      *
-     * @param user 用户实体
+     * @param entity 用户实体
      * @return 用户VO
      */
-    private UserVo convertToVo(UserEntity user) {
-        if (user == null) {
+    private UserVo convertToVo(UserEntity entity) {
+        if (entity == null) {
             return null;
         }
         UserVo vo = new UserVo();
-        BeanUtils.copyProperties(user, vo);
+        BeanUtils.copyProperties(entity, vo);
         return vo;
     }
 }
