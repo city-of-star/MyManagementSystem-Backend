@@ -1,0 +1,7 @@
+# JWT 配置
+jwt:
+  secret: YOUR_JWT_SECRET
+  accessExpiration: 900000
+  refreshExpiration: 604800000
+  # accessExpiration: 1000 # 测试
+  # refreshExpiration: 2000 # 测试

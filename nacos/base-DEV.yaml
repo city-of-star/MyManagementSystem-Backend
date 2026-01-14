@@ -1,0 +1,13 @@
+# 端口配置
+server:
+  port: 5091
+
+# 数据库配置
+spring:
+  datasource:
+    url: jdbc:mysql://YOUR_DB_HOST:3306/mms_dev_core?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&rewriteBatchedStatements=true
+
+# Swagger 配置
+springdoc:
+  swagger-ui:
+    url: /base/v3/api-docs

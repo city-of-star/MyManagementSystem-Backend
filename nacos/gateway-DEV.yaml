@@ -1,0 +1,17 @@
+# 端口配置
+server:
+  port: 5092
+
+# 网关连接超时配置
+spring:
+  cloud:
+    gateway:
+      httpclient:
+        connect-timeout: 5000  # 连接超时（5秒）
+        response-timeout: 10s  # 响应超时（10秒）
+
+# 网关签名配置
+gateway:
+  signature:
+    # RSA私钥（Base64编码，PKCS#8），仅网关持有
+    private-key: YOUR_GATEWAY_RSA_PRIVATE_KEY

@@ -1,0 +1,14 @@
+# 白名单配置
+whitelist:
+  common: # 公共白名单
+    - /actuator/**
+    - /doc.html
+    - /v3/api-docs/**
+    - /webjars/**
+    - /swagger-resources/**
+    - /favicon.ico
+  usercenter: # 用户中心服务
+    - /auth/login
+    - /auth/refresh
+    - /authority/**
+  base: [] # 基础数据服务

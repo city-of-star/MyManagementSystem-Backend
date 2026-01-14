@@ -1,0 +1,13 @@
+# MySQL配置（无url，需要在各个服务里面配置）
+spring:
+  datasource:
+    username: YOUR_DB_USERNAME
+    password: YOUR_DB_PASSWORD
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    hikari:
+      maximum-pool-size: 8
+      minimum-idle: 3                # 设置最小空闲连接
+      idle-timeout: 300000           # 5分钟
+      max-lifetime: 540000           # 9分钟
+      keepalive-time: 180000         # 3分钟保活
+      connection-timeout: 30000

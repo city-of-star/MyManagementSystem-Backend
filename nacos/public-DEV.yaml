@@ -1,0 +1,24 @@
+# 公共配置
+spring:
+  jackson:
+    time-zone: Asia/Shanghai
+  main:
+    banner-mode: off # 启动应用时不打印 banner.txt
+    allow-bean-definition-overriding: true  # Bean 覆盖策略
+  mvc:
+    # 启用：当找不到处理器时抛出 NoHandlerFoundException，而不是尝试作为静态资源处理
+    throw-exception-if-no-handler-found: true
+  web:
+    # 开发环境：保留静态资源处理（支持 Swagger/Knife4j）
+    resources:
+      add-mappings: true
+
+# Swagger 配置
+swagger:
+  gateway-url: http://YOUR_GATEWAY_IP:5092  # 网关地址
+
+# Mybatis Plus配置
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl  # 禁用MyBatis默认SQL日志打印
+  mapper-locations: classpath*:mapper/**/*.xml

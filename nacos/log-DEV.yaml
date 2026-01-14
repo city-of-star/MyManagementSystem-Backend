@@ -1,0 +1,58 @@
+# 日志路径配置
+logback:
+  path: logs/${spring.application.name}
+
+# 日志级别配置（开发环境）
+logging:
+  level:
+    # ========== 全局默认级别 ==========
+    root: INFO
+
+    # ========== 业务代码（详细调试） ==========
+    com.mms: DEBUG                    # 业务代码
+
+    # ========== Spring 框架 ==========
+    org.springframework: INFO
+    org.springframework.web: INFO     # 请求详情
+    org.springframework.security: INFO # 安全认证流程
+    org.springframework.cloud: INFO   # 服务发现、配置刷新等
+    org.springframework.cloud.gateway: INFO  # 网关路由、过滤器
+    org.springframework.cloud.openfeign: INFO # Feign 调用
+
+    # ========== Nacos ==========
+    com.alibaba.cloud.nacos: INFO
+    com.alibaba.nacos: INFO
+
+    # ========== 数据库相关 ==========
+    com.baomidou.mybatisplus: INFO   # MyBatis Plus SQL 日志
+    org.apache.ibatis: INFO          # MyBatis SQL 日志
+    java.sql: INFO                    # JDBC 日志
+    java.sql.Connection: INFO
+    java.sql.Statement: INFO
+    java.sql.PreparedStatement: INFO
+    java.sql.ResultSet: INFO
+
+    # ========== Redis ==========
+    io.lettuce.core: INFO              # Lettuce Redis 客户端
+    org.springframework.data.redis: INFO  # Spring Redis 操作日志
+
+    # ========== 容器/服务器 ==========
+    org.apache.catalina: ERROR        # Tomcat 容器
+    org.apache.coyote: WARN           # Tomcat 连接器
+    org.apache.tomcat: WARN
+
+    # ========== 数据校验 ==========
+    org.hibernate.validator: WARN     # 校验框架，只记录警告
+
+    # ========== HTTP 客户端 ==========
+    org.apache.http: WARN             # HTTP 客户端
+
+    # ========== 其他第三方库 ==========
+    com.zaxxer.hikari: INFO           # HikariCP 连接池
+    org.apache.commons: WARN
+    com.alibaba.fastjson: WARN
+    org.apache.logging: WARN
+    ch.qos.logback: WARN              # Logback 自身日志
+
+    # ========== 监控和健康检查 ==========
+    org.springframework.boot.actuator: INFO

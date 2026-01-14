@@ -4,7 +4,9 @@
 
 ## 项目简介
 
-MMS（Management System）是一个企业级管理系统，采用微服务架构设计，提供用户管理、基础数据管理等功能模块。项目采用Spring Cloud微服务架构，使用Nacos作为服务注册中心和配置中心，通过Spring Cloud Gateway实现统一网关路由和鉴权。
+MMS（Management System）是一个企业级管理系统，采用微服务架构设计，提供完整的用户权限管理体系。项目采用Spring Cloud微服务架构，使用Nacos作为服务注册中心和配置中心，通过Spring Cloud Gateway实现统一网关路由和JWT+RSA双重鉴权。
+
+项目包含完整的RBAC权限模型，支持用户管理、角色管理、权限控制、数据字典、系统配置等企业级功能。数据库设计包含13个核心表，支持逻辑删除和完整的审计功能。
 
 ## 技术栈
 
@@ -23,11 +25,11 @@ MMS（Management System）是一个企业级管理系统，采用微服务架构
 ### 数据持久化
 - **MyBatis Plus**: 3.5.7
 - **MySQL**: 8.0.33
-- **Redis**: 缓存支持
+- **Redis**: 6.2.14
 
 ### 安全认证
 - **JWT**: 0.12.5（基于JJWT）
-- **BCrypt**: 密码加密
+- **BCrypt**: 0.4
 
 ### 工具类库
 - **Lombok**: 1.18.30
@@ -69,25 +71,31 @@ MyManagementSystem-Backend/
 
 ### 网关服务 (mms-gateway-bc)
 - **端口**: 5092
-- **功能**: 
+- **服务名**: gateway
+- **功能**:
   - 统一API入口
   - 路由转发
-  - JWT鉴权
+  - JWT鉴权 + RSA签名验证
   - 链路追踪（TraceId）
+  - 请求头透传用户信息
 
 ### 用户中心服务 (mms-usercenter-bc)
+- **端口**: 5090
 - **服务名**: usercenter
 - **功能**:
-  - 用户注册/登录
-  - JWT Token管理
-  - 用户信息管理
-  - 角色权限管理
+  - 用户注册/登录/登出
+  - JWT Token管理（访问令牌+刷新令牌）
+  - 用户信息管理（CRUD操作）
+  - 角色权限管理（RBAC模型）
+  - 用户登录日志记录
 
 ### 基础数据服务 (mms-base-bc)
+- **端口**: 5091
 - **服务名**: base
 - **功能**:
-  - 基础数据管理
-  - 业务数据维护
+  - 数据字典管理
+  - 系统配置管理
+  - 基础业务数据维护
 
 ## 环境要求
 
@@ -102,7 +110,7 @@ MyManagementSystem-Backend/
 ### 1. 克隆项目
 
 ```bash
-git clone https://github.com/city-of-star/MyManagementSystem.git
+git clone https://github.com/city-of-star/MyManagementSystem-Backend.git
 cd MyManagementSystem-Backend
 ```
 
@@ -120,17 +128,23 @@ mysql -u root -p < mysql/init_mms_dev_core.sql
 
 确保Nacos服务已启动，并在Nacos控制台配置以下配置文件：
 
-- `public-DEV.yaml` - 公共配置（数据库连接等）
-- `jwt-DEV.yaml` - JWT配置
-- `gateway-DEV.yaml` - 网关服务配置
-- `usercenter-DEV.yaml` - 用户中心服务配置
-- `base-DEV.yaml` - 基础数据服务配置
+- `public-DEV.yaml`    - 公共配置（Spring 公共配置、Swagger 等）
+- `mysql-DEV.yaml`     - MySQL 数据源通用配置（用户名/密码为占位符）
+- `redis-DEV.yaml`     - Redis 通用配置（地址/密码为占位符）
+- `jwt-DEV.yaml`       - JWT 配置（密钥为占位符）
+- `gateway-DEV.yaml`   - 网关服务配置（端口、超时、网关私钥为占位符）
+- `usercenter-DEV.yaml`- 用户中心服务配置（端口、数据源 URL 为占位符）
+- `base-DEV.yaml`      - 基础数据服务配置（端口、数据源 URL 为占位符）
+- `secret-DEV.yaml`    - 网关公钥等安全相关通用配置（公钥为占位符）
+- `log-DEV.yaml`       - 日志级别与输出路径配置
+- `whitelist-DEV.yaml` - 网关与各服务的接口白名单配置
 
-**Nacos连接信息**（开发环境）:
-- 地址: 111.229.150.28:8848
-- 用户名: nacos
-- 密码: nacos
-- 命名空间: DEV
+> 说明：仓库中的上述 `*-DEV.yaml` 文件仅作为 **示例模板**，所有数据库账号、密码、JWT 密钥、RSA 密钥等敏感信息均已使用 `YOUR_***` 占位符处理，请在 **Nacos 控制台中创建同名配置并填入真实值**，不要将真实敏感信息写回到代码仓库。
+
+**Nacos连接信息**（请根据自己环境填写）示例：
+- 地址: `http://YOUR_NACOS_HOST:8848`
+- 用户名: `YOUR_NACOS_USERNAME`
+- 密码: `YOUR_NACOS_PASSWORD`
 
 ### 4. 编译项目
 
@@ -159,9 +173,9 @@ cd mms-base-bc/mms-base-bc-server && mvn spring-boot:run
 ### 6. 访问服务
 
 - **网关地址**: http://localhost:5092
-- **API文档**:
-  - 用户中心文档: http://localhost:5090/usercenter/doc.html
-  - 基础数据文档: http://localhost:5091/base/doc.html
+- **API文档** (通过网关访问):
+  - 用户中心文档: http://localhost:5092/usercenter/doc.html
+  - 基础数据文档: http://localhost:5092/base/doc.html
 
 ## 开发说明
 
@@ -169,12 +183,15 @@ cd mms-base-bc/mms-base-bc-server && mvn spring-boot:run
 
 - ✅ **Maven多模块管理**: 统一依赖版本，模块职责清晰
 - ✅ **微服务架构**: 服务独立部署，支持水平扩展
-- ✅ **统一认证**: 网关统一JWT验证，支持Token刷新
-- ✅ **服务发现**: 基于Nacos实现服务注册与发现
-- ✅ **配置中心**: 使用Nacos配置中心，支持多环境配置
-- ✅ **API文档**: 集成Knife4j，自动生成API文档
-- ✅ **统一响应**: 全局统一响应格式和异常处理
-- ✅ **链路追踪**: 支持TraceId追踪请求链路
+- ✅ **统一认证**: 网关统一JWT验证 + RSA数字签名，支持Token刷新
+- ✅ **安全防护**: Token黑名单机制，防JWT盗用攻击
+- ✅ **服务治理**: 基于Nacos实现服务注册与发现、配置中心
+- ✅ **多环境配置**: 支持DEV/TEST/PROD环境配置分离
+- ✅ **API文档**: 集成Knife4j，自动生成Swagger文档
+- ✅ **统一响应**: 全局统一Response格式和异常处理
+- ✅ **链路追踪**: 全链路TraceId追踪请求链路
+- ✅ **数据库设计**: 完整的RBAC权限模型，支持逻辑删除和审计
+- ✅ **开发规范**: 统一的代码分层和命名规范
 
 ### 服务间调用
 
@@ -196,6 +213,20 @@ public interface UserCenterFeignClient {
 - 分页查询
 - 条件构造器
 
+### 安全架构说明
+
+项目采用多层次安全防护体系：
+
+#### JWT + RSA签名双重认证
+- **网关层**: 验证JWT Token完整性，使用RSA私钥对用户信息生成数字签名
+- **服务层**: 验证网关RSA签名，确保请求来自可信网关
+- **优势**: 防止请求头篡改、防止绕过网关直接访问、轻量级高性能验证
+
+#### Token管理机制
+- **双Token设计**: 访问令牌(Access Token) + 刷新令牌(Refresh Token)
+- **黑名单机制**: 支持Token强制失效，防止JWT盗用
+- **自动刷新**: 支持Token自动续期，提升用户体验
+
 ### 开发规范
 
 1. **模块命名**: `mms-{module}-bc-{layer}`
@@ -213,6 +244,11 @@ public interface UserCenterFeignClient {
 
 4. **异常处理**: 使用 `BusinessException` 和 `ServerException`，由全局异常处理器统一处理
 
+5. **数据库规范**:
+   - 所有表使用逻辑删除(`deleted`字段)
+   - 审计字段: `create_by`, `create_time`, `update_by`, `update_time`
+   - 索引优化: 主键索引、状态索引、时间索引
+
 ## 配置文件说明
 
 项目使用Nacos作为配置中心，各服务的 `application.yml` 仅包含基础配置：
@@ -224,16 +260,18 @@ public interface UserCenterFeignClient {
 
 ### 网关签名配置
 
-网关使用RSA数字签名机制，确保请求来自网关且未被篡改：
+项目使用RSA数字签名机制，确保微服务间通信的安全性：
 
 1. **生成RSA密钥对**：
    ```bash
-   # 运行密钥生成工具类
+   # 编译项目后运行密钥生成工具类
+   mvn clean compile
    java -cp target/classes com.mms.common.security.utils.RsaKeyGenerator
    ```
 
-2. **配置网关签名密钥**（在Nacos的`public-DEV.yaml`或`gateway-DEV.yaml`中）：
+2. **配置网关签名密钥**（在Nacos配置中心）：
    ```yaml
+   # public-DEV.yaml 或 gateway-DEV.yaml
    gateway:
      signature:
        # RSA私钥（Base64编码的PKCS#8格式），仅网关持有
@@ -244,23 +282,52 @@ public interface UserCenterFeignClient {
        timestamp-validity: 300000
    ```
 
-3. **安全架构**：
-   - **网关层**：完整验证JWT token（签名、过期、黑名单），使用RSA私钥对用户信息生成数字签名
-   - **服务层**：验证网关签名（RSA公钥），信任网关透传的用户信息，加载权限
-   - **优势**：防止请求头篡改、防止绕过网关直接访问、轻量级验证、高性能
+3. **安全工作流程**：
+   - **请求进入**: 网关验证JWT Token完整性（签名、过期、黑名单检查）
+   - **签名生成**: 使用RSA私钥对用户信息和时间戳生成数字签名
+   - **信息透传**: 将用户信息和签名通过请求头传递给下游服务
+   - **签名验证**: 下游服务使用RSA公钥验证签名，确保请求来自可信网关
+   - **权限加载**: 服务层信任透传的用户信息，直接加载用户权限
+
+4. **安全优势**：
+   - ✅ **防篡改**: RSA签名确保用户信息不被中间人修改
+   - ✅ **防绕过**: 必须通过网关获取有效签名才能访问服务
+   - ✅ **轻量级**: 比JWT更轻量的签名验证机制
+   - ✅ **高性能**: 非对称加密签名验证性能优秀
 
 ## 目录说明
 
 - `mysql/`: 数据库初始化脚本
-- `logs/`: 服务日志文件
-- `report/`: 项目评估报告
-- `teacher/`: 教学指南文档
+- `logs/`: 服务运行日志文件（按服务分别存储）
+- `nacos/`: Nacos 配置示例（DEV环境，便于本地复现/学习）
+- `mms-common-bc/`: 公共组件模块（核心工具类、Web配置、安全组件等）
+- `mms-gateway-bc/`: API网关服务（路由、鉴权、签名验证）
+- `mms-usercenter-bc/`: 用户中心服务（用户管理、权限控制）
+- `mms-base-bc/`: 基础数据服务（数据字典、系统配置）
+- `LICENSE`: 项目许可证文件
+
+## 学习建议
+
+这个项目非常适合以下学习场景：
+
+- **微服务架构学习**: Spring Cloud全家桶实战项目
+- **安全认证开发**: JWT + RSA签名双重认证机制
+- **企业级开发**: 完整的RBAC权限模型和数据库设计
+- **代码规范实践**: Maven多模块管理，统一开发规范
+- **生产环境部署**: Nacos配置中心，多环境支持
+
+**推荐学习路径**:
+1. 先了解项目整体架构和数据库设计
+2. 按模块学习：common → gateway → usercenter → base
+3. 重点掌握JWT认证和RSA签名机制
+4. 实践数据库操作和业务逻辑开发
 
 ## 联系方式
 
 - **开发团队**: MMS开发团队
-- **邮箱**: 2825646787@qq.com
+- **邮箱**: 2722562862@qq.com
+- **项目主页**: https://github.com/city-of-star/MyManagementSystem-Backend
 
 ## 许可证
 
-本项目采用 [MIT License](LICENSE) 许可证
+本项目采用 [MIT License](LICENSE) 许可证，详见LICENSE文件

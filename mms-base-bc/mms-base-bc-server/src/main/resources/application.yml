@@ -7,6 +7,18 @@ spring:
     import:
       # 公共配置
       - optional:nacos:public-${spring.profiles.active}.yaml?refreshEnabled=true
+      # MySQL配置
+      - optional:nacos:mysql-${spring.profiles.active}.yaml?refreshEnabled=true
+      # Redis配置
+      - optional:nacos:redis-${spring.profiles.active}.yaml?refreshEnabled=true
+      # JWT配置
+      - optional:nacos:jwt-${spring.profiles.active}.yaml?refreshEnabled=true
+      # 密钥配置
+      - optional:nacos:secret-${spring.profiles.active}.yaml?refreshEnabled=true
+      # 白名单配置
+      - optional:nacos:whitelist-${spring.profiles.active}.yaml?refreshEnabled=true
+      # 日志配置
+      - optional:nacos:log-${spring.profiles.active}.yaml?refreshEnabled=true
       # 服务专属配置
       - optional:nacos:${spring.application.name}-${spring.profiles.active}.yaml?refreshEnabled=true
   cloud:
