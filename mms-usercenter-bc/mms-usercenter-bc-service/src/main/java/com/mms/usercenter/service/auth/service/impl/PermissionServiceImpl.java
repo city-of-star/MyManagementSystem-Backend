@@ -19,6 +19,7 @@ import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.auth.entity.UserRoleEntity;
 import com.mms.usercenter.common.auth.vo.PermissionVo;
 import com.mms.usercenter.common.auth.vo.RoleVo;
+import com.mms.usercenter.common.security.constants.SuperAdminInfoConstants;
 import com.mms.usercenter.service.auth.mapper.PermissionMapper;
 import com.mms.usercenter.service.auth.mapper.RoleMapper;
 import com.mms.usercenter.service.auth.mapper.RolePermissionMapper;
@@ -117,7 +118,7 @@ public class PermissionServiceImpl implements PermissionService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "父权限不存在");
             }
             if (existsByPermissionCode(dto.getPermissionCode())) {
-                throw new BusinessException(ErrorCode.UNIQUE_CONSTRAINT_ERROR, "权限编码已存在");
+                throw new BusinessException(ErrorCode.PERMISSION_CODE_EXISTS);
             }
             PermissionEntity entity = new PermissionEntity();
             BeanUtils.copyProperties(dto, entity);
@@ -142,9 +143,14 @@ public class PermissionServiceImpl implements PermissionService {
     public PermissionVo updatePermission(PermissionUpdateDto dto) {
         try {
             log.info("更新权限，参数：{}", dto);
+            // 查询权限
             PermissionEntity permission = permissionMapper.selectById(dto.getId());
             if (permission == null || Objects.equals(permission.getDeleted(), 1)) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "权限不存在");
+            }
+            // 系统核心权限不可修改
+            if (SuperAdminInfoConstants.isCorePermission(dto.getId())) {
+                throw new BusinessException(ErrorCode.CORE_PERMISSION_UPDATE_FORBIDDEN);
             }
             if (dto.getParentId() != null) {
                 if (Objects.equals(dto.getParentId(), dto.getId())) {
@@ -154,12 +160,6 @@ public class PermissionServiceImpl implements PermissionService {
                     throw new BusinessException(ErrorCode.PARAM_INVALID, "父权限不存在");
                 }
                 permission.setParentId(dto.getParentId());
-            }
-            if (StringUtils.hasText(dto.getPermissionCode()) && !dto.getPermissionCode().equals(permission.getPermissionCode())) {
-                if (existsByPermissionCode(dto.getPermissionCode())) {
-                    throw new BusinessException(ErrorCode.UNIQUE_CONSTRAINT_ERROR, "权限编码已存在");
-                }
-                permission.setPermissionCode(dto.getPermissionCode());
             }
             // 更新字段
             if (StringUtils.hasText(dto.getPermissionType())) {
@@ -220,9 +220,14 @@ public class PermissionServiceImpl implements PermissionService {
             if (permissionId == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "权限ID不能为空");
             }
+            // 查询权限
             PermissionEntity permission = permissionMapper.selectById(permissionId);
             if (permission == null || Objects.equals(permission.getDeleted(), 1)) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "权限不存在");
+            }
+            // 系统核心权限不可删除
+            if (SuperAdminInfoConstants.isCorePermission(permissionId)) {
+                throw new BusinessException(ErrorCode.CORE_PERMISSION_DELETE_FORBIDDEN);
             }
             LambdaQueryWrapper<PermissionEntity> childWrapper = new LambdaQueryWrapper<>();
             childWrapper.eq(PermissionEntity::getParentId, permissionId)
@@ -254,6 +259,11 @@ public class PermissionServiceImpl implements PermissionService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "权限ID列表不能为空");
             }
             for (Long permissionId : dto.getPermissionIds()) {
+                // 系统核心权限不可删除
+                if (SuperAdminInfoConstants.isCorePermission(permissionId)) {
+                    throw new BusinessException(ErrorCode.CORE_PERMISSION_DELETE_FORBIDDEN,
+                            "系统核心权限不可删除，其他误删数据已恢复");
+                }
                 deletePermission(permissionId);
             }
         } catch (BusinessException e) {
@@ -272,6 +282,10 @@ public class PermissionServiceImpl implements PermissionService {
             PermissionEntity permission = permissionMapper.selectById(dto.getPermissionId());
             if (permission == null || Objects.equals(permission.getDeleted(), 1)) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "权限不存在");
+            }
+            // 系统核心权限不可禁用
+            if (SuperAdminInfoConstants.isCorePermission(dto.getPermissionId())) {
+                throw new BusinessException(ErrorCode.CORE_PERMISSION_SWITCH_FORBIDDEN);
             }
             if (dto.getStatus() != 0 && dto.getStatus() != 1) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "状态值只能是0或1");
@@ -392,6 +406,11 @@ public class PermissionServiceImpl implements PermissionService {
             RoleEntity role = roleMapper.selectById(dto.getRoleId());
             if (role == null || Objects.equals(role.getDeleted(), 1)) {
                 throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
+            }
+            // 超级管理员角色必须拥有核心权限，不可移除，防止误操作
+            if (Objects.equals(dto.getRoleId(), SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID)
+                    && SuperAdminInfoConstants.isCorePermission(dto.getPermissionId())) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "此权限是核心权限，超级管理员角色必须拥有，不可移除");
             }
             LambdaQueryWrapper<RolePermissionEntity> rpWrapper = new LambdaQueryWrapper<>();
             rpWrapper.eq(RolePermissionEntity::getPermissionId, dto.getPermissionId())

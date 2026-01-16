@@ -27,9 +27,6 @@ public class PermissionUpdateDto {
     @Schema(description = "权限名称", example = "用户管理")
     private String permissionName;
 
-    @Schema(description = "权限编码（唯一标识）", example = "user:manage")
-    private String permissionCode;
-
     @Schema(description = "路由路径（菜单类型）", example = "/user")
     private String path;
 

@@ -20,9 +20,6 @@ public class RoleUpdateDto {
     @Schema(description = "角色ID", example = "1")
     private Long id;
 
-    @Schema(description = "角色编码", example = "admin")
-    private String roleCode;
-
     @Schema(description = "角色名称", example = "超级管理员")
     private String roleName;
 
@@ -37,8 +34,5 @@ public class RoleUpdateDto {
 
     @Schema(description = "备注", example = "系统内置角色")
     private String remark;
-
-    @Schema(description = "关联的权限ID列表（更新时覆盖）", example = "[1,2,3]")
-    private List<Long> permissionIds;
 }
 

@@ -49,7 +49,15 @@ public enum ErrorCode {
     ROLE_NOT_FOUND(2011, "角色不存在"),
     ROLE_NAME_EXISTS(2012, "角色名称已存在"),
     ROLE_CODE_EXISTS(2013, "角色编码已存在"),
-    ROLE_IN_USE(2014, "角色存在关联用户，无法删除"),
+    ROLE_CODE_UPDATE_FORBIDDEN(2014, "角色编码不可修改"),
+    ROLE_IN_USE(2015, "角色存在关联用户，无法删除"),
+
+    // 权限管理错误 (2021-2030)
+    PERMISSION_CODE_EXISTS(2021, "权限编码已存在"),
+    PERMISSION_CODE_UPDATE_FORBIDDEN(2022, "权限编码不可修改"),
+    CORE_PERMISSION_UPDATE_FORBIDDEN(2023, "系统核心权限不可修改"),
+    CORE_PERMISSION_DELETE_FORBIDDEN(2023, "系统核心权限不可删除"),
+    CORE_PERMISSION_SWITCH_FORBIDDEN(2023, "系统核心权限不可禁用"),
     
     // ==================== 系统管理错误 (3xxx) ====================
     // 文件处理错误 (3001-3010)

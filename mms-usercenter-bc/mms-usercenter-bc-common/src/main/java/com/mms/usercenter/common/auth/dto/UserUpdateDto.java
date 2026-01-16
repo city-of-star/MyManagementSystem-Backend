@@ -25,11 +25,6 @@ public class UserUpdateDto {
     @Schema(description = "用户ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Long id;
 
-    @Size(min = 3, max = 64, message = "用户名长度必须在3-64个字符之间")
-    @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "用户名只能包含字母、数字和下划线")
-    @Schema(description = "用户名（登录账号）", example = "testuser")
-    private String username;
-
     @Schema(description = "昵称", example = "测试用户")
     private String nickname;
 

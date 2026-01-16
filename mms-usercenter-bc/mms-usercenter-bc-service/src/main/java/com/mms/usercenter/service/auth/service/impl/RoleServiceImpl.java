@@ -12,6 +12,7 @@ import com.mms.usercenter.common.auth.dto.RolePageQueryDto;
 import com.mms.usercenter.common.auth.dto.RoleRemoveUserDto;
 import com.mms.usercenter.common.auth.dto.RoleStatusSwitchDto;
 import com.mms.usercenter.common.auth.dto.RoleUpdateDto;
+import com.mms.usercenter.common.auth.entity.PermissionEntity;
 import com.mms.usercenter.common.auth.entity.RoleEntity;
 import com.mms.usercenter.common.auth.entity.RolePermissionEntity;
 import com.mms.usercenter.common.auth.entity.UserEntity;
@@ -19,6 +20,8 @@ import com.mms.usercenter.common.auth.entity.UserRoleEntity;
 import com.mms.usercenter.common.auth.vo.RoleVo;
 import com.mms.usercenter.common.auth.vo.UserVo;
 import com.mms.common.core.constants.usercenter.UserAuthorityConstants;
+import com.mms.usercenter.common.security.constants.SuperAdminInfoConstants;
+import com.mms.usercenter.service.auth.mapper.PermissionMapper;
 import com.mms.usercenter.service.auth.mapper.RoleMapper;
 import com.mms.usercenter.service.auth.mapper.RolePermissionMapper;
 import com.mms.usercenter.service.auth.mapper.UserMapper;
@@ -35,6 +38,7 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
@@ -59,6 +63,9 @@ public class RoleServiceImpl implements RoleService {
 
     @Resource
     private RolePermissionMapper rolePermissionMapper;
+
+    @Resource
+    private PermissionMapper permissionMapper;
 
     @Resource
     private UserMapper userMapper;
@@ -138,22 +145,23 @@ public class RoleServiceImpl implements RoleService {
     public RoleVo updateRole(RoleUpdateDto dto) {
         try {
             log.info("更新角色，参数：{}", dto);
+            // 查询角色
             RoleEntity role = roleMapper.selectById(dto.getId());
             if (role == null || Objects.equals(role.getDeleted(), 1)) {
                 throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
             }
-            if (StringUtils.hasText(dto.getRoleCode()) && !dto.getRoleCode().equals(role.getRoleCode())) {
-                if (existsByRoleCode(dto.getRoleCode())) {
-                    throw new BusinessException(ErrorCode.ROLE_CODE_EXISTS);
-                }
-                role.setRoleCode(dto.getRoleCode());
+            // 不可修改超级管理员角色
+            if (Objects.equals(dto.getId(), SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID)) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "不可修改超级管理员角色");
             }
+            // 角色名称已存在
             if (StringUtils.hasText(dto.getRoleName()) && !dto.getRoleName().equals(role.getRoleName())) {
                 if (existsByRoleName(dto.getRoleName())) {
                     throw new BusinessException(ErrorCode.ROLE_NAME_EXISTS);
                 }
                 role.setRoleName(dto.getRoleName());
             }
+            // 更新字段
             if (StringUtils.hasText(dto.getRoleType())) {
                 role.setRoleType(dto.getRoleType());
             }
@@ -170,10 +178,6 @@ public class RoleServiceImpl implements RoleService {
                 role.setRemark(dto.getRemark());
             }
             roleMapper.updateById(role);
-            // 权限覆盖
-            if (dto.getPermissionIds() != null) {
-                saveRolePermissions(role.getId(), dto.getPermissionIds());
-            }
             log.info("更新角色成功，roleId：{}", role.getId());
             return convertToVo(role);
         } catch (BusinessException e) {
@@ -191,6 +195,9 @@ public class RoleServiceImpl implements RoleService {
             log.info("删除角色，roleId：{}", roleId);
             if (roleId == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "角色ID不能为空");
+            }
+            if (roleId.equals(SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID)) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员角色不可删除");
             }
             RoleEntity role = roleMapper.selectById(roleId);
             if (role == null || Objects.equals(role.getDeleted(), 1)) {
@@ -228,6 +235,9 @@ public class RoleServiceImpl implements RoleService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "角色ID列表不能为空");
             }
             for (Long roleId : dto.getRoleIds()) {
+                if (Objects.equals(roleId, SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID)) {
+                    throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员角色不可删除，其他误删数据已恢复");
+                }
                 deleteRole(roleId);
             }
         } catch (BusinessException e) {
@@ -246,6 +256,10 @@ public class RoleServiceImpl implements RoleService {
             RoleEntity role = roleMapper.selectById(dto.getRoleId());
             if (role == null || Objects.equals(role.getDeleted(), 1)) {
                 throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
+            }
+            // 超级管理员角色不能被禁用
+            if (Objects.equals(dto.getRoleId(), SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID) && dto.getStatus() == 0) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员角色不可禁用");
             }
             if (dto.getStatus() != 0 && dto.getStatus() != 1) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "状态值只能是0或1");
@@ -278,6 +292,22 @@ public class RoleServiceImpl implements RoleService {
             }
             if (CollectionUtils.isEmpty(dto.getPermissionIds())) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "权限ID列表不能为空");
+            }
+            // 验证权限ID是否存在且未删除
+            List<PermissionEntity> permissions = permissionMapper.selectBatchIds(dto.getPermissionIds());
+            if (permissions.size() != dto.getPermissionIds().size()) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "存在无效的权限ID");
+            }
+            // 检查是否有已删除的权限
+            for (PermissionEntity permission : permissions) {
+                if (Objects.equals(permission.getDeleted(), 1)) {
+                    throw new BusinessException(ErrorCode.PARAM_INVALID, "权限ID " + permission.getId() + " 已被删除");
+                }
+            }
+            // 超级管理员角色必须拥有所有的核心权限，防止误操作
+            if (Objects.equals(dto.getRoleId(), SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID) &&
+                    !new HashSet<>(dto.getPermissionIds()).containsAll(SuperAdminInfoConstants.SYSTEM_CORE_PERMISSION_IDS)) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员角色必须拥有所有的核心权限");
             }
             saveRolePermissions(dto.getRoleId(), dto.getPermissionIds());
         } catch (BusinessException e) {
@@ -352,6 +382,10 @@ public class RoleServiceImpl implements RoleService {
             }
             if (dto.getUserId() == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "用户ID不能为空");
+            }
+            if (dto.getUserId().equals(SuperAdminInfoConstants.SUPER_ADMIN_USER_ID)
+                    && dto.getRoleId().equals(SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID)) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员角色不可移除超级管理用户");
             }
             // 验证角色是否存在
             RoleEntity role = roleMapper.selectById(dto.getRoleId());

@@ -6,10 +6,13 @@ import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
 import com.mms.usercenter.common.auth.dto.*;
+import com.mms.usercenter.common.auth.entity.RoleEntity;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.auth.entity.UserRoleEntity;
 import com.mms.usercenter.common.auth.vo.UserVo;
 import com.mms.common.core.constants.usercenter.UserAuthorityConstants;
+import com.mms.usercenter.common.security.constants.SuperAdminInfoConstants;
+import com.mms.usercenter.service.auth.mapper.RoleMapper;
 import com.mms.usercenter.service.auth.mapper.UserMapper;
 import com.mms.usercenter.service.auth.mapper.UserRoleMapper;
 import com.mms.usercenter.service.auth.service.UserService;
@@ -26,6 +29,7 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * 实现功能【用户服务实现类】
@@ -45,6 +49,9 @@ public class UserServiceImpl implements UserService {
 
     @Resource
     private UserRoleMapper userRoleMapper;
+
+    @Resource
+    private RoleMapper roleMapper;
 
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
@@ -191,15 +198,9 @@ public class UserServiceImpl implements UserService {
             if (user == null) {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
             }
-            // 检查用户名是否被其他用户使用（排除当前用户）
-            if (StringUtils.hasText(dto.getUsername()) && !dto.getUsername().equals(user.getUsername())) {
-                LambdaQueryWrapper<UserEntity> usernameWrapper = new LambdaQueryWrapper<>();
-                usernameWrapper.eq(UserEntity::getUsername, dto.getUsername())
-                        .eq(UserEntity::getDeleted, 0)
-                        .ne(UserEntity::getId, dto.getId());
-                if (userMapper.selectCount(usernameWrapper) > 0) {
-                    throw new BusinessException(ErrorCode.USERNAME_EXISTS);
-                }
+            // 超级管理员用户不可修改
+            if (Objects.equals(dto.getId(), SuperAdminInfoConstants.SUPER_ADMIN_USER_ID)) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员用户不可修改");
             }
             // 检查邮箱是否被其他用户使用（排除当前用户）
             if (StringUtils.hasText(dto.getEmail()) && !dto.getEmail().equals(user.getEmail())) {
@@ -220,10 +221,6 @@ public class UserServiceImpl implements UserService {
                 if (userMapper.selectCount(phoneWrapper) > 0) {
                     throw new BusinessException(ErrorCode.PHONE_EXISTS);
                 }
-            }
-            // 更新用户信息
-            if (StringUtils.hasText(dto.getUsername())) {
-                user.setUsername(dto.getUsername());
             }
             if (StringUtils.hasText(dto.getNickname())) {
                 user.setNickname(dto.getNickname());
@@ -271,6 +268,9 @@ public class UserServiceImpl implements UserService {
             if (userId == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "用户ID不能为空");
             }
+            if (userId.equals(SuperAdminInfoConstants.SUPER_ADMIN_USER_ID)) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员用户不可删除");
+            }
             UserEntity user = userMapper.selectById(userId);
             if (user == null) {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
@@ -296,6 +296,9 @@ public class UserServiceImpl implements UserService {
             }
             // 批量逻辑删除
             for (Long userId : dto.getUserIds()) {
+                if (userId.equals(SuperAdminInfoConstants.SUPER_ADMIN_USER_ID)) {
+                    throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员用户不可删除，其他误删数据已恢复");
+                }
                 userMapper.deleteById(userId);
             }
             log.info("批量删除用户成功，删除数量：{}", dto.getUserIds().size());
@@ -315,6 +318,10 @@ public class UserServiceImpl implements UserService {
             UserEntity user = userMapper.selectById(dto.getUserId());
             if (user == null) {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+            }
+            // 超级管理员用户不可被禁用
+            if (Objects.equals(dto.getUserId(), SuperAdminInfoConstants.SUPER_ADMIN_USER_ID) && dto.getStatus() == 0) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员用户不可禁用");
             }
             if (dto.getStatus() != 0 && dto.getStatus() != 1) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "状态值只能是0或1");
@@ -338,6 +345,10 @@ public class UserServiceImpl implements UserService {
             UserEntity user = userMapper.selectById(dto.getUserId());
             if (user == null) {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+            }
+            // 超级管理员用户不可被锁定
+            if (Objects.equals(dto.getUserId(), SuperAdminInfoConstants.SUPER_ADMIN_USER_ID) && dto.getLocked() == 1) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员用户不可锁定");
             }
             if (dto.getLocked() != 0 && dto.getLocked() != 1) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "锁定状态值只能是0或1");
@@ -477,6 +488,21 @@ public class UserServiceImpl implements UserService {
             }
             if (CollectionUtils.isEmpty(dto.getRoleIds())) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "角色ID列表不能为空");
+            }
+            // 验证角色ID是否存在且未删除
+            List<RoleEntity> roles = roleMapper.selectBatchIds(dto.getRoleIds());
+            if (roles.size() != dto.getRoleIds().size()) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "存在无效的角色ID");
+            }
+            // 检查是否有已删除的角色
+            for (RoleEntity role : roles) {
+                if (Objects.equals(role.getDeleted(), 1)) {
+                    throw new BusinessException(ErrorCode.PARAM_INVALID, "角色ID " + role.getId() + " 已被删除");
+                }
+            }
+            if (Objects.equals(dto.getUserId(), SuperAdminInfoConstants.SUPER_ADMIN_USER_ID) 
+                    && !dto.getRoleIds().contains(SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID)) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员用户必须有超级管理员角色，请重新分配");
             }
             saveUserRoles(dto.getUserId(), dto.getRoleIds());
         } catch (BusinessException e) {
