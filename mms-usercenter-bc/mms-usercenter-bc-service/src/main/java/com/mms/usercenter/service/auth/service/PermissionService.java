@@ -69,13 +69,9 @@ public interface PermissionService {
 
     /**
      * 返回当前用户有权限的权限树（用于前端菜单展示）
-     * 只返回用户拥有权限编码的权限节点，并按类型/状态/可见性过滤
-     *
-     * @param permissionType 可选：menu/button/api
-     * @param status         可选：0/1
-     * @param visible        可选：0/1
+     * 固定查询条件：只返回启用(status=1)、可见(visible=1)、类型为目录(catalog)或菜单(menu)的权限
      */
-    List<PermissionVo> listCurrentUserPermissionTree(String permissionType, Integer status, Integer visible);
+    List<PermissionVo> listCurrentUserPermissionTree();
 
     /**
      * 查询与指定权限关联的角色列表

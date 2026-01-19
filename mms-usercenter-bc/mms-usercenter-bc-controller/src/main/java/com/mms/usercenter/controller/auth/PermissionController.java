@@ -100,12 +100,10 @@ public class PermissionController {
     }
 
     @Operation(summary = "查询当前用户的权限树（用于前端菜单展示）", 
-               description = "返回当前登录用户有权限的权限树，不需要权限校验，因为只返回自己的权限")
+               description = "返回当前登录用户有权限的权限树，固定返回启用、可见、目录或菜单类型的权限")
     @GetMapping("/tree/current-user")
-    public Response<List<PermissionVo>> listCurrentUserPermissionTree(@RequestParam(required = false) String permissionType,
-                                                                      @RequestParam(required = false) Integer status,
-                                                                      @RequestParam(required = false) Integer visible) {
-        return Response.success(permissionService.listCurrentUserPermissionTree(permissionType, status, visible));
+    public Response<List<PermissionVo>> listCurrentUserPermissionTree() {
+        return Response.success(permissionService.listCurrentUserPermissionTree());
     }
 
     @Operation(summary = "查询权限关联的角色列表")

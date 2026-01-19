@@ -306,11 +306,32 @@ public class PermissionServiceImpl implements PermissionService {
     public List<PermissionVo> listPermissionTree(String permissionType, Integer status, Integer visible) {
         try {
             log.info("查询权限树，入参：permissionType={}，status={}，visible={}", permissionType, status, visible);
-            List<PermissionEntity> allPermissions = queryPermissions(permissionType, status, visible);
+
+            // 查询权限列表
+            LambdaQueryWrapper<PermissionEntity> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(PermissionEntity::getDeleted, 0)
+                    .orderByAsc(PermissionEntity::getParentId)
+                    .orderByAsc(PermissionEntity::getSortOrder)
+                    .orderByDesc(PermissionEntity::getCreateTime);
+            if (StringUtils.hasText(permissionType)) {
+                wrapper.eq(PermissionEntity::getPermissionType, permissionType);
+            }
+            if (status != null) {
+                wrapper.eq(PermissionEntity::getStatus, status);
+            }
+            if (visible != null) {
+                wrapper.eq(PermissionEntity::getVisible, visible);
+            }
+            List<PermissionEntity> allPermissions = permissionMapper.selectList(wrapper);
+
             if (CollectionUtils.isEmpty(allPermissions)) {
                 return new ArrayList<>();
             }
+
+            // 转换成 PermissionVo
             List<PermissionVo> voList = allPermissions.stream().map(this::convertToVo).toList();
+
+            // 构建权限树
             return buildPermissionTree(voList);
         } catch (Exception e) {
             log.error("查询权限树失败：{}", e.getMessage(), e);
@@ -319,7 +340,7 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
-    public List<PermissionVo> listCurrentUserPermissionTree(String permissionType, Integer status, Integer visible) {
+    public List<PermissionVo> listCurrentUserPermissionTree() {
         try {
             // 获取当前用户的权限编码集合
             Set<String> userPermissionCodes = SecurityUtils.getPermissions();
@@ -330,10 +351,19 @@ public class PermissionServiceImpl implements PermissionService {
 
             // 获取当前用户的用户名
             String username = SecurityUtils.getUsername();
-            log.info("查询用户 {} 的权限树，权限编码数量：{}", username, userPermissionCodes.size());
+            log.info("查询用户 {} 的菜单权限树，权限编码数量：{}", username, userPermissionCodes.size());
 
-            // 查询所有符合条件的权限
-            List<PermissionEntity> allPermissions = queryPermissions(permissionType, status, visible);
+            // 固定查询条件：启用、可见、目录或菜单类型
+            LambdaQueryWrapper<PermissionEntity> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(PermissionEntity::getDeleted, 0)
+                    .eq(PermissionEntity::getStatus, 1)
+                    .eq(PermissionEntity::getVisible, 1)
+                    .in(PermissionEntity::getPermissionType, "catalog", "menu")
+                    .orderByAsc(PermissionEntity::getParentId)
+                    .orderByAsc(PermissionEntity::getSortOrder)
+                    .orderByDesc(PermissionEntity::getCreateTime);
+            
+            List<PermissionEntity> allPermissions = permissionMapper.selectList(wrapper);
             if (CollectionUtils.isEmpty(allPermissions)) {
                 return new ArrayList<>();
             }
@@ -346,7 +376,7 @@ public class PermissionServiceImpl implements PermissionService {
 
             // 构建权限树
             List<PermissionVo> roots = buildPermissionTree(filteredVoList);
-            log.info("用户 {} 的权限树构建完成，共 {} 个根节点", username, roots.size());
+            log.info("用户 {} 的菜单权限树构建完成，共 {} 个根节点", username, roots.size());
             return roots;
         } catch (Exception e) {
             log.error("查询当前用户权限树失败：{}", e.getMessage(), e);
@@ -430,32 +460,6 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     // ==================== 私有工具方法 ====================
-
-    /**
-     * 查询权限列表
-     *
-     * @param permissionType 权限类型
-     * @param status         状态
-     * @param visible        是否可见
-     * @return 权限实体列表
-     */
-    private List<PermissionEntity> queryPermissions(String permissionType, Integer status, Integer visible) {
-        LambdaQueryWrapper<PermissionEntity> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(PermissionEntity::getDeleted, 0)
-                .orderByAsc(PermissionEntity::getParentId)
-                .orderByAsc(PermissionEntity::getSortOrder)
-                .orderByDesc(PermissionEntity::getCreateTime);
-        if (StringUtils.hasText(permissionType)) {
-            wrapper.eq(PermissionEntity::getPermissionType, permissionType);
-        }
-        if (status != null) {
-            wrapper.eq(PermissionEntity::getStatus, status);
-        }
-        if (visible != null) {
-            wrapper.eq(PermissionEntity::getVisible, visible);
-        }
-        return permissionMapper.selectList(wrapper);
-    }
 
     /**
      * 构建权限树
