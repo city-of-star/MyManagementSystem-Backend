@@ -2,6 +2,11 @@
 spring:
   jackson:
     time-zone: Asia/Shanghai
+    # 全局日期格式配置（主要对 java.util.Date 生效）
+    date-format: yyyy-MM-dd HH:mm:ss
+    # 禁用将日期序列化为时间戳，使用字符串格式
+    serialization:
+      write-dates-as-timestamps: false
   main:
     banner-mode: off # 启动应用时不打印 banner.txt
     allow-bean-definition-overriding: true  # Bean 覆盖策略
