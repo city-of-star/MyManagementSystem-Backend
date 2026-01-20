@@ -199,9 +199,9 @@ public class UserServiceImpl implements UserService {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
             }
             // 超级管理员用户不可修改
-            if (Objects.equals(dto.getId(), SuperAdminInfoConstants.SUPER_ADMIN_USER_ID)) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员用户不可修改");
-            }
+//            if (Objects.equals(dto.getId(), SuperAdminInfoConstants.SUPER_ADMIN_USER_ID)) {
+//                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员用户不可修改");
+//            }
             // 检查邮箱是否被其他用户使用（排除当前用户）
             if (StringUtils.hasText(dto.getEmail()) && !dto.getEmail().equals(user.getEmail())) {
                 LambdaQueryWrapper<UserEntity> emailWrapper = new LambdaQueryWrapper<>();
@@ -242,9 +242,6 @@ public class UserServiceImpl implements UserService {
             }
             if (dto.getBirthday() != null) {
                 user.setBirthday(dto.getBirthday());
-            }
-            if (dto.getStatus() != null) {
-                user.setStatus(dto.getStatus());
             }
             if (StringUtils.hasText(dto.getRemark())) {
                 user.setRemark(dto.getRemark());

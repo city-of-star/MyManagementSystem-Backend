@@ -149,9 +149,9 @@ public class PermissionServiceImpl implements PermissionService {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "权限不存在");
             }
             // 系统核心权限不可修改
-            if (SuperAdminInfoConstants.isCorePermission(dto.getId())) {
-                throw new BusinessException(ErrorCode.CORE_PERMISSION_UPDATE_FORBIDDEN);
-            }
+//            if (SuperAdminInfoConstants.isCorePermission(dto.getId())) {
+//                throw new BusinessException(ErrorCode.CORE_PERMISSION_UPDATE_FORBIDDEN);
+//            }
             if (dto.getParentId() != null) {
                 if (Objects.equals(dto.getParentId(), dto.getId())) {
                     throw new BusinessException(ErrorCode.PARAM_INVALID, "父权限不能是自身");

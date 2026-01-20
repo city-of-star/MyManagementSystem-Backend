@@ -48,9 +48,6 @@ public class UserUpdateDto {
     @Schema(description = "生日", example = "1990-01-01")
     private LocalDate birthday;
 
-    @Schema(description = "状态：0-禁用，1-启用", example = "1")
-    private Integer status;
-
     @Schema(description = "备注", example = "测试用户备注")
     private String remark;
 }

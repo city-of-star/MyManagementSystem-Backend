@@ -151,9 +151,9 @@ public class RoleServiceImpl implements RoleService {
                 throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
             }
             // 不可修改超级管理员角色
-            if (Objects.equals(dto.getId(), SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID)) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "不可修改超级管理员角色");
-            }
+//            if (Objects.equals(dto.getId(), SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID)) {
+//                throw new BusinessException(ErrorCode.PARAM_INVALID, "不可修改超级管理员角色");
+//            }
             // 角色名称已存在
             if (StringUtils.hasText(dto.getRoleName()) && !dto.getRoleName().equals(role.getRoleName())) {
                 if (existsByRoleName(dto.getRoleName())) {
