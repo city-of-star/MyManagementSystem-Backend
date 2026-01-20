@@ -424,6 +424,64 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void assignRoles(UserAssignRoleDto dto) {
+        try {
+            log.info("为用户分配角色，userId：{}，roleIds：{}", dto.getUserId(), dto.getRoleIds());
+            if (dto.getUserId() == null) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "用户ID不能为空");
+            }
+            UserEntity user = userMapper.selectById(dto.getUserId());
+            if (user == null) {
+                throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+            }
+            if (CollectionUtils.isEmpty(dto.getRoleIds())) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "角色ID列表不能为空");
+            }
+            // 验证角色ID是否存在且未删除
+            List<RoleEntity> roles = roleMapper.selectBatchIds(dto.getRoleIds());
+            if (roles.size() != dto.getRoleIds().size()) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "存在无效的角色ID");
+            }
+            // 检查是否有已删除的角色
+            for (RoleEntity role : roles) {
+                if (Objects.equals(role.getDeleted(), 1)) {
+                    throw new BusinessException(ErrorCode.PARAM_INVALID, "角色ID " + role.getId() + " 已被删除");
+                }
+            }
+            if (Objects.equals(dto.getUserId(), SuperAdminInfoConstants.SUPER_ADMIN_USER_ID) 
+                    && !dto.getRoleIds().contains(SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID)) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员用户必须有超级管理员角色，请重新分配");
+            }
+            if (!Objects.equals(dto.getUserId(), SuperAdminInfoConstants.SUPER_ADMIN_USER_ID)
+                    && dto.getRoleIds().contains(SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID)) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员角色只能分配给超级管理员用户");
+            }
+            saveUserRoles(dto.getUserId(), dto.getRoleIds());
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("分配用户角色失败：{}", e.getMessage(), e);
+            throw new ServerException("分配用户角色失败", e);
+        }
+    }
+
+    @Override
+    public List<Long> listRoleIdsByUserId(Long userId) {
+        try {
+            log.info("查询用户角色ID列表，userId：{}", userId);
+            LambdaQueryWrapper<UserRoleEntity> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(UserRoleEntity::getUserId, userId);
+            return userRoleMapper.selectList(wrapper).stream()
+                    .map(UserRoleEntity::getRoleId)
+                    .toList();
+        } catch (Exception e) {
+            log.error("查询用户角色ID列表失败：{}", e.getMessage(), e);
+            throw new ServerException("查询用户角色ID列表失败", e);
+        }
+    }
+
+    @Override
     public boolean existsByUsername(String username) {
         try {
             if (!StringUtils.hasText(username)) {
@@ -468,60 +526,6 @@ public class UserServiceImpl implements UserService {
         } catch (Exception e) {
             log.error("检查手机号是否存在失败：{}", e.getMessage(), e);
             throw new ServerException("检查手机号是否存在失败", e);
-        }
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void assignRoles(UserAssignRoleDto dto) {
-        try {
-            log.info("为用户分配角色，userId：{}，roleIds：{}", dto.getUserId(), dto.getRoleIds());
-            if (dto.getUserId() == null) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "用户ID不能为空");
-            }
-            UserEntity user = userMapper.selectById(dto.getUserId());
-            if (user == null) {
-                throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-            }
-            if (CollectionUtils.isEmpty(dto.getRoleIds())) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "角色ID列表不能为空");
-            }
-            // 验证角色ID是否存在且未删除
-            List<RoleEntity> roles = roleMapper.selectBatchIds(dto.getRoleIds());
-            if (roles.size() != dto.getRoleIds().size()) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "存在无效的角色ID");
-            }
-            // 检查是否有已删除的角色
-            for (RoleEntity role : roles) {
-                if (Objects.equals(role.getDeleted(), 1)) {
-                    throw new BusinessException(ErrorCode.PARAM_INVALID, "角色ID " + role.getId() + " 已被删除");
-                }
-            }
-            if (Objects.equals(dto.getUserId(), SuperAdminInfoConstants.SUPER_ADMIN_USER_ID) 
-                    && !dto.getRoleIds().contains(SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID)) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员用户必须有超级管理员角色，请重新分配");
-            }
-            saveUserRoles(dto.getUserId(), dto.getRoleIds());
-        } catch (BusinessException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("分配用户角色失败：{}", e.getMessage(), e);
-            throw new ServerException("分配用户角色失败", e);
-        }
-    }
-
-    @Override
-    public List<Long> listRoleIdsByUserId(Long userId) {
-        try {
-            log.info("查询用户角色ID列表，userId：{}", userId);
-            LambdaQueryWrapper<UserRoleEntity> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(UserRoleEntity::getUserId, userId);
-            return userRoleMapper.selectList(wrapper).stream()
-                    .map(UserRoleEntity::getRoleId)
-                    .toList();
-        } catch (Exception e) {
-            log.error("查询用户角色ID列表失败：{}", e.getMessage(), e);
-            throw new ServerException("查询用户角色ID列表失败", e);
         }
     }
 
