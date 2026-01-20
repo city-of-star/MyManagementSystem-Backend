@@ -6,6 +6,7 @@ import com.mms.usercenter.common.auth.dto.PermissionCreateDto;
 import com.mms.usercenter.common.auth.dto.PermissionPageQueryDto;
 import com.mms.usercenter.common.auth.dto.PermissionRemoveRoleDto;
 import com.mms.usercenter.common.auth.dto.PermissionStatusSwitchDto;
+import com.mms.usercenter.common.auth.dto.PermissionTreeQueryDto;
 import com.mms.usercenter.common.auth.dto.PermissionUpdateDto;
 import com.mms.usercenter.common.auth.vo.PermissionVo;
 import com.mms.usercenter.common.auth.vo.RoleVo;
@@ -59,13 +60,9 @@ public interface PermissionService {
     void switchPermissionStatus(PermissionStatusSwitchDto dto);
 
     /**
-     * 返回权限树，可按类型/状态/可见性过滤
-     *
-     * @param permissionType 可选：menu/button/api
-     * @param status         可选：0/1
-     * @param visible        可选：0/1
+     * 返回权限树，可按名称/编码/类型/状态/可见性过滤
      */
-    List<PermissionVo> listPermissionTree(String permissionType, Integer status, Integer visible);
+    List<PermissionVo> listPermissionTree(PermissionTreeQueryDto dto);
 
     /**
      * 返回当前用户有权限的权限树（用于前端菜单展示）

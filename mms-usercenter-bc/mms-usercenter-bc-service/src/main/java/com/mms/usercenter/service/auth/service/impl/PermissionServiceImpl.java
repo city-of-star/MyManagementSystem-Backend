@@ -11,6 +11,7 @@ import com.mms.usercenter.common.auth.dto.PermissionCreateDto;
 import com.mms.usercenter.common.auth.dto.PermissionPageQueryDto;
 import com.mms.usercenter.common.auth.dto.PermissionRemoveRoleDto;
 import com.mms.usercenter.common.auth.dto.PermissionStatusSwitchDto;
+import com.mms.usercenter.common.auth.dto.PermissionTreeQueryDto;
 import com.mms.usercenter.common.auth.dto.PermissionUpdateDto;
 import com.mms.usercenter.common.auth.entity.PermissionEntity;
 import com.mms.usercenter.common.auth.entity.RolePermissionEntity;
@@ -303,9 +304,9 @@ public class PermissionServiceImpl implements PermissionService {
     }
 
     @Override
-    public List<PermissionVo> listPermissionTree(String permissionType, Integer status, Integer visible) {
+    public List<PermissionVo> listPermissionTree(PermissionTreeQueryDto dto) {
         try {
-            log.info("查询权限树，入参：permissionType={}，status={}，visible={}", permissionType, status, visible);
+            log.info("查询权限树，入参：{}", dto);
 
             // 查询权限列表
             LambdaQueryWrapper<PermissionEntity> wrapper = new LambdaQueryWrapper<>();
@@ -313,14 +314,20 @@ public class PermissionServiceImpl implements PermissionService {
                     .orderByAsc(PermissionEntity::getParentId)
                     .orderByAsc(PermissionEntity::getSortOrder)
                     .orderByDesc(PermissionEntity::getCreateTime);
-            if (StringUtils.hasText(permissionType)) {
-                wrapper.eq(PermissionEntity::getPermissionType, permissionType);
+            if (dto != null && StringUtils.hasText(dto.getPermissionType())) {
+                wrapper.eq(PermissionEntity::getPermissionType, dto.getPermissionType());
             }
-            if (status != null) {
-                wrapper.eq(PermissionEntity::getStatus, status);
+            if (dto != null && dto.getStatus() != null) {
+                wrapper.eq(PermissionEntity::getStatus, dto.getStatus());
             }
-            if (visible != null) {
-                wrapper.eq(PermissionEntity::getVisible, visible);
+            if (dto != null && dto.getVisible() != null) {
+                wrapper.eq(PermissionEntity::getVisible, dto.getVisible());
+            }
+            if (dto != null && StringUtils.hasText(dto.getPermissionName())) {
+                wrapper.like(PermissionEntity::getPermissionName, dto.getPermissionName());
+            }
+            if (dto != null && StringUtils.hasText(dto.getPermissionCode())) {
+                wrapper.like(PermissionEntity::getPermissionCode, dto.getPermissionCode());
             }
             List<PermissionEntity> allPermissions = permissionMapper.selectList(wrapper);
 

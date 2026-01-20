@@ -8,6 +8,7 @@ import com.mms.usercenter.common.auth.dto.PermissionCreateDto;
 import com.mms.usercenter.common.auth.dto.PermissionPageQueryDto;
 import com.mms.usercenter.common.auth.dto.PermissionRemoveRoleDto;
 import com.mms.usercenter.common.auth.dto.PermissionStatusSwitchDto;
+import com.mms.usercenter.common.auth.dto.PermissionTreeQueryDto;
 import com.mms.usercenter.common.auth.dto.PermissionUpdateDto;
 import com.mms.usercenter.common.auth.vo.PermissionVo;
 import com.mms.usercenter.common.auth.vo.RoleVo;
@@ -93,10 +94,8 @@ public class PermissionController {
     @Operation(summary = "查询权限树（全量，用于管理场景）")
     @RequiresPermission(PermissionConstants.PERMISSION_VIEW)
     @GetMapping("/tree")
-    public Response<List<PermissionVo>> listPermissionTree(@RequestParam(required = false) String permissionType,
-                                                           @RequestParam(required = false) Integer status,
-                                                           @RequestParam(required = false) Integer visible) {
-        return Response.success(permissionService.listPermissionTree(permissionType, status, visible));
+    public Response<List<PermissionVo>> listPermissionTree(@Valid PermissionTreeQueryDto dto) {
+        return Response.success(permissionService.listPermissionTree(dto));
     }
 
     @Operation(summary = "查询当前用户的权限树（用于前端菜单展示）", 
