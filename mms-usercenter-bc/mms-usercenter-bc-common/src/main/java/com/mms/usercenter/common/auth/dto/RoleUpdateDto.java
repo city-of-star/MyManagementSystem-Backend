@@ -29,9 +29,6 @@ public class RoleUpdateDto {
     @Schema(description = "排序号", example = "1")
     private Integer sortOrder;
 
-    @Schema(description = "状态：0-禁用，1-启用", example = "1")
-    private Integer status;
-
     @Schema(description = "备注", example = "系统内置角色")
     private String remark;
 }

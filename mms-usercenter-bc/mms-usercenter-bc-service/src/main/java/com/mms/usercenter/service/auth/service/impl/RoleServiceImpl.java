@@ -150,29 +150,12 @@ public class RoleServiceImpl implements RoleService {
             if (role == null || Objects.equals(role.getDeleted(), 1)) {
                 throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
             }
-            // 不可修改超级管理员角色
-//            if (Objects.equals(dto.getId(), SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID)) {
-//                throw new BusinessException(ErrorCode.PARAM_INVALID, "不可修改超级管理员角色");
-//            }
-            // 角色名称已存在
-            if (StringUtils.hasText(dto.getRoleName()) && !dto.getRoleName().equals(role.getRoleName())) {
-                if (existsByRoleName(dto.getRoleName())) {
-                    throw new BusinessException(ErrorCode.ROLE_NAME_EXISTS);
-                }
-                role.setRoleName(dto.getRoleName());
-            }
             // 更新字段
             if (StringUtils.hasText(dto.getRoleType())) {
                 role.setRoleType(dto.getRoleType());
             }
             if (dto.getSortOrder() != null) {
                 role.setSortOrder(dto.getSortOrder());
-            }
-            if (dto.getStatus() != null) {
-                if (dto.getStatus() != 0 && dto.getStatus() != 1) {
-                    throw new BusinessException(ErrorCode.PARAM_INVALID, "状态值只能是0或1");
-                }
-                role.setStatus(dto.getStatus());
             }
             if (StringUtils.hasText(dto.getRemark())) {
                 role.setRemark(dto.getRemark());
@@ -196,14 +179,16 @@ public class RoleServiceImpl implements RoleService {
             if (roleId == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "角色ID不能为空");
             }
-            if (roleId.equals(SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID)) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员角色不可删除");
-            }
+            // 检查角色是否存在
             RoleEntity role = roleMapper.selectById(roleId);
             if (role == null || Objects.equals(role.getDeleted(), 1)) {
                 throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
             }
-            // 判断是否有用户关联
+            // 检查是否是超级管理员角色
+            if (roleId.equals(SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID)) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员角色不可删除");
+            }
+            // 检查是否有用户关联
             LambdaQueryWrapper<com.mms.usercenter.common.auth.entity.UserRoleEntity> userRoleWrapper =
                     new LambdaQueryWrapper<com.mms.usercenter.common.auth.entity.UserRoleEntity>()
                             .eq(com.mms.usercenter.common.auth.entity.UserRoleEntity::getRoleId, roleId);
@@ -211,7 +196,7 @@ public class RoleServiceImpl implements RoleService {
             if (count > 0) {
                 throw new BusinessException(ErrorCode.ROLE_IN_USE, "角色存在关联用户，无法删除");
             }
-            // 逻辑删除角色
+            // 逻辑删除
             roleMapper.deleteById(roleId);
             // 清理角色权限关联
             LambdaQueryWrapper<RolePermissionEntity> rpWrapper = new LambdaQueryWrapper<>();
@@ -235,9 +220,6 @@ public class RoleServiceImpl implements RoleService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "角色ID列表不能为空");
             }
             for (Long roleId : dto.getRoleIds()) {
-                if (Objects.equals(roleId, SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID)) {
-                    throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员角色不可删除，其他误删数据已恢复");
-                }
                 deleteRole(roleId);
             }
         } catch (BusinessException e) {
@@ -298,10 +280,13 @@ public class RoleServiceImpl implements RoleService {
             if (permissions.size() != dto.getPermissionIds().size()) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "存在无效的权限ID");
             }
-            // 检查是否有已删除的权限
+            // 检查是否有已删除或者被禁用的权限
             for (PermissionEntity permission : permissions) {
                 if (Objects.equals(permission.getDeleted(), 1)) {
-                    throw new BusinessException(ErrorCode.PARAM_INVALID, "权限ID " + permission.getId() + " 已被删除");
+                    throw new BusinessException(ErrorCode.PARAM_INVALID, "权限 " + permission.getPermissionCode() + " 已被删除");
+                }
+                if (Objects.equals(permission.getStatus(), 0)) {
+                    throw new BusinessException(ErrorCode.PARAM_INVALID, "权限 " + permission.getPermissionCode() + " 已被禁用，无法分配给角色");
                 }
             }
             // 超级管理员角色必须拥有所有的核心权限，防止误操作

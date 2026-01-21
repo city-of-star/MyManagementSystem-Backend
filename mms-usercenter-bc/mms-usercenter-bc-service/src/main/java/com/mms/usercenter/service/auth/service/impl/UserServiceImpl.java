@@ -198,10 +198,6 @@ public class UserServiceImpl implements UserService {
             if (user == null) {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
             }
-            // 超级管理员用户不可修改
-//            if (Objects.equals(dto.getId(), SuperAdminInfoConstants.SUPER_ADMIN_USER_ID)) {
-//                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员用户不可修改");
-//            }
             // 检查邮箱是否被其他用户使用（排除当前用户）
             if (StringUtils.hasText(dto.getEmail()) && !dto.getEmail().equals(user.getEmail())) {
                 LambdaQueryWrapper<UserEntity> emailWrapper = new LambdaQueryWrapper<>();
@@ -293,10 +289,7 @@ public class UserServiceImpl implements UserService {
             }
             // 批量逻辑删除
             for (Long userId : dto.getUserIds()) {
-                if (userId.equals(SuperAdminInfoConstants.SUPER_ADMIN_USER_ID)) {
-                    throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员用户不可删除，其他误删数据已恢复");
-                }
-                userMapper.deleteById(userId);
+                deleteUser(userId);
             }
             log.info("批量删除用户成功，删除数量：{}", dto.getUserIds().size());
         } catch (BusinessException e) {
@@ -382,6 +375,10 @@ public class UserServiceImpl implements UserService {
             if (user == null) {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
             }
+            // 超级管理员用户不可被锁定
+            if (Objects.equals(dto.getUserId(), SuperAdminInfoConstants.SUPER_ADMIN_USER_ID)) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员用户不可重置密码");
+            }
             // 加密新密码
             String hashedPassword = BCrypt.hashpw(dto.getNewPassword(), BCrypt.gensalt());
             user.setPassword(hashedPassword);
@@ -443,10 +440,13 @@ public class UserServiceImpl implements UserService {
             if (roles.size() != dto.getRoleIds().size()) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "存在无效的角色ID");
             }
-            // 检查是否有已删除的角色
+            // 检查是否有已删除或者被禁用的角色
             for (RoleEntity role : roles) {
                 if (Objects.equals(role.getDeleted(), 1)) {
-                    throw new BusinessException(ErrorCode.PARAM_INVALID, "角色ID " + role.getId() + " 已被删除");
+                    throw new BusinessException(ErrorCode.PARAM_INVALID, "角色 " + role.getRoleCode() + " 已被删除");
+                }
+                if (Objects.equals(role.getStatus(), 0)) {
+                    throw new BusinessException(ErrorCode.PARAM_INVALID, "角色 " + role.getRoleCode() + " 已被禁用，无法分配给角色");
                 }
             }
             if (Objects.equals(dto.getUserId(), SuperAdminInfoConstants.SUPER_ADMIN_USER_ID) 

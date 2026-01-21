@@ -149,23 +149,6 @@ public class PermissionServiceImpl implements PermissionService {
             if (permission == null || Objects.equals(permission.getDeleted(), 1)) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "权限不存在");
             }
-            // 系统核心权限不可修改
-//            if (SuperAdminInfoConstants.isCorePermission(dto.getId())) {
-//                throw new BusinessException(ErrorCode.CORE_PERMISSION_UPDATE_FORBIDDEN);
-//            }
-            if (dto.getParentId() != null) {
-                if (Objects.equals(dto.getParentId(), dto.getId())) {
-                    throw new BusinessException(ErrorCode.PARAM_INVALID, "父权限不能是自身");
-                }
-                if (dto.getParentId() > 0 && !existsById(dto.getParentId())) {
-                    throw new BusinessException(ErrorCode.PARAM_INVALID, "父权限不存在");
-                }
-                permission.setParentId(dto.getParentId());
-            }
-            // 更新字段
-            if (StringUtils.hasText(dto.getPermissionType())) {
-                permission.setPermissionType(dto.getPermissionType());
-            }
             if (StringUtils.hasText(dto.getPermissionName())) {
                 permission.setPermissionName(dto.getPermissionName());
             }
@@ -193,12 +176,6 @@ public class PermissionServiceImpl implements PermissionService {
                 }
                 permission.setVisible(dto.getVisible());
             }
-            if (dto.getStatus() != null) {
-                if (dto.getStatus() != 0 && dto.getStatus() != 1) {
-                    throw new BusinessException(ErrorCode.PARAM_INVALID, "状态值只能是0或1");
-                }
-                permission.setStatus(dto.getStatus());
-            }
             if (StringUtils.hasText(dto.getRemark())) {
                 permission.setRemark(dto.getRemark());
             }
@@ -221,26 +198,29 @@ public class PermissionServiceImpl implements PermissionService {
             if (permissionId == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "权限ID不能为空");
             }
-            // 查询权限
+            // 检查权限是否存在
             PermissionEntity permission = permissionMapper.selectById(permissionId);
             if (permission == null || Objects.equals(permission.getDeleted(), 1)) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "权限不存在");
             }
-            // 系统核心权限不可删除
+            // 检查是否是系统核心权限
             if (SuperAdminInfoConstants.isCorePermission(permissionId)) {
                 throw new BusinessException(ErrorCode.CORE_PERMISSION_DELETE_FORBIDDEN);
             }
+            // 检查是否有子权限
             LambdaQueryWrapper<PermissionEntity> childWrapper = new LambdaQueryWrapper<>();
             childWrapper.eq(PermissionEntity::getParentId, permissionId)
                     .eq(PermissionEntity::getDeleted, 0);
             if (permissionMapper.selectCount(childWrapper) > 0) {
                 throw new BusinessException(ErrorCode.DATA_IN_USE, "存在子权限，无法删除");
             }
+            // 检查是否有关联角色
             LambdaQueryWrapper<RolePermissionEntity> rpWrapper = new LambdaQueryWrapper<>();
             rpWrapper.eq(RolePermissionEntity::getPermissionId, permissionId);
             if (rolePermissionMapper.selectCount(rpWrapper) > 0) {
                 throw new BusinessException(ErrorCode.DATA_IN_USE, "权限存在关联角色，无法删除");
             }
+            // 逻辑删除
             permissionMapper.deleteById(permissionId);
             log.info("删除权限成功，permissionId：{}", permissionId);
         } catch (BusinessException e) {
@@ -260,11 +240,6 @@ public class PermissionServiceImpl implements PermissionService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "权限ID列表不能为空");
             }
             for (Long permissionId : dto.getPermissionIds()) {
-                // 系统核心权限不可删除
-                if (SuperAdminInfoConstants.isCorePermission(permissionId)) {
-                    throw new BusinessException(ErrorCode.CORE_PERMISSION_DELETE_FORBIDDEN,
-                            "系统核心权限不可删除，其他误删数据已恢复");
-                }
                 deletePermission(permissionId);
             }
         } catch (BusinessException e) {
@@ -490,9 +465,8 @@ public class PermissionServiceImpl implements PermissionService {
                 if (parent != null) {
                     parent.getChildren().add(vo);
                 } else {
-                    // 父节点不在列表中，可能是数据不一致，仍然添加到根节点
-                    log.warn("权限树数据不一致：节点 {} 的父节点 {} 不在权限列表中", vo.getId(), parentId);
-                    roots.add(vo);
+                    log.error("权限树数据不一致：节点 {} 的父节点 {} 不在权限列表中", vo.getId(), parentId);
+                    throw new BusinessException(ErrorCode.SYSTEM_ERROR);
                 }
             }
         }

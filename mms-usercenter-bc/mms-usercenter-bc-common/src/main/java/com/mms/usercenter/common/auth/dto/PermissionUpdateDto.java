@@ -18,12 +18,6 @@ public class PermissionUpdateDto {
     @Schema(description = "权限ID", example = "1")
     private Long id;
 
-    @Schema(description = "父权限ID，0表示顶级权限", example = "0")
-    private Long parentId;
-
-    @Schema(description = "权限类型：catalog-目录，menu-菜单，button-按钮，api-接口", example = "menu")
-    private String permissionType;
-
     @Schema(description = "权限名称", example = "用户管理")
     private String permissionName;
 
@@ -47,9 +41,6 @@ public class PermissionUpdateDto {
 
     @Schema(description = "是否显示：0-隐藏，1-显示", example = "1")
     private Integer visible;
-
-    @Schema(description = "状态：0-禁用，1-启用", example = "1")
-    private Integer status;
 
     @Schema(description = "备注", example = "权限说明")
     private String remark;
