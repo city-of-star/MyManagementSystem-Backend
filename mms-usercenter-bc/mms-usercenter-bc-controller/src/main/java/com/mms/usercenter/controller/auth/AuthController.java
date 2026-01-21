@@ -5,6 +5,7 @@ import com.mms.usercenter.common.auth.dto.LoginDto;
 import com.mms.usercenter.common.auth.dto.LogoutDto;
 import com.mms.usercenter.common.auth.dto.RefreshTokenDto;
 import com.mms.usercenter.common.auth.vo.LoginVo;
+import com.mms.usercenter.common.auth.vo.UserVo;
 import com.mms.usercenter.service.auth.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -49,5 +50,11 @@ public class AuthController {
     public Response<Void> logout(@RequestBody @Valid LogoutDto dto) {
         authService.logout(dto);
         return Response.success();
+    }
+
+    @Operation(summary = "获取当前用户信息", description = "获取当前用户信息")
+    @PostMapping("/getCurrentUser")
+    public Response<UserVo> getCurrentUser() {
+        return Response.success(authService.getCurrentUser());
     }
 }

@@ -15,6 +15,7 @@ import com.mms.usercenter.common.auth.dto.LogoutDto;
 import com.mms.usercenter.common.auth.dto.RefreshTokenDto;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.auth.vo.LoginVo;
+import com.mms.usercenter.common.auth.vo.UserVo;
 import com.mms.usercenter.common.security.properties.LoginSecurityProperties;
 import com.mms.usercenter.service.auth.utils.LoginSecurityUtils;
 import com.mms.usercenter.common.auth.entity.UserLoginLogEntity;
@@ -24,6 +25,8 @@ import com.mms.usercenter.service.auth.service.AuthService;
 import io.jsonwebtoken.Claims;
 import jakarta.annotation.Resource;
 import org.mindrot.jbcrypt.BCrypt;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -65,6 +68,8 @@ public class AuthServiceImpl implements AuthService {
 
     @Resource
     private UserLoginLogMapper userLoginLogMapper;
+    @Autowired
+    private UserServiceImpl userServiceImpl;
 
     @Override
     public LoginVo login(LoginDto dto) {
@@ -195,6 +200,23 @@ public class AuthServiceImpl implements AuthService {
                 .ifPresent(username -> refreshTokenUtils.removeRefreshToken(username));
     }
 
+    @Override
+    public UserVo getCurrentUser() {
+        // 从请求上下文获取用户名（网关已验证并透传）
+        Long userId = UserContextUtils.getUserId();
+
+        // 检查是否为空
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.LOGIN_EXPIRED);
+        }
+
+        // 查询信息
+        UserEntity user = userMapper.selectById(userId);
+
+        // 转换成 UserVo
+        return convertToVo(user);
+    }
+
     /**
      * 处理登录失败逻辑
      */
@@ -281,5 +303,20 @@ public class AuthServiceImpl implements AuthService {
             // 记录日志失败不应该影响登录流程，只记录异常
             // 可以使用日志框架记录，这里暂时忽略
         }
+    }
+
+    /**
+     * 将 UserEntity 转换为 UserVo
+     *
+     * @param entity 用户实体
+     * @return 用户VO
+     */
+    private UserVo convertToVo(UserEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+        UserVo vo = new UserVo();
+        BeanUtils.copyProperties(entity, vo);
+        return vo;
     }
 }
