@@ -5,17 +5,27 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
+import com.mms.usercenter.common.auth.dto.UserAssignDeptDto;
+import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.org.dto.*;
 import com.mms.usercenter.common.org.entity.DeptEntity;
+import com.mms.usercenter.common.org.entity.UserDeptEntity;
 import com.mms.usercenter.common.org.vo.DeptVo;
+import com.mms.usercenter.service.auth.mapper.UserMapper;
 import com.mms.usercenter.service.org.mapper.DeptMapper;
+import com.mms.usercenter.service.org.mapper.UserDeptMapper;
 import com.mms.usercenter.service.org.service.DeptService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * 实现功能【部门服务实现类】
@@ -31,7 +41,13 @@ import org.springframework.util.StringUtils;
 public class DeptServiceImpl implements DeptService {
 
     @Resource
+    private UserMapper userMapper;
+
+    @Resource
     private DeptMapper deptMapper;
+
+    @Resource
+    private UserDeptMapper userDeptMapper;
 
     @Override
     public Page<DeptVo> getDeptPage(DeptPageQueryDto dto) {
@@ -229,6 +245,104 @@ public class DeptServiceImpl implements DeptService {
             throw new ServerException("切换部门状态失败", e);
         }
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void assignDepts(UserAssignDeptDto dto) {
+        try {
+            log.info("为用户分配部门，userId：{}，deptIds：{}", dto.getUserId(), dto.getDeptIds());
+            if (dto.getUserId() == null) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "用户ID不能为空");
+            }
+            UserEntity user = userMapper.selectById(dto.getUserId());
+            if (user == null) {
+                throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+            }
+            saveUserDepts(dto.getUserId(), dto.getDeptIds(), dto.getPrimaryDeptId());
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("分配用户部门失败：{}", e.getMessage(), e);
+            throw new ServerException("分配用户部门失败", e);
+        }
+    }
+
+    @Override
+    public List<Long> listDeptIdsByUserId(Long userId) {
+        try {
+            log.info("查询用户部门ID列表，userId：{}", userId);
+            LambdaQueryWrapper<UserDeptEntity> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(UserDeptEntity::getUserId, userId);
+            return userDeptMapper.selectList(wrapper).stream()
+                    .map(UserDeptEntity::getDeptId)
+                    .toList();
+        } catch (Exception e) {
+            log.error("查询用户部门ID列表失败：{}", e.getMessage(), e);
+            throw new ServerException("查询用户部门ID列表失败", e);
+        }
+    }
+
+    @Override
+    public Long getPrimaryDeptIdByUserId(Long userId) {
+        try {
+            log.info("查询用户主部门ID，userId：{}", userId);
+            LambdaQueryWrapper<UserDeptEntity> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(UserDeptEntity::getUserId, userId)
+                    .eq(UserDeptEntity::getIsPrimary, 1);
+            UserDeptEntity entity = userDeptMapper.selectOne(wrapper);
+            return entity != null ? entity.getDeptId() : null;
+        } catch (Exception e) {
+            log.error("查询用户主部门ID失败：{}", e.getMessage(), e);
+            throw new ServerException("查询用户主部门ID失败", e);
+        }
+    }
+
+    // ==================== 私有工具方法 ====================
+
+    /**
+     * 保存用户部门关联（覆盖）
+     */
+    private void saveUserDepts(Long userId, List<Long> deptIds, Long primaryDeptId) {
+        // 先清空旧关联
+        LambdaQueryWrapper<UserDeptEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserDeptEntity::getUserId, userId);
+        userDeptMapper.delete(wrapper);
+
+        if (CollectionUtils.isEmpty(deptIds)) {
+            return;
+        }
+
+        // 校验部门是否存在且未删除、已启用
+        List<DeptEntity> depts = deptMapper.selectBatchIds(deptIds);
+        if (depts.size() != deptIds.size()) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "存在无效的部门ID");
+        }
+        for (DeptEntity dept : depts) {
+            if (Objects.equals(dept.getDeleted(), 1)) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "部门 " + dept.getDeptName() + " 已被删除");
+            }
+            if (Objects.equals(dept.getStatus(), 0)) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "部门 " + dept.getDeptName() + " 已被禁用，无法分配");
+            }
+        }
+
+        // 主部门校验
+        if (primaryDeptId != null && !deptIds.contains(primaryDeptId)) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "主部门ID必须在部门ID列表中");
+        }
+
+        List<Long> distinctIds = deptIds.stream().distinct().toList();
+        for (Long deptId : distinctIds) {
+            UserDeptEntity entity = new UserDeptEntity();
+            entity.setUserId(userId);
+            entity.setDeptId(deptId);
+            entity.setIsPrimary(primaryDeptId != null && Objects.equals(primaryDeptId, deptId) ? 1 : 0);
+            entity.setCreateTime(LocalDateTime.now());
+            userDeptMapper.insert(entity);
+        }
+    }
+
+    // ==================== 实体转换方法 ====================
 
     /**
      * 将 DeptEntity 转换为 DeptVo

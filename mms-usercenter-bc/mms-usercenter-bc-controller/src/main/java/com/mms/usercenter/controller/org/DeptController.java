@@ -1,7 +1,10 @@
 package com.mms.usercenter.controller.org;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.mms.common.core.constants.usercenter.PermissionConstants;
 import com.mms.common.core.response.Response;
+import com.mms.common.security.annotations.RequiresPermission;
+import com.mms.usercenter.common.auth.dto.UserAssignDeptDto;
 import com.mms.usercenter.common.org.dto.*;
 import com.mms.usercenter.common.org.vo.DeptVo;
 import com.mms.usercenter.service.org.service.DeptService;
@@ -71,5 +74,20 @@ public class DeptController {
     public Response<Void> switchDeptStatus(@RequestBody @Valid DeptStatusSwitchDto dto) {
         deptService.switchDeptStatus(dto);
         return Response.success();
+    }
+
+    @Operation(summary = "为用户分配部门（覆盖）", description = "为用户分配部门，会覆盖原有部门关联")
+    @RequiresPermission(PermissionConstants.USER_UPDATE)
+    @PostMapping("/assign-depts")
+    public Response<Void> assignDepts(@RequestBody @Valid UserAssignDeptDto dto) {
+        deptService.assignDepts(dto);
+        return Response.success();
+    }
+
+    @Operation(summary = "查询用户已分配的部门ID列表", description = "查询用户当前所属的部门ID列表")
+    @RequiresPermission(PermissionConstants.USER_VIEW)
+    @GetMapping("/{userId}/dept-ids")
+    public Response<java.util.List<Long>> listDeptIds(@PathVariable Long userId) {
+        return Response.success(deptService.listDeptIdsByUserId(userId));
     }
 }

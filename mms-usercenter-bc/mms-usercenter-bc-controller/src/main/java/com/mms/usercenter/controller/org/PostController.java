@@ -1,7 +1,10 @@
 package com.mms.usercenter.controller.org;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.mms.common.core.constants.usercenter.PermissionConstants;
 import com.mms.common.core.response.Response;
+import com.mms.common.security.annotations.RequiresPermission;
+import com.mms.usercenter.common.auth.dto.UserAssignPostDto;
 import com.mms.usercenter.common.org.dto.*;
 import com.mms.usercenter.common.org.vo.PostVo;
 import com.mms.usercenter.service.org.service.PostService;
@@ -71,5 +74,20 @@ public class PostController {
     public Response<Void> switchPostStatus(@RequestBody @Valid PostStatusSwitchDto dto) {
         postService.switchPostStatus(dto);
         return Response.success();
+    }
+
+    @Operation(summary = "为用户分配岗位（覆盖）", description = "为用户分配岗位，会覆盖原有岗位关联")
+    @RequiresPermission(PermissionConstants.USER_UPDATE)
+    @PostMapping("/assign-posts")
+    public Response<Void> assignPosts(@RequestBody @Valid UserAssignPostDto dto) {
+        postService.assignPosts(dto);
+        return Response.success();
+    }
+
+    @Operation(summary = "查询用户已分配的岗位ID列表", description = "查询用户当前所属的岗位ID列表")
+    @RequiresPermission(PermissionConstants.USER_VIEW)
+    @GetMapping("/{userId}/post-ids")
+    public Response<java.util.List<Long>> listPostIds(@PathVariable Long userId) {
+        return Response.success(postService.listPostIdsByUserId(userId));
     }
 }

@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.time.LocalDate;
+import java.util.List;
 
 /**
  * 实现功能【创建用户请求 DTO】
@@ -60,5 +61,17 @@ public class UserCreateDto {
 
     @Schema(description = "备注", example = "测试用户备注")
     private String remark;
+
+    @Schema(description = "所属部门ID列表", example = "[1, 2, 3]")
+    private List<Long> deptIds;
+
+    @Schema(description = "主部门ID，必须包含在部门ID列表中", example = "1")
+    private Long primaryDeptId;
+
+    @Schema(description = "所属岗位ID列表", example = "[1, 2, 3]")
+    private List<Long> postIds;
+
+    @Schema(description = "主岗位ID，必须包含在岗位ID列表中", example = "1")
+    private Long primaryPostId;
 }
 

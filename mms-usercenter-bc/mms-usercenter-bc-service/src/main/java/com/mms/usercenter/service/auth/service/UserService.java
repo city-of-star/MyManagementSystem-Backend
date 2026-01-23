@@ -4,6 +4,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.usercenter.common.auth.dto.*;
 import com.mms.usercenter.common.auth.vo.UserVo;
 
+import java.util.List;
+
 /**
  * 实现功能【用户服务】
  * <p>
@@ -38,22 +40,6 @@ public interface UserService {
      * @return 用户信息
      */
     UserVo getUserByUsername(String username);
-
-    /**
-     * 根据手机号查询用户信息
-     *
-     * @param phone 手机号
-     * @return 用户信息
-     */
-    UserVo getUserByPhone(String phone);
-
-    /**
-     * 根据邮箱查询用户信息
-     *
-     * @param email 邮箱
-     * @return 用户信息
-     */
-    UserVo getUserByEmail(String email);
 
     /**
      * 创建用户
@@ -151,5 +137,5 @@ public interface UserService {
      * @param userId 用户ID
      * @return 角色ID列表
      */
-    java.util.List<Long> listRoleIdsByUserId(Long userId);
+    List<Long> listRoleIdsByUserId(Long userId);
 }

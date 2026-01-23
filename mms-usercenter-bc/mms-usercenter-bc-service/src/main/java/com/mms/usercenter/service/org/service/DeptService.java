@@ -1,8 +1,11 @@
 package com.mms.usercenter.service.org.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.mms.usercenter.common.auth.dto.UserAssignDeptDto;
 import com.mms.usercenter.common.org.dto.*;
 import com.mms.usercenter.common.org.vo.DeptVo;
+
+import java.util.List;
 
 /**
  * 实现功能【部门服务】
@@ -67,4 +70,27 @@ public interface DeptService {
      * @param dto 状态切换参数
      */
     void switchDeptStatus(DeptStatusSwitchDto dto);
+
+    /**
+     * 为用户分配部门（覆盖）
+     *
+     * @param dto 用户分配部门参数
+     */
+    void assignDepts(UserAssignDeptDto dto);
+
+    /**
+     * 查询用户当前所属的部门ID列表
+     *
+     * @param userId 用户ID
+     * @return 部门ID列表
+     */
+    List<Long> listDeptIdsByUserId(Long userId);
+
+    /**
+     * 查询用户主部门ID
+     *
+     * @param userId 用户ID
+     * @return 主部门ID（可能为null）
+     */
+    Long getPrimaryDeptIdByUserId(Long userId);
 }

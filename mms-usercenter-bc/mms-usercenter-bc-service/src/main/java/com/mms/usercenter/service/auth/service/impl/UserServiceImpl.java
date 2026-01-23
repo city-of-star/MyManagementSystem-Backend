@@ -10,11 +10,17 @@ import com.mms.usercenter.common.auth.entity.RoleEntity;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.auth.entity.UserRoleEntity;
 import com.mms.usercenter.common.auth.vo.UserVo;
+import com.mms.usercenter.common.org.entity.UserDeptEntity;
+import com.mms.usercenter.common.org.entity.UserPostEntity;
 import com.mms.usercenter.common.security.constants.SuperAdminInfoConstants;
 import com.mms.usercenter.service.auth.mapper.RoleMapper;
 import com.mms.usercenter.service.auth.mapper.UserMapper;
 import com.mms.usercenter.service.auth.mapper.UserRoleMapper;
 import com.mms.usercenter.service.auth.service.UserService;
+import com.mms.usercenter.service.org.mapper.UserDeptMapper;
+import com.mms.usercenter.service.org.mapper.UserPostMapper;
+import com.mms.usercenter.service.org.service.DeptService;
+import com.mms.usercenter.service.org.service.PostService;
 import com.mms.usercenter.service.security.service.UserAuthorityService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -53,6 +59,18 @@ public class UserServiceImpl implements UserService {
     private UserRoleMapper userRoleMapper;
 
     @Resource
+    private UserDeptMapper userDeptMapper;
+
+    @Resource
+    private UserPostMapper userPostMapper;
+
+    @Resource
+    private DeptService deptService;
+
+    @Resource
+    private PostService postService;
+
+    @Resource
     private UserAuthorityService userAuthorityService;
 
     @Override
@@ -78,7 +96,13 @@ public class UserServiceImpl implements UserService {
             if (user == null) {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
             }
-            return convertToVo(user);
+            UserVo vo = convertToVo(user);
+            // 填充部门、岗位相关信息（主部门/主岗位 + ID 列表）
+            vo.setDeptIds(deptService.listDeptIdsByUserId(userId));
+            vo.setPostIds(postService.listPostIdsByUserId(userId));
+            vo.setPrimaryDeptId(deptService.getPrimaryDeptIdByUserId(userId));
+            vo.setPrimaryPostId(postService.getPrimaryPostIdByUserId(userId));
+            return vo;
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -98,51 +122,17 @@ public class UserServiceImpl implements UserService {
             if (user == null) {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
             }
-            return convertToVo(user);
+            UserVo vo = convertToVo(user);
+            Long userId = user.getId();
+            vo.setDeptIds(deptService.listDeptIdsByUserId(userId));
+            vo.setPostIds(postService.listPostIdsByUserId(userId));
+            vo.setPrimaryDeptId(deptService.getPrimaryDeptIdByUserId(userId));
+            vo.setPrimaryPostId(postService.getPrimaryPostIdByUserId(userId));
+            return vo;
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
             log.error("根据用户名查询用户失败：{}", e.getMessage(), e);
-            throw new ServerException("查询用户失败", e);
-        }
-    }
-
-    @Override
-    public UserVo getUserByPhone(String phone) {
-        try {
-            log.info("根据手机号查询用户，phone：{}", phone);
-            if (!StringUtils.hasText(phone)) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "手机号不能为空");
-            }
-            UserEntity user = userMapper.selectByPhone(phone);
-            if (user == null) {
-                throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-            }
-            return convertToVo(user);
-        } catch (BusinessException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("根据手机号查询用户失败：{}", e.getMessage(), e);
-            throw new ServerException("查询用户失败", e);
-        }
-    }
-
-    @Override
-    public UserVo getUserByEmail(String email) {
-        try {
-            log.info("根据邮箱查询用户，email：{}", email);
-            if (!StringUtils.hasText(email)) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "邮箱不能为空");
-            }
-            UserEntity user = userMapper.selectByEmail(email);
-            if (user == null) {
-                throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-            }
-            return convertToVo(user);
-        } catch (BusinessException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("根据邮箱查询用户失败：{}", e.getMessage(), e);
             throw new ServerException("查询用户失败", e);
         }
     }
@@ -177,8 +167,24 @@ public class UserServiceImpl implements UserService {
             user.setDeleted(0);
             // 保存用户
             userMapper.insert(user);
+            // 处理部门、岗位关联
+            if (!CollectionUtils.isEmpty(dto.getDeptIds())) {
+                UserAssignDeptDto userAssignDeptDto = new UserAssignDeptDto();
+                userAssignDeptDto.setUserId(user.getId());
+                userAssignDeptDto.setDeptIds(dto.getDeptIds());
+                userAssignDeptDto.setPrimaryDeptId(dto.getPrimaryDeptId());
+                deptService.assignDepts(userAssignDeptDto);
+            }
+            if (!CollectionUtils.isEmpty(dto.getPostIds())) {
+                UserAssignPostDto userAssignPostDto = new UserAssignPostDto();
+                userAssignPostDto.setUserId(user.getId());
+                userAssignPostDto.setPostIds(dto.getPostIds());
+                userAssignPostDto.setPrimaryPostId(dto.getPrimaryPostId());
+                postService.assignPosts(userAssignPostDto);
+            }
+            UserVo vo = convertToVo(user);
             log.info("创建用户成功，userId：{}", user.getId());
-            return convertToVo(user);
+            return vo;
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -242,8 +248,40 @@ public class UserServiceImpl implements UserService {
                 user.setRemark(dto.getRemark());
             }
             userMapper.updateById(user);
+            // 如果前端传了部门/岗位列表，则覆盖更新关联关系
+            if (dto.getDeptIds() != null) {
+                UserAssignDeptDto userAssignDeptDto = new UserAssignDeptDto();
+                if (CollectionUtils.isEmpty(dto.getDeptIds())) {
+                    // 清空部门关联
+                    userAssignDeptDto.setUserId(user.getId());
+                    userAssignDeptDto.setDeptIds(new ArrayList<>());
+                    userAssignDeptDto.setPrimaryDeptId(null);
+                    deptService.assignDepts(userAssignDeptDto);
+                } else {
+                    userAssignDeptDto.setUserId(user.getId());
+                    userAssignDeptDto.setDeptIds(dto.getDeptIds());
+                    userAssignDeptDto.setPrimaryDeptId(dto.getPrimaryDeptId());
+                    deptService.assignDepts(userAssignDeptDto);
+                }
+            }
+            if (dto.getPostIds() != null) {
+                UserAssignPostDto userAssignPostDto = new UserAssignPostDto();
+                if (CollectionUtils.isEmpty(dto.getPostIds())) {
+                    // 清空岗位关联
+                    userAssignPostDto.setUserId(user.getId());
+                    userAssignPostDto.setPostIds(new ArrayList<>());
+                    userAssignPostDto.setPrimaryPostId(null);
+                    postService.assignPosts(userAssignPostDto);
+                } else {
+                    userAssignPostDto.setUserId(user.getId());
+                    userAssignPostDto.setPostIds(dto.getPostIds());
+                    userAssignPostDto.setPrimaryPostId(dto.getPrimaryPostId());
+                    postService.assignPosts(userAssignPostDto);
+                }
+            }
+            UserVo vo = convertToVo(user);
             log.info("更新用户信息成功，userId：{}", user.getId());
-            return convertToVo(user);
+            return vo;
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -267,6 +305,15 @@ public class UserServiceImpl implements UserService {
             if (user == null) {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
             }
+            // 删除部门、岗位关联
+            LambdaQueryWrapper<UserDeptEntity> deptWrapper = new LambdaQueryWrapper<>();
+            deptWrapper.eq(UserDeptEntity::getUserId, userId);
+            userDeptMapper.delete(deptWrapper);
+
+            LambdaQueryWrapper<UserPostEntity> postWrapper = new LambdaQueryWrapper<>();
+            postWrapper.eq(UserPostEntity::getUserId, userId);
+            userPostMapper.delete(postWrapper);
+
             // 逻辑删除
             userMapper.deleteById(userId);
             log.info("删除用户成功，userId：{}", userId);
@@ -579,4 +626,5 @@ public class UserServiceImpl implements UserService {
         BeanUtils.copyProperties(entity, vo);
         return vo;
     }
+
 }

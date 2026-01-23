@@ -5,17 +5,27 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
+import com.mms.usercenter.common.auth.dto.UserAssignPostDto;
+import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.org.dto.*;
 import com.mms.usercenter.common.org.entity.PostEntity;
+import com.mms.usercenter.common.org.entity.UserPostEntity;
 import com.mms.usercenter.common.org.vo.PostVo;
+import com.mms.usercenter.service.auth.mapper.UserMapper;
 import com.mms.usercenter.service.org.mapper.PostMapper;
+import com.mms.usercenter.service.org.mapper.UserPostMapper;
 import com.mms.usercenter.service.org.service.PostService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * 实现功能【岗位服务实现类】
@@ -31,7 +41,13 @@ import org.springframework.util.StringUtils;
 public class PostServiceImpl implements PostService {
 
     @Resource
+    private UserMapper userMapper;
+
+    @Resource
     private PostMapper postMapper;
+
+    @Resource
+    private UserPostMapper userPostMapper;
 
     @Override
     public Page<PostVo> getPostPage(PostPageQueryDto dto) {
@@ -213,6 +229,104 @@ public class PostServiceImpl implements PostService {
             throw new ServerException("切换岗位状态失败", e);
         }
     }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void assignPosts(UserAssignPostDto dto) {
+        try {
+            log.info("为用户分配岗位，userId：{}，postIds：{}", dto.getUserId(), dto.getPostIds());
+            if (dto.getUserId() == null) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "用户ID不能为空");
+            }
+            UserEntity user = userMapper.selectById(dto.getUserId());
+            if (user == null) {
+                throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+            }
+            saveUserPosts(dto.getUserId(), dto.getPostIds(), dto.getPrimaryPostId());
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("分配用户岗位失败：{}", e.getMessage(), e);
+            throw new ServerException("分配用户岗位失败", e);
+        }
+    }
+
+    @Override
+    public List<Long> listPostIdsByUserId(Long userId) {
+        try {
+            log.info("查询用户岗位ID列表，userId：{}", userId);
+            LambdaQueryWrapper<UserPostEntity> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(UserPostEntity::getUserId, userId);
+            return userPostMapper.selectList(wrapper).stream()
+                    .map(UserPostEntity::getPostId)
+                    .toList();
+        } catch (Exception e) {
+            log.error("查询用户岗位ID列表失败：{}", e.getMessage(), e);
+            throw new ServerException("查询用户岗位ID列表失败", e);
+        }
+    }
+
+    @Override
+    public Long getPrimaryPostIdByUserId(Long userId) {
+        try {
+            log.info("查询用户主岗位ID，userId：{}", userId);
+            LambdaQueryWrapper<UserPostEntity> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(UserPostEntity::getUserId, userId)
+                    .eq(UserPostEntity::getIsPrimary, 1);
+            UserPostEntity entity = userPostMapper.selectOne(wrapper);
+            return entity != null ? entity.getPostId() : null;
+        } catch (Exception e) {
+            log.error("查询用户主岗位ID失败：{}", e.getMessage(), e);
+            throw new ServerException("查询用户主岗位ID失败", e);
+        }
+    }
+
+    // ==================== 私有工具方法 ====================
+
+    /**
+     * 保存用户岗位关联（覆盖）
+     */
+    private void saveUserPosts(Long userId, List<Long> postIds, Long primaryPostId) {
+        // 先清空旧关联
+        LambdaQueryWrapper<UserPostEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(UserPostEntity::getUserId, userId);
+        userPostMapper.delete(wrapper);
+
+        if (CollectionUtils.isEmpty(postIds)) {
+            return;
+        }
+
+        // 校验岗位是否存在且未删除、已启用
+        List<PostEntity> posts = postMapper.selectBatchIds(postIds);
+        if (posts.size() != postIds.size()) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "存在无效的岗位ID");
+        }
+        for (PostEntity post : posts) {
+            if (Objects.equals(post.getDeleted(), 1)) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "岗位 " + post.getPostName() + " 已被删除");
+            }
+            if (Objects.equals(post.getStatus(), 0)) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "岗位 " + post.getPostName() + " 已被禁用，无法分配");
+            }
+        }
+
+        // 主岗位校验
+        if (primaryPostId != null && !postIds.contains(primaryPostId)) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "主岗位ID必须在岗位ID列表中");
+        }
+
+        List<Long> distinctIds = postIds.stream().distinct().toList();
+        for (Long postId : distinctIds) {
+            UserPostEntity entity = new UserPostEntity();
+            entity.setUserId(userId);
+            entity.setPostId(postId);
+            entity.setIsPrimary(primaryPostId != null && Objects.equals(primaryPostId, postId) ? 1 : 0);
+            entity.setCreateTime(LocalDateTime.now());
+            userPostMapper.insert(entity);
+        }
+    }
+
+    // ==================== 实体转换方法 ====================
 
     /**
      * 将 PostEntity 转换为 PostVo

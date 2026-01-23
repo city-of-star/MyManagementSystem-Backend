@@ -53,5 +53,11 @@ public class UserPageQueryDto {
 
     @Schema(description = "创建时间结束", example = "2025-12-31 23:59:59")
     private LocalDateTime createTimeEnd;
+
+    @Schema(description = "所属部门ID（根据部门筛选）", example = "1")
+    private Long deptId;
+
+    @Schema(description = "所属岗位ID（根据岗位筛选）", example = "1")
+    private Long postId;
 }
 
