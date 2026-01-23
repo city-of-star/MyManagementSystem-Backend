@@ -2,5 +2,40 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.mms.usercenter.service.org.mapper.PostMapper">
 
+    <!-- 岗位VO字段列表 -->
+    <sql id="PostVoColumns">
+        id, post_code, post_name, post_level, sort_order, status, remark,
+        create_by, create_time, update_by, update_time
+    </sql>
+
+    <!-- 分页查询岗位列表 -->
+    <select id="getPostPage" resultType="com.mms.usercenter.common.org.vo.PostVo">
+        SELECT
+            <include refid="PostVoColumns"/>
+        FROM post
+        <where>
+            deleted = 0
+            <if test="dto.postName != null and dto.postName != ''">
+                AND post_name LIKE CONCAT('%', #{dto.postName}, '%')
+            </if>
+            <if test="dto.postCode != null and dto.postCode != ''">
+                AND post_code LIKE CONCAT('%', #{dto.postCode}, '%')
+            </if>
+            <if test="dto.postLevel != null and dto.postLevel != ''">
+                AND post_level = #{dto.postLevel}
+            </if>
+            <if test="dto.status != null">
+                AND status = #{dto.status}
+            </if>
+            <if test="dto.createTimeStart != null">
+                AND create_time >= #{dto.createTimeStart}
+            </if>
+            <if test="dto.createTimeEnd != null">
+                AND create_time &lt;= #{dto.createTimeEnd}
+            </if>
+        </where>
+        ORDER BY sort_order ASC, create_time DESC
+    </select>
+
 </mapper>
 

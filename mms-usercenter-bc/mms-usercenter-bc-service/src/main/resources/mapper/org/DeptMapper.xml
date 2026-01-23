@@ -2,5 +2,40 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.mms.usercenter.service.org.mapper.DeptMapper">
 
+    <!-- 部门VO字段列表 -->
+    <sql id="DeptVoColumns">
+        id, parent_id, dept_name, dept_code, leader, phone, email, sort_order, status, remark,
+        create_by, create_time, update_by, update_time
+    </sql>
+
+    <!-- 分页查询部门列表 -->
+    <select id="getDeptPage" resultType="com.mms.usercenter.common.org.vo.DeptVo">
+        SELECT
+            <include refid="DeptVoColumns"/>
+        FROM dept
+        <where>
+            deleted = 0
+            <if test="dto.deptName != null and dto.deptName != ''">
+                AND dept_name LIKE CONCAT('%', #{dto.deptName}, '%')
+            </if>
+            <if test="dto.deptCode != null and dto.deptCode != ''">
+                AND dept_code LIKE CONCAT('%', #{dto.deptCode}, '%')
+            </if>
+            <if test="dto.parentId != null">
+                AND parent_id = #{dto.parentId}
+            </if>
+            <if test="dto.status != null">
+                AND status = #{dto.status}
+            </if>
+            <if test="dto.createTimeStart != null">
+                AND create_time >= #{dto.createTimeStart}
+            </if>
+            <if test="dto.createTimeEnd != null">
+                AND create_time &lt;= #{dto.createTimeEnd}
+            </if>
+        </where>
+        ORDER BY sort_order ASC, create_time DESC
+    </select>
+
 </mapper>
 
