@@ -51,18 +51,18 @@ public class UserController {
         return Response.success(userService.getUserByUsername(username));
     }
 
-    @Operation(summary = "根据邮箱查询用户", description = "根据邮箱查询用户信息")
-    @RequiresPermission(PermissionConstants.USER_VIEW)
-    @GetMapping("/email/{email}")
-    public Response<UserVo> getUserByEmail(@PathVariable String email) {
-        return Response.success(userService.getUserByEmail(email));
-    }
-
     @Operation(summary = "根据手机号查询用户", description = "根据手机号查询用户信息")
     @RequiresPermission(PermissionConstants.USER_VIEW)
     @GetMapping("/phone/{phone}")
     public Response<UserVo> getUserByPhone(@PathVariable String phone) {
         return Response.success(userService.getUserByPhone(phone));
+    }
+
+    @Operation(summary = "根据邮箱查询用户", description = "根据邮箱查询用户信息")
+    @RequiresPermission(PermissionConstants.USER_VIEW)
+    @GetMapping("/email/{email}")
+    public Response<UserVo> getUserByEmail(@PathVariable String email) {
+        return Response.success(userService.getUserByEmail(email));
     }
 
     @Operation(summary = "创建用户", description = "创建新用户")

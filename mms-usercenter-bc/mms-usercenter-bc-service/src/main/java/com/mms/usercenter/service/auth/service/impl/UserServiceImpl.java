@@ -10,17 +10,16 @@ import com.mms.usercenter.common.auth.entity.RoleEntity;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.auth.entity.UserRoleEntity;
 import com.mms.usercenter.common.auth.vo.UserVo;
-import com.mms.common.core.constants.usercenter.UserAuthorityConstants;
 import com.mms.usercenter.common.security.constants.SuperAdminInfoConstants;
 import com.mms.usercenter.service.auth.mapper.RoleMapper;
 import com.mms.usercenter.service.auth.mapper.UserMapper;
 import com.mms.usercenter.service.auth.mapper.UserRoleMapper;
 import com.mms.usercenter.service.auth.service.UserService;
+import com.mms.usercenter.service.security.service.UserAuthorityService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.BeanUtils;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -48,13 +47,13 @@ public class UserServiceImpl implements UserService {
     private UserMapper userMapper;
 
     @Resource
-    private UserRoleMapper userRoleMapper;
-
-    @Resource
     private RoleMapper roleMapper;
 
     @Resource
-    private RedisTemplate<String, Object> redisTemplate;
+    private UserRoleMapper userRoleMapper;
+
+    @Resource
+    private UserAuthorityService userAuthorityService;
 
     @Override
     public Page<UserVo> getUserPage(UserPageQueryDto dto) {
@@ -109,26 +108,6 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserVo getUserByEmail(String email) {
-        try {
-            log.info("根据邮箱查询用户，email：{}", email);
-            if (!StringUtils.hasText(email)) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "邮箱不能为空");
-            }
-            UserEntity user = userMapper.selectByEmail(email);
-            if (user == null) {
-                throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-            }
-            return convertToVo(user);
-        } catch (BusinessException e) {
-            throw e;
-        } catch (Exception e) {
-            log.error("根据邮箱查询用户失败：{}", e.getMessage(), e);
-            throw new ServerException("查询用户失败", e);
-        }
-    }
-
-    @Override
     public UserVo getUserByPhone(String phone) {
         try {
             log.info("根据手机号查询用户，phone：{}", phone);
@@ -144,6 +123,26 @@ public class UserServiceImpl implements UserService {
             throw e;
         } catch (Exception e) {
             log.error("根据手机号查询用户失败：{}", e.getMessage(), e);
+            throw new ServerException("查询用户失败", e);
+        }
+    }
+
+    @Override
+    public UserVo getUserByEmail(String email) {
+        try {
+            log.info("根据邮箱查询用户，email：{}", email);
+            if (!StringUtils.hasText(email)) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "邮箱不能为空");
+            }
+            UserEntity user = userMapper.selectByEmail(email);
+            if (user == null) {
+                throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+            }
+            return convertToVo(user);
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("根据邮箱查询用户失败：{}", e.getMessage(), e);
             throw new ServerException("查询用户失败", e);
         }
     }
@@ -435,7 +434,7 @@ public class UserServiceImpl implements UserService {
             if (CollectionUtils.isEmpty(dto.getRoleIds())) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "角色ID列表不能为空");
             }
-            // 验证角色ID是否存在且未删除
+            // 检查角色ID是否存在且未删除
             List<RoleEntity> roles = roleMapper.selectBatchIds(dto.getRoleIds());
             if (roles.size() != dto.getRoleIds().size()) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "存在无效的角色ID");
@@ -449,10 +448,12 @@ public class UserServiceImpl implements UserService {
                     throw new BusinessException(ErrorCode.PARAM_INVALID, "角色 " + role.getRoleCode() + " 已被禁用，无法分配给角色");
                 }
             }
+            // 检查
             if (Objects.equals(dto.getUserId(), SuperAdminInfoConstants.SUPER_ADMIN_USER_ID) 
                     && !dto.getRoleIds().contains(SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID)) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员用户必须有超级管理员角色，请重新分配");
             }
+            // 检查
             if (!Objects.equals(dto.getUserId(), SuperAdminInfoConstants.SUPER_ADMIN_USER_ID)
                     && dto.getRoleIds().contains(SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID)) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员角色只能分配给超级管理员用户");
@@ -541,7 +542,7 @@ public class UserServiceImpl implements UserService {
         userRoleMapper.delete(wrapper);
         if (CollectionUtils.isEmpty(roleIds)) {
             // 即使角色列表为空，也需要清除用户的权限缓存
-            clearUserAuthorityCacheByUserId(userId);
+            userAuthorityService.clearUserAuthorityCacheByUserId(userId);
             return;
         }
         List<UserRoleEntity> entities = new ArrayList<>();
@@ -554,39 +555,12 @@ public class UserServiceImpl implements UserService {
             entity.setCreateTime(LocalDateTime.now());
             entities.add(entity);
         }
-        // 批量插入（如果数据量较大，可以考虑使用 MyBatis-Plus 批量插入插件）
+        // 批量插入
         for (UserRoleEntity entity : entities) {
             userRoleMapper.insert(entity);
         }
         // 清除该用户的权限缓存，确保角色变更立即生效
-        clearUserAuthorityCacheByUserId(userId);
-    }
-
-    /**
-     * 清除指定用户的权限缓存
-     * 当用户角色关联变更时，需要清除该用户的缓存，确保下次请求时重新从数据库加载最新权限
-     *
-     * @param userId 用户ID
-     */
-    private void clearUserAuthorityCacheByUserId(Long userId) {
-        try {
-            UserEntity user = userMapper.selectById(userId);
-            if (user == null) {
-                log.debug("用户 {} 不存在，无需清除缓存", userId);
-                return;
-            }
-            String username = user.getUsername();
-            if (StringUtils.hasText(username)) {
-                String roleCacheKey = UserAuthorityConstants.USER_ROLE_PREFIX + username;
-                String permissionCacheKey = UserAuthorityConstants.USER_PERMISSION_PREFIX + username;
-                redisTemplate.delete(roleCacheKey);
-                redisTemplate.delete(permissionCacheKey);
-                log.info("已清除用户 {} 的权限缓存", username);
-            }
-        } catch (Exception e) {
-            // 缓存清除失败不应该影响主流程，只记录日志
-            log.error("清除用户 {} 的权限缓存失败：{}", userId, e.getMessage(), e);
-        }
+        userAuthorityService.clearUserAuthorityCacheByUserId(userId);
     }
 
     // ==================== 实体转换方法 ====================

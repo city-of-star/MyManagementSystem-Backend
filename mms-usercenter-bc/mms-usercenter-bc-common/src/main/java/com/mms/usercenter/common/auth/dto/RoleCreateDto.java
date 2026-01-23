@@ -35,8 +35,5 @@ public class RoleCreateDto {
 
     @Schema(description = "备注", example = "系统内置角色")
     private String remark;
-
-    @Schema(description = "关联的权限ID列表", example = "[1,2,3]")
-    private List<Long> permissionIds;
 }
 

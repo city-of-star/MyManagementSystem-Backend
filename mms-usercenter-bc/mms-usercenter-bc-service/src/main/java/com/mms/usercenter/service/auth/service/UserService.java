@@ -40,20 +40,20 @@ public interface UserService {
     UserVo getUserByUsername(String username);
 
     /**
-     * 根据邮箱查询用户信息
-     *
-     * @param email 邮箱
-     * @return 用户信息
-     */
-    UserVo getUserByEmail(String email);
-
-    /**
      * 根据手机号查询用户信息
      *
      * @param phone 手机号
      * @return 用户信息
      */
     UserVo getUserByPhone(String phone);
+
+    /**
+     * 根据邮箱查询用户信息
+     *
+     * @param email 邮箱
+     * @return 用户信息
+     */
+    UserVo getUserByEmail(String email);
 
     /**
      * 创建用户

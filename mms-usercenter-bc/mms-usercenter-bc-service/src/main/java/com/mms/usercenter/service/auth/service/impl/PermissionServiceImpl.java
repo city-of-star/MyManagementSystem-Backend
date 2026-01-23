@@ -5,7 +5,6 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
-import com.mms.common.core.constants.usercenter.UserAuthorityConstants;
 import com.mms.usercenter.common.auth.dto.PermissionBatchDeleteDto;
 import com.mms.usercenter.common.auth.dto.PermissionCreateDto;
 import com.mms.usercenter.common.auth.dto.PermissionPageQueryDto;
@@ -16,21 +15,17 @@ import com.mms.usercenter.common.auth.dto.PermissionUpdateDto;
 import com.mms.usercenter.common.auth.entity.PermissionEntity;
 import com.mms.usercenter.common.auth.entity.RolePermissionEntity;
 import com.mms.usercenter.common.auth.entity.RoleEntity;
-import com.mms.usercenter.common.auth.entity.UserEntity;
-import com.mms.usercenter.common.auth.entity.UserRoleEntity;
 import com.mms.usercenter.common.auth.vo.PermissionVo;
 import com.mms.usercenter.common.auth.vo.RoleVo;
 import com.mms.usercenter.common.security.constants.SuperAdminInfoConstants;
 import com.mms.usercenter.service.auth.mapper.PermissionMapper;
 import com.mms.usercenter.service.auth.mapper.RoleMapper;
 import com.mms.usercenter.service.auth.mapper.RolePermissionMapper;
-import com.mms.usercenter.service.auth.mapper.UserMapper;
-import com.mms.usercenter.service.auth.mapper.UserRoleMapper;
 import com.mms.usercenter.service.auth.service.PermissionService;
+import com.mms.usercenter.service.security.service.UserAuthorityService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import com.mms.usercenter.service.security.utils.SecurityUtils;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -60,22 +55,16 @@ import org.springframework.beans.BeanUtils;
 public class PermissionServiceImpl implements PermissionService {
 
     @Resource
+    private RoleMapper roleMapper;
+
+    @Resource
     private PermissionMapper permissionMapper;
 
     @Resource
     private RolePermissionMapper rolePermissionMapper;
 
     @Resource
-    private RoleMapper roleMapper;
-
-    @Resource
-    private UserRoleMapper userRoleMapper;
-
-    @Resource
-    private UserMapper userMapper;
-
-    @Resource
-    private RedisTemplate<String, Object> redisTemplate;
+    private UserAuthorityService userAuthorityService;
 
     @Override
     public Page<PermissionVo> getPermissionPage(PermissionPageQueryDto dto) {
@@ -432,7 +421,7 @@ public class PermissionServiceImpl implements PermissionService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "角色未关联该权限");
             }
             // 清除拥有该角色的用户缓存，确保权限变更生效
-            clearUserAuthorityCacheByRoleId(dto.getRoleId());
+            userAuthorityService.clearUserAuthorityCacheByRoleId(dto.getRoleId());
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -495,42 +484,6 @@ public class PermissionServiceImpl implements PermissionService {
         }
         PermissionEntity entity = permissionMapper.selectById(id);
         return entity != null && !Objects.equals(entity.getDeleted(), 1);
-    }
-
-    /**
-     * 清除拥有指定角色的用户权限缓存，确保角色权限调整即时生效
-     */
-    private void clearUserAuthorityCacheByRoleId(Long roleId) {
-        try {
-            LambdaQueryWrapper<UserRoleEntity> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(UserRoleEntity::getRoleId, roleId);
-            List<UserRoleEntity> userRoleList = userRoleMapper.selectList(wrapper);
-            if (CollectionUtils.isEmpty(userRoleList)) {
-                return;
-            }
-            List<Long> userIds = userRoleList.stream()
-                    .map(UserRoleEntity::getUserId)
-                    .distinct()
-                    .toList();
-            List<UserEntity> users = userMapper.selectBatchIds(userIds);
-            for (UserEntity user : users) {
-                if (user == null || Objects.equals(user.getDeleted(), 1)) {
-                    continue;
-                }
-                String username = user.getUsername();
-                if (StringUtils.hasText(username)) {
-                    String roleCacheKey = UserAuthorityConstants.USER_ROLE_PREFIX + username;
-                    String permissionCacheKey = UserAuthorityConstants.USER_PERMISSION_PREFIX + username;
-                    redisTemplate.delete(roleCacheKey);
-                    redisTemplate.delete(permissionCacheKey);
-                    log.debug("已清除用户 {} 的权限缓存（角色：{}）", username, roleId);
-                }
-            }
-            log.info("已清除角色 {} 关联的 {} 个用户的权限缓存", roleId, users.size());
-        } catch (Exception e) {
-            // 缓存清除失败不应该影响主流程，只记录日志
-            log.error("清除角色 {} 关联用户权限缓存失败：{}", roleId, e.getMessage(), e);
-        }
     }
 
     // ==================== 实体转换方法 ====================

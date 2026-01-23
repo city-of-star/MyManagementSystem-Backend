@@ -19,7 +19,6 @@ import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.auth.entity.UserRoleEntity;
 import com.mms.usercenter.common.auth.vo.RoleVo;
 import com.mms.usercenter.common.auth.vo.UserVo;
-import com.mms.common.core.constants.usercenter.UserAuthorityConstants;
 import com.mms.usercenter.common.security.constants.SuperAdminInfoConstants;
 import com.mms.usercenter.service.auth.mapper.PermissionMapper;
 import com.mms.usercenter.service.auth.mapper.RoleMapper;
@@ -27,10 +26,10 @@ import com.mms.usercenter.service.auth.mapper.RolePermissionMapper;
 import com.mms.usercenter.service.auth.mapper.UserMapper;
 import com.mms.usercenter.service.auth.mapper.UserRoleMapper;
 import com.mms.usercenter.service.auth.service.RoleService;
+import com.mms.usercenter.service.security.service.UserAuthorityService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -56,22 +55,22 @@ import java.util.Objects;
 public class RoleServiceImpl implements RoleService {
 
     @Resource
+    private UserMapper userMapper;
+
+    @Resource
     private RoleMapper roleMapper;
 
     @Resource
     private UserRoleMapper userRoleMapper;
 
     @Resource
-    private RolePermissionMapper rolePermissionMapper;
-
-    @Resource
     private PermissionMapper permissionMapper;
 
     @Resource
-    private UserMapper userMapper;
+    private RolePermissionMapper rolePermissionMapper;
 
     @Resource
-    private RedisTemplate<String, Object> redisTemplate;
+    private UserAuthorityService userAuthorityService;
 
     @Override
     public Page<RoleVo> getRolePage(RolePageQueryDto dto) {
@@ -110,9 +109,11 @@ public class RoleServiceImpl implements RoleService {
     public RoleVo createRole(RoleCreateDto dto) {
         try {
             log.info("创建角色，参数：{}", dto);
+            // 检查角色编码是否已存在
             if (existsByRoleCode(dto.getRoleCode())) {
                 throw new BusinessException(ErrorCode.ROLE_CODE_EXISTS);
             }
+            // 检查角色名称是否已存在
             if (existsByRoleName(dto.getRoleName())) {
                 throw new BusinessException(ErrorCode.ROLE_NAME_EXISTS);
             }
@@ -126,10 +127,6 @@ public class RoleServiceImpl implements RoleService {
             }
             role.setDeleted(0);
             roleMapper.insert(role);
-            // 处理权限绑定
-            if (!CollectionUtils.isEmpty(dto.getPermissionIds())) {
-                saveRolePermissions(role.getId(), dto.getPermissionIds());
-            }
             log.info("创建角色成功，roleId：{}", role.getId());
             return convertToVo(role);
         } catch (BusinessException e) {
@@ -150,7 +147,14 @@ public class RoleServiceImpl implements RoleService {
             if (role == null || Objects.equals(role.getDeleted(), 1)) {
                 throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
             }
+            // 检查角色名称是否已存在
+            if (existsByRoleName(dto.getRoleName())) {
+                throw new BusinessException(ErrorCode.ROLE_NAME_EXISTS);
+            }
             // 更新字段
+            if (StringUtils.hasText(dto.getRoleName())) {
+                role.setRoleName(dto.getRoleName());
+            }
             if (StringUtils.hasText(dto.getRoleType())) {
                 role.setRoleType(dto.getRoleType());
             }
@@ -189,9 +193,8 @@ public class RoleServiceImpl implements RoleService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员角色不可删除");
             }
             // 检查是否有用户关联
-            LambdaQueryWrapper<com.mms.usercenter.common.auth.entity.UserRoleEntity> userRoleWrapper =
-                    new LambdaQueryWrapper<com.mms.usercenter.common.auth.entity.UserRoleEntity>()
-                            .eq(com.mms.usercenter.common.auth.entity.UserRoleEntity::getRoleId, roleId);
+            LambdaQueryWrapper<UserRoleEntity> userRoleWrapper = new LambdaQueryWrapper<UserRoleEntity>()
+                            .eq(UserRoleEntity::getRoleId, roleId);
             long count = userRoleMapper.selectCount(userRoleWrapper);
             if (count > 0) {
                 throw new BusinessException(ErrorCode.ROLE_IN_USE, "角色存在关联用户，无法删除");
@@ -239,7 +242,7 @@ public class RoleServiceImpl implements RoleService {
             if (role == null || Objects.equals(role.getDeleted(), 1)) {
                 throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
             }
-            // 超级管理员角色不能被禁用
+            // 检查
             if (Objects.equals(dto.getRoleId(), SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID) && dto.getStatus() == 0) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员角色不可禁用");
             }
@@ -250,7 +253,7 @@ public class RoleServiceImpl implements RoleService {
             roleMapper.updateById(role);
             // 角色状态变更时，清除拥有该角色的所有用户的权限缓存
             // 因为禁用角色后，用户不应该再拥有该角色的权限
-            clearUserAuthorityCacheByRoleId(dto.getRoleId());
+            userAuthorityService.clearUserAuthorityCacheByRoleId(dto.getRoleId());
             log.info("切换角色状态成功，roleId：{}，status：{}", dto.getRoleId(), dto.getStatus());
         } catch (BusinessException e) {
             throw e;
@@ -275,7 +278,7 @@ public class RoleServiceImpl implements RoleService {
             if (CollectionUtils.isEmpty(dto.getPermissionIds())) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "权限ID列表不能为空");
             }
-            // 验证权限ID是否存在且未删除
+            // 检查权限ID是否存在且未删除
             List<PermissionEntity> permissions = permissionMapper.selectBatchIds(dto.getPermissionIds());
             if (permissions.size() != dto.getPermissionIds().size()) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "存在无效的权限ID");
@@ -391,7 +394,7 @@ public class RoleServiceImpl implements RoleService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "用户未关联该角色");
             }
             // 清除该用户的权限缓存，确保权限变更立即生效
-            clearUserAuthorityCacheByUserId(dto.getUserId());
+            userAuthorityService.clearUserAuthorityCacheByUserId(dto.getUserId());
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -438,7 +441,7 @@ public class RoleServiceImpl implements RoleService {
         rolePermissionMapper.delete(wrapper);
         if (CollectionUtils.isEmpty(permissionIds)) {
             // 即使权限列表为空，也需要清除相关用户的缓存
-            clearUserAuthorityCacheByRoleId(roleId);
+            userAuthorityService.clearUserAuthorityCacheByRoleId(roleId);
             return;
         }
         List<RolePermissionEntity> entities = new ArrayList<>();
@@ -456,86 +459,7 @@ public class RoleServiceImpl implements RoleService {
             rolePermissionMapper.insert(entity);
         }
         // 清除拥有该角色的所有用户的权限缓存，确保权限变更立即生效
-        clearUserAuthorityCacheByRoleId(roleId);
-    }
-
-    /**
-     * 清除拥有指定角色的所有用户的权限缓存
-     * 当角色权限变更时，需要清除相关用户的缓存，确保下次请求时重新从数据库加载最新权限
-     *
-     * @param roleId 角色ID
-     */
-    private void clearUserAuthorityCacheByRoleId(Long roleId) {
-        try {
-            // 查询拥有该角色的所有用户
-            LambdaQueryWrapper<UserRoleEntity> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(UserRoleEntity::getRoleId, roleId);
-            List<UserRoleEntity> userRoleList = userRoleMapper.selectList(wrapper);
-            
-            if (CollectionUtils.isEmpty(userRoleList)) {
-                log.debug("角色 {} 没有关联用户，无需清除缓存", roleId);
-                return;
-            }
-
-            // 获取所有关联的用户ID
-            List<Long> userIds = userRoleList.stream()
-                    .map(UserRoleEntity::getUserId)
-                    .distinct()
-                    .toList();
-
-            // 查询用户信息，获取用户名
-            List<UserEntity> users = userMapper.selectBatchIds(userIds);
-            if (CollectionUtils.isEmpty(users)) {
-                log.warn("角色 {} 关联的用户不存在，userIdList={}", roleId, userIds);
-                return;
-            }
-
-            // 清除每个用户的权限缓存
-            for (UserEntity user : users) {
-                if (user.getDeleted() != null && user.getDeleted() == 1) {
-                    continue; // 跳过已删除的用户
-                }
-                String username = user.getUsername();
-                if (StringUtils.hasText(username)) {
-                    String roleCacheKey = UserAuthorityConstants.USER_ROLE_PREFIX + username;
-                    String permissionCacheKey = UserAuthorityConstants.USER_PERMISSION_PREFIX + username;
-                    redisTemplate.delete(roleCacheKey);
-                    redisTemplate.delete(permissionCacheKey);
-                    log.debug("已清除用户 {} 的权限缓存（角色：{}）", username, roleId);
-                }
-            }
-            log.info("已清除角色 {} 关联的 {} 个用户的权限缓存", roleId, users.size());
-        } catch (Exception e) {
-            // 缓存清除失败不应该影响主流程，只记录日志
-            log.error("清除角色 {} 关联用户的权限缓存失败：{}", roleId, e.getMessage(), e);
-        }
-    }
-
-    /**
-     * 清除指定用户的权限缓存
-     * 当用户角色关联变更时，需要清除该用户的缓存，确保下次请求时重新从数据库加载最新权限
-     *
-     * @param userId 用户ID
-     */
-    private void clearUserAuthorityCacheByUserId(Long userId) {
-        try {
-            UserEntity user = userMapper.selectById(userId);
-            if (user == null || (user.getDeleted() != null && user.getDeleted() == 1)) {
-                log.debug("用户 {} 不存在或已删除，无需清除缓存", userId);
-                return;
-            }
-            String username = user.getUsername();
-            if (StringUtils.hasText(username)) {
-                String roleCacheKey = UserAuthorityConstants.USER_ROLE_PREFIX + username;
-                String permissionCacheKey = UserAuthorityConstants.USER_PERMISSION_PREFIX + username;
-                redisTemplate.delete(roleCacheKey);
-                redisTemplate.delete(permissionCacheKey);
-                log.info("已清除用户 {} 的权限缓存", username);
-            }
-        } catch (Exception e) {
-            // 缓存清除失败不应该影响主流程，只记录日志
-            log.error("清除用户 {} 的权限缓存失败：{}", userId, e.getMessage(), e);
-        }
+        userAuthorityService.clearUserAuthorityCacheByRoleId(roleId);
     }
 
     // ==================== 实体转换方法 ====================
