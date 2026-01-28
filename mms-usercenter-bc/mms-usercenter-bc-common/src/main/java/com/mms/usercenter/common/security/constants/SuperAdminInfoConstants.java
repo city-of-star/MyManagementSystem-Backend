@@ -37,12 +37,12 @@ public class SuperAdminInfoConstants {
     /**
      * 系统核心权限ID集合
      * <p>
-     * 系统初始化时创建的权限ID集合（1-29）
+     * 系统初始化时创建的权限ID集合（1-39）
      * 同时也是超级管理员角色必须拥有的权限
      * 这些权限不能被修改、删除、禁用
      * </p>
      */
-    public static final Set<Long> SYSTEM_CORE_PERMISSION_IDS = IntStream.rangeClosed(1, 29)
+    public static final Set<Long> SYSTEM_CORE_PERMISSION_IDS = IntStream.rangeClosed(1, 39)
             .mapToObj(Long::valueOf)
             .collect(Collectors.toUnmodifiableSet());
 

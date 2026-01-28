@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 实现功能【部门信息响应 VO】
@@ -59,4 +61,7 @@ public class DeptVo {
 
     @Schema(description = "更新时间", example = "2026-01-23 10:00:00")
     private LocalDateTime updateTime;
+
+    @Schema(description = "子部门列表")
+    private List<DeptVo> children = new ArrayList<>();
 }

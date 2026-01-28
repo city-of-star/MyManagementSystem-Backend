@@ -93,8 +93,8 @@ public class PermissionController {
 
     @Operation(summary = "查询权限树（全量，用于管理场景）")
     @RequiresPermission(PermissionConstants.PERMISSION_VIEW)
-    @GetMapping("/tree")
-    public Response<List<PermissionVo>> listPermissionTree(@Valid PermissionTreeQueryDto dto) {
+    @PostMapping("/tree")
+    public Response<List<PermissionVo>> listPermissionTree(@RequestBody @Valid PermissionTreeQueryDto dto) {
         return Response.success(permissionService.listPermissionTree(dto));
     }
 

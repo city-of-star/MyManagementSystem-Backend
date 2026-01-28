@@ -27,6 +27,14 @@ public interface DeptService {
     Page<DeptVo> getDeptPage(DeptPageQueryDto dto);
 
     /**
+     * 查询部门树（全量，用于管理场景）
+     *
+     * @param dto 查询条件
+     * @return 部门树根节点列表
+     */
+    List<DeptVo> listDeptTree(DeptTreeQueryDto dto);
+
+    /**
      * 根据部门ID查询部门详情
      *
      * @param deptId 部门ID

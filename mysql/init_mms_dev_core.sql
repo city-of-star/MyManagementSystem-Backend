@@ -345,19 +345,33 @@ VALUES
     (18, 15, 'button', '权限-编辑', 'SYSTEM_MENU_UPDATE', NULL, NULL, NULL, 33, 1, 1, 0, NOW(), NOW()),
     (19, 15, 'button', '权限-删除', 'SYSTEM_MENU_DELETE', NULL, NULL, NULL, 34, 1, 1, 0, NOW(), NOW()),
 
+    -- 部门管理（菜单 + 按钮）
+    (20, 1, 'menu', '部门管理', 'SYSTEM_DEPT', '/system/deptPage', '/system/dept/DeptPage.vue', 'OfficeBuilding', 40, 1, 1, 0, NOW(), NOW()),
+    (21, 20, 'button', '部门-查看', 'SYSTEM_DEPT_VIEW', NULL, NULL, NULL, 41, 1, 1, 0, NOW(), NOW()),
+    (22, 20, 'button', '部门-新增', 'SYSTEM_DEPT_CREATE', NULL, NULL, NULL, 42, 1, 1, 0, NOW(), NOW()),
+    (23, 20, 'button', '部门-编辑', 'SYSTEM_DEPT_UPDATE', NULL, NULL, NULL, 43, 1, 1, 0, NOW(), NOW()),
+    (24, 20, 'button', '部门-删除', 'SYSTEM_DEPT_DELETE', NULL, NULL, NULL, 44, 1, 1, 0, NOW(), NOW()),
+
+    -- 岗位管理（菜单 + 按钮）
+    (25, 1, 'menu', '岗位管理', 'SYSTEM_POST', '/system/postPage', '/system/post/PostPage.vue', 'Briefcase', 50, 1, 1, 0, NOW(), NOW()),
+    (26, 25, 'button', '岗位-查看', 'SYSTEM_POST_VIEW', NULL, NULL, NULL, 51, 1, 1, 0, NOW(), NOW()),
+    (27, 25, 'button', '岗位-新增', 'SYSTEM_POST_CREATE', NULL, NULL, NULL, 52, 1, 1, 0, NOW(), NOW()),
+    (28, 25, 'button', '岗位-编辑', 'SYSTEM_POST_UPDATE', NULL, NULL, NULL, 53, 1, 1, 0, NOW(), NOW()),
+    (29, 25, 'button', '岗位-删除', 'SYSTEM_POST_DELETE', NULL, NULL, NULL, 54, 1, 1, 0, NOW(), NOW()),
+
     -- 系统配置管理（菜单 + 按钮）
-    (20, 1, 'menu', '系统配置管理', 'SYSTEM_CONFIG', '/system/configPage', '/system/config/ConfigPage.vue', 'Monitor', 40, 1, 1, 0, NOW(), NOW()),
-    (21, 20, 'button', '配置-查看', 'SYSTEM_CONFIG_VIEW', NULL, NULL, NULL, 41, 1, 1, 0, NOW(), NOW()),
-    (22, 20, 'button', '配置-新增', 'SYSTEM_CONFIG_CREATE', NULL, NULL, NULL, 42, 1, 1, 0, NOW(), NOW()),
-    (23, 20, 'button', '配置-编辑', 'SYSTEM_CONFIG_UPDATE', NULL, NULL, NULL, 43, 1, 1, 0, NOW(), NOW()),
-    (24, 20, 'button', '配置-删除', 'SYSTEM_CONFIG_DELETE', NULL, NULL, NULL, 44, 1, 1, 0, NOW(), NOW()),
+    (30, 1, 'menu', '系统配置管理', 'SYSTEM_CONFIG', '/system/configPage', '/system/config/ConfigPage.vue', 'Monitor', 60, 1, 1, 0, NOW(), NOW()),
+    (31, 30, 'button', '配置-查看', 'SYSTEM_CONFIG_VIEW', NULL, NULL, NULL, 61, 1, 1, 0, NOW(), NOW()),
+    (32, 30, 'button', '配置-新增', 'SYSTEM_CONFIG_CREATE', NULL, NULL, NULL, 62, 1, 1, 0, NOW(), NOW()),
+    (33, 30, 'button', '配置-编辑', 'SYSTEM_CONFIG_UPDATE', NULL, NULL, NULL, 63, 1, 1, 0, NOW(), NOW()),
+    (34, 30, 'button', '配置-删除', 'SYSTEM_CONFIG_DELETE', NULL, NULL, NULL, 64, 1, 1, 0, NOW(), NOW()),
 
     -- 数据字典管理（菜单 + 按钮）
-    (25, 1, 'menu', '数据字典管理', 'SYSTEM_DICT', '/system/dictPage', '/system/dict/DictPage.vue', 'Document', 50, 1, 1, 0, NOW(), NOW()),
-    (26, 25, 'button', '字典-查看', 'SYSTEM_DICT_VIEW', NULL, NULL, NULL, 51, 1, 1, 0, NOW(), NOW()),
-    (27, 25, 'button', '字典-新增', 'SYSTEM_DICT_CREATE', NULL, NULL, NULL, 52, 1, 1, 0, NOW(), NOW()),
-    (28, 25, 'button', '字典-编辑', 'SYSTEM_DICT_UPDATE', NULL, NULL, NULL, 53, 1, 1, 0, NOW(), NOW()),
-    (29, 25, 'button', '字典-删除', 'SYSTEM_DICT_DELETE', NULL, NULL, NULL, 54, 1, 1, 0, NOW(), NOW());
+    (35, 1, 'menu', '数据字典管理', 'SYSTEM_DICT', '/system/dictPage', '/system/dict/DictPage.vue', 'Document', 70, 1, 1, 0, NOW(), NOW()),
+    (36, 35, 'button', '字典-查看', 'SYSTEM_DICT_VIEW', NULL, NULL, NULL, 71, 1, 1, 0, NOW(), NOW()),
+    (37, 35, 'button', '字典-新增', 'SYSTEM_DICT_CREATE', NULL, NULL, NULL, 72, 1, 1, 0, NOW(), NOW()),
+    (38, 35, 'button', '字典-编辑', 'SYSTEM_DICT_UPDATE', NULL, NULL, NULL, 73, 1, 1, 0, NOW(), NOW()),
+    (39, 35, 'button', '字典-删除', 'SYSTEM_DICT_DELETE', NULL, NULL, NULL, 74, 1, 1, 0, NOW(), NOW());
 
 -- 将权限授予角色
 INSERT IGNORE INTO `role_permission` (`role_id`, `permission_id`, `create_time`)

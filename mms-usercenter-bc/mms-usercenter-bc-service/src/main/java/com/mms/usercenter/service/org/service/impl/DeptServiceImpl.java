@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+import java.util.stream.Collectors;
 
 /**
  * 实现功能【部门服务实现类】
@@ -62,6 +63,39 @@ public class DeptServiceImpl implements DeptService {
         } catch (Exception e) {
             log.error("分页查询部门列表失败：{}", e.getMessage(), e);
             throw new ServerException("查询部门列表失败", e);
+        }
+    }
+
+    @Override
+    public List<DeptVo> listDeptTree(DeptTreeQueryDto dto) {
+        try {
+            log.info("查询部门树，入参：{}", dto);
+            LambdaQueryWrapper<DeptEntity> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(DeptEntity::getDeleted, 0)
+                    .orderByAsc(DeptEntity::getParentId)
+                    .orderByAsc(DeptEntity::getSortOrder)
+                    .orderByDesc(DeptEntity::getCreateTime);
+
+            if (dto != null && StringUtils.hasText(dto.getDeptName())) {
+                wrapper.like(DeptEntity::getDeptName, dto.getDeptName());
+            }
+            if (dto != null && StringUtils.hasText(dto.getDeptCode())) {
+                wrapper.like(DeptEntity::getDeptCode, dto.getDeptCode());
+            }
+            if (dto != null && dto.getStatus() != null) {
+                wrapper.eq(DeptEntity::getStatus, dto.getStatus());
+            }
+
+            List<DeptEntity> allDepts = deptMapper.selectList(wrapper);
+            if (CollectionUtils.isEmpty(allDepts)) {
+                return new ArrayList<>();
+            }
+
+            List<DeptVo> voList = allDepts.stream().map(this::convertToVo).toList();
+            return buildDeptTree(voList);
+        } catch (Exception e) {
+            log.error("查询部门树失败：{}", e.getMessage(), e);
+            throw new ServerException("查询部门树失败", e);
         }
     }
 
@@ -309,6 +343,36 @@ public class DeptServiceImpl implements DeptService {
     }
 
     // ==================== 私有工具方法 ====================
+
+    /**
+     * 构建部门树
+     *
+     * @param voList 部门VO列表
+     * @return 部门树根节点列表
+     */
+    private List<DeptVo> buildDeptTree(List<DeptVo> voList) {
+        if (CollectionUtils.isEmpty(voList)) {
+            return new ArrayList<>();
+        }
+        Map<Long, DeptVo> voMap = voList.stream()
+                .collect(Collectors.toMap(DeptVo::getId, v -> v));
+        List<DeptVo> roots = new ArrayList<>();
+        for (DeptVo vo : voList) {
+            Long parentId = vo.getParentId() == null ? 0L : vo.getParentId();
+            if (parentId == 0L) {
+                roots.add(vo);
+            } else {
+                DeptVo parent = voMap.get(parentId);
+                if (parent != null) {
+                    parent.getChildren().add(vo);
+                } else {
+                    log.error("部门树数据不一致：节点 {} 的父节点 {} 不在部门列表中", vo.getId(), parentId);
+                    throw new BusinessException(ErrorCode.SYSTEM_ERROR);
+                }
+            }
+        }
+        return roots;
+    }
 
     /**
      * 保存用户部门关联（覆盖）

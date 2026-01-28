@@ -88,6 +88,36 @@ public final class PermissionConstants {
     public static final String PERMISSION_DELETE = "SYSTEM_MENU_DELETE";
 
     /**
+     * 部门管理（菜单）
+     * <p>目录编码_菜单编码：SYSTEM_DEPT</p>
+     */
+    public static final String SYSTEM_DEPT_MANAGE = "SYSTEM_DEPT";
+
+    /**
+     * 部门管理（按钮权限）
+     * <p>菜单编码_按钮编码：SYSTEM_DEPT_VIEW / ...</p>
+     */
+    public static final String DEPT_VIEW = "SYSTEM_DEPT_VIEW";
+    public static final String DEPT_CREATE = "SYSTEM_DEPT_CREATE";
+    public static final String DEPT_UPDATE = "SYSTEM_DEPT_UPDATE";
+    public static final String DEPT_DELETE = "SYSTEM_DEPT_DELETE";
+
+    /**
+     * 岗位管理（菜单）
+     * <p>目录编码_菜单编码：SYSTEM_POST</p>
+     */
+    public static final String SYSTEM_POST_MANAGE = "SYSTEM_POST";
+
+    /**
+     * 岗位管理（按钮权限）
+     * <p>菜单编码_按钮编码：SYSTEM_POST_VIEW / ...</p>
+     */
+    public static final String POST_VIEW = "SYSTEM_POST_VIEW";
+    public static final String POST_CREATE = "SYSTEM_POST_CREATE";
+    public static final String POST_UPDATE = "SYSTEM_POST_UPDATE";
+    public static final String POST_DELETE = "SYSTEM_POST_DELETE";
+
+    /**
      * 系统配置管理（菜单）
      * <p>目录编码_菜单编码：SYSTEM_CONFIG</p>
      */
