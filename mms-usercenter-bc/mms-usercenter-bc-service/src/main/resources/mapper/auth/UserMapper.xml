@@ -19,23 +19,7 @@
     <!-- 分页查询用户列表 -->
     <select id="getUserPage" resultType="com.mms.usercenter.common.auth.vo.UserVo">
         SELECT
-            <include refid="UserVoColumns"/>,
-            (
-                SELECT d.dept_name
-                FROM user_dept ud
-                         JOIN dept d ON ud.dept_id = d.id
-                WHERE ud.user_id = user.id
-                  AND ud.is_primary = 1
-                LIMIT 1
-            ) AS primaryDeptName,
-            (
-                SELECT p.post_name
-                FROM user_post up
-                         JOIN post p ON up.post_id = p.id
-                WHERE up.user_id = user.id
-                  AND up.is_primary = 1
-                LIMIT 1
-            ) AS primaryPostName
+            <include refid="UserVoColumns"/>
         FROM user
         <where>
             deleted = 0

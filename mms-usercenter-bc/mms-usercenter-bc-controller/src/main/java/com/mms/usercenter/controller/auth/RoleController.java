@@ -31,7 +31,7 @@ import java.util.List;
  * @author li.hongyu
  * @date 2025-12-12 09:36:59
  */
-@Tag(name = "角色服务", description = "角色服务相关接口")
+@Tag(name = "角色管理", description = "角色管理相关接口")
 @RestController
 @RequestMapping("/role")
 public class RoleController {

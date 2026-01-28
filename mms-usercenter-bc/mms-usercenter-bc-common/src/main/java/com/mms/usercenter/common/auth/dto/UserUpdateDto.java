@@ -52,16 +52,17 @@ public class UserUpdateDto {
     @Schema(description = "备注", example = "测试用户备注")
     private String remark;
 
-    @Schema(description = "所属部门ID列表（为空表示不变）", example = "[1, 2, 3]")
-    private List<Long> deptIds;
-
     @Schema(description = "主部门ID，必须包含在部门ID列表中（为空表示不变）", example = "1")
     private Long primaryDeptId;
+
+    @Schema(description = "主岗位ID，必须包含在岗位ID列表中（为空表示不变）", example = "1")
+    private Long primaryPostId;
+
+    @Schema(description = "所属部门ID列表（为空表示不变）", example = "[1, 2, 3]")
+    private List<Long> deptIds;
 
     @Schema(description = "所属岗位ID列表（为空表示不变）", example = "[1, 2, 3]")
     private List<Long> postIds;
 
-    @Schema(description = "主岗位ID，必须包含在岗位ID列表中（为空表示不变）", example = "1")
-    private Long primaryPostId;
 }
 

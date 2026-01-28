@@ -37,5 +37,18 @@
         ORDER BY sort_order ASC, create_time DESC
     </select>
 
+    <!-- 根据用户ID查询主岗位信息 -->
+    <select id="getPrimaryPostByUserId" resultType="com.mms.usercenter.common.org.vo.PostVo">
+        SELECT
+            p.id, p.post_code, p.post_name, p.post_level, p.sort_order, p.status, p.remark,
+            p.create_by, p.create_time, p.update_by, p.update_time
+        FROM post p
+        INNER JOIN user_post up ON p.id = up.post_id
+        WHERE up.user_id = #{userId}
+          AND up.is_primary = 1
+          AND p.deleted = 0
+        LIMIT 1
+    </select>
+
 </mapper>
 

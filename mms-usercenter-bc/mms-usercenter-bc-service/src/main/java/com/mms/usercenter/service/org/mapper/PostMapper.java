@@ -28,4 +28,12 @@ public interface PostMapper extends BaseMapper<PostEntity> {
      * @return 分页岗位列表
      */
     Page<PostVo> getPostPage(@Param("page") Page<PostVo> page, @Param("dto") PostPageQueryDto dto);
+
+    /**
+     * 根据用户ID查询主岗位信息
+     *
+     * @param userId 用户ID
+     * @return 主岗位VO（可能为null）
+     */
+    PostVo getPrimaryPostByUserId(@Param("userId") Long userId);
 }

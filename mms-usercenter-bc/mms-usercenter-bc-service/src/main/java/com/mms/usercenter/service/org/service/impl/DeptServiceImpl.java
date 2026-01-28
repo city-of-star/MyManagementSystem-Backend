@@ -6,6 +6,7 @@ import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
 import com.mms.usercenter.common.auth.dto.UserAssignDeptDto;
+import com.mms.usercenter.common.auth.entity.RoleEntity;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.org.dto.*;
 import com.mms.usercenter.common.org.entity.DeptEntity;
@@ -24,8 +25,11 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * 实现功能【部门服务实现类】
@@ -87,10 +91,7 @@ public class DeptServiceImpl implements DeptService {
         try {
             log.info("创建部门，参数：{}", dto);
             // 检查部门编码是否存在
-            LambdaQueryWrapper<DeptEntity> codeWrapper = new LambdaQueryWrapper<>();
-            codeWrapper.eq(DeptEntity::getDeptCode, dto.getDeptCode())
-                    .eq(DeptEntity::getDeleted, 0);
-            if (deptMapper.selectCount(codeWrapper) > 0) {
+            if (existsByDeptCode(dto.getDeptCode())) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "部门编码已存在");
             }
             // 创建部门实体
@@ -126,25 +127,12 @@ public class DeptServiceImpl implements DeptService {
             if (dept == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "部门不存在");
             }
-            // 检查部门编码是否被其他部门使用（排除当前部门）
-            if (StringUtils.hasText(dto.getDeptCode()) && !dto.getDeptCode().equals(dept.getDeptCode())) {
-                LambdaQueryWrapper<DeptEntity> codeWrapper = new LambdaQueryWrapper<>();
-                codeWrapper.eq(DeptEntity::getDeptCode, dto.getDeptCode())
-                        .eq(DeptEntity::getDeleted, 0)
-                        .ne(DeptEntity::getId, dto.getId());
-                if (deptMapper.selectCount(codeWrapper) > 0) {
-                    throw new BusinessException(ErrorCode.PARAM_INVALID, "部门编码已被使用");
-                }
-            }
             // 更新字段
             if (dto.getParentId() != null) {
                 dept.setParentId(dto.getParentId());
             }
             if (StringUtils.hasText(dto.getDeptName())) {
                 dept.setDeptName(dto.getDeptName());
-            }
-            if (StringUtils.hasText(dto.getDeptCode())) {
-                dept.setDeptCode(dto.getDeptCode());
             }
             if (StringUtils.hasText(dto.getLeader())) {
                 dept.setLeader(dto.getLeader());
@@ -180,6 +168,7 @@ public class DeptServiceImpl implements DeptService {
             if (deptId == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "部门ID不能为空");
             }
+            // 查询部门
             DeptEntity dept = deptMapper.selectById(deptId);
             if (dept == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "部门不存在");
@@ -283,17 +272,39 @@ public class DeptServiceImpl implements DeptService {
     }
 
     @Override
-    public Long getPrimaryDeptIdByUserId(Long userId) {
+    public List<DeptVo> getDeptListByUserId(Long userId) {
         try {
-            log.info("查询用户主部门ID，userId：{}", userId);
-            LambdaQueryWrapper<UserDeptEntity> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(UserDeptEntity::getUserId, userId)
-                    .eq(UserDeptEntity::getIsPrimary, 1);
-            UserDeptEntity entity = userDeptMapper.selectOne(wrapper);
-            return entity != null ? entity.getDeptId() : null;
+            log.info("查询用户部门信息列表，userId：{}", userId);
+            // 先获取部门ID列表
+            List<Long> deptIds = listDeptIdsByUserId(userId);
+            if (CollectionUtils.isEmpty(deptIds)) {
+                return new ArrayList<>();
+            }
+            // 批量查询部门实体
+            List<DeptEntity> depts = deptMapper.selectBatchIds(deptIds);
+            // 创建ID到实体的映射
+            Map<Long, DeptEntity> deptMap = depts.stream()
+                    .collect(Collectors.toMap(DeptEntity::getId, dept -> dept));
+            // 按照原始ID列表的顺序转换为VO
+            return deptIds.stream()
+                    .map(deptMap::get)
+                    .filter(Objects::nonNull)
+                    .map(this::convertToVo)
+                    .toList();
         } catch (Exception e) {
-            log.error("查询用户主部门ID失败：{}", e.getMessage(), e);
-            throw new ServerException("查询用户主部门ID失败", e);
+            log.error("查询用户部门信息列表失败：{}", e.getMessage(), e);
+            throw new ServerException("查询用户部门信息列表失败", e);
+        }
+    }
+
+    @Override
+    public DeptVo getPrimaryDeptByUserId(Long userId) {
+        try {
+            log.info("查询用户主部门信息，userId：{}", userId);
+            return deptMapper.getPrimaryDeptByUserId(userId);
+        } catch (Exception e) {
+            log.error("查询用户主部门信息失败：{}", e.getMessage(), e);
+            throw new ServerException("查询用户主部门信息失败", e);
         }
     }
 
@@ -340,6 +351,19 @@ public class DeptServiceImpl implements DeptService {
             entity.setCreateTime(LocalDateTime.now());
             userDeptMapper.insert(entity);
         }
+    }
+
+    /**
+     * 判断部门编码是否存在
+     */
+    private boolean existsByDeptCode(String deptCode) {
+        if (!StringUtils.hasText(deptCode)) {
+            return false;
+        }
+        LambdaQueryWrapper<DeptEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(DeptEntity::getDeptCode, deptCode)
+                .eq(DeptEntity::getDeleted, 0);
+        return deptMapper.selectCount(wrapper) > 0;
     }
 
     // ==================== 实体转换方法 ====================

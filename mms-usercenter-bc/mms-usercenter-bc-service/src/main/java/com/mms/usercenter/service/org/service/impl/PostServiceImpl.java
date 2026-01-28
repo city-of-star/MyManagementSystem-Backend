@@ -8,6 +8,7 @@ import com.mms.common.core.exceptions.ServerException;
 import com.mms.usercenter.common.auth.dto.UserAssignPostDto;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.org.dto.*;
+import com.mms.usercenter.common.org.entity.DeptEntity;
 import com.mms.usercenter.common.org.entity.PostEntity;
 import com.mms.usercenter.common.org.entity.UserPostEntity;
 import com.mms.usercenter.common.org.vo.PostVo;
@@ -24,8 +25,11 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * 实现功能【岗位服务实现类】
@@ -87,10 +91,7 @@ public class PostServiceImpl implements PostService {
         try {
             log.info("创建岗位，参数：{}", dto);
             // 检查岗位编码是否存在
-            LambdaQueryWrapper<PostEntity> codeWrapper = new LambdaQueryWrapper<>();
-            codeWrapper.eq(PostEntity::getPostCode, dto.getPostCode())
-                    .eq(PostEntity::getDeleted, 0);
-            if (postMapper.selectCount(codeWrapper) > 0) {
+            if (existsByPostCode(dto.getPostCode())) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "岗位编码已存在");
             }
             // 创建岗位实体
@@ -126,20 +127,7 @@ public class PostServiceImpl implements PostService {
             if (post == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "岗位不存在");
             }
-            // 检查岗位编码是否被其他岗位使用（排除当前岗位）
-            if (StringUtils.hasText(dto.getPostCode()) && !dto.getPostCode().equals(post.getPostCode())) {
-                LambdaQueryWrapper<PostEntity> codeWrapper = new LambdaQueryWrapper<>();
-                codeWrapper.eq(PostEntity::getPostCode, dto.getPostCode())
-                        .eq(PostEntity::getDeleted, 0)
-                        .ne(PostEntity::getId, dto.getId());
-                if (postMapper.selectCount(codeWrapper) > 0) {
-                    throw new BusinessException(ErrorCode.PARAM_INVALID, "岗位编码已被使用");
-                }
-            }
             // 更新字段
-            if (StringUtils.hasText(dto.getPostCode())) {
-                post.setPostCode(dto.getPostCode());
-            }
             if (StringUtils.hasText(dto.getPostName())) {
                 post.setPostName(dto.getPostName());
             }
@@ -171,6 +159,7 @@ public class PostServiceImpl implements PostService {
             if (postId == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "岗位ID不能为空");
             }
+            // 查询岗位
             PostEntity post = postMapper.selectById(postId);
             if (post == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "岗位不存在");
@@ -267,17 +256,39 @@ public class PostServiceImpl implements PostService {
     }
 
     @Override
-    public Long getPrimaryPostIdByUserId(Long userId) {
+    public List<PostVo> getPostListByUserId(Long userId) {
         try {
-            log.info("查询用户主岗位ID，userId：{}", userId);
-            LambdaQueryWrapper<UserPostEntity> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(UserPostEntity::getUserId, userId)
-                    .eq(UserPostEntity::getIsPrimary, 1);
-            UserPostEntity entity = userPostMapper.selectOne(wrapper);
-            return entity != null ? entity.getPostId() : null;
+            log.info("查询用户岗位信息列表，userId：{}", userId);
+            // 先获取岗位ID列表
+            List<Long> postIds = listPostIdsByUserId(userId);
+            if (CollectionUtils.isEmpty(postIds)) {
+                return new ArrayList<>();
+            }
+            // 批量查询岗位实体
+            List<PostEntity> posts = postMapper.selectBatchIds(postIds);
+            // 创建ID到实体的映射
+            Map<Long, PostEntity> postMap = posts.stream()
+                    .collect(Collectors.toMap(PostEntity::getId, post -> post));
+            // 按照原始ID列表的顺序转换为VO
+            return postIds.stream()
+                    .map(postMap::get)
+                    .filter(Objects::nonNull)
+                    .map(this::convertToVo)
+                    .toList();
         } catch (Exception e) {
-            log.error("查询用户主岗位ID失败：{}", e.getMessage(), e);
-            throw new ServerException("查询用户主岗位ID失败", e);
+            log.error("查询用户岗位信息列表失败：{}", e.getMessage(), e);
+            throw new ServerException("查询用户岗位信息列表失败", e);
+        }
+    }
+
+    @Override
+    public PostVo getPrimaryPostByUserId(Long userId) {
+        try {
+            log.info("查询用户主岗位信息，userId：{}", userId);
+            return postMapper.getPrimaryPostByUserId(userId);
+        } catch (Exception e) {
+            log.error("查询用户主岗位信息失败：{}", e.getMessage(), e);
+            throw new ServerException("查询用户主岗位信息失败", e);
         }
     }
 
@@ -324,6 +335,19 @@ public class PostServiceImpl implements PostService {
             entity.setCreateTime(LocalDateTime.now());
             userPostMapper.insert(entity);
         }
+    }
+
+    /**
+     * 判断岗位编码是否存在
+     */
+    private boolean existsByPostCode(String postCode) {
+        if (!StringUtils.hasText(postCode)) {
+            return false;
+        }
+        LambdaQueryWrapper<PostEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(PostEntity::getPostCode, postCode)
+                .eq(PostEntity::getDeleted, 0);
+        return postMapper.selectCount(wrapper) > 0;
     }
 
     // ==================== 实体转换方法 ====================

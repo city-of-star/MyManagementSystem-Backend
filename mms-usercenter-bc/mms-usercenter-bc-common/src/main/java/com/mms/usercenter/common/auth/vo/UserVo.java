@@ -1,5 +1,7 @@
 package com.mms.usercenter.common.auth.vo;
 
+import com.mms.usercenter.common.org.vo.DeptVo;
+import com.mms.usercenter.common.org.vo.PostVo;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
@@ -83,22 +85,16 @@ public class UserVo {
     @Schema(description = "更新时间", example = "2025-12-19 10:00:00")
     private LocalDateTime updateTime;
 
-    @Schema(description = "主部门ID", example = "1")
-    private Long primaryDeptId;
+    @Schema(description = "主部门信息", example = "")
+    private DeptVo primaryDept;
 
-    @Schema(description = "主岗位ID", example = "1")
-    private Long primaryPostId;
+    @Schema(description = "主岗位信息", example = "")
+    private PostVo primaryPost;
 
-    @Schema(description = "所属部门ID列表", example = "[1, 2, 3]")
-    private List<Long> deptIds;
+    @Schema(description = "所属部门列表", example = "")
+    private List<DeptVo> depts;
 
-    @Schema(description = "所属岗位ID列表", example = "[1, 2, 3]")
-    private List<Long> postIds;
-
-    @Schema(description = "主部门名称", example = "技术部")
-    private String primaryDeptName;
-
-    @Schema(description = "主岗位名称", example = "Java开发工程师")
-    private String primaryPostName;
+    @Schema(description = "所属岗位列表", example = "")
+    private List<PostVo> posts;
 }
 

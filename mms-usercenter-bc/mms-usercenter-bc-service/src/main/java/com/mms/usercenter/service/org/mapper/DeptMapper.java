@@ -28,4 +28,12 @@ public interface DeptMapper extends BaseMapper<DeptEntity> {
      * @return 分页部门列表
      */
     Page<DeptVo> getDeptPage(@Param("page") Page<DeptVo> page, @Param("dto") DeptPageQueryDto dto);
+
+    /**
+     * 根据用户ID查询主部门信息
+     *
+     * @param userId 用户ID
+     * @return 主部门VO（可能为null）
+     */
+    DeptVo getPrimaryDeptByUserId(@Param("userId") Long userId);
 }

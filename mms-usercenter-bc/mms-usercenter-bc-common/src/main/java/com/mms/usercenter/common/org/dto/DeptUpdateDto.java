@@ -28,9 +28,6 @@ public class DeptUpdateDto {
     @Schema(description = "部门名称", example = "技术部")
     private String deptName;
 
-    @Schema(description = "部门编码", example = "TECH")
-    private String deptCode;
-
     @Schema(description = "负责人", example = "张三")
     private String leader;
 

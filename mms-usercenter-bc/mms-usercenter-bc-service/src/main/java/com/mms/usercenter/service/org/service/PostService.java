@@ -87,10 +87,18 @@ public interface PostService {
     List<Long> listPostIdsByUserId(Long userId);
 
     /**
-     * 查询用户主岗位ID
+     * 查询用户所属的岗位列表
      *
      * @param userId 用户ID
-     * @return 主岗位ID（可能为null）
+     * @return 岗位列表
      */
-    Long getPrimaryPostIdByUserId(Long userId);
+    List<PostVo> getPostListByUserId(Long userId);
+
+    /**
+     * 查询用户所属的主岗位
+     *
+     * @param userId 用户ID
+     * @return 主岗位（可能为null）
+     */
+    PostVo getPrimaryPostByUserId(Long userId);
 }

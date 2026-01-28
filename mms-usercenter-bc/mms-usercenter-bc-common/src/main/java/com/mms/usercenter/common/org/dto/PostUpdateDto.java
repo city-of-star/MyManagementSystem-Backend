@@ -21,9 +21,6 @@ public class PostUpdateDto {
     @Schema(description = "岗位ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Long id;
 
-    @Schema(description = "岗位编码", example = "JAVA_DEV")
-    private String postCode;
-
     @Schema(description = "岗位名称", example = "Java开发工程师")
     private String postName;
 

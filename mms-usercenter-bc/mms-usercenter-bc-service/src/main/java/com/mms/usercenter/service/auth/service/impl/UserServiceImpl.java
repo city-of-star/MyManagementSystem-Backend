@@ -78,7 +78,16 @@ public class UserServiceImpl implements UserService {
         try {
             log.info("分页查询用户列表，参数：{}", dto);
             Page<UserVo> page = new Page<>(dto.getPageNum(), dto.getPageSize());
-            return userMapper.getUserPage(page, dto);
+            Page<UserVo> result = userMapper.getUserPage(page, dto);
+            // 查询主部门/主岗位信息
+            if (result.getRecords() != null && !result.getRecords().isEmpty()) {
+                for (UserVo vo : result.getRecords()) {
+                    Long userId = vo.getId();
+                    vo.setPrimaryDept(deptService.getPrimaryDeptByUserId(userId));
+                    vo.setPrimaryPost(postService.getPrimaryPostByUserId(userId));
+                }
+            }
+            return result;
         } catch (Exception e) {
             log.error("分页查询用户列表失败：{}", e.getMessage(), e);
             throw new ServerException("查询用户列表失败", e);
@@ -97,11 +106,11 @@ public class UserServiceImpl implements UserService {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
             }
             UserVo vo = convertToVo(user);
-            // 填充部门、岗位相关信息（主部门/主岗位 + ID 列表）
-            vo.setDeptIds(deptService.listDeptIdsByUserId(userId));
-            vo.setPostIds(postService.listPostIdsByUserId(userId));
-            vo.setPrimaryDeptId(deptService.getPrimaryDeptIdByUserId(userId));
-            vo.setPrimaryPostId(postService.getPrimaryPostIdByUserId(userId));
+            // 查询部门、岗位信息
+            vo.setPrimaryDept(deptService.getPrimaryDeptByUserId(userId));
+            vo.setPrimaryPost(postService.getPrimaryPostByUserId(userId));
+            vo.setDepts(deptService.getDeptListByUserId(userId));
+            vo.setPosts(postService.getPostListByUserId(userId));
             return vo;
         } catch (BusinessException e) {
             throw e;
@@ -124,10 +133,11 @@ public class UserServiceImpl implements UserService {
             }
             UserVo vo = convertToVo(user);
             Long userId = user.getId();
-            vo.setDeptIds(deptService.listDeptIdsByUserId(userId));
-            vo.setPostIds(postService.listPostIdsByUserId(userId));
-            vo.setPrimaryDeptId(deptService.getPrimaryDeptIdByUserId(userId));
-            vo.setPrimaryPostId(postService.getPrimaryPostIdByUserId(userId));
+            // 查询部门、岗位信息
+            vo.setPrimaryDept(deptService.getPrimaryDeptByUserId(userId));
+            vo.setPrimaryPost(postService.getPrimaryPostByUserId(userId));
+            vo.setDepts(deptService.getDeptListByUserId(userId));
+            vo.setPosts(postService.getPostListByUserId(userId));
             return vo;
         } catch (BusinessException e) {
             throw e;
@@ -167,7 +177,7 @@ public class UserServiceImpl implements UserService {
             user.setDeleted(0);
             // 保存用户
             userMapper.insert(user);
-            // 处理部门、岗位关联
+            // 处理部门关联
             if (!CollectionUtils.isEmpty(dto.getDeptIds())) {
                 UserAssignDeptDto userAssignDeptDto = new UserAssignDeptDto();
                 userAssignDeptDto.setUserId(user.getId());
@@ -175,6 +185,7 @@ public class UserServiceImpl implements UserService {
                 userAssignDeptDto.setPrimaryDeptId(dto.getPrimaryDeptId());
                 deptService.assignDepts(userAssignDeptDto);
             }
+            // 处理岗位关联
             if (!CollectionUtils.isEmpty(dto.getPostIds())) {
                 UserAssignPostDto userAssignPostDto = new UserAssignPostDto();
                 userAssignPostDto.setUserId(user.getId());
@@ -183,6 +194,12 @@ public class UserServiceImpl implements UserService {
                 postService.assignPosts(userAssignPostDto);
             }
             UserVo vo = convertToVo(user);
+            // 回显部门、岗位信息
+            UserVo userInfo = getUserByUsername(dto.getUsername());
+            vo.setPrimaryDept(deptService.getPrimaryDeptByUserId(userInfo.getId()));
+            vo.setPrimaryPost(postService.getPrimaryPostByUserId(userInfo.getId()));
+            vo.setDepts(deptService.getDeptListByUserId(userInfo.getId()));
+            vo.setPosts(postService.getPostListByUserId(userInfo.getId()));
             log.info("创建用户成功，userId：{}", user.getId());
             return vo;
         } catch (BusinessException e) {
@@ -280,6 +297,11 @@ public class UserServiceImpl implements UserService {
                 }
             }
             UserVo vo = convertToVo(user);
+            // 回显部门、岗位信息
+            vo.setPrimaryDept(deptService.getPrimaryDeptByUserId(dto.getId()));
+            vo.setPrimaryPost(postService.getPrimaryPostByUserId(dto.getId()));
+            vo.setDepts(deptService.getDeptListByUserId(dto.getId()));
+            vo.setPosts(postService.getPostListByUserId(dto.getId()));
             log.info("更新用户信息成功，userId：{}", user.getId());
             return vo;
         } catch (BusinessException e) {
@@ -305,11 +327,13 @@ public class UserServiceImpl implements UserService {
             if (user == null) {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
             }
-            // 删除部门、岗位关联
+
+            // 删除部门关联
             LambdaQueryWrapper<UserDeptEntity> deptWrapper = new LambdaQueryWrapper<>();
             deptWrapper.eq(UserDeptEntity::getUserId, userId);
             userDeptMapper.delete(deptWrapper);
 
+            // 删除岗位关联
             LambdaQueryWrapper<UserPostEntity> postWrapper = new LambdaQueryWrapper<>();
             postWrapper.eq(UserPostEntity::getUserId, userId);
             userPostMapper.delete(postWrapper);

@@ -87,10 +87,18 @@ public interface DeptService {
     List<Long> listDeptIdsByUserId(Long userId);
 
     /**
-     * 查询用户主部门ID
+     * 查询用户所属的部门列表信息
      *
      * @param userId 用户ID
-     * @return 主部门ID（可能为null）
+     * @return 部门列表
      */
-    Long getPrimaryDeptIdByUserId(Long userId);
+    List<DeptVo> getDeptListByUserId(Long userId);
+
+    /**
+     * 查询用户所属的主部门信息
+     *
+     * @param userId 用户ID
+     * @return 主部门（可能为null）
+     */
+    DeptVo getPrimaryDeptByUserId(Long userId);
 }
