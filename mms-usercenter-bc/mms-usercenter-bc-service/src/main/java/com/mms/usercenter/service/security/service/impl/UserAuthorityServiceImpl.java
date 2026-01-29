@@ -5,9 +5,11 @@ import com.mms.common.core.constants.usercenter.UserAuthorityConstants;
 import com.mms.common.core.exceptions.ServerException;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.auth.entity.UserRoleEntity;
+import com.mms.usercenter.common.auth.entity.RolePermissionEntity;
 import com.mms.usercenter.common.security.vo.UserAuthorityVo;
 import com.mms.usercenter.service.auth.mapper.PermissionMapper;
 import com.mms.usercenter.service.auth.mapper.RoleMapper;
+import com.mms.usercenter.service.auth.mapper.RolePermissionMapper;
 import com.mms.usercenter.service.auth.mapper.UserMapper;
 import com.mms.usercenter.service.auth.mapper.UserRoleMapper;
 import com.mms.usercenter.service.security.service.UserAuthorityService;
@@ -52,6 +54,9 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
     private PermissionMapper permissionMapper;
 
     @Resource
+    private RolePermissionMapper rolePermissionMapper;
+
+    @Resource
     private RedisTemplate<String, Object> redisTemplate;
 
     /**
@@ -83,7 +88,6 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
         try {
             UserEntity user = userMapper.selectById(userId);
             if (user == null) {
-                log.debug("用户 {} 不存在，无需清除缓存", userId);
                 return;
             }
             String username = user.getUsername();
@@ -107,47 +111,63 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
      */
     public void clearUserAuthorityCacheByRoleId(Long roleId) {
         try {
+            if (roleId == null) {
+                return;
+            }
             // 查询拥有该角色的所有用户
             LambdaQueryWrapper<UserRoleEntity> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(UserRoleEntity::getRoleId, roleId);
             List<UserRoleEntity> userRoleList = userRoleMapper.selectList(wrapper);
-
             if (CollectionUtils.isEmpty(userRoleList)) {
-                log.debug("角色 {} 没有关联用户，无需清除缓存", roleId);
                 return;
             }
-
             // 获取所有关联的用户ID
             List<Long> userIds = userRoleList.stream()
                     .map(UserRoleEntity::getUserId)
                     .distinct()
                     .toList();
-
-            // 查询用户信息，获取用户名
-            List<UserEntity> users = userMapper.selectBatchIds(userIds);
-            if (CollectionUtils.isEmpty(users)) {
-                log.warn("角色 {} 关联的用户不存在，userIdList={}", roleId, userIds);
-                return;
+            // 开始清除
+            for (Long userId : userIds) {
+                clearUserAuthorityCacheByUserId(userId);
             }
-
-            // 清除每个用户的权限缓存
-            for (UserEntity user : users) {
-                if (user.getDeleted() != null && user.getDeleted() == 1) {
-                    continue; // 跳过已删除的用户
-                }
-                String username = user.getUsername();
-                if (StringUtils.hasText(username)) {
-                    String roleCacheKey = UserAuthorityConstants.USER_ROLE_PREFIX + username;
-                    String permissionCacheKey = UserAuthorityConstants.USER_PERMISSION_PREFIX + username;
-                    redisTemplate.delete(roleCacheKey);
-                    redisTemplate.delete(permissionCacheKey);
-                    log.debug("已清除用户 {} 的权限缓存（角色：{}）", username, roleId);
-                }
-            }
-            log.info("已清除角色 {} 关联的 {} 个用户的权限缓存", roleId, users.size());
+            log.info("已清除角色 {} 关联的 {} 个用户的权限缓存", roleId, userIds.size());
         } catch (Exception e) {
             // 缓存清除失败不应该影响主流程，只记录日志
             log.error("清除角色 {} 关联用户的权限缓存失败：{}", roleId, e.getMessage(), e);
+        }
+    }
+
+    /**
+     * 清除“包含指定权限”的所有角色下用户的权限缓存
+     *
+     * @param permissionId 权限ID
+     */
+    @Override
+    public void clearUserAuthorityCacheByPermissionId(Long permissionId) {
+        try {
+            if (permissionId == null) {
+                return;
+            }
+            // 查询拥有该权限的所有角色
+            LambdaQueryWrapper<RolePermissionEntity> rpWrapper = new LambdaQueryWrapper<>();
+            rpWrapper.eq(RolePermissionEntity::getPermissionId, permissionId);
+            List<RolePermissionEntity> relations = rolePermissionMapper.selectList(rpWrapper);
+            if (CollectionUtils.isEmpty(relations)) {
+                return;
+            }
+            List<Long> roleIds = relations.stream()
+                    .map(RolePermissionEntity::getRoleId)
+                    .filter(Objects::nonNull)
+                    .distinct()
+                    .toList();
+            // 开始清除
+            for (Long roleId : roleIds) {
+                clearUserAuthorityCacheByRoleId(roleId);
+            }
+            log.info("已清除权限 {} 关联的 {} 个角色下用户的权限缓存", permissionId, roleIds.size());
+        } catch (Exception e) {
+            // 缓存清除失败不应该影响主流程，只记录日志
+            log.error("清除权限 {} 关联角色下用户的权限缓存失败：{}", permissionId, e.getMessage(), e);
         }
     }
 

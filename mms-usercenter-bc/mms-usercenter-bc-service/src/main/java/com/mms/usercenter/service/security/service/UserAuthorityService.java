@@ -29,5 +29,11 @@ public interface UserAuthorityService {
      * @param roleId 角色ID
      */
     void clearUserAuthorityCacheByRoleId(Long roleId);
+
+    /**
+     * 清除“包含指定权限”的所有角色下用户的权限缓存
+     * @param permissionId 权限ID
+     */
+    void clearUserAuthorityCacheByPermissionId(Long permissionId);
 }
 

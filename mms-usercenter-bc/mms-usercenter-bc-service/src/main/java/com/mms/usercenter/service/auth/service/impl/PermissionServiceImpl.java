@@ -258,6 +258,8 @@ public class PermissionServiceImpl implements PermissionService {
             permission.setStatus(dto.getStatus());
             permission.setUpdateTime(LocalDateTime.now());
             permissionMapper.updateById(permission);
+            // 权限状态变更后，清除相关用户的权限缓存，确保立即生效
+            userAuthorityService.clearUserAuthorityCacheByPermissionId(dto.getPermissionId());
             log.info("切换权限状态成功，permissionId：{}，status：{}", dto.getPermissionId(), dto.getStatus());
         } catch (BusinessException e) {
             throw e;
