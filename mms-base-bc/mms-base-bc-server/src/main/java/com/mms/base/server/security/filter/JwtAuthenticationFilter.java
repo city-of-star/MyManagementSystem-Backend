@@ -108,17 +108,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
 
-        // 从 Redis 中加载用户角色和权限
-        Set<String> roles = loadStringSet(UserAuthorityConstants.USER_ROLE_PREFIX + username);
-        Set<String> permissions = loadStringSet(UserAuthorityConstants.USER_PERMISSION_PREFIX + username);
+        // 定义权限
+        Set<String> roles = new HashSet<>();
+        Set<String> permissions = new HashSet<>();
 
-        // 缓存缺失时，从用户中心获取
-        if (CollectionUtils.isEmpty(roles) && CollectionUtils.isEmpty(permissions)) {
-            Response<UserAuthorityVo> resp = userAuthorityFeign.getUserAuthorities(username);
-            if (resp != null && Response.SUCCESS_CODE.equals(resp.getCode()) && resp.getData() != null) {
-                roles = resp.getData().getRoles() == null ? Collections.emptySet() : resp.getData().getRoles();
-                permissions = resp.getData().getPermissions() == null ? Collections.emptySet() : resp.getData().getPermissions();
-            }
+        // 从用户中心获取权限
+        Response<UserAuthorityVo> resp = userAuthorityFeign.getUserAuthorities(username);
+        if (resp != null && Response.SUCCESS_CODE.equals(resp.getCode()) && resp.getData() != null) {
+            roles = resp.getData().getRoles() == null ? Collections.emptySet() : resp.getData().getRoles();
+            permissions = resp.getData().getPermissions() == null ? Collections.emptySet() : resp.getData().getPermissions();
         }
 
         // 组装用户权限
@@ -147,32 +145,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 继续过滤器链
         filterChain.doFilter(request, response);
     }
-
-    /**
-     * 从 Redis 读取对象并转换为字符串集合，兼容 Set/List/单值
-     */
-    private Set<String> loadStringSet(String key) {
-        Object cached = redisTemplate.opsForValue().get(key);
-        if (cached == null) {
-            return Collections.emptySet();
-        }
-        if (cached instanceof Set<?> set) {
-            return set.stream()
-                    .filter(Objects::nonNull)
-                    .map(Object::toString)
-                    .collect(Collectors.toSet());
-        }
-        if (cached instanceof Iterable<?> iterable) {
-            Set<String> result = new HashSet<>();
-            for (Object item : iterable) {
-                if (item != null) {
-                    result.add(item.toString());
-                }
-            }
-            return result;
-        }
-        return Collections.singleton(cached.toString());
-    }
-
 }
 

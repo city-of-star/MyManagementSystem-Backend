@@ -1,7 +1,9 @@
 package com.mms.common.core.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.slf4j.MDC;
 
 /**
@@ -11,6 +13,8 @@ import org.slf4j.MDC;
  * @date 2025-10-28 15:51:29
  */
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 @Schema(description = "统一响应包装类")
 public class Response<T> {
 

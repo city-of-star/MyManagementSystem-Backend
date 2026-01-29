@@ -22,10 +22,6 @@ public class ConfigUpdateDto {
     @Schema(description = "配置ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Long id;
 
-    @Size(max = 128, message = "配置键长度不能超过128个字符")
-    @Schema(description = "配置键（唯一标识）", example = "system.name")
-    private String configKey;
-
     @Schema(description = "配置值", example = "MyManagementSystem")
     private String configValue;
 

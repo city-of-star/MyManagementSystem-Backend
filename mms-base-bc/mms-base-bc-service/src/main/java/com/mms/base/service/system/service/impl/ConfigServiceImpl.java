@@ -157,12 +157,6 @@ public class ConfigServiceImpl implements ConfigService {
             if (config.getEditable() != null && config.getEditable() == 0) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "系统配置不可编辑");
             }
-            if (StringUtils.hasText(dto.getConfigKey()) && !dto.getConfigKey().equals(config.getConfigKey())) {
-                if (existsByConfigKey(dto.getConfigKey())) {
-                    throw new BusinessException(ErrorCode.UNIQUE_CONSTRAINT_ERROR, "配置键已存在");
-                }
-                config.setConfigKey(dto.getConfigKey());
-            }
             if (StringUtils.hasText(dto.getConfigValue())) {
                 config.setConfigValue(dto.getConfigValue());
             }
