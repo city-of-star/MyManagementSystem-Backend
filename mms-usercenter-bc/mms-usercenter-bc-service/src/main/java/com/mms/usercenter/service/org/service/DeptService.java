@@ -106,7 +106,7 @@ public interface DeptService {
      * 查询用户所属的主部门信息
      *
      * @param userId 用户ID
-     * @return 主部门（可能为null）
+     * @return 主部门
      */
     DeptVo getPrimaryDeptByUserId(Long userId);
 }

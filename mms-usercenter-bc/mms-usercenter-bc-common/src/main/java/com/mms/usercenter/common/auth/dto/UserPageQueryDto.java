@@ -54,6 +54,12 @@ public class UserPageQueryDto {
     @Schema(description = "创建时间结束", example = "2025-12-31 23:59:59")
     private LocalDateTime createTimeEnd;
 
+    @Schema(description = "最后登录时间开始", example = "2025-01-01 00:00:00")
+    private LocalDateTime lastLoginTimeStart;
+
+    @Schema(description = "最后登录时间结束", example = "2025-12-31 23:59:59")
+    private LocalDateTime lastLoginTimeEnd;
+
     @Schema(description = "所属部门ID（根据部门筛选）", example = "1")
     private Long deptId;
 

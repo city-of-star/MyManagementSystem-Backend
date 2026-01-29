@@ -104,4 +104,18 @@ public class DeptController {
     public Response<java.util.List<Long>> listDeptIds(@PathVariable Long userId) {
         return Response.success(deptService.listDeptIdsByUserId(userId));
     }
+
+    @Operation(summary = "查询用户所属的部门列表", description = "查询用户当前所属的部门列表信息")
+    @RequiresPermission(PermissionConstants.DEPT_VIEW)
+    @GetMapping("/{userId}/list")
+    public Response<java.util.List<DeptVo>> getDeptListByUserId(@PathVariable Long userId) {
+        return Response.success(deptService.getDeptListByUserId(userId));
+    }
+
+    @Operation(summary = "查询用户所属的主部门", description = "查询用户当前所属的主部门信息")
+    @RequiresPermission(PermissionConstants.DEPT_VIEW)
+    @GetMapping("/{userId}/primary")
+    public Response<DeptVo> getPrimaryDeptByUserId(@PathVariable Long userId) {
+        return Response.success(deptService.getPrimaryDeptByUserId(userId));
+    }
 }

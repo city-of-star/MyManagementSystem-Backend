@@ -17,6 +17,7 @@ import com.mms.usercenter.service.auth.mapper.RoleMapper;
 import com.mms.usercenter.service.auth.mapper.UserMapper;
 import com.mms.usercenter.service.auth.mapper.UserRoleMapper;
 import com.mms.usercenter.service.auth.service.UserService;
+import com.mms.usercenter.service.auth.utils.PasswordValidatorUtils;
 import com.mms.usercenter.service.org.mapper.UserDeptMapper;
 import com.mms.usercenter.service.org.mapper.UserPostMapper;
 import com.mms.usercenter.service.org.service.DeptService;
@@ -152,6 +153,8 @@ public class UserServiceImpl implements UserService {
     public UserVo createUser(UserCreateDto dto) {
         try {
             log.info("创建用户，参数：{}", dto);
+            // 校验密码复杂度
+            PasswordValidatorUtils.validate(dto.getPassword());
             // 检查用户名是否存在
             if (existsByUsername(dto.getUsername())) {
                 throw new BusinessException(ErrorCode.USERNAME_EXISTS);
@@ -450,7 +453,7 @@ public class UserServiceImpl implements UserService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员用户不可重置密码");
             }
             // 加密新密码
-            String hashedPassword = BCrypt.hashpw(dto.getNewPassword(), BCrypt.gensalt());
+            String hashedPassword = BCrypt.hashpw("123456", BCrypt.gensalt());
             user.setPassword(hashedPassword);
             user.setPasswordUpdateTime(LocalDateTime.now());
             userMapper.updateById(user);
@@ -476,6 +479,8 @@ public class UserServiceImpl implements UserService {
             if (!BCrypt.checkpw(dto.getOldPassword(), user.getPassword())) {
                 throw new BusinessException(ErrorCode.PWD_MISMATCH, "旧密码错误");
             }
+            // 校验新密码复杂度
+            PasswordValidatorUtils.validate(dto.getNewPassword());
             // 加密新密码
             String hashedPassword = BCrypt.hashpw(dto.getNewPassword(), BCrypt.gensalt());
             user.setPassword(hashedPassword);

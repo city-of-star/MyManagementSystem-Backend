@@ -98,7 +98,7 @@ public interface PostService {
      * 查询用户所属的主岗位
      *
      * @param userId 用户ID
-     * @return 主岗位（可能为null）
+     * @return 主岗位
      */
     PostVo getPrimaryPostByUserId(Long userId);
 }

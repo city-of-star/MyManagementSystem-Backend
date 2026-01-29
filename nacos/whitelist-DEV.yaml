@@ -10,5 +10,4 @@ whitelist:
   usercenter: # 用户中心服务
     - /auth/login
     - /auth/refresh
-    - /authority/**
   base: [] # 基础数据服务

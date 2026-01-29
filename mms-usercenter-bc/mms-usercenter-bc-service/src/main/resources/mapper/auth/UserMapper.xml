@@ -53,6 +53,12 @@
             <if test="dto.createTimeEnd != null">
                 AND create_time &lt;= #{dto.createTimeEnd}
             </if>
+            <if test="dto.lastLoginTimeStart != null">
+                AND last_login_time >= #{dto.lastLoginTimeStart}
+            </if>
+            <if test="dto.lastLoginTimeEnd != null">
+                AND last_login_time &lt;= #{dto.lastLoginTimeEnd}
+            </if>
             <if test="dto.deptId != null">
                 AND EXISTS (
                     SELECT 1

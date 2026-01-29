@@ -17,7 +17,7 @@ public class Response<T> {
     // 成功消息
     public static final String SUCCESS_MESSAGE = "success";
     // 成功状态码
-    public static final int SUCCESS_CODE = 200;
+    public static final Integer SUCCESS_CODE = 200;
 
     @Schema(description = "响应状态码，200表示成功", example = "200")
     private Integer code;

@@ -115,7 +115,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // 缓存缺失时，从用户中心获取
         if (CollectionUtils.isEmpty(roles) && CollectionUtils.isEmpty(permissions)) {
             Response<UserAuthorityVo> resp = userAuthorityFeign.getUserAuthorities(username);
-            if (resp != null && Response.SUCCESS_CODE == resp.getCode() && resp.getData() != null) {
+            if (resp != null && Response.SUCCESS_CODE.equals(resp.getCode()) && resp.getData() != null) {
                 roles = resp.getData().getRoles() == null ? Collections.emptySet() : resp.getData().getRoles();
                 permissions = resp.getData().getPermissions() == null ? Collections.emptySet() : resp.getData().getPermissions();
             }

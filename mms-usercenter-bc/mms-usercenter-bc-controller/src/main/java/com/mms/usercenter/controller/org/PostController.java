@@ -97,4 +97,18 @@ public class PostController {
     public Response<java.util.List<Long>> listPostIds(@PathVariable Long userId) {
         return Response.success(postService.listPostIdsByUserId(userId));
     }
+
+    @Operation(summary = "查询用户所属的岗位列表", description = "查询用户当前所属的岗位列表信息")
+    @RequiresPermission(PermissionConstants.POST_VIEW)
+    @GetMapping("/{userId}/list")
+    public Response<java.util.List<PostVo>> getPostListByUserId(@PathVariable Long userId) {
+        return Response.success(postService.getPostListByUserId(userId));
+    }
+
+    @Operation(summary = "查询用户所属的主岗位", description = "查询用户当前所属的主岗位信息")
+    @RequiresPermission(PermissionConstants.POST_VIEW)
+    @GetMapping("/{userId}/primary")
+    public Response<PostVo> getPrimaryPostByUserId(@PathVariable Long userId) {
+        return Response.success(postService.getPrimaryPostByUserId(userId));
+    }
 }
