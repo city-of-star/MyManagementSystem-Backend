@@ -17,6 +17,7 @@ import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.auth.vo.LoginVo;
 import com.mms.usercenter.common.auth.vo.UserVo;
 import com.mms.usercenter.common.security.properties.LoginSecurityProperties;
+import com.mms.usercenter.service.auth.service.UserService;
 import com.mms.usercenter.service.auth.utils.LoginSecurityUtils;
 import com.mms.usercenter.common.auth.entity.UserLoginLogEntity;
 import com.mms.usercenter.service.auth.mapper.UserMapper;
@@ -26,7 +27,6 @@ import io.jsonwebtoken.Claims;
 import jakarta.annotation.Resource;
 import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
@@ -68,8 +68,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Resource
     private UserLoginLogMapper userLoginLogMapper;
-    @Autowired
-    private UserServiceImpl userServiceImpl;
+
+    @Resource
+    private UserService userService;
 
     @Override
     public LoginVo login(LoginDto dto) {
@@ -211,10 +212,7 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // 查询信息
-        UserEntity user = userMapper.selectById(userId);
-
-        // 转换成 UserVo
-        return convertToVo(user);
+        return userService.getUserById(userId);
     }
 
     /**
