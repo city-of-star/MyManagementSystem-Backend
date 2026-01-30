@@ -95,10 +95,9 @@ public interface UserService {
     /**
      * 修改用户密码（用户自己操作）
      *
-     * @param userId 用户ID
      * @param dto 密码修改参数
      */
-    void changePassword(Long userId, UserPasswordChangeDto dto);
+    void changePassword(UserPasswordChangeDto dto);
 
     /**
      * 检查用户名是否存在

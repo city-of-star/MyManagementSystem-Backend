@@ -161,8 +161,14 @@ public class PostServiceImpl implements PostService {
             }
             // 查询岗位
             PostEntity post = postMapper.selectById(postId);
-            if (post == null) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "岗位不存在");
+            if (post == null || Objects.equals(post.getDeleted(), 1)) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "岗位不存在或已被删除");
+            }
+            // 检查是否有用户绑定该岗位
+            LambdaQueryWrapper<UserPostEntity> userPostWrapper = new LambdaQueryWrapper<>();
+            userPostWrapper.eq(UserPostEntity::getPostId, postId);
+            if (userPostMapper.selectCount(userPostWrapper) > 0) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "该岗位下存在用户，无法删除");
             }
             // 逻辑删除
             postMapper.deleteById(postId);

@@ -204,8 +204,8 @@ public class DeptServiceImpl implements DeptService {
             }
             // 查询部门
             DeptEntity dept = deptMapper.selectById(deptId);
-            if (dept == null) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "部门不存在");
+            if (dept == null || Objects.equals(dept.getDeleted(), 1)) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "部门不存在或已被删除");
             }
             // 检查是否有子部门
             LambdaQueryWrapper<DeptEntity> wrapper = new LambdaQueryWrapper<>();
@@ -213,6 +213,12 @@ public class DeptServiceImpl implements DeptService {
                     .eq(DeptEntity::getDeleted, 0);
             if (deptMapper.selectCount(wrapper) > 0) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "该部门下存在子部门，无法删除");
+            }
+            // 检查是否有用户绑定该部门
+            LambdaQueryWrapper<UserDeptEntity> userDeptWrapper = new LambdaQueryWrapper<>();
+            userDeptWrapper.eq(UserDeptEntity::getDeptId, deptId);
+            if (userDeptMapper.selectCount(userDeptWrapper) > 0) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "该部门下存在用户，无法删除");
             }
             // 逻辑删除
             deptMapper.deleteById(deptId);

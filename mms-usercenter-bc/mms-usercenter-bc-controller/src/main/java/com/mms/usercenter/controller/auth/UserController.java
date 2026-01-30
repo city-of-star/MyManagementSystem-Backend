@@ -106,9 +106,9 @@ public class UserController {
     }
 
     @Operation(summary = "修改用户密码", description = "用户自己修改密码")
-    @PostMapping("/change-password/{userId}")
-    public Response<Void> changePassword(@PathVariable Long userId, @RequestBody @Valid UserPasswordChangeDto dto) {
-        userService.changePassword(userId, dto);
+    @PostMapping("/change-password")
+    public Response<Void> changePassword(@RequestBody @Valid UserPasswordChangeDto dto) {
+        userService.changePassword(dto);
         return Response.success();
     }
 

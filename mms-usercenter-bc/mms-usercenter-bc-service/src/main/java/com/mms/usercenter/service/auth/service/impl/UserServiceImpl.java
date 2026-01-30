@@ -23,6 +23,7 @@ import com.mms.usercenter.service.org.mapper.UserPostMapper;
 import com.mms.usercenter.service.org.service.DeptService;
 import com.mms.usercenter.service.org.service.PostService;
 import com.mms.usercenter.service.security.service.UserAuthorityService;
+import com.mms.usercenter.service.security.utils.SecurityUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.mindrot.jbcrypt.BCrypt;
@@ -468,10 +469,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void changePassword(Long userId, UserPasswordChangeDto dto) {
+    public void changePassword(UserPasswordChangeDto dto) {
         try {
-            log.info("修改用户密码，userId：{}", userId);
-            UserEntity user = userMapper.selectById(userId);
+            Long currentUserId = SecurityUtils.getUserId();
+            log.info("修改用户密码，userId：{}", currentUserId);
+            UserEntity user = userMapper.selectById(currentUserId);
             if (user == null) {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
             }
@@ -486,7 +488,7 @@ public class UserServiceImpl implements UserService {
             user.setPassword(hashedPassword);
             user.setPasswordUpdateTime(LocalDateTime.now());
             userMapper.updateById(user);
-            log.info("修改用户密码成功，userId：{}", userId);
+            log.info("修改用户密码成功，userId：{}", currentUserId);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
