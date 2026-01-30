@@ -1,6 +1,7 @@
 package com.mms.base.service.advise.service.impl;
 
 import com.mms.base.service.advise.mapper.AdviseMapper;
+import com.mms.base.service.advise.service.AdviseService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -16,7 +17,7 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service
-public class AdviseServiceImpl {
+public class AdviseServiceImpl implements AdviseService {
 
     @Resource
     private AdviseMapper adviseMapper;

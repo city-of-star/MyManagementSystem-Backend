@@ -6,7 +6,6 @@ import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.security.service.GatewaySignatureVerificationService;
 import com.mms.common.security.service.ServiceWhitelistService;
 import com.mms.usercenter.common.security.entity.SecurityUser;
-import com.mms.usercenter.service.security.service.impl.UserDetailsServiceImpl;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,6 +14,7 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -46,7 +46,7 @@ import java.io.IOException;
 @AllArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final UserDetailsServiceImpl userDetailsService;
+    private final UserDetailsService userDetailsService;
     private final GatewaySignatureVerificationService gatewaySignatureVerificationService;
     private final ServiceWhitelistService serviceWhitelistUtils;
 
