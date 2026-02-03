@@ -57,7 +57,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
-        String method = request.getMethod() != null ? request.getMethod().name() : "UNKNOWN";
+        String method = request.getMethod().name();
         String traceId = GatewayMdcUtils.getTraceIdFromMdc();
 
         // 白名单直接放行
@@ -74,76 +74,72 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             token = reactiveTokenValidatorUtils.extractTokenFromHeader(authHeader);
         } catch (BusinessException e) {
             // 认证头格式错误，直接返回错误响应
-            log.warn("JWT认证失败: traceId={}, path={}, method={}, reason={}", 
-                    traceId, path, method, e.getMessage());
+            log.warn("JWT认证失败: traceId={}, path={}, method={}, reason={}", traceId, path, method, e.getMessage());
             return GatewayResponseUtils.writeError(exchange, HttpStatus.UNAUTHORIZED, e.getMessage());
         }
         
         // 解析并验证Token（验证类型必须是ACCESS，并检查黑名单）
         return reactiveTokenValidatorUtils.parseAndValidate(token, TokenType.ACCESS)
-                .flatMap(claims -> {
-                    // 从 Token 中获取 userId
-                    String userId = Optional.ofNullable(claims.get(JwtConstants.Claims.USER_ID))
-                            .map(Object::toString)
-                            .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN));
-                    // 从 Token 中获取 username
-                    String username = Optional.ofNullable(claims.get(JwtConstants.Claims.USERNAME))
-                            .map(Object::toString)
-                            .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN));
-                    // 从 Token 中获取 jti（Token 标识）
-                    String jti = claims.getId();
-                    // 从 Token 中获取 expiration（Token 过期时间）
-                    Date expiration = claims.getExpiration();
+            .flatMap(claims -> {
+                // 从 Token 中获取 userId
+                String userId = Optional.ofNullable(claims.get(JwtConstants.Claims.USER_ID))
+                        .map(Object::toString)
+                        .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN));
+                // 从 Token 中获取 username
+                String username = Optional.ofNullable(claims.get(JwtConstants.Claims.USERNAME))
+                        .map(Object::toString)
+                        .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN));
+                // 从 Token 中获取 jti（Token 标识）
+                String jti = claims.getId();
+                // 从 Token 中获取 expiration（Token 过期时间）
+                Date expiration = claims.getExpiration();
 
-                    // 生成网关签名（使用RSA私钥）
-                    String[] signatureResult = gatewaySignatureService.generateSignature(userId, username, jti);
-                    String signature = signatureResult[0];
-                    String timestamp = signatureResult[1];
+                // 生成网关签名（使用RSA私钥）
+                String[] signatureResult = gatewaySignatureService.generateSignature(userId, username, jti);
+                String signature = signatureResult[0];
+                String timestamp = signatureResult[1];
 
-                    // 记录认证成功日志
-                    log.info("JWT认证成功: traceId={}, path={}, method={}, username={}, token={}",
-                            traceId, path, method, username, token);
+                // 将用户信息和签名透传到下游服务
+                ServerHttpRequest mutatedRequest = request.mutate()
+                    .headers(httpHeaders -> {
+                        if (StringUtils.hasText(userId)) {
+                            // 将 userId 添加到请求头，供下游服务使用
+                            httpHeaders.set(GatewayConstants.Headers.USER_ID, userId);
+                        }
+                        if (StringUtils.hasText(username)) {
+                            // 将 username 添加到请求头，供下游服务使用
+                            httpHeaders.set(GatewayConstants.Headers.USER_NAME, username);
+                        }
+                        if (StringUtils.hasText(jti)) {
+                            // 将 jti 添加到请求头，供下游服务使用（用于黑名单）
+                            httpHeaders.set(GatewayConstants.Headers.TOKEN_JTI, jti);
+                        }
+                        if (expiration != null) {
+                            // 将 expiration 添加到请求头，供下游服务使用（用于黑名单TTL计算）
+                            httpHeaders.set(GatewayConstants.Headers.TOKEN_EXP, String.valueOf(expiration.getTime()));
+                        }
+                        // 添加网关签名和时间戳
+                        httpHeaders.set(GatewayConstants.Headers.GATEWAY_SIGNATURE, signature);
+                        httpHeaders.set(GatewayConstants.Headers.GATEWAY_TIMESTAMP, timestamp);
+                    })
+                    .build();
 
-                    // 将用户信息和签名透传到下游服务
-                    ServerHttpRequest mutatedRequest = request.mutate()
-                            .headers(httpHeaders -> {
-                                if (StringUtils.hasText(userId)) {
-                                    // 将 userId 添加到请求头，供下游服务使用
-                                    httpHeaders.set(GatewayConstants.Headers.USER_ID, userId);
-                                }
-                                if (StringUtils.hasText(username)) {
-                                    // 将 username 添加到请求头，供下游服务使用
-                                    httpHeaders.set(GatewayConstants.Headers.USER_NAME, username);
-                                }
-                                if (StringUtils.hasText(jti)) {
-                                    // 将 jti 添加到请求头，供下游服务使用（用于黑名单）
-                                    httpHeaders.set(GatewayConstants.Headers.TOKEN_JTI, jti);
-                                }
-                                if (expiration != null) {
-                                    // 将 expiration 添加到请求头，供下游服务使用（用于黑名单TTL计算）
-                                    httpHeaders.set(GatewayConstants.Headers.TOKEN_EXP, String.valueOf(expiration.getTime()));
-                                }
-                                // 添加网关签名和时间戳
-                                httpHeaders.set(GatewayConstants.Headers.GATEWAY_SIGNATURE, signature);
-                                httpHeaders.set(GatewayConstants.Headers.GATEWAY_TIMESTAMP, timestamp);
-                            })
-                            .build();
+                // 记录认证成功日志
+                log.info("JWT认证成功: traceId={}, path={}, method={}, username={}", traceId, path, method, username);
 
-                    // 继续过滤器链
-                    return chain.filter(exchange.mutate().request(mutatedRequest).build());
-                })
-                .onErrorResume(BusinessException.class, e -> {
-                    // Token验证失败（业务异常：过期、无效、黑名单等）
-                    log.warn("JWT认证失败: traceId={}, path={}, method={}, reason={}", 
-                            traceId, path, method, e.getMessage());
-                    return GatewayResponseUtils.writeError(exchange, HttpStatus.UNAUTHORIZED, e.getMessage());
-                })
-                .onErrorResume(e -> {
-                    // Token验证失败（系统异常）
-                    log.error("JWT认证异常: traceId={}, path={}, method={}, error={}", 
-                            traceId, path, method, e.getMessage(), e);
-                    return GatewayResponseUtils.writeError(exchange, HttpStatus.UNAUTHORIZED, ErrorCode.LOGIN_EXPIRED.getMessage());
-                });
+                // 继续过滤器链
+                return chain.filter(exchange.mutate().request(mutatedRequest).build());
+            })
+            .onErrorResume(BusinessException.class, e -> {
+                // Token验证失败（业务异常：过期、无效、黑名单等）
+                log.warn("JWT认证失败: traceId={}, path={}, method={}, reason={}", traceId, path, method, e.getMessage());
+                return GatewayResponseUtils.writeError(exchange, HttpStatus.UNAUTHORIZED, e.getMessage());
+            })
+            .onErrorResume(e -> {
+                // Token验证失败（系统异常）
+                log.error("JWT认证异常: traceId={}, path={}, method={}, error={}", traceId, path, method, e.getMessage(), e);
+                return GatewayResponseUtils.writeError(exchange, HttpStatus.UNAUTHORIZED, ErrorCode.LOGIN_EXPIRED.getMessage());
+            });
     }
 
     @Override

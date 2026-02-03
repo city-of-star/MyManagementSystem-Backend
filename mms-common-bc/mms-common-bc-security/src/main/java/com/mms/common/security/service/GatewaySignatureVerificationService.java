@@ -14,9 +14,7 @@ import org.springframework.util.StringUtils;
  * 实现功能【网关签名验证器】
  * <p>
  * 下游服务使用RSA公钥验证网关签名，确保请求来自网关且未被篡改
- * </p>
- * <p>
- * 注意：此服务仅在 Servlet 环境（业务服务）中生效，网关（WebFlux）环境不会创建此 Bean
+ * 此服务仅在 Servlet 环境（业务服务）中生效，网关（WebFlux）环境不会创建此 Bean
  * </p>
  *
  * @author li.hongyu
