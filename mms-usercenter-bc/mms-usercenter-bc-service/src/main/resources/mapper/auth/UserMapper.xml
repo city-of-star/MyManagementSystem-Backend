@@ -2,105 +2,111 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.mms.usercenter.service.auth.mapper.UserMapper">
 
-    <!-- 用户实体完整字段列表（包含password和deleted） -->
-    <sql id="UserEntityColumns">
-        id, username, password, nickname, real_name, avatar, email, phone, gender, birthday,
-        status, locked, lock_time, lock_reason, last_login_time, last_login_ip,
-        password_update_time, remark, deleted, create_by, create_time, update_by, update_time
-    </sql>
-
-    <!-- 用户VO字段列表（不包含password和deleted） -->
-    <sql id="UserVoColumns">
-        id, username, nickname, real_name, avatar, email, phone, gender, birthday,
-        status, locked, lock_time, lock_reason, last_login_time, last_login_ip,
-        password_update_time, remark, create_by, create_time, update_by, update_time
-    </sql>
-
-    <!-- 分页查询用户列表 -->
-    <select id="getUserPage" resultType="com.mms.usercenter.common.auth.vo.UserVo">
+    <select id="getUserPage" resultType="com.mms.usercenter.common.auth.vo.UserPageVo">
         SELECT
-            <include refid="UserVoColumns"/>
-        FROM user
+            u.id,
+            u.username,
+            u.nickname,
+            u.real_name,
+            u.gender,
+            u.phone,
+            u.email,
+            u.status,
+            u.locked,
+            u.last_login_time,
+            u.remark,
+            d.dept_name primaryDeptName,
+            p.post_name primaryPostName
+        FROM user u
+        LEFT JOIN user_dept ud on u.id = ud.user_id AND ud.is_primary = 1
+        LEFT JOIN dept d on ud.dept_id = d.id
+        LEFT JOIN user_post up on u.id = up.user_id AND up.is_primary = 1
+        LEFT JOIN post p on up.post_id = p.id
         <where>
-            deleted = 0
+            u.deleted = 0
             <if test="dto.username != null and dto.username != ''">
-                AND username LIKE CONCAT('%', #{dto.username}, '%')
+                AND u.username LIKE CONCAT('%', #{dto.username}, '%')
             </if>
             <if test="dto.nickname != null and dto.nickname != ''">
-                AND nickname LIKE CONCAT('%', #{dto.nickname}, '%')
+                AND u.nickname LIKE CONCAT('%', #{dto.nickname}, '%')
             </if>
             <if test="dto.realName != null and dto.realName != ''">
-                AND real_name LIKE CONCAT('%', #{dto.realName}, '%')
+                AND u.real_name LIKE CONCAT('%', #{dto.realName}, '%')
             </if>
             <if test="dto.email != null and dto.email != ''">
-                AND email = #{dto.email}
+                AND u.email = #{dto.email}
             </if>
             <if test="dto.phone != null and dto.phone != ''">
-                AND phone = #{dto.phone}
+                AND u.phone = #{dto.phone}
             </if>
             <if test="dto.status != null">
-                AND status = #{dto.status}
+                AND u.status = #{dto.status}
             </if>
             <if test="dto.locked != null">
-                AND locked = #{dto.locked}
+                AND u.locked = #{dto.locked}
             </if>
             <if test="dto.gender != null">
-                AND gender = #{dto.gender}
+                AND u.gender = #{dto.gender}
             </if>
             <if test="dto.createTimeStart != null">
-                AND create_time >= #{dto.createTimeStart}
+                AND u.create_time >= #{dto.createTimeStart}
             </if>
             <if test="dto.createTimeEnd != null">
-                AND create_time &lt;= #{dto.createTimeEnd}
+                AND u.create_time &lt;= #{dto.createTimeEnd}
             </if>
             <if test="dto.lastLoginTimeStart != null">
-                AND last_login_time >= #{dto.lastLoginTimeStart}
+                AND u.last_login_time >= #{dto.lastLoginTimeStart}
             </if>
             <if test="dto.lastLoginTimeEnd != null">
-                AND last_login_time &lt;= #{dto.lastLoginTimeEnd}
+                AND u.last_login_time &lt;= #{dto.lastLoginTimeEnd}
             </if>
             <if test="dto.deptId != null">
-                AND EXISTS (
-                    SELECT 1
-                    FROM user_dept ud
-                    WHERE ud.user_id = user.id
-                      AND ud.dept_id = #{dto.deptId}
-                )
+                AND
+                    EXISTS (
+                        SELECT 1
+                        FROM user_dept ud
+                        WHERE ud.user_id = u.id
+                            AND ud.dept_id = #{dto.deptId}
+                    )
             </if>
             <if test="dto.postId != null">
-                AND EXISTS (
-                    SELECT 1
-                    FROM user_post up
-                    WHERE up.user_id = user.id
-                      AND up.post_id = #{dto.postId}
-                )
+                AND
+                    EXISTS (
+                        SELECT 1
+                        FROM user_post up
+                        WHERE up.user_id = u.id
+                            AND up.post_id = #{dto.postId}
+                    )
             </if>
         </where>
-        ORDER BY create_time DESC
+        ORDER BY u.create_time DESC
     </select>
 
-    <!-- 根据用户名查询用户 -->
     <select id="selectByUsername" resultType="com.mms.usercenter.common.auth.entity.UserEntity">
         SELECT
-            <include refid="UserEntityColumns"/>
+            id, username, password, nickname, real_name, avatar, email, phone, gender, birthday,
+            status, locked, lock_time, lock_reason, last_login_time, last_login_ip,
+            password_update_time, remark, create_by, create_time, update_by, update_time
         FROM user
         WHERE username = #{username}
           AND deleted = 0
     </select>
 
-    <!-- 根据邮箱查询用户 -->
     <select id="selectByEmail" resultType="com.mms.usercenter.common.auth.entity.UserEntity">
         SELECT
-            <include refid="UserEntityColumns"/>
+            id, username, password, nickname, real_name, avatar, email, phone, gender, birthday,
+            status, locked, lock_time, lock_reason, last_login_time, last_login_ip,
+            password_update_time, remark, create_by, create_time, update_by, update_time
         FROM user
         WHERE email = #{email}
           AND deleted = 0
     </select>
 
-    <!-- 根据手机号查询用户 -->
     <select id="selectByPhone" resultType="com.mms.usercenter.common.auth.entity.UserEntity">
         SELECT
-            <include refid="UserEntityColumns"/>
+            id, username, password, nickname, real_name, avatar, email, phone, gender, birthday,
+            status, locked, lock_time, lock_reason, last_login_time, last_login_ip,
+            password_update_time, remark, create_by, create_time, update_by, update_time
         FROM user
         WHERE phone = #{phone}
           AND deleted = 0

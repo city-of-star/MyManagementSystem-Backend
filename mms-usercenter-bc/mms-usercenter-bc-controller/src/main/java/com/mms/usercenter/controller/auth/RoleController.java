@@ -11,7 +11,7 @@ import com.mms.usercenter.common.auth.dto.RoleRemoveUserDto;
 import com.mms.usercenter.common.auth.dto.RoleStatusSwitchDto;
 import com.mms.usercenter.common.auth.dto.RoleUpdateDto;
 import com.mms.usercenter.common.auth.vo.RoleVo;
-import com.mms.usercenter.common.auth.vo.UserVo;
+import com.mms.usercenter.common.auth.vo.UserDetailVo;
 import com.mms.common.core.constants.usercenter.PermissionConstants;
 import com.mms.usercenter.service.auth.service.RoleService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -109,7 +109,7 @@ public class RoleController {
     @Operation(summary = "查询角色关联的用户列表")
     @RequiresPermission(PermissionConstants.ROLE_VIEW)
     @GetMapping("/{roleId}/users")
-    public Response<List<UserVo>> listUsersByRoleId(@PathVariable Long roleId) {
+    public Response<List<UserDetailVo>> listUsersByRoleId(@PathVariable Long roleId) {
         return Response.success(roleService.listUsersByRoleId(roleId));
     }
 

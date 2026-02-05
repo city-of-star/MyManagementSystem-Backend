@@ -9,7 +9,7 @@ import com.mms.usercenter.common.auth.dto.RoleRemoveUserDto;
 import com.mms.usercenter.common.auth.dto.RoleStatusSwitchDto;
 import com.mms.usercenter.common.auth.dto.RoleUpdateDto;
 import com.mms.usercenter.common.auth.vo.RoleVo;
-import com.mms.usercenter.common.auth.vo.UserVo;
+import com.mms.usercenter.common.auth.vo.UserDetailVo;
 
 import java.util.List;
 
@@ -72,7 +72,7 @@ public interface RoleService {
     /**
      * 查询角色关联的用户列表
      */
-    List<UserVo> listUsersByRoleId(Long roleId);
+    List<UserDetailVo> listUsersByRoleId(Long roleId);
 
     /**
      * 移除角色的用户关联

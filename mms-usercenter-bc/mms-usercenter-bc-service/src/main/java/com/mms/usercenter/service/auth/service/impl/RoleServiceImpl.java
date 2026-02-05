@@ -18,8 +18,7 @@ import com.mms.usercenter.common.auth.entity.RolePermissionEntity;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.auth.entity.UserRoleEntity;
 import com.mms.usercenter.common.auth.vo.RoleVo;
-import com.mms.usercenter.common.auth.vo.UserVo;
-import com.mms.usercenter.common.security.constants.SuperAdminInfoConstants;
+import com.mms.usercenter.common.auth.vo.UserDetailVo;
 import com.mms.usercenter.service.auth.mapper.PermissionMapper;
 import com.mms.usercenter.service.auth.mapper.RoleMapper;
 import com.mms.usercenter.service.auth.mapper.RolePermissionMapper;
@@ -37,7 +36,6 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 
@@ -188,10 +186,6 @@ public class RoleServiceImpl implements RoleService {
             if (role == null || Objects.equals(role.getDeleted(), 1)) {
                 throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
             }
-            // 检查是否是超级管理员角色
-            if (roleId.equals(SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID)) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员角色不可删除");
-            }
             // 检查是否有用户关联
             LambdaQueryWrapper<UserRoleEntity> userRoleWrapper = new LambdaQueryWrapper<UserRoleEntity>()
                             .eq(UserRoleEntity::getRoleId, roleId);
@@ -242,10 +236,6 @@ public class RoleServiceImpl implements RoleService {
             if (role == null || Objects.equals(role.getDeleted(), 1)) {
                 throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
             }
-            // 检查
-            if (Objects.equals(dto.getRoleId(), SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID) && dto.getStatus() == 0) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员角色不可禁用");
-            }
             if (dto.getStatus() != 0 && dto.getStatus() != 1) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "状态值只能是0或1");
             }
@@ -292,11 +282,6 @@ public class RoleServiceImpl implements RoleService {
                     throw new BusinessException(ErrorCode.PARAM_INVALID, "权限 " + permission.getPermissionCode() + " 已被禁用，无法分配给角色");
                 }
             }
-            // 超级管理员角色必须拥有所有的核心权限，防止误操作
-            if (Objects.equals(dto.getRoleId(), SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID) &&
-                    !new HashSet<>(dto.getPermissionIds()).containsAll(SuperAdminInfoConstants.SYSTEM_CORE_PERMISSION_IDS)) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员角色必须拥有所有的核心权限");
-            }
             saveRolePermissions(dto.getRoleId(), dto.getPermissionIds());
         } catch (BusinessException e) {
             throw e;
@@ -322,7 +307,7 @@ public class RoleServiceImpl implements RoleService {
     }
 
     @Override
-    public List<UserVo> listUsersByRoleId(Long roleId) {
+    public List<UserDetailVo> listUsersByRoleId(Long roleId) {
         try {
             log.info("查询角色关联的用户列表，roleId：{}", roleId);
             if (roleId == null) {
@@ -370,10 +355,6 @@ public class RoleServiceImpl implements RoleService {
             }
             if (dto.getUserId() == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "用户ID不能为空");
-            }
-            if (dto.getUserId().equals(SuperAdminInfoConstants.SUPER_ADMIN_USER_ID)
-                    && dto.getRoleId().equals(SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID)) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员角色不可移除超级管理用户");
             }
             // 验证角色是否存在
             RoleEntity role = roleMapper.selectById(dto.getRoleId());
@@ -480,7 +461,7 @@ public class RoleServiceImpl implements RoleService {
     }
 
     /**
-     * 将 UserEntity 转换为 UserVo
+     * 将 UserEntity 转换为 UserDetailVo
      * <p>
      * 注意：此方法存在于 RoleServiceImpl 中是为了避免循环依赖。
      * 当需要查询角色关联的用户时，不能依赖 UserService，因此在此处进行转换。
@@ -488,11 +469,11 @@ public class RoleServiceImpl implements RoleService {
      * @param entity 用户实体
      * @return 用户VO
      */
-    private UserVo convertUserToVo(UserEntity entity) {
+    private UserDetailVo convertUserToVo(UserEntity entity) {
         if (entity == null) {
             return null;
         }
-        UserVo vo = new UserVo();
+        UserDetailVo vo = new UserDetailVo();
         BeanUtils.copyProperties(entity, vo);
         return vo;
     }

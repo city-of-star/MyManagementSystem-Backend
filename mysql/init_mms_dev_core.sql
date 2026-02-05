@@ -292,6 +292,35 @@ CREATE TABLE IF NOT EXISTS `dict_data` (
     CONSTRAINT `fk_dict_data_type` FOREIGN KEY (`dict_type_id`) REFERENCES `dict_type` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='数据字典数据表（字典键值对）';
 
+-- 14. 附件表
+CREATE TABLE IF NOT EXISTS `attachment` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '附件ID',
+    `file_name` varchar(255) NOT NULL COMMENT '文件名（存储文件名）',
+    `original_name` varchar(255) NOT NULL COMMENT '原始文件名',
+    `file_path` varchar(1024) NOT NULL COMMENT '文件存储路径',
+    `file_url` varchar(1024) NOT NULL COMMENT '文件访问URL',
+    `file_size` bigint NOT NULL COMMENT '文件大小（字节）',
+    `file_type` varchar(64) NOT NULL COMMENT '文件类型（扩展名）',
+    `mime_type` varchar(128) DEFAULT NULL COMMENT 'MIME类型',
+    `storage_type` varchar(32) NOT NULL DEFAULT 'local' COMMENT '存储类型：local-本地，oss-对象存储',
+    `business_type` varchar(64) DEFAULT NULL COMMENT '业务类型（用于区分不同业务场景）',
+    `business_id` bigint DEFAULT NULL COMMENT '关联业务ID',
+    `status` tinyint NOT NULL DEFAULT 1 COMMENT '状态：0-禁用，1-启用',
+    `remark` varchar(512) DEFAULT NULL COMMENT '备注',
+    `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除',
+    `create_by` bigint DEFAULT NULL COMMENT '创建人ID',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by` bigint DEFAULT NULL COMMENT '更新人ID',
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_file_type` (`file_type`),
+    KEY `idx_business` (`business_type`, `business_id`),
+    KEY `idx_create_by` (`create_by`),
+    KEY `idx_deleted` (`deleted`),
+    KEY `idx_create_time` (`create_time`),
+    KEY `idx_status_deleted` (`status`, `deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='附件表';
+
 -- ==================== 初始化数据 ====================
 
 -- 初始化用户（密码：123456）
@@ -371,7 +400,15 @@ VALUES
     (36, 35, 'button', '字典-查看', 'SYSTEM_DICT_VIEW', NULL, NULL, NULL, 71, 1, 1, 0, NOW(), NOW()),
     (37, 35, 'button', '字典-新增', 'SYSTEM_DICT_CREATE', NULL, NULL, NULL, 72, 1, 1, 0, NOW(), NOW()),
     (38, 35, 'button', '字典-编辑', 'SYSTEM_DICT_UPDATE', NULL, NULL, NULL, 73, 1, 1, 0, NOW(), NOW()),
-    (39, 35, 'button', '字典-删除', 'SYSTEM_DICT_DELETE', NULL, NULL, NULL, 74, 1, 1, 0, NOW(), NOW());
+    (39, 35, 'button', '字典-删除', 'SYSTEM_DICT_DELETE', NULL, NULL, NULL, 74, 1, 1, 0, NOW(), NOW()),
+
+    -- 附件管理（菜单 + 按钮）
+    (40, 1, 'menu', '附件管理', 'SYSTEM_ATTACHMENT', '/system/attachmentPage', '/system/attachment/AttachmentPage.vue', 'Folder', 80, 1, 1, 0, NOW(), NOW()),
+    (41, 40, 'button', '附件-查看', 'SYSTEM_ATTACHMENT_VIEW', NULL, NULL, NULL, 81, 1, 1, 0, NOW(), NOW()),
+    (42, 40, 'button', '附件-上传', 'SYSTEM_ATTACHMENT_UPLOAD', NULL, NULL, NULL, 82, 1, 1, 0, NOW(), NOW()),
+    (43, 40, 'button', '附件-编辑', 'SYSTEM_ATTACHMENT_UPDATE', NULL, NULL, NULL, 83, 1, 1, 0, NOW(), NOW()),
+    (44, 40, 'button', '附件-删除', 'SYSTEM_ATTACHMENT_DELETE', NULL, NULL, NULL, 84, 1, 1, 0, NOW(), NOW()),
+    (45, 40, 'button', '附件-下载', 'SYSTEM_ATTACHMENT_DOWNLOAD', NULL, NULL, NULL, 85, 1, 1, 0, NOW(), NOW());
 
 -- 将权限授予角色
 INSERT IGNORE INTO `role_permission` (`role_id`, `permission_id`, `create_time`)

@@ -15,7 +15,7 @@ import com.mms.usercenter.common.auth.dto.LogoutDto;
 import com.mms.usercenter.common.auth.dto.RefreshTokenDto;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.auth.vo.LoginVo;
-import com.mms.usercenter.common.auth.vo.UserVo;
+import com.mms.usercenter.common.auth.vo.UserDetailVo;
 import com.mms.usercenter.common.security.properties.LoginSecurityProperties;
 import com.mms.usercenter.service.auth.service.UserService;
 import com.mms.usercenter.service.auth.utils.LoginSecurityUtils;
@@ -202,7 +202,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public UserVo getCurrentUser() {
+    public UserDetailVo getCurrentUser() {
         // 从请求上下文获取用户名（网关已验证并透传）
         Long userId = UserContextUtils.getUserId();
 
@@ -304,16 +304,16 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * 将 UserEntity 转换为 UserVo
+     * 将 UserEntity 转换为 UserDetailVo
      *
      * @param entity 用户实体
      * @return 用户VO
      */
-    private UserVo convertToVo(UserEntity entity) {
+    private UserDetailVo convertToVo(UserEntity entity) {
         if (entity == null) {
             return null;
         }
-        UserVo vo = new UserVo();
+        UserDetailVo vo = new UserDetailVo();
         BeanUtils.copyProperties(entity, vo);
         return vo;
     }

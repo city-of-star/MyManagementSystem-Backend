@@ -4,8 +4,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.common.security.annotations.RequiresPermission;
 import com.mms.common.core.response.Response;
 import com.mms.usercenter.common.auth.dto.*;
-import com.mms.usercenter.common.auth.vo.UserVo;
+import com.mms.usercenter.common.auth.vo.UserDetailVo;
 import com.mms.common.core.constants.usercenter.PermissionConstants;
+import com.mms.usercenter.common.auth.vo.UserPageVo;
 import com.mms.usercenter.service.auth.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,35 +34,35 @@ public class UserController {
     @Operation(summary = "分页查询用户列表", description = "根据条件分页查询用户列表")
     @RequiresPermission(PermissionConstants.USER_VIEW)
     @PostMapping("/page")
-    public Response<Page<UserVo>> getUserPage(@RequestBody @Valid UserPageQueryDto dto) {
+    public Response<Page<UserPageVo>> getUserPage(@RequestBody @Valid UserPageQueryDto dto) {
         return Response.success(userService.getUserPage(dto));
     }
 
     @Operation(summary = "根据ID查询用户详情", description = "根据用户ID查询用户详细信息")
     @RequiresPermission(PermissionConstants.USER_VIEW)
     @GetMapping("/{userId}")
-    public Response<UserVo> getUserById(@PathVariable Long userId) {
+    public Response<UserDetailVo> getUserById(@PathVariable Long userId) {
         return Response.success(userService.getUserById(userId));
     }
 
     @Operation(summary = "根据用户名查询用户", description = "根据用户名查询用户信息")
     @RequiresPermission(PermissionConstants.USER_VIEW)
     @GetMapping("/username/{username}")
-    public Response<UserVo> getUserByUsername(@PathVariable String username) {
+    public Response<UserDetailVo> getUserByUsername(@PathVariable String username) {
         return Response.success(userService.getUserByUsername(username));
     }
 
     @Operation(summary = "创建用户", description = "创建新用户")
     @RequiresPermission(PermissionConstants.USER_CREATE)
     @PostMapping("/create")
-    public Response<UserVo> createUser(@RequestBody @Valid UserCreateDto dto) {
+    public Response<UserDetailVo> createUser(@RequestBody @Valid UserCreateDto dto) {
         return Response.success(userService.createUser(dto));
     }
 
     @Operation(summary = "更新用户信息", description = "更新用户的基本信息")
     @RequiresPermission(PermissionConstants.USER_UPDATE)
     @PutMapping("/update")
-    public Response<UserVo> updateUser(@RequestBody @Valid UserUpdateDto dto) {
+    public Response<UserDetailVo> updateUser(@RequestBody @Valid UserUpdateDto dto) {
         return Response.success(userService.updateUser(dto));
     }
 

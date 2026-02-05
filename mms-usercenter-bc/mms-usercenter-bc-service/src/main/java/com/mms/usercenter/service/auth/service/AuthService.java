@@ -4,7 +4,7 @@ import com.mms.usercenter.common.auth.dto.LoginDto;
 import com.mms.usercenter.common.auth.dto.LogoutDto;
 import com.mms.usercenter.common.auth.dto.RefreshTokenDto;
 import com.mms.usercenter.common.auth.vo.LoginVo;
-import com.mms.usercenter.common.auth.vo.UserVo;
+import com.mms.usercenter.common.auth.vo.UserDetailVo;
 
 /**
  * 实现功能【用户认证服务】
@@ -41,5 +41,5 @@ public interface AuthService {
      * 获取当前用户信息
      * @return 当前用户信息
      */
-    UserVo getCurrentUser();
+    UserDetailVo getCurrentUser();
 }

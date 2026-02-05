@@ -1,7 +1,7 @@
 package com.mms.usercenter.controller.security;
 
 import com.mms.common.core.response.Response;
-import com.mms.usercenter.common.auth.vo.UserVo;
+import com.mms.usercenter.common.auth.vo.UserDetailVo;
 import com.mms.usercenter.service.auth.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -30,13 +30,13 @@ public class UserInfoController {
 
     @Operation(summary = "根据用户名获取用户详细信息", description = "内部接口")
     @GetMapping("/username/{username}")
-    public Response<UserVo> getUserByUsername(@PathVariable String username) {
+    public Response<UserDetailVo> getUserByUsername(@PathVariable String username) {
         return Response.success(userService.getUserByUsername(username));
     }
 
     @Operation(summary = "根据用户ID获取用户详细信息", description = "内部接口")
     @GetMapping("/{userId}")
-    public Response<UserVo> getUserById(@PathVariable Long userId) {
+    public Response<UserDetailVo> getUserById(@PathVariable Long userId) {
         return Response.success(userService.getUserById(userId));
     }
 }

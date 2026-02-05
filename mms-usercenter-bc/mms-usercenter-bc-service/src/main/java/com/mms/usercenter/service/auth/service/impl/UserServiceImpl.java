@@ -9,10 +9,10 @@ import com.mms.usercenter.common.auth.dto.*;
 import com.mms.usercenter.common.auth.entity.RoleEntity;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.auth.entity.UserRoleEntity;
-import com.mms.usercenter.common.auth.vo.UserVo;
+import com.mms.usercenter.common.auth.vo.UserDetailVo;
+import com.mms.usercenter.common.auth.vo.UserPageVo;
 import com.mms.usercenter.common.org.entity.UserDeptEntity;
 import com.mms.usercenter.common.org.entity.UserPostEntity;
-import com.mms.usercenter.common.security.constants.SuperAdminInfoConstants;
 import com.mms.usercenter.service.auth.mapper.RoleMapper;
 import com.mms.usercenter.service.auth.mapper.UserMapper;
 import com.mms.usercenter.service.auth.mapper.UserRoleMapper;
@@ -76,20 +76,11 @@ public class UserServiceImpl implements UserService {
     private UserAuthorityService userAuthorityService;
 
     @Override
-    public Page<UserVo> getUserPage(UserPageQueryDto dto) {
+    public Page<UserPageVo> getUserPage(UserPageQueryDto dto) {
         try {
             log.info("分页查询用户列表，参数：{}", dto);
-            Page<UserVo> page = new Page<>(dto.getPageNum(), dto.getPageSize());
-            Page<UserVo> result = userMapper.getUserPage(page, dto);
-            // 查询主部门/主岗位信息
-            if (result.getRecords() != null && !result.getRecords().isEmpty()) {
-                for (UserVo vo : result.getRecords()) {
-                    Long userId = vo.getId();
-                    vo.setPrimaryDept(deptService.getPrimaryDeptByUserId(userId));
-                    vo.setPrimaryPost(postService.getPrimaryPostByUserId(userId));
-                }
-            }
-            return result;
+            Page<UserPageVo> page = new Page<>(dto.getPageNum(), dto.getPageSize());
+            return userMapper.getUserPage(page, dto);
         } catch (Exception e) {
             log.error("分页查询用户列表失败：{}", e.getMessage(), e);
             throw new ServerException("查询用户列表失败", e);
@@ -97,7 +88,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserVo getUserById(Long userId) {
+    public UserDetailVo getUserById(Long userId) {
         try {
             log.info("根据ID查询用户，userId：{}", userId);
             if (userId == null) {
@@ -107,7 +98,7 @@ public class UserServiceImpl implements UserService {
             if (user == null) {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
             }
-            UserVo vo = convertToVo(user);
+            UserDetailVo vo = convertToVo(user);
             // 查询部门、岗位信息
             vo.setPrimaryDept(deptService.getPrimaryDeptByUserId(userId));
             vo.setPrimaryPost(postService.getPrimaryPostByUserId(userId));
@@ -123,7 +114,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserVo getUserByUsername(String username) {
+    public UserDetailVo getUserByUsername(String username) {
         try {
             log.info("根据用户名查询用户，username：{}", username);
             if (!StringUtils.hasText(username)) {
@@ -133,7 +124,7 @@ public class UserServiceImpl implements UserService {
             if (user == null) {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
             }
-            UserVo vo = convertToVo(user);
+            UserDetailVo vo = convertToVo(user);
             Long userId = user.getId();
             // 查询部门、岗位信息
             vo.setPrimaryDept(deptService.getPrimaryDeptByUserId(userId));
@@ -151,7 +142,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public UserVo createUser(UserCreateDto dto) {
+    public UserDetailVo createUser(UserCreateDto dto) {
         try {
             log.info("创建用户，参数：{}", dto);
             // 校验密码复杂度
@@ -197,9 +188,9 @@ public class UserServiceImpl implements UserService {
                 userAssignPostDto.setPrimaryPostId(dto.getPrimaryPostId());
                 postService.assignPosts(userAssignPostDto);
             }
-            UserVo vo = convertToVo(user);
+            UserDetailVo vo = convertToVo(user);
             // 回显部门、岗位信息
-            UserVo userInfo = getUserByUsername(dto.getUsername());
+            UserDetailVo userInfo = getUserByUsername(dto.getUsername());
             vo.setPrimaryDept(deptService.getPrimaryDeptByUserId(userInfo.getId()));
             vo.setPrimaryPost(postService.getPrimaryPostByUserId(userInfo.getId()));
             vo.setDepts(deptService.getDeptListByUserId(userInfo.getId()));
@@ -216,7 +207,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public UserVo updateUser(UserUpdateDto dto) {
+    public UserDetailVo updateUser(UserUpdateDto dto) {
         try {
             log.info("更新用户信息，参数：{}", dto);
             // 查询用户
@@ -300,7 +291,7 @@ public class UserServiceImpl implements UserService {
                     postService.assignPosts(userAssignPostDto);
                 }
             }
-            UserVo vo = convertToVo(user);
+            UserDetailVo vo = convertToVo(user);
             // 回显部门、岗位信息
             vo.setPrimaryDept(deptService.getPrimaryDeptByUserId(dto.getId()));
             vo.setPrimaryPost(postService.getPrimaryPostByUserId(dto.getId()));
@@ -323,9 +314,6 @@ public class UserServiceImpl implements UserService {
             log.info("删除用户，userId：{}", userId);
             if (userId == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "用户ID不能为空");
-            }
-            if (userId.equals(SuperAdminInfoConstants.SUPER_ADMIN_USER_ID)) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员用户不可删除");
             }
             UserEntity user = userMapper.selectById(userId);
             if (user == null) {
@@ -383,10 +371,6 @@ public class UserServiceImpl implements UserService {
             if (user == null) {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
             }
-            // 超级管理员用户不可被禁用
-            if (Objects.equals(dto.getUserId(), SuperAdminInfoConstants.SUPER_ADMIN_USER_ID) && dto.getStatus() == 0) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员用户不可禁用");
-            }
             if (dto.getStatus() != 0 && dto.getStatus() != 1) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "状态值只能是0或1");
             }
@@ -409,10 +393,6 @@ public class UserServiceImpl implements UserService {
             UserEntity user = userMapper.selectById(dto.getUserId());
             if (user == null) {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-            }
-            // 超级管理员用户不可被锁定
-            if (Objects.equals(dto.getUserId(), SuperAdminInfoConstants.SUPER_ADMIN_USER_ID) && dto.getLocked() == 1) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员用户不可锁定");
             }
             if (dto.getLocked() != 0 && dto.getLocked() != 1) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "锁定状态值只能是0或1");
@@ -448,10 +428,6 @@ public class UserServiceImpl implements UserService {
             UserEntity user = userMapper.selectById(dto.getUserId());
             if (user == null) {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-            }
-            // 超级管理员用户不可被锁定
-            if (Objects.equals(dto.getUserId(), SuperAdminInfoConstants.SUPER_ADMIN_USER_ID)) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员用户不可重置密码");
             }
             // 加密新密码
             String hashedPassword = BCrypt.hashpw("123456", BCrypt.gensalt());
@@ -525,16 +501,6 @@ public class UserServiceImpl implements UserService {
                 if (Objects.equals(role.getStatus(), 0)) {
                     throw new BusinessException(ErrorCode.PARAM_INVALID, "角色 " + role.getRoleCode() + " 已被禁用，无法分配给角色");
                 }
-            }
-            // 检查
-            if (Objects.equals(dto.getUserId(), SuperAdminInfoConstants.SUPER_ADMIN_USER_ID) 
-                    && !dto.getRoleIds().contains(SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID)) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员用户必须有超级管理员角色，请重新分配");
-            }
-            // 检查
-            if (!Objects.equals(dto.getUserId(), SuperAdminInfoConstants.SUPER_ADMIN_USER_ID)
-                    && dto.getRoleIds().contains(SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID)) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "超级管理员角色只能分配给超级管理员用户");
             }
             saveUserRoles(dto.getUserId(), dto.getRoleIds());
         } catch (BusinessException e) {
@@ -644,16 +610,16 @@ public class UserServiceImpl implements UserService {
     // ==================== 实体转换方法 ====================
 
     /**
-     * 将 UserEntity 转换为 UserVo
+     * 将 UserEntity 转换为 UserDetailVo
      *
      * @param entity 用户实体
      * @return 用户VO
      */
-    private UserVo convertToVo(UserEntity entity) {
+    private UserDetailVo convertToVo(UserEntity entity) {
         if (entity == null) {
             return null;
         }
-        UserVo vo = new UserVo();
+        UserDetailVo vo = new UserDetailVo();
         BeanUtils.copyProperties(entity, vo);
         return vo;
     }

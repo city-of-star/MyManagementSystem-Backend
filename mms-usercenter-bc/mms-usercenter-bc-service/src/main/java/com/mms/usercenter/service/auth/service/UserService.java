@@ -2,7 +2,8 @@ package com.mms.usercenter.service.auth.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.usercenter.common.auth.dto.*;
-import com.mms.usercenter.common.auth.vo.UserVo;
+import com.mms.usercenter.common.auth.vo.UserDetailVo;
+import com.mms.usercenter.common.auth.vo.UserPageVo;
 
 import java.util.List;
 
@@ -23,7 +24,7 @@ public interface UserService {
      * @param dto 查询条件
      * @return 分页用户列表
      */
-    Page<UserVo> getUserPage(UserPageQueryDto dto);
+    Page<UserPageVo> getUserPage(UserPageQueryDto dto);
 
     /**
      * 根据用户ID查询用户详情
@@ -31,7 +32,7 @@ public interface UserService {
      * @param userId 用户ID
      * @return 用户信息
      */
-    UserVo getUserById(Long userId);
+    UserDetailVo getUserById(Long userId);
 
     /**
      * 根据用户名查询用户信息
@@ -39,7 +40,7 @@ public interface UserService {
      * @param username 用户名
      * @return 用户信息
      */
-    UserVo getUserByUsername(String username);
+    UserDetailVo getUserByUsername(String username);
 
     /**
      * 创建用户
@@ -47,7 +48,7 @@ public interface UserService {
      * @param dto 用户创建参数
      * @return 创建的用户信息
      */
-    UserVo createUser(UserCreateDto dto);
+    UserDetailVo createUser(UserCreateDto dto);
 
     /**
      * 更新用户信息
@@ -55,7 +56,7 @@ public interface UserService {
      * @param dto 用户更新参数
      * @return 更新后的用户信息
      */
-    UserVo updateUser(UserUpdateDto dto);
+    UserDetailVo updateUser(UserUpdateDto dto);
 
     /**
      * 删除用户（逻辑删除）

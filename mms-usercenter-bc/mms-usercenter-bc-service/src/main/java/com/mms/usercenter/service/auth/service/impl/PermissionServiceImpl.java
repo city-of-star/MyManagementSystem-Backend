@@ -17,7 +17,6 @@ import com.mms.usercenter.common.auth.entity.RolePermissionEntity;
 import com.mms.usercenter.common.auth.entity.RoleEntity;
 import com.mms.usercenter.common.auth.vo.PermissionVo;
 import com.mms.usercenter.common.auth.vo.RoleVo;
-import com.mms.usercenter.common.security.constants.SuperAdminInfoConstants;
 import com.mms.usercenter.service.auth.mapper.PermissionMapper;
 import com.mms.usercenter.service.auth.mapper.RoleMapper;
 import com.mms.usercenter.service.auth.mapper.RolePermissionMapper;
@@ -192,10 +191,6 @@ public class PermissionServiceImpl implements PermissionService {
             if (permission == null || Objects.equals(permission.getDeleted(), 1)) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "权限不存在");
             }
-            // 检查是否是系统核心权限
-            if (SuperAdminInfoConstants.isCorePermission(permissionId)) {
-                throw new BusinessException(ErrorCode.CORE_PERMISSION_DELETE_FORBIDDEN);
-            }
             // 检查是否有子权限
             LambdaQueryWrapper<PermissionEntity> childWrapper = new LambdaQueryWrapper<>();
             childWrapper.eq(PermissionEntity::getParentId, permissionId)
@@ -247,10 +242,6 @@ public class PermissionServiceImpl implements PermissionService {
             PermissionEntity permission = permissionMapper.selectById(dto.getPermissionId());
             if (permission == null || Objects.equals(permission.getDeleted(), 1)) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "权限不存在");
-            }
-            // 系统核心权限不可禁用
-            if (SuperAdminInfoConstants.isCorePermission(dto.getPermissionId())) {
-                throw new BusinessException(ErrorCode.CORE_PERMISSION_SWITCH_FORBIDDEN);
             }
             if (dto.getStatus() != 0 && dto.getStatus() != 1) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "状态值只能是0或1");
@@ -409,11 +400,6 @@ public class PermissionServiceImpl implements PermissionService {
             RoleEntity role = roleMapper.selectById(dto.getRoleId());
             if (role == null || Objects.equals(role.getDeleted(), 1)) {
                 throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
-            }
-            // 超级管理员角色必须拥有核心权限，不可移除，防止误操作
-            if (Objects.equals(dto.getRoleId(), SuperAdminInfoConstants.SUPER_ADMIN_ROLE_ID)
-                    && SuperAdminInfoConstants.isCorePermission(dto.getPermissionId())) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "此权限是核心权限，超级管理员角色必须拥有，不可移除");
             }
             LambdaQueryWrapper<RolePermissionEntity> rpWrapper = new LambdaQueryWrapper<>();
             rpWrapper.eq(RolePermissionEntity::getPermissionId, dto.getPermissionId())
