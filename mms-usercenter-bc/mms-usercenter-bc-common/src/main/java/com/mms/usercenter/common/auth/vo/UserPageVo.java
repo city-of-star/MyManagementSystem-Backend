@@ -54,6 +54,9 @@ public class UserPageVo {
     @Schema(description = "最后登录时间", example = "2025-12-19 10:00:00")
     private LocalDateTime lastLoginTime;
 
+    @Schema(description = "创建时间", example = "2025-12-01 09:00:00")
+    private LocalDateTime createTime;
+
     @Schema(description = "备注", example = "管理员备注")
     private String remark;
 }

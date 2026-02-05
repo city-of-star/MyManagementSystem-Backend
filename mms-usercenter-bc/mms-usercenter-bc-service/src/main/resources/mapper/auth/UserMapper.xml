@@ -14,6 +14,7 @@
             u.status,
             u.locked,
             u.last_login_time,
+            u.create_time,
             u.remark,
             d.dept_name primaryDeptName,
             p.post_name primaryPostName
