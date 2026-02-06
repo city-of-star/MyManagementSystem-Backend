@@ -10,4 +10,5 @@ whitelist:
   usercenter: # 用户中心服务
     - /auth/login
     - /auth/refresh
-  base: [] # 基础数据服务
+  base: # 基础数据服务
+    - /attachment/stream/**

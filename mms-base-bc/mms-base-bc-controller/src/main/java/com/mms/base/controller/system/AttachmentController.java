@@ -126,12 +126,14 @@ public class AttachmentController {
             return;
         }
 
-        Path baseDir = Paths.get(attachmentProperties.getStoragePath()).toAbsolutePath().normalize();
-        Path filePath = baseDir.resolve(relative).normalize();
-        if (!filePath.startsWith(baseDir)) {
+        // 简单防护：不允许路径穿越
+        if (relative.contains("..")) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
+
+        Path baseDir = Paths.get(attachmentProperties.getStoragePath()).toAbsolutePath().normalize();
+        Path filePath = baseDir.resolve(relative).normalize();
         if (!Files.exists(filePath) || Files.isDirectory(filePath)) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;

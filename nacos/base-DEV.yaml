@@ -46,7 +46,7 @@ file:
     # 方式3：Linux服务器路径（生产环境）
     # storage-path: /data/mms/attachments
     # 访问URL前缀
-    url-prefix: /base/api/attachment/stream
+    url-prefix: /base/attachment/stream
     # 是否启用文件类型验证（MIME类型 + 扩展名双重验证）
     enable-type-validation: true
     # 批量上传最大文件数量
