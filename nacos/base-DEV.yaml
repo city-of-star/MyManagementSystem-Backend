@@ -33,9 +33,49 @@ file:
       - txt
     # 单个文件最大大小（MB）
     max-size: 50
-    # 存储路径
-    storage-path: /data/mms/attachments
+    # 存储路径（Windows本地开发环境）
+    # 方式1：使用相对路径（推荐，相对于项目根目录）
+    storage-path: ./attachments
+    # 方式2：使用绝对路径（需要手动创建目录）
+    # storage-path: D:/IDEAWorkspace/my/attachments
+    # 方式3：Linux服务器路径（生产环境）
+    # storage-path: /data/mms/attachments
     # 访问URL前缀
-    url-prefix: /base/api/files/download
+    url-prefix: /base/api/attachment/stream
     # 是否启用文件类型验证（MIME类型 + 扩展名双重验证）
     enable-type-validation: true
+    # 批量上传最大文件数量
+    max-batch-count: 10
+    # 文件命名策略：uuid-使用UUID，timestamp-使用时间戳，original-保留原名
+    naming-strategy: uuid
+    # 是否启用文件去重（基于文件MD5，暂不启用）
+    enable-deduplication: false
+    # 文件访问权限控制
+    access-control:
+      # 是否启用权限校验
+      enabled: true
+      # 允许访问的角色（为空则所有登录用户可访问）
+      allowed-roles: []
+      # 是否允许创建者访问自己的文件
+      allow-creator-access: true
+    # 文件清理配置（本地开发可关闭）
+    cleanup:
+      # 是否启用自动清理
+      enabled: false
+      # 清理已删除文件的时间间隔（天）
+      deleted-file-retention-days: 30
+      # 清理任务执行时间（cron表达式）
+      cleanup-cron: "0 0 2 * * ?"  # 每天凌晨2点
+    # 文件预览配置
+    preview:
+      # 是否启用预览功能
+      enabled: true
+      # 支持预览的文件类型
+      supported-types:
+        - jpg
+        - jpeg
+        - png
+        - gif
+        - pdf
+      # 图片预览最大尺寸（像素）
+      image-max-size: 1920

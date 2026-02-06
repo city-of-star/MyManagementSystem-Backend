@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mms.base.service.system.mapper.AttachmentMapper">
+
+    <select id="getAttachmentPage" resultType="com.mms.base.common.system.entity.AttachmentEntity">
+        SELECT
+            id,
+            file_name,
+            original_name,
+            file_path,
+            file_url,
+            file_size,
+            file_type,
+            mime_type,
+            storage_type,
+            business_type,
+            business_id,
+            status,
+            remark,
+            create_by,
+            create_time,
+            update_by,
+            update_time
+        FROM attachment
+        <where>
+            deleted = 0
+            <if test="dto.originalName != null and dto.originalName != ''">
+                AND original_name LIKE CONCAT('%', #{dto.originalName}, '%')
+            </if>
+            <if test="dto.fileType != null and dto.fileType != ''">
+                AND file_type = #{dto.fileType}
+            </if>
+            <if test="dto.mimeType != null and dto.mimeType != ''">
+                AND mime_type = #{dto.mimeType}
+            </if>
+            <if test="dto.storageType != null and dto.storageType != ''">
+                AND storage_type = #{dto.storageType}
+            </if>
+            <if test="dto.businessType != null and dto.businessType != ''">
+                AND business_type = #{dto.businessType}
+            </if>
+            <if test="dto.businessId != null">
+                AND business_id = #{dto.businessId}
+            </if>
+            <if test="dto.status != null">
+                AND status = #{dto.status}
+            </if>
+            <if test="dto.createBy != null">
+                AND create_by = #{dto.createBy}
+            </if>
+            <if test="dto.createTimeStart != null">
+                AND create_time <![CDATA[ >= ]]> #{dto.createTimeStart}
+            </if>
+            <if test="dto.createTimeEnd != null">
+                AND create_time <![CDATA[ <= ]]> #{dto.createTimeEnd}
+            </if>
+        </where>
+        ORDER BY create_time DESC, id DESC
+    </select>
+
+</mapper>
