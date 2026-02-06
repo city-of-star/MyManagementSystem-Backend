@@ -19,3 +19,5 @@ Thumbs.db
 
 # 忽略Maven的本地仓库锁定文件
 **/dependency-reduced-pom.xml
+
+/attachments

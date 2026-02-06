@@ -204,54 +204,53 @@ public class AttachmentServiceImpl implements AttachmentService {
         }
     }
 
-    private AttachmentVo convertToVo(AttachmentEntity entity) {
-        if (entity == null) {
-            return null;
-        }
-        AttachmentVo vo = new AttachmentVo();
-        BeanUtils.copyProperties(entity, vo);
-        return vo;
-    }
-
     @Override
     @Transactional(rollbackFor = Exception.class)
     public AttachmentVo uploadAttachment(MultipartFile file, String businessType, Long businessId, String remark) {
         try {
+            // 1. 基本空值校验
             if (file == null || file.isEmpty()) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "上传文件不能为空");
             }
 
+            // 2. 读取原始文件名，并做路径穿越防护（只保留文件名部分）
             String originalFilename = file.getOriginalFilename();
             if (originalFilename == null) {
                 originalFilename = "";
             }
-            // 防止路径穿越，仅取文件名部分
             originalFilename = Paths.get(originalFilename).getFileName().toString();
 
+            // 3. 提取扩展名、MIME 类型、大小，用于后续校验与入库
             String fileType = extractExtensionLower(originalFilename);
             String mimeType = file.getContentType();
             long fileSize = file.getSize();
 
+            // 4. 生成按日期分目录的相对路径，例如：2026/02/06
             String dateDir = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy/MM/dd"));
+            // 5. 按配置校验文件大小/类型，并根据命名策略生成最终存储文件名
             validateUpload(fileType, mimeType, fileSize);
             String storedFileName = buildStoredFileName(originalFilename, fileType);
 
+            // 6. 计算物理存储路径：storage-path + 日期目录
             Path baseDir = Paths.get(attachmentProperties.getStoragePath()).toAbsolutePath().normalize();
             Path targetDir = baseDir.resolve(dateDir);
             Files.createDirectories(targetDir);
             Path targetFile = targetDir.resolve(storedFileName);
 
+            // 7. 将上传输入流写入目标文件
             try (InputStream in = file.getInputStream()) {
                 Files.copy(in, targetFile, StandardCopyOption.REPLACE_EXISTING);
             }
 
+            // 8. 生成对外访问地址：urlPrefix + /yyyy/MM/dd/ + storedFileName
             String urlPrefix = normalizeUrlPrefix(attachmentProperties.getUrlPrefix());
             String fileUrl = urlPrefix + "/" + dateDir + "/" + storedFileName;
 
+            // 9. 组装附件实体并入库
             AttachmentEntity entity = new AttachmentEntity();
             entity.setFileName(storedFileName);
             entity.setOriginalName(originalFilename);
-            // file_path 存相对目录，便于跨环境迁移
+            // file_path 仅保存相对目录，便于迁移/切换存储根路径
             entity.setFilePath(dateDir + "/");
             entity.setFileUrl(fileUrl);
             entity.setFileSize(fileSize);
@@ -265,18 +264,25 @@ public class AttachmentServiceImpl implements AttachmentService {
             entity.setDeleted(0);
             attachmentMapper.insert(entity);
 
+            // 10. 转换为 VO 返回给前端
             return convertToVo(entity);
         } catch (BusinessException e) {
+            // 业务异常原样抛出，由全局异常处理器统一封装
             throw e;
         } catch (IOException e) {
+            // 文件写入相关 IO 异常
             log.error("上传附件写入文件失败：{}", e.getMessage(), e);
             throw new ServerException("上传附件失败（写入文件失败）", e);
         } catch (Exception e) {
+            // 兜底异常
             log.error("上传附件失败：{}", e.getMessage(), e);
             throw new ServerException("上传附件失败", e);
         }
     }
 
+    /**
+     * 提取文件名中的扩展名（转为小写），无扩展名或异常情况返回空串
+     */
     private String extractExtensionLower(String filename) {
         if (!StringUtils.hasText(filename)) {
             return "";
@@ -296,6 +302,12 @@ public class AttachmentServiceImpl implements AttachmentService {
         return ext.toLowerCase();
     }
 
+    /**
+     * 按配置校验上传文件的大小与类型：
+     * - 大小：不能超过 file.upload.max-size
+     * - 类型：必须在 file.upload.allowed-types 白名单内
+     * - 可选：简单校验扩展名与 MIME 是否匹配（图片/PDF）
+     */
     private void validateUpload(String fileType, String mimeType, long fileSize) {
         Integer maxSizeMb = attachmentProperties.getMaxSize();
         if (maxSizeMb != null && maxSizeMb > 0) {
@@ -332,11 +344,20 @@ public class AttachmentServiceImpl implements AttachmentService {
         }
     }
 
+    /**
+     * 判断扩展名是否为常见图片类型
+     */
     private boolean isImageExt(String ext) {
         return "jpg".equals(ext) || "jpeg".equals(ext) || "png".equals(ext) || "gif".equals(ext)
                 || "bmp".equals(ext) || "webp".equals(ext);
     }
 
+    /**
+     * 根据配置的命名策略生成存储文件名：
+     * - uuid：使用随机 UUID
+     * - timestamp：时间戳 + 随机后缀
+     * - original：基于原始文件名做安全清洗
+     */
     private String buildStoredFileName(String originalFilename, String fileType) {
         String strategy = attachmentProperties.getNamingStrategy();
         if (!StringUtils.hasText(strategy)) {
@@ -362,6 +383,9 @@ public class AttachmentServiceImpl implements AttachmentService {
         };
     }
 
+    /**
+     * 清洗原始文件名，去除/替换非法字符，限制长度，防止在不同平台创建非法文件名
+     */
     private String sanitizeFileName(String filename) {
         if (!StringUtils.hasText(filename)) {
             return "";
@@ -386,6 +410,11 @@ public class AttachmentServiceImpl implements AttachmentService {
         return f;
     }
 
+    /**
+     * 规范化 URL 前缀：
+     * - 确保以 / 开头
+     * - 去掉末尾多余的 /
+     */
     private String normalizeUrlPrefix(String urlPrefix) {
         String p = StringUtils.hasText(urlPrefix) ? urlPrefix.trim() : "";
         if (!p.startsWith("/")) {
@@ -395,5 +424,14 @@ public class AttachmentServiceImpl implements AttachmentService {
             p = p.substring(0, p.length() - 1);
         }
         return p;
+    }
+
+    private AttachmentVo convertToVo(AttachmentEntity entity) {
+        if (entity == null) {
+            return null;
+        }
+        AttachmentVo vo = new AttachmentVo();
+        BeanUtils.copyProperties(entity, vo);
+        return vo;
     }
 }
