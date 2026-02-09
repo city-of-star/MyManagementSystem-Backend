@@ -22,7 +22,34 @@ public interface FileService {
     FileVo store(MultipartFile file) throws IOException;
 
     /**
-     * 按相对路径读取文件（用于下载/预览）
+     * 根据相对路径打开文件输入流（由调用方负责关闭）
+     *
+     * @param relativePath 相对存储路径（如 2026/02/09/xxx.png）
+     * @return 文件输入流
      */
-    InputStream load(String relativePath) throws IOException;
+    InputStream openStream(String relativePath) throws IOException;
+
+    /**
+     * 获取文件大小（字节）
+     *
+     * @param relativePath 相对存储路径
+     * @return 文件大小（字节）
+     */
+    long getFileSize(String relativePath) throws IOException;
+
+    /**
+     * 获取文件的 Content-Type
+     *
+     * @param relativePath 相对存储路径
+     * @return MIME 类型，无法判断时返回 null
+     */
+    String getContentType(String relativePath) throws IOException;
+
+    /**
+     * 判断文件是否存在且为普通文件
+     *
+     * @param relativePath 相对存储路径
+     * @return 是否存在
+     */
+    boolean exists(String relativePath);
 }

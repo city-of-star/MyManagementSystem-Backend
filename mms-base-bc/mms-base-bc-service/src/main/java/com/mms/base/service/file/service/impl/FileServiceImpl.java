@@ -1,8 +1,8 @@
 package com.mms.base.service.file.service.impl;
 
 import com.mms.base.common.file.properties.FileProperties;
-import com.mms.base.service.file.service.FileService;
 import com.mms.base.common.file.vo.FileVo;
+import com.mms.base.service.file.service.FileService;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
@@ -17,7 +17,10 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 
 /**
  * 实现功能【文件服务实现类】
@@ -111,9 +114,46 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
-    public InputStream load(String relativePath) throws IOException {
+    public InputStream openStream(String relativePath) throws IOException {
+        Path filePath = resolveFilePath(relativePath);
+        return Files.newInputStream(filePath);
+    }
+
+    @Override
+    public long getFileSize(String relativePath) throws IOException {
+        Path filePath = resolveFilePath(relativePath);
+        return Files.size(filePath);
+    }
+
+    @Override
+    public String getContentType(String relativePath) throws IOException {
+        Path filePath = resolveFilePath(relativePath);
+        return Files.probeContentType(filePath);
+    }
+
+    @Override
+    public boolean exists(String relativePath) {
+        try {
+            Path filePath = resolveFilePath(relativePath);
+            return Files.exists(filePath) && Files.isRegularFile(filePath);
+        } catch (Exception e) {
+            log.warn("检查文件是否存在失败，相对路径：{}，原因：{}", relativePath, e.getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * 将相对路径解析为物理文件路径，并做路径穿越防护
+     */
+    private Path resolveFilePath(String relativePath) {
+        if (!StringUtils.hasText(relativePath)) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "附件路径不能为空");
+        }
         Path filePath = baseDir.resolve(relativePath).normalize();
-        return Files.newInputStream(filePath, StandardOpenOption.READ);
+        if (!filePath.startsWith(baseDir)) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "非法的附件访问路径");
+        }
+        return filePath;
     }
 
     /**

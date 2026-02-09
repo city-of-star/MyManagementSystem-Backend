@@ -241,24 +241,6 @@ public class AttachmentServiceImpl implements AttachmentService {
         }
     }
 
-    @Override
-    public InputStream loadAttachment(String relativePath) {
-        try {
-            if (!StringUtils.hasText(relativePath)) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "附件路径不能为空");
-            }
-            return fileService.load(relativePath);
-        } catch (BusinessException e) {
-            throw e;
-        } catch (IOException e) {
-            log.error("读取附件失败（文件服务 IO 异常），relativePath：{}", relativePath, e);
-            throw new ServerException("读取附件失败（文件读取失败）", e);
-        } catch (Exception e) {
-            log.error("读取附件失败：{}", e.getMessage(), e);
-            throw new ServerException("读取附件失败", e);
-        }
-    }
-
     private AttachmentVo convertToVo(AttachmentEntity entity) {
         if (entity == null) {
             return null;

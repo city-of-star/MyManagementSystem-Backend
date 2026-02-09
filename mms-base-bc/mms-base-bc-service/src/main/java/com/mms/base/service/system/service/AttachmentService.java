@@ -85,13 +85,5 @@ public interface AttachmentService {
      * @return 附件信息
      */
     AttachmentVo uploadAttachment(MultipartFile file, String businessType, Long businessId, String remark);
-
-    /**
-     * 根据相对路径加载附件文件流
-     *
-     * @param relativePath 附件相对路径
-     * @return 输入流（调用方负责关闭）
-     */
-    InputStream loadAttachment(String relativePath);
 }
 
