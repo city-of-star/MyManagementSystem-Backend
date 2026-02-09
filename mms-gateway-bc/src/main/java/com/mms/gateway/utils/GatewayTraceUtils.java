@@ -1,10 +1,9 @@
 package com.mms.gateway.utils;
 
 import com.mms.common.core.constants.gateway.GatewayConstants;
+import com.mms.common.core.utils.IdUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
-
-import java.util.UUID;
 
 /**
  * 实现功能【网关 TraceId 工具类】
@@ -40,7 +39,7 @@ public class GatewayTraceUtils {
      * @return 生成的 TraceId
      */
     public static String generateTraceId() {
-        return UUID.randomUUID().toString().replace("-", "");
+        return IdUtils.timestampId();
     }
 
     /**

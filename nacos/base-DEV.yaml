@@ -36,6 +36,7 @@ file:
       - pptx
       - pdf
       - txt
+      - md
     # 单个文件最大大小（MB）
     max-size: 50
     # 存储路径（Windows本地开发环境）
@@ -47,12 +48,8 @@ file:
     # storage-path: /data/mms/attachments
     # 访问URL前缀
     url-prefix: /base/attachment/stream
-    # 是否启用文件类型验证（MIME类型 + 扩展名双重验证）
-    enable-type-validation: true
     # 批量上传最大文件数量
     max-batch-count: 10
-    # 文件命名策略：uuid-使用UUID，timestamp-使用时间戳，original-保留原名
-    naming-strategy: uuid
     # 是否启用文件去重（基于文件MD5，暂不启用）
     enable-deduplication: false
     # 文件访问权限控制

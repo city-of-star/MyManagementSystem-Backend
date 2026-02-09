@@ -1,6 +1,7 @@
 package com.mms.common.web.filter;
 
 import com.mms.common.core.constants.gateway.GatewayConstants;
+import com.mms.common.core.utils.IdUtils;
 import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.MDC;
@@ -11,7 +12,6 @@ import org.springframework.util.StringUtils;
 
 
 import java.io.IOException;
-import java.util.UUID;
 
 /**
  * 实现功能【Servlet/MVC TraceId 过滤器】
@@ -54,8 +54,8 @@ public class TraceIdMvcFilter implements Filter, Ordered {
 	 * 生成追踪 ID
 	 */
 	private String generateTraceId() {
-		// 使用 UUID 并移除连字符，生成简洁且足够分布式的唯一 ID
-		return UUID.randomUUID().toString().replace("-", "");
+		// 使用统一的全局ID生成工具类生成：时间戳 + 短UUID
+		return IdUtils.timestampId();
 	}
 
 	@Override

@@ -2,6 +2,7 @@ package com.mms.common.security.utils;
 
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
+import com.mms.common.core.utils.IdUtils;
 import com.mms.common.security.constants.JwtConstants;
 import com.mms.common.core.enums.jwt.TokenType;
 import com.mms.common.security.properties.JwtProperties;
@@ -15,7 +16,6 @@ import lombok.AllArgsConstructor;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
-import java.util.UUID;
 
 /**
  * 实现功能【JWT 工具类：生成、解析、验证JWT】
@@ -56,7 +56,7 @@ public class JwtUtils {
 	private String generateToken(Long userId, String username, TokenType tokenType, long expirationMs) {
 		Date now = new Date();
 		Date expiryDate = new Date(now.getTime() + expirationMs);
-		String jti = UUID.randomUUID().toString();
+		String jti = IdUtils.uuid32();
 
 		return Jwts.builder()
 				.id(jti)

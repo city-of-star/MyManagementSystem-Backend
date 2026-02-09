@@ -7,7 +7,7 @@ import com.mms.base.common.system.dto.AttachmentPageQueryDto;
 import com.mms.base.common.system.dto.AttachmentStatusSwitchDto;
 import com.mms.base.common.system.dto.AttachmentUpdateDto;
 import com.mms.base.common.system.vo.AttachmentVo;
-import com.mms.base.common.system.properties.AttachmentProperties;
+import com.mms.base.common.file.properties.FileProperties;
 import com.mms.base.service.system.service.AttachmentService;
 import com.mms.common.core.constants.usercenter.PermissionConstants;
 import com.mms.common.core.response.Response;
@@ -45,7 +45,7 @@ public class AttachmentController {
     private AttachmentService attachmentService;
 
     @Resource
-    private AttachmentProperties attachmentProperties;
+    private FileProperties fileProperties;
 
     @Operation(summary = "分页查询附件列表", description = "根据条件分页查询附件列表")
     @RequiresPermission(PermissionConstants.ATTACHMENT_VIEW)
@@ -132,7 +132,7 @@ public class AttachmentController {
             return;
         }
 
-        Path baseDir = Paths.get(attachmentProperties.getStoragePath()).toAbsolutePath().normalize();
+        Path baseDir = Paths.get(fileProperties.getStoragePath()).toAbsolutePath().normalize();
         Path filePath = baseDir.resolve(relative).normalize();
         if (!Files.exists(filePath) || Files.isDirectory(filePath)) {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
