@@ -9,6 +9,8 @@ import com.mms.base.common.system.dto.AttachmentUpdateDto;
 import com.mms.base.common.system.vo.AttachmentVo;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
+
 /**
  * 实现功能【附件服务】
  * <p>
@@ -74,7 +76,7 @@ public interface AttachmentService {
     void switchAttachmentStatus(AttachmentStatusSwitchDto dto);
 
     /**
-     * 上传文件并创建附件记录（本地存储）
+     * 上传文件并创建附件记录
      *
      * @param file         上传文件
      * @param businessType 业务类型（可选）
@@ -83,5 +85,13 @@ public interface AttachmentService {
      * @return 附件信息
      */
     AttachmentVo uploadAttachment(MultipartFile file, String businessType, Long businessId, String remark);
+
+    /**
+     * 根据相对路径加载附件文件流
+     *
+     * @param relativePath 附件相对路径
+     * @return 输入流（调用方负责关闭）
+     */
+    InputStream loadAttachment(String relativePath);
 }
 

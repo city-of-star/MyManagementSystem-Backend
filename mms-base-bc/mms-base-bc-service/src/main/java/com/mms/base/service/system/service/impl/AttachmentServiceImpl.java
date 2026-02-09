@@ -20,6 +20,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -237,6 +238,24 @@ public class AttachmentServiceImpl implements AttachmentService {
         } catch (Exception e) {
             log.error("上传附件失败：{}", e.getMessage(), e);
             throw new ServerException("上传附件失败", e);
+        }
+    }
+
+    @Override
+    public InputStream loadAttachment(String relativePath) {
+        try {
+            if (!StringUtils.hasText(relativePath)) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "附件路径不能为空");
+            }
+            return fileService.load(relativePath);
+        } catch (BusinessException e) {
+            throw e;
+        } catch (IOException e) {
+            log.error("读取附件失败（文件服务 IO 异常），relativePath：{}", relativePath, e);
+            throw new ServerException("读取附件失败（文件读取失败）", e);
+        } catch (Exception e) {
+            log.error("读取附件失败：{}", e.getMessage(), e);
+            throw new ServerException("读取附件失败", e);
         }
     }
 

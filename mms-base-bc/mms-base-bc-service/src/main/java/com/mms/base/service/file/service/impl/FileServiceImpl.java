@@ -8,6 +8,7 @@ import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
 import com.mms.common.core.utils.DateUtils;
 import com.mms.common.core.utils.IdUtils;
+import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -33,8 +34,28 @@ public class FileServiceImpl implements FileService {
     @Resource
     private FileProperties fileProperties;
 
+    private Path baseDir;
+
+    @PostConstruct
+    public void init() {
+        String storagePath = fileProperties.getStoragePath();
+        String urlPrefix = fileProperties.getUrlPrefix();
+        if (!StringUtils.hasText(storagePath) || !StringUtils.hasText(urlPrefix)) {
+            throw new ServerException("文件存储配置异常，请检查 file.upload.storagePath / file.upload.urlPrefix");
+        }
+
+        // 将相对存储路径转换为绝对路径并缓存
+        this.baseDir = Paths.get(storagePath).toAbsolutePath().normalize();
+        try {
+            Files.createDirectories(baseDir);
+        } catch (IOException e) {
+            log.error("文件存储路径不可用: {}", baseDir, e);
+            throw new ServerException("文件存储路径不可用: " + baseDir, e);
+        }
+    }
+
     @Override
-    public FileVo store(MultipartFile file) throws IOException {
+    public FileVo store(MultipartFile file) {
         try {
             if (file == null || file.isEmpty()) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "上传文件不能为空");
@@ -55,20 +76,19 @@ public class FileServiceImpl implements FileService {
             // 生成日期目录
             String dateDir = DateUtils.todayDir();
             // 生成存储文件名
-            String storedFileName = buildStoredFileName(fileType);
-            // 计算物理路径
-            Path baseDir = Paths.get(fileProperties.getStoragePath()).toAbsolutePath().normalize();
+            String storedFileName = IdUtils.timestampId() + '.' + fileType;
+            // 生成目录路径（基础路径+日期路径）
             Path targetDir = baseDir.resolve(dateDir);
+            // 递归创建目标目录及其所有父目录
             Files.createDirectories(targetDir);
+            // 拼接成完整的文件路径
             Path targetFile = targetDir.resolve(storedFileName);
-            // 写入文件
+            // 写入文件（如果存在就覆盖）
             try (InputStream in = file.getInputStream()) {
                 Files.copy(in, targetFile, StandardCopyOption.REPLACE_EXISTING);
             }
             // 生成访问 URL
-            String urlPrefix = normalizeUrlPrefix(fileProperties.getUrlPrefix());
-            String fileUrl = urlPrefix + "/" + dateDir + "/" + storedFileName;
-
+            String fileUrl = fileProperties.getUrlPrefix() + "/" + dateDir + "/" + storedFileName;
             // 组装文件信息并返回
             FileVo fileVo = new FileVo();
             fileVo.setOriginalFileName(originalFileName);
@@ -92,13 +112,12 @@ public class FileServiceImpl implements FileService {
 
     @Override
     public InputStream load(String relativePath) throws IOException {
-        Path baseDir = Paths.get(fileProperties.getStoragePath()).toAbsolutePath().normalize();
         Path filePath = baseDir.resolve(relativePath).normalize();
         return Files.newInputStream(filePath, StandardOpenOption.READ);
     }
 
     /**
-     * 提取文件名中的扩展名（转为小写），无扩展名或异常情况返回空串
+     * 提取文件名中的扩展名，无扩展名或异常情况返回空串
      */
     private String extractExtensionLower(String filename) {
         if (!StringUtils.hasText(filename)) {
@@ -115,7 +134,7 @@ public class FileServiceImpl implements FileService {
         if (ext.length() > 20) {
             return "";
         }
-        return ext.toLowerCase();
+        return ext;
     }
 
     /**
@@ -146,26 +165,5 @@ public class FileServiceImpl implements FileService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "不支持的文件类型：" + fileType);
             }
         }
-    }
-
-    /**
-     * 生成存储文件名
-     */
-    private String buildStoredFileName(String fileType) {
-        return IdUtils.timestampId() + fileType;
-    }
-
-    /**
-     * 规范化 URL 前缀
-     */
-    private String normalizeUrlPrefix(String urlPrefix) {
-        String p = StringUtils.hasText(urlPrefix) ? urlPrefix.trim() : "";
-        if (!p.startsWith("/")) {
-            p = "/" + p;
-        }
-        if (p.endsWith("/")) {
-            p = p.substring(0, p.length() - 1);
-        }
-        return p;
     }
 }

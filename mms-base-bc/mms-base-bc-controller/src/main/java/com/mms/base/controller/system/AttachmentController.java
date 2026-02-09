@@ -112,16 +112,16 @@ public class AttachmentController {
     @Operation(summary = "附件流式访问", description = "按路径流式读取本地附件文件（用于图片预览/下载等）")
     @GetMapping("/stream/**")
     public void stream(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        // 取 /attachment/stream/ 后面的相对路径，例如 2026/02/06/xxx.png
+        // 从 URL 中截取出文件的相对路径（/attachment/stream/ 之后的那一段）
         String uri = request.getRequestURI();
         String marker = "/attachment/stream/";
         int idx = uri.indexOf(marker);
-        if (idx < 0) {
+        if (idx < 0) { // URL 里没有这个前缀，说明路径不对
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
         String relative = uri.substring(idx + marker.length());
-        if (!org.springframework.util.StringUtils.hasText(relative)) {
+        if (!org.springframework.util.StringUtils.hasText(relative)) { // 后面没有任何路径
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             return;
         }
@@ -132,6 +132,7 @@ public class AttachmentController {
             return;
         }
 
+        // 计算真实文件路径，并检查文件是否存在
         Path baseDir = Paths.get(fileProperties.getStoragePath()).toAbsolutePath().normalize();
         Path filePath = baseDir.resolve(relative).normalize();
         if (!Files.exists(filePath) || Files.isDirectory(filePath)) {
@@ -139,13 +140,18 @@ public class AttachmentController {
             return;
         }
 
+        // 探测 Content-Type，设置响应头
         String contentType = Files.probeContentType(filePath);
         if (!org.springframework.util.StringUtils.hasText(contentType)) {
             contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
         }
         response.setContentType(contentType);
         response.setHeader("Content-Length", String.valueOf(Files.size(filePath)));
-        Files.copy(filePath, response.getOutputStream());
+
+        // 调用 Service 拿到文件流，写入响应输出流（流式输出）
+        try (var in = attachmentService.loadAttachment(relative)) {
+            in.transferTo(response.getOutputStream());
+        }
     }
 
 }

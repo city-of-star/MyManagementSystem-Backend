@@ -30,12 +30,9 @@ public class FileProperties {
     private Integer maxSize = 50;
 
     @Schema(description = "存储路径", example = "./attachments")
-    private String storagePath = "./attachments";
-
-    @Schema(description = "静态资源映射公开路径（可选）", example = "/attachment-files")
-    private String staticPublicPath = "";
+    private String storagePath;
 
     @Schema(description = "访问URL前缀", example = "/base/api/attachment/stream")
-    private String urlPrefix = "/base/api/attachment/stream";
+    private String urlPrefix;
 }
 
