@@ -47,30 +47,8 @@ public class DictTypeServiceImpl implements DictTypeService {
     public Page<DictTypeVo> getDictTypePage(DictTypePageQueryDto dto) {
         try {
             log.info("分页查询数据字典类型列表，参数：{}", dto);
-            Page<DictTypeEntity> page = new Page<>(dto.getPageNum(), dto.getPageSize());
-            LambdaQueryWrapper<DictTypeEntity> wrapper = new LambdaQueryWrapper<>();
-            if (StringUtils.hasText(dto.getDictTypeCode())) {
-                wrapper.like(DictTypeEntity::getDictTypeCode, dto.getDictTypeCode());
-            }
-            if (StringUtils.hasText(dto.getDictTypeName())) {
-                wrapper.like(DictTypeEntity::getDictTypeName, dto.getDictTypeName());
-            }
-            if (dto.getStatus() != null) {
-                wrapper.eq(DictTypeEntity::getStatus, dto.getStatus());
-            }
-            if (dto.getCreateTimeStart() != null) {
-                wrapper.ge(DictTypeEntity::getCreateTime, dto.getCreateTimeStart());
-            }
-            if (dto.getCreateTimeEnd() != null) {
-                wrapper.le(DictTypeEntity::getCreateTime, dto.getCreateTimeEnd());
-            }
-            wrapper.eq(DictTypeEntity::getDeleted, 0)
-                    .orderByAsc(DictTypeEntity::getSortOrder)
-                    .orderByDesc(DictTypeEntity::getCreateTime);
-            Page<DictTypeEntity> entityPage = dictTypeMapper.selectPage(page, wrapper);
-            Page<DictTypeVo> voPage = new Page<>(entityPage.getCurrent(), entityPage.getSize(), entityPage.getTotal());
-            voPage.setRecords(entityPage.getRecords().stream().map(this::convertToVo).collect(Collectors.toList()));
-            return voPage;
+            Page<DictTypeVo> page = new Page<>(dto.getPageNum(), dto.getPageSize());
+            return dictTypeMapper.getDictTypePage(page, dto);
         } catch (Exception e) {
             log.error("分页查询数据字典类型列表失败：{}", e.getMessage(), e);
             throw new ServerException("查询数据字典类型列表失败", e);

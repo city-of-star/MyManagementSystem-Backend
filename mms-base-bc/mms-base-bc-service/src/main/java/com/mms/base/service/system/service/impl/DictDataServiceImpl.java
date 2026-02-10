@@ -47,33 +47,8 @@ public class DictDataServiceImpl implements DictDataService {
     public Page<DictDataVo> getDictDataPage(DictDataPageQueryDto dto) {
         try {
             log.info("分页查询数据字典数据列表，参数：{}", dto);
-            Page<DictDataEntity> page = new Page<>(dto.getPageNum(), dto.getPageSize());
-            LambdaQueryWrapper<DictDataEntity> wrapper = new LambdaQueryWrapper<>();
-            if (dto.getDictTypeId() != null) {
-                wrapper.eq(DictDataEntity::getDictTypeId, dto.getDictTypeId());
-            }
-            if (StringUtils.hasText(dto.getDictLabel())) {
-                wrapper.like(DictDataEntity::getDictLabel, dto.getDictLabel());
-            }
-            if (StringUtils.hasText(dto.getDictValue())) {
-                wrapper.like(DictDataEntity::getDictValue, dto.getDictValue());
-            }
-            if (dto.getStatus() != null) {
-                wrapper.eq(DictDataEntity::getStatus, dto.getStatus());
-            }
-            if (dto.getCreateTimeStart() != null) {
-                wrapper.ge(DictDataEntity::getCreateTime, dto.getCreateTimeStart());
-            }
-            if (dto.getCreateTimeEnd() != null) {
-                wrapper.le(DictDataEntity::getCreateTime, dto.getCreateTimeEnd());
-            }
-            wrapper.eq(DictDataEntity::getDeleted, 0)
-                    .orderByAsc(DictDataEntity::getDictSort)
-                    .orderByDesc(DictDataEntity::getCreateTime);
-            Page<DictDataEntity> entityPage = dictDataMapper.selectPage(page, wrapper);
-            Page<DictDataVo> voPage = new Page<>(entityPage.getCurrent(), entityPage.getSize(), entityPage.getTotal());
-            voPage.setRecords(entityPage.getRecords().stream().map(this::convertToVo).collect(Collectors.toList()));
-            return voPage;
+            Page<DictDataVo> page = new Page<>(dto.getPageNum(), dto.getPageSize());
+            return dictDataMapper.getDictDataPage(page, dto);
         } catch (Exception e) {
             log.error("分页查询数据字典数据列表失败：{}", e.getMessage(), e);
             throw new ServerException("查询数据字典数据列表失败", e);

@@ -2,4 +2,46 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.mms.base.service.system.mapper.DictDataMapper">
 
+    <select id="getDictDataPage" resultType="com.mms.base.common.system.vo.DictDataVo">
+        SELECT
+            dd.id,
+            dd.dict_type_id,
+            dt.dict_type_code,
+            dt.dict_type_name,
+            dd.dict_label,
+            dd.dict_value,
+            dd.dict_sort,
+            dd.is_default,
+            dd.status,
+            dd.remark,
+            dd.create_by,
+            dd.create_time,
+            dd.update_by,
+            dd.update_time
+        FROM dict_data dd
+        LEFT JOIN dict_type dt ON dt.id = dd.dict_type_id AND dt.deleted = 0
+        <where>
+            dd.deleted = 0
+            <if test="dto.dictTypeId != null">
+                AND dd.dict_type_id = #{dto.dictTypeId}
+            </if>
+            <if test="dto.dictLabel != null and dto.dictLabel != ''">
+                AND dd.dict_label LIKE CONCAT('%', #{dto.dictLabel}, '%')
+            </if>
+            <if test="dto.dictValue != null and dto.dictValue != ''">
+                AND dd.dict_value LIKE CONCAT('%', #{dto.dictValue}, '%')
+            </if>
+            <if test="dto.status != null">
+                AND dd.status = #{dto.status}
+            </if>
+            <if test="dto.createTimeStart != null">
+                AND dd.create_time <![CDATA[ >= ]]> #{dto.createTimeStart}
+            </if>
+            <if test="dto.createTimeEnd != null">
+                AND dd.create_time <![CDATA[ <= ]]> #{dto.createTimeEnd}
+            </if>
+        </where>
+        ORDER BY dd.dict_sort ASC, dd.create_time DESC, dd.id DESC
+    </select>
+
 </mapper>

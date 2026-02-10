@@ -40,35 +40,8 @@ public class ConfigServiceImpl implements ConfigService {
     public Page<ConfigVo> getConfigPage(ConfigPageQueryDto dto) {
         try {
             log.info("分页查询系统配置列表，参数：{}", dto);
-            Page<ConfigEntity> page = new Page<>(dto.getPageNum(), dto.getPageSize());
-            LambdaQueryWrapper<ConfigEntity> wrapper = new LambdaQueryWrapper<>();
-            if (StringUtils.hasText(dto.getConfigKey())) {
-                wrapper.like(ConfigEntity::getConfigKey, dto.getConfigKey());
-            }
-            if (StringUtils.hasText(dto.getConfigName())) {
-                wrapper.like(ConfigEntity::getConfigName, dto.getConfigName());
-            }
-            if (StringUtils.hasText(dto.getConfigType())) {
-                wrapper.eq(ConfigEntity::getConfigType, dto.getConfigType());
-            }
-            if (dto.getStatus() != null) {
-                wrapper.eq(ConfigEntity::getStatus, dto.getStatus());
-            }
-            if (dto.getEditable() != null) {
-                wrapper.eq(ConfigEntity::getEditable, dto.getEditable());
-            }
-            if (dto.getCreateTimeStart() != null) {
-                wrapper.ge(ConfigEntity::getCreateTime, dto.getCreateTimeStart());
-            }
-            if (dto.getCreateTimeEnd() != null) {
-                wrapper.le(ConfigEntity::getCreateTime, dto.getCreateTimeEnd());
-            }
-            wrapper.eq(ConfigEntity::getDeleted, 0)
-                    .orderByDesc(ConfigEntity::getCreateTime);
-            Page<ConfigEntity> entityPage = configMapper.selectPage(page, wrapper);
-            Page<ConfigVo> voPage = new Page<>(entityPage.getCurrent(), entityPage.getSize(), entityPage.getTotal());
-            voPage.setRecords(entityPage.getRecords().stream().map(this::convertToVo).toList());
-            return voPage;
+            Page<ConfigVo> page = new Page<>(dto.getPageNum(), dto.getPageSize());
+            return configMapper.getConfigPage(page, dto);
         } catch (Exception e) {
             log.error("分页查询系统配置列表失败：{}", e.getMessage(), e);
             throw new ServerException("查询系统配置列表失败", e);

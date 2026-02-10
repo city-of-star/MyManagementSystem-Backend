@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.base.common.system.dto.AttachmentPageQueryDto;
 import com.mms.base.common.system.entity.AttachmentEntity;
+import com.mms.base.common.system.vo.AttachmentVo;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -23,6 +24,6 @@ public interface AttachmentMapper extends BaseMapper<AttachmentEntity> {
      * @param dto  查询条件
      * @return 分页结果
      */
-    Page<AttachmentEntity> getAttachmentPage(Page<AttachmentEntity> page, @Param("dto") AttachmentPageQueryDto dto);
+    Page<AttachmentVo> getAttachmentPage(Page<AttachmentVo> page, @Param("dto") AttachmentPageQueryDto dto);
 }
 

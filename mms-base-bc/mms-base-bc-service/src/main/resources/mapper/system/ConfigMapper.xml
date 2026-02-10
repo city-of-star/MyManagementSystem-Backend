@@ -2,4 +2,46 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.mms.base.service.system.mapper.ConfigMapper">
 
+    <select id="getConfigPage" resultType="com.mms.base.common.system.vo.ConfigVo">
+        SELECT
+            id,
+            config_key,
+            config_value,
+            config_type,
+            config_name,
+            status,
+            editable,
+            remark,
+            create_by,
+            create_time,
+            update_by,
+            update_time
+        FROM config
+        <where>
+            deleted = 0
+            <if test="dto.configKey != null and dto.configKey != ''">
+                AND config_key LIKE CONCAT('%', #{dto.configKey}, '%')
+            </if>
+            <if test="dto.configName != null and dto.configName != ''">
+                AND config_name LIKE CONCAT('%', #{dto.configName}, '%')
+            </if>
+            <if test="dto.configType != null and dto.configType != ''">
+                AND config_type = #{dto.configType}
+            </if>
+            <if test="dto.status != null">
+                AND status = #{dto.status}
+            </if>
+            <if test="dto.editable != null">
+                AND editable = #{dto.editable}
+            </if>
+            <if test="dto.createTimeStart != null">
+                AND create_time <![CDATA[ >= ]]> #{dto.createTimeStart}
+            </if>
+            <if test="dto.createTimeEnd != null">
+                AND create_time <![CDATA[ <= ]]> #{dto.createTimeEnd}
+            </if>
+        </where>
+        ORDER BY create_time DESC, id DESC
+    </select>
+
 </mapper>

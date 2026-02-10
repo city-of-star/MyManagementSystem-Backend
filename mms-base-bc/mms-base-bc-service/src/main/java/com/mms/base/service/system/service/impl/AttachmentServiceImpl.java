@@ -20,10 +20,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.time.LocalDateTime;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * 实现功能【附件服务实现类】
@@ -48,11 +46,8 @@ public class AttachmentServiceImpl implements AttachmentService {
     public Page<AttachmentVo> getAttachmentPage(AttachmentPageQueryDto dto) {
         try {
             log.info("分页查询附件列表，参数：{}", dto);
-            Page<AttachmentEntity> page = new Page<>(dto.getPageNum(), dto.getPageSize());
-            Page<AttachmentEntity> entityPage = attachmentMapper.getAttachmentPage(page, dto);
-            Page<AttachmentVo> voPage = new Page<>(entityPage.getCurrent(), entityPage.getSize(), entityPage.getTotal());
-            voPage.setRecords(entityPage.getRecords().stream().map(this::convertToVo).collect(Collectors.toList()));
-            return voPage;
+            Page<AttachmentVo> page = new Page<>(dto.getPageNum(), dto.getPageSize());
+            return attachmentMapper.getAttachmentPage(page, dto);
         } catch (Exception e) {
             log.error("分页查询附件列表失败：{}", e.getMessage(), e);
             throw new ServerException("查询附件列表失败", e);
@@ -207,10 +202,8 @@ public class AttachmentServiceImpl implements AttachmentService {
             if (file == null || file.isEmpty()) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "上传文件不能为空");
             }
-
             // 调用文件服务完成物理存储，获取存储结果
             FileVo fileVo = fileService.store(file);
-
             // 组装附件实体并入库
             AttachmentEntity entity = new AttachmentEntity();
             entity.setFileName(fileVo.getStoredFileName());

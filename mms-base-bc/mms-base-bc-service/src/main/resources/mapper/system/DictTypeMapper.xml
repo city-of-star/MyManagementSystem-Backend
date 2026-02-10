@@ -2,4 +2,38 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.mms.base.service.system.mapper.DictTypeMapper">
 
+    <select id="getDictTypePage" resultType="com.mms.base.common.system.vo.DictTypeVo">
+        SELECT
+            id,
+            dict_type_code,
+            dict_type_name,
+            status,
+            sort_order,
+            remark,
+            create_by,
+            create_time,
+            update_by,
+            update_time
+        FROM dict_type
+        <where>
+            deleted = 0
+            <if test="dto.dictTypeCode != null and dto.dictTypeCode != ''">
+                AND dict_type_code LIKE CONCAT('%', #{dto.dictTypeCode}, '%')
+            </if>
+            <if test="dto.dictTypeName != null and dto.dictTypeName != ''">
+                AND dict_type_name LIKE CONCAT('%', #{dto.dictTypeName}, '%')
+            </if>
+            <if test="dto.status != null">
+                AND status = #{dto.status}
+            </if>
+            <if test="dto.createTimeStart != null">
+                AND create_time <![CDATA[ >= ]]> #{dto.createTimeStart}
+            </if>
+            <if test="dto.createTimeEnd != null">
+                AND create_time <![CDATA[ <= ]]> #{dto.createTimeEnd}
+            </if>
+        </where>
+        ORDER BY sort_order ASC, create_time DESC, id DESC
+    </select>
+
 </mapper>

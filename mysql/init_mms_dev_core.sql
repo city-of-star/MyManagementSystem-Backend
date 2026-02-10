@@ -529,7 +529,7 @@ VALUES
 -- 初始化数据字典类型（通用字典类型放在前面）
 INSERT IGNORE INTO `dict_type` (`id`, `dict_type_code`, `dict_type_name`, `status`, `sort_order`, `remark`, `deleted`, `create_time`, `update_time`)
 VALUES
-    -- 通用字典类型（放前面）
+    -- 通用字典类型
     (1, 'common_status', '通用状态', 1, 1, '通用的启用/禁用状态', 0, NOW(), NOW()),
     (2, 'yes_no', '是否', 1, 2, '通用布尔值（是/否）', 0, NOW(), NOW()),
     (3, 'menu_visible', '菜单显示状态', 1, 3, '菜单/权限显示状态', 0, NOW(), NOW()),
@@ -538,7 +538,9 @@ VALUES
     (5, 'user_lock_status', '用户锁定状态', 1, 10, '用户是否被锁定', 0, NOW(), NOW()),
     (6, 'user_gender', '用户性别', 1, 11, '用户性别选项', 0, NOW(), NOW()),
     (7, 'role_type', '角色类型', 1, 12, '角色类型分类', 0, NOW(), NOW()),
-    (8, 'permission_type', '权限类型', 1, 13, '权限类型分类', 0, NOW(), NOW());
+    (8, 'attachment_business_type', '附件业务类型', 1, 14, '附件业务类型', 0, NOW(), NOW()),
+    (9, 'attachment_file_type', '附件文件类型', 1, 15, '扩展名', 0, NOW(), NOW()),
+    (10, 'permission_type', '权限类型', 1, 16, '权限类型分类', 0, NOW(), NOW());
 
 -- 初始化数据字典数据
 INSERT IGNORE INTO `dict_data` (`dict_type_id`, `dict_label`, `dict_value`, `dict_sort`, `is_default`, `status`, `remark`, `deleted`, `create_time`, `update_time`)
@@ -567,8 +569,26 @@ VALUES
     -- 角色类型
     (7, '系统角色', 'system', 1, 0, 1, '系统内置角色，不可删除', 0, NOW(), NOW()),
     (7, '自定义角色', 'custom', 2, 1, 1, '用户自定义角色', 0, NOW(), NOW()),
+    -- 附件业务类型
+    (8, '用户头像', 'user_avatar', 1, 0, 1, '业务ID为用户ID', 0, NOW(), NOW()),
+    -- 附件类型（扩展名）
+    (9, 'jpg', 'jpg', 1, 0, 1, 'jpg', 0, NOW(), NOW()),
+    (9, 'jpeg', 'jpeg', 2, 0, 1, 'jpeg', 0, NOW(), NOW()),
+    (9, 'png', 'png', 3, 0, 1, 'png', 0, NOW(), NOW()),
+    (9, 'gif', 'gif', 4, 0, 1, 'gif', 0, NOW(), NOW()),
+    (9, 'bmp', 'bmp', 5, 0, 1, 'bmp', 0, NOW(), NOW()),
+    (9, 'webp', 'webp', 6, 0, 1, 'webp', 0, NOW(), NOW()),
+    (9, 'doc', 'doc', 7, 0, 1, 'doc', 0, NOW(), NOW()),
+    (9, 'docx', 'docx', 8, 0, 1, 'docx', 0, NOW(), NOW()),
+    (9, 'xls', 'xls', 9, 0, 1, 'xls', 0, NOW(), NOW()),
+    (9, 'xlsx', 'xlsx', 10, 0, 1, 'xlsx', 0, NOW(), NOW()),
+    (9, 'ppt', 'ppt', 11, 0, 1, 'ppt', 0, NOW(), NOW()),
+    (9, 'pptx', 'pptx', 12, 0, 1, 'pptx', 0, NOW(), NOW()),
+    (9, 'pdf', 'pdf', 13, 0, 1, 'pdf', 0, NOW(), NOW()),
+    (9, 'txt', 'txt', 14, 0, 1, 'txt', 0, NOW(), NOW()),
+    (9, 'md', 'md', 15, 0, 1, 'md', 0, NOW(), NOW()),
     -- 权限类型
-    (8, '目录', 'catalog', 0, 0, 1, '目录权限', 0, NOW(), NOW()),
-    (8, '菜单', 'menu', 1, 0, 1, '菜单权限', 0, NOW(), NOW()),
-    (8, '按钮', 'button', 2, 0, 1, '按钮权限', 0, NOW(), NOW()),
-    (8, '接口', 'api', 3, 0, 1, '接口权限', 0, NOW(), NOW());
+    (10, '目录', 'catalog', 1, 0, 1, '目录权限', 0, NOW(), NOW()),
+    (10, '菜单', 'menu', 2, 0, 1, '菜单权限', 0, NOW(), NOW()),
+    (10, '按钮', 'button', 3, 0, 1, '按钮权限', 0, NOW(), NOW()),
+    (10, '接口', 'api', 4, 0, 1, '接口权限', 0, NOW(), NOW());
