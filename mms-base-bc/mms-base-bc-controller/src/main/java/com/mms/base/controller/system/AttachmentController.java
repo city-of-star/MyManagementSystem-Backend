@@ -86,6 +86,14 @@ public class AttachmentController {
         return Response.success();
     }
 
+    @Operation(summary = "硬删除附件", description = "删除物理文件并逻辑删除附件记录，仅管理员使用")
+    @RequiresPermission(PermissionConstants.ATTACHMENT_DELETE)
+    @DeleteMapping("/{attachmentId}/hard")
+    public Response<Void> hardDeleteAttachment(@PathVariable Long attachmentId) {
+        attachmentService.hardDeleteAttachment(attachmentId);
+        return Response.success();
+    }
+
     @Operation(summary = "批量删除附件", description = "批量逻辑删除附件（软删除）")
     @RequiresPermission(PermissionConstants.ATTACHMENT_DELETE)
     @PostMapping("/batch-delete")

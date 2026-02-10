@@ -321,6 +321,50 @@ CREATE TABLE IF NOT EXISTS `attachment` (
     KEY `idx_status_deleted` (`status`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='附件表';
 
+-- 15. 定时任务定义表
+CREATE TABLE IF NOT EXISTS `job_def` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '任务定义ID',
+    `service_name` varchar(64) NOT NULL COMMENT '所属服务（如 usercenter/base）',
+    `job_code` varchar(128) NOT NULL COMMENT '任务编码（服务内唯一，如 user_sync）',
+    `job_name` varchar(255) NOT NULL COMMENT '任务名称',
+    `cron_expr` varchar(128) NOT NULL COMMENT 'Cron表达式',
+    `run_mode` varchar(16) NOT NULL DEFAULT 'single' COMMENT '运行模式：single-集群只跑一份，all-每实例都跑',
+    `enabled` tinyint NOT NULL DEFAULT 1 COMMENT '是否启用：0-禁用，1-启用',
+    `timeout_ms` int NOT NULL DEFAULT 0 COMMENT '超时毫秒（0表示不超时）',
+    `remark` varchar(512) DEFAULT NULL COMMENT '备注',
+    `params_json` text DEFAULT NULL COMMENT '任务参数JSON（可选）',
+    `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除',
+    `create_by` bigint DEFAULT NULL COMMENT '创建人ID',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by` bigint DEFAULT NULL COMMENT '更新人ID',
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_service_job_code` (`service_name`, `job_code`),
+    KEY `idx_service_enabled` (`service_name`, `enabled`),
+    KEY `idx_deleted` (`deleted`),
+    KEY `idx_create_time` (`create_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='定时任务定义表';
+
+-- 16. 定时任务执行记录表
+CREATE TABLE IF NOT EXISTS `job_run_log` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '执行记录ID',
+    `job_id` bigint NOT NULL COMMENT '任务定义ID',
+    `run_id` varchar(64) NOT NULL COMMENT '本次执行唯一ID（建议UUID32）',
+    `status` varchar(16) NOT NULL COMMENT '状态：RUNNING/SUCCESS/FAIL/TIMEOUT/SKIP',
+    `start_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '开始时间',
+    `end_time` datetime DEFAULT NULL COMMENT '结束时间',
+    `duration_ms` bigint DEFAULT NULL COMMENT '耗时毫秒',
+    `instance_id` varchar(128) DEFAULT NULL COMMENT '执行实例ID（如pod名/端口）',
+    `host` varchar(128) DEFAULT NULL COMMENT '执行机器host/IP',
+    `error_message` varchar(1024) DEFAULT NULL COMMENT '错误摘要',
+    `error_stack` mediumtext DEFAULT NULL COMMENT '错误堆栈（可选）',
+    `result_json` text DEFAULT NULL COMMENT '结果/统计JSON（可选）',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_run_id` (`run_id`),
+    KEY `idx_job_start_time` (`job_id`, `start_time`),
+    KEY `idx_status_start_time` (`status`, `start_time`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='定时任务执行记录表';
+
 -- ==================== 初始化数据 ====================
 
 -- 初始化用户（密码：123456）
@@ -408,7 +452,15 @@ VALUES
     (42, 40, 'button', '附件-上传', 'SYSTEM_ATTACHMENT_UPLOAD', NULL, NULL, NULL, 82, 1, 1, 0, NOW(), NOW()),
     (43, 40, 'button', '附件-编辑', 'SYSTEM_ATTACHMENT_UPDATE', NULL, NULL, NULL, 83, 1, 1, 0, NOW(), NOW()),
     (44, 40, 'button', '附件-删除', 'SYSTEM_ATTACHMENT_DELETE', NULL, NULL, NULL, 84, 1, 1, 0, NOW(), NOW()),
-    (45, 40, 'button', '附件-下载', 'SYSTEM_ATTACHMENT_DOWNLOAD', NULL, NULL, NULL, 85, 1, 1, 0, NOW(), NOW());
+    (45, 40, 'button', '附件-下载', 'SYSTEM_ATTACHMENT_DOWNLOAD', NULL, NULL, NULL, 85, 1, 1, 0, NOW(), NOW()),
+
+    -- 定时任务监控（菜单 + 按钮）
+    (46, 1, 'menu', '定时任务监控', 'SYSTEM_JOB_MONITOR', '/system/jobMonitorPage', '/system/job/JobMonitorPage.vue', 'Timer', 90, 1, 1, 0, NOW(), NOW()),
+    (47, 46, 'button', '任务监控-查看', 'SYSTEM_JOB_MONITOR_VIEW', NULL, NULL, NULL, 91, 1, 1, 0, NOW(), NOW()),
+    (48, 46, 'button', '任务监控-新增', 'SYSTEM_JOB_MONITOR_CREATE', NULL, NULL, NULL, 92, 1, 1, 0, NOW(), NOW()),
+    (49, 46, 'button', '任务监控-编辑', 'SYSTEM_JOB_MONITOR_UPDATE', NULL, NULL, NULL, 93, 1, 1, 0, NOW(), NOW()),
+    (50, 46, 'button', '任务监控-删除', 'SYSTEM_JOB_MONITOR_DELETE', NULL, NULL, NULL, 94, 1, 1, 0, NOW(), NOW()),
+    (51, 46, 'button', '任务监控-执行', 'SYSTEM_JOB_MONITOR_RUN', NULL, NULL, NULL, 95, 1, 1, 0, NOW(), NOW());
 
 -- 将权限授予角色
 INSERT IGNORE INTO `role_permission` (`role_id`, `permission_id`, `create_time`)
@@ -571,6 +623,7 @@ VALUES
     (7, '自定义角色', 'custom', 2, 1, 1, '用户自定义角色', 0, NOW(), NOW()),
     -- 附件业务类型
     (8, '用户头像', 'user_avatar', 1, 0, 1, '业务ID为用户ID', 0, NOW(), NOW()),
+    (8, '系统附件', 'system_attachment', 2, 0, 1, '系统附件管理-资源库上传', 0, NOW(), NOW()),
     -- 附件类型（扩展名）
     (9, 'jpg', 'jpg', 1, 0, 1, 'jpg', 0, NOW(), NOW()),
     (9, 'jpeg', 'jpeg', 2, 0, 1, 'jpeg', 0, NOW(), NOW()),

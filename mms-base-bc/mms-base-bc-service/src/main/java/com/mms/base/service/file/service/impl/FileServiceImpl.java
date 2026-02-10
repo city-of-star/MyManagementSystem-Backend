@@ -114,6 +114,19 @@ public class FileServiceImpl implements FileService {
     }
 
     @Override
+    public void deleteIfExists(String relativePath) {
+        try {
+            Path filePath = resolveFilePath(relativePath);
+            Files.deleteIfExists(filePath);
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("删除文件失败，相对路径：{}，原因：{}", relativePath, e.getMessage(), e);
+            throw new ServerException("删除文件失败", e);
+        }
+    }
+
+    @Override
     public InputStream openStream(String relativePath) throws IOException {
         Path filePath = resolveFilePath(relativePath);
         return Files.newInputStream(filePath);

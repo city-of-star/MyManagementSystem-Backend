@@ -154,6 +154,36 @@ public class AttachmentServiceImpl implements AttachmentService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public void hardDeleteAttachment(Long attachmentId) {
+        try {
+            log.info("硬删除附件（删除物理文件 + 物理删除记录），attachmentId：{}", attachmentId);
+            if (attachmentId == null) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "附件ID不能为空");
+            }
+            AttachmentEntity attachment = attachmentMapper.selectById(attachmentId);
+            if (attachment == null || Objects.equals(attachment.getDeleted(), 1)) {
+                throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "附件不存在或已删除");
+            }
+
+            // 组装相对文件路径并尝试删除物理文件
+//            String relativePath = buildRelativePath(attachment.getFilePath(), attachment.getFileName());
+            String relativePath = attachment.getFilePath() + '/' + attachment.getFileName();
+            if (StringUtils.hasText(relativePath)) {
+                fileService.deleteIfExists(relativePath);
+            }
+
+            // 物理删除数据库记录
+            attachmentMapper.hardDeleteById(attachmentId);
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("硬删除附件失败：{}", e.getMessage(), e);
+            throw new ServerException("硬删除附件失败", e);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public void batchDeleteAttachment(AttachmentBatchDeleteDto dto) {
         try {
             log.info("批量删除附件，ids：{}", dto.getIds());
@@ -241,5 +271,28 @@ public class AttachmentServiceImpl implements AttachmentService {
         AttachmentVo vo = new AttachmentVo();
         BeanUtils.copyProperties(entity, vo);
         return vo;
+    }
+
+    /**
+     * 组装相对文件路径：
+     * - upload 场景：filePath 形如 2026/02/09/，fileName 为文件名
+     */
+    private String buildRelativePath(String filePath, String fileName) {
+        String p = filePath == null ? "" : filePath.trim().replace("\\", "/");
+        String n = fileName == null ? "" : fileName.trim();
+        if (!StringUtils.hasText(p) && !StringUtils.hasText(n)) {
+            return null;
+        }
+        if (!StringUtils.hasText(p)) {
+            return n;
+        }
+        if (!StringUtils.hasText(n)) {
+            return p.startsWith("/") ? p.substring(1) : p;
+        }
+        String normalized = p.startsWith("/") ? p.substring(1) : p;
+        if (!normalized.endsWith("/")) {
+            normalized = normalized + "/";
+        }
+        return normalized + n;
     }
 }

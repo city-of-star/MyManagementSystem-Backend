@@ -22,6 +22,13 @@ public interface FileService {
     FileVo store(MultipartFile file) throws IOException;
 
     /**
+     * 删除文件（如果文件不存在则返回 false，不抛异常）
+     *
+     * @param relativePath 相对存储路径（如 2026/02/09/xxx.png）
+     */
+    void deleteIfExists(String relativePath);
+
+    /**
      * 根据相对路径打开文件输入流（由调用方负责关闭）
      *
      * @param relativePath 相对存储路径（如 2026/02/09/xxx.png）

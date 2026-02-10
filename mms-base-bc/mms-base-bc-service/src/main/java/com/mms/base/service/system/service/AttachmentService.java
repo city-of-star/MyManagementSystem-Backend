@@ -9,8 +9,6 @@ import com.mms.base.common.system.dto.AttachmentUpdateDto;
 import com.mms.base.common.system.vo.AttachmentVo;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.InputStream;
-
 /**
  * 实现功能【附件服务】
  * <p>
@@ -60,6 +58,13 @@ public interface AttachmentService {
      * @param attachmentId 附件ID
      */
     void deleteAttachment(Long attachmentId);
+
+    /**
+     * 硬删除附件（删除物理文件 + 逻辑删除记录）
+     *
+     * @param attachmentId 附件ID
+     */
+    void hardDeleteAttachment(Long attachmentId);
 
     /**
      * 批量删除附件（逻辑删除）

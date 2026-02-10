@@ -58,4 +58,8 @@
         ORDER BY create_time DESC, id DESC
     </select>
 
+    <delete id="hardDeleteById">
+        DELETE FROM attachment WHERE id = #{id}
+    </delete>
+
 </mapper>

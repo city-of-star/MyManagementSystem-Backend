@@ -18,12 +18,17 @@ import org.apache.ibatis.annotations.Param;
 public interface AttachmentMapper extends BaseMapper<AttachmentEntity> {
 
     /**
-     * 分页查询附件列表（XML）
+     * 分页查询附件列表
      *
      * @param page 分页参数
      * @param dto  查询条件
      * @return 分页结果
      */
     Page<AttachmentVo> getAttachmentPage(Page<AttachmentVo> page, @Param("dto") AttachmentPageQueryDto dto);
+
+    /**
+     * 硬删除：真正删除数据库记录
+     */
+    int hardDeleteById(@Param("id") Long id);
 }
 
