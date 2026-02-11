@@ -324,15 +324,15 @@ CREATE TABLE IF NOT EXISTS `attachment` (
 -- 15. 定时任务定义表
 CREATE TABLE IF NOT EXISTS `job_def` (
     `id` bigint NOT NULL AUTO_INCREMENT COMMENT '任务定义ID',
-    `service_name` varchar(64) NOT NULL COMMENT '所属服务（如 usercenter/base）',
-    `job_code` varchar(128) NOT NULL COMMENT '任务编码（服务内唯一，如 user_sync）',
+    `service_name` varchar(64) NOT NULL COMMENT '所属服务',
+    `job_code` varchar(128) NOT NULL COMMENT '任务编码',
     `job_name` varchar(255) NOT NULL COMMENT '任务名称',
     `cron_expr` varchar(128) NOT NULL COMMENT 'Cron表达式',
     `run_mode` varchar(16) NOT NULL DEFAULT 'single' COMMENT '运行模式：single-集群只跑一份，all-每实例都跑',
     `enabled` tinyint NOT NULL DEFAULT 1 COMMENT '是否启用：0-禁用，1-启用',
     `timeout_ms` int NOT NULL DEFAULT 0 COMMENT '超时毫秒（0表示不超时）',
     `remark` varchar(512) DEFAULT NULL COMMENT '备注',
-    `params_json` text DEFAULT NULL COMMENT '任务参数JSON（可选）',
+    `params_json` text DEFAULT NULL COMMENT '任务参数JSON',
     `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除',
     `create_by` bigint DEFAULT NULL COMMENT '创建人ID',
     `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -354,16 +354,30 @@ CREATE TABLE IF NOT EXISTS `job_run_log` (
     `start_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '开始时间',
     `end_time` datetime DEFAULT NULL COMMENT '结束时间',
     `duration_ms` bigint DEFAULT NULL COMMENT '耗时毫秒',
-    `instance_id` varchar(128) DEFAULT NULL COMMENT '执行实例ID（如pod名/端口）',
+    `instance_id` varchar(128) DEFAULT NULL COMMENT '执行实例ID',
     `host` varchar(128) DEFAULT NULL COMMENT '执行机器host/IP',
     `error_message` varchar(1024) DEFAULT NULL COMMENT '错误摘要',
-    `error_stack` mediumtext DEFAULT NULL COMMENT '错误堆栈（可选）',
-    `result_json` text DEFAULT NULL COMMENT '结果/统计JSON（可选）',
+    `error_stack` mediumtext DEFAULT NULL COMMENT '错误堆栈',
+    `result_json` text DEFAULT NULL COMMENT '结果/统计JSON',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_run_id` (`run_id`),
     KEY `idx_job_start_time` (`job_id`, `start_time`),
     KEY `idx_status_start_time` (`status`, `start_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='定时任务执行记录表';
+
+-- 17. 定时任务执行锁表
+CREATE TABLE IF NOT EXISTS `job_lock` (
+    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '锁ID',
+    `job_id` bigint NOT NULL COMMENT '任务定义ID',
+    `instance_id` varchar(128) NOT NULL COMMENT '持有锁的实例ID',
+    `lock_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '锁定时间',
+    `expire_time` datetime NOT NULL COMMENT '锁过期时间',
+    `heartbeat_time` datetime DEFAULT NULL COMMENT '心跳时间（用于续期）',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_job_id` (`job_id`),
+    KEY `idx_expire_time` (`expire_time`),
+    KEY `idx_instance_id` (`instance_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='任务执行锁表';
 
 -- ==================== 初始化数据 ====================
 
