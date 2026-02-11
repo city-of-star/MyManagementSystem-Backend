@@ -20,6 +20,8 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -164,14 +166,10 @@ public class AttachmentServiceImpl implements AttachmentService {
             if (attachment == null || Objects.equals(attachment.getDeleted(), 1)) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "附件不存在或已删除");
             }
-
-            // 组装相对文件路径并尝试删除物理文件
-//            String relativePath = buildRelativePath(attachment.getFilePath(), attachment.getFileName());
-            String relativePath = attachment.getFilePath() + '/' + attachment.getFileName();
-            if (StringUtils.hasText(relativePath)) {
-                fileService.deleteIfExists(relativePath);
-            }
-
+            // 组装相对文件路径
+            Path relativePath = Paths.get(attachment.getFilePath()).resolve(attachment.getFileName());
+            // 删除物理文件
+            fileService.deleteIfExists(relativePath.toString());
             // 物理删除数据库记录
             attachmentMapper.hardDeleteById(attachmentId);
         } catch (BusinessException e) {
@@ -250,7 +248,6 @@ public class AttachmentServiceImpl implements AttachmentService {
             entity.setRemark(remark);
             entity.setDeleted(0);
             attachmentMapper.insert(entity);
-
             // 转换为 VO 返回
             return convertToVo(entity);
         } catch (BusinessException e) {
@@ -271,28 +268,5 @@ public class AttachmentServiceImpl implements AttachmentService {
         AttachmentVo vo = new AttachmentVo();
         BeanUtils.copyProperties(entity, vo);
         return vo;
-    }
-
-    /**
-     * 组装相对文件路径：
-     * - upload 场景：filePath 形如 2026/02/09/，fileName 为文件名
-     */
-    private String buildRelativePath(String filePath, String fileName) {
-        String p = filePath == null ? "" : filePath.trim().replace("\\", "/");
-        String n = fileName == null ? "" : fileName.trim();
-        if (!StringUtils.hasText(p) && !StringUtils.hasText(n)) {
-            return null;
-        }
-        if (!StringUtils.hasText(p)) {
-            return n;
-        }
-        if (!StringUtils.hasText(n)) {
-            return p.startsWith("/") ? p.substring(1) : p;
-        }
-        String normalized = p.startsWith("/") ? p.substring(1) : p;
-        if (!normalized.endsWith("/")) {
-            normalized = normalized + "/";
-        }
-        return normalized + n;
     }
 }
