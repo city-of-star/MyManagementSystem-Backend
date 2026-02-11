@@ -17,10 +17,13 @@
 
     <modules>
         <module>mms-common-bc-core</module>
-        <module>mms-common-bc-web-mvc</module>
-        <module>mms-common-bc-database</module>
+        <module>mms-common-bc-webmvc</module>
+        <module>mms-common-bc-datasource</module>
         <module>mms-common-bc-security</module>
         <module>mms-common-bc-all</module>
+        <module>mms-common-bc-cache</module>
+        <module>mms-common-bc-es</module>
+        <module>mms-common-bc-mq</module>
     </modules>
 
 </project>

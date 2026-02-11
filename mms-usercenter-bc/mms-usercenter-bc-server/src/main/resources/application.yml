@@ -25,7 +25,7 @@ spring:
     nacos:
       server-addr: 111.229.150.28:8848
       username: nacos
-      password: nacos
+      password: zyntm123lhy
       config:
         namespace: ${spring.profiles.active}
         group: DEFAULT_GROUP

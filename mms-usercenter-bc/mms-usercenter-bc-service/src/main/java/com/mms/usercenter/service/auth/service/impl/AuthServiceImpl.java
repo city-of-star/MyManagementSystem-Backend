@@ -9,7 +9,7 @@ import com.mms.common.security.utils.TokenBlacklistUtils;
 import com.mms.common.security.utils.JwtUtils;
 import com.mms.common.core.enums.jwt.TokenType;
 import com.mms.common.security.utils.TokenValidatorUtils;
-import com.mms.common.web.utils.UserContextUtils;
+import com.mms.common.webmvc.utils.UserContextUtils;
 import com.mms.usercenter.common.auth.dto.LoginDto;
 import com.mms.usercenter.common.auth.dto.LogoutDto;
 import com.mms.usercenter.common.auth.dto.RefreshTokenDto;

@@ -23,24 +23,45 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- 依赖 mms-common-bc-database 模块 -->
+        <!-- 依赖 mms-common-bc-datasource 模块 -->
         <dependency>
             <groupId>com.mms</groupId>
-            <artifactId>mms-common-bc-database</artifactId>
+            <artifactId>mms-common-bc-datasource</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- 依赖 mms-common-bc-cache 模块 -->
+        <dependency>
+            <groupId>com.mms</groupId>
+            <artifactId>mms-common-bc-cache</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- 依赖 mms-common-bc-es 模块 -->
+        <dependency>
+            <groupId>com.mms</groupId>
+            <artifactId>mms-common-bc-es</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <!-- 依赖 mms-common-bc-mq 模块 -->
+        <dependency>
+            <groupId>com.mms</groupId>
+            <artifactId>mms-common-bc-mq</artifactId>
             <version>${project.version}</version>
         </dependency>
         
-        <!-- 依赖 mms-common-bc-security 模块（提供JWT等安全能力） -->
+        <!-- 依赖 mms-common-bc-security 模块 -->
         <dependency>
             <groupId>com.mms</groupId>
             <artifactId>mms-common-bc-security</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- 依赖 mms-common-bc-web-mvc 模块（包含全局异常处理器和Swagger配置，仅用于业务服务） -->
+        <!-- 依赖 mms-common-bc-webmvc 模块 -->
         <dependency>
             <groupId>com.mms</groupId>
-            <artifactId>mms-common-bc-web-mvc</artifactId>
+            <artifactId>mms-common-bc-webmvc</artifactId>
             <version>${project.version}</version>
         </dependency>
 

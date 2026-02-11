@@ -18,27 +18,23 @@
     <!-- 统一依赖 -->
     <dependencies>
 
-        <!-- 引入 common 模块聚合包，包含 common 下的所有子模块 -->
+        <!-- 依赖 mms-common-bc-core 模块 -->
         <dependency>
             <groupId>com.mms</groupId>
-            <artifactId>mms-common-bc-all</artifactId>
+            <artifactId>mms-common-bc-core</artifactId>
             <exclusions>
-                <!-- 排除 web-mvc（避免引入 Spring MVC 依赖（网关使用 WebFlux））-->
-                <exclusion>
-                    <groupId>com.mms</groupId>
-                    <artifactId>mms-common-bc-web-mvc</artifactId>
-                </exclusion>
-                <!-- 排除 database（避免引入 MyBatis-Plus 和 DataSource 自动配置（网关不需要数据库）） -->
-                <exclusion>
-                    <groupId>com.mms</groupId>
-                    <artifactId>mms-common-bc-database</artifactId>
-                </exclusion>
                 <!-- 排除 Knife4j（会引入 Spring MVC 依赖，导致网关切换为 Servlet 类型） -->
                 <exclusion>
                     <groupId>com.github.xiaoymin</groupId>
                     <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <!-- 依赖 mms-common-bc-security 模块 -->
+        <dependency>
+            <groupId>com.mms</groupId>
+            <artifactId>mms-common-bc-security</artifactId>
         </dependency>
 
         <!-- Spring Cloud Gateway -->

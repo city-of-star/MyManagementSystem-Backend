@@ -26,10 +26,46 @@
     <!-- 统一依赖，所有子模块都会继承 -->
     <dependencies>
 
-        <!-- 引入 common 模块聚合包，包含 common 下的所有子模块 -->
+        <!-- 依赖 mms-common-bc-core 模块 -->
         <dependency>
             <groupId>com.mms</groupId>
-            <artifactId>mms-common-bc-all</artifactId>
+            <artifactId>mms-common-bc-core</artifactId>
+        </dependency>
+
+        <!-- 依赖 mms-common-bc-datasource 模块 -->
+        <dependency>
+            <groupId>com.mms</groupId>
+            <artifactId>mms-common-bc-datasource</artifactId>
+        </dependency>
+
+        <!-- 依赖 mms-common-bc-cache 模块 -->
+        <dependency>
+            <groupId>com.mms</groupId>
+            <artifactId>mms-common-bc-cache</artifactId>
+        </dependency>
+
+        <!-- 依赖 mms-common-bc-es 模块 -->
+        <dependency>
+            <groupId>com.mms</groupId>
+            <artifactId>mms-common-bc-es</artifactId>
+        </dependency>
+
+        <!-- 依赖 mms-common-bc-mq 模块 -->
+        <dependency>
+            <groupId>com.mms</groupId>
+            <artifactId>mms-common-bc-mq</artifactId>
+        </dependency>
+
+        <!-- 依赖 mms-common-bc-security 模块 -->
+        <dependency>
+            <groupId>com.mms</groupId>
+            <artifactId>mms-common-bc-security</artifactId>
+        </dependency>
+
+        <!-- 依赖 mms-common-bc-webmvc 模块 -->
+        <dependency>
+            <groupId>com.mms</groupId>
+            <artifactId>mms-common-bc-webmvc</artifactId>
         </dependency>
 
     </dependencies>
