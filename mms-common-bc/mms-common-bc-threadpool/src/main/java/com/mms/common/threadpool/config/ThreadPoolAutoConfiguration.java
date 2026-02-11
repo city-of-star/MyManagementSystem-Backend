@@ -11,7 +11,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
-import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 
@@ -41,7 +40,7 @@ public class ThreadPoolAutoConfiguration {
         ExecutorProperties cfg = properties.getScheduler();
         String prefix = cfg.getThreadNamePrefix() != null ? cfg.getThreadNamePrefix() : "scheduler-";
         ThreadPoolTaskExecutor executor = buildExecutor(cfg, prefix);
-        log.info("[ThreadPool] 初始化定时任务线程池：core={}, max={}, queue={}, prefix={}", cfg.getCorePoolSize(), cfg.getMaxPoolSize(), cfg.getQueueCapacity(), prefix);
+        log.info("初始化【定时任务】线程池成功：core={}, max={}, queue={}, prefix={}", cfg.getCorePoolSize(), cfg.getMaxPoolSize(), cfg.getQueueCapacity(), prefix);
         return executor;
     }
 
@@ -54,7 +53,7 @@ public class ThreadPoolAutoConfiguration {
         ExecutorProperties cfg = properties.getFile();
         String prefix = cfg.getThreadNamePrefix() != null ? cfg.getThreadNamePrefix() : "file-";
         ThreadPoolTaskExecutor executor = buildExecutor(cfg, prefix);
-        log.info("[ThreadPool] 初始化文件线程池：core={}, max={}, queue={}, prefix={}", cfg.getCorePoolSize(), cfg.getMaxPoolSize(), cfg.getQueueCapacity(), prefix);
+        log.info("初始化【文件】线程池成功：core={}, max={}, queue={}, prefix={}", cfg.getCorePoolSize(), cfg.getMaxPoolSize(), cfg.getQueueCapacity(), prefix);
         return executor;
     }
 
