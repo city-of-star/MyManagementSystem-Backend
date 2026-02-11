@@ -1,0 +1,36 @@
+# 线程池配置
+threadpool:
+  # 定时任务线程池
+  scheduler:
+    # 核心线程数
+    core-pool-size: 4
+    # 最大线程数
+    max-pool-size: 8
+    # 队列容量
+    queue-capacity: 1000
+    # 空闲线程存活时间（秒）
+    keep-alive-time: 60
+    # 是否允许核心线程超时回收
+    allow-core-thread-time-out: false
+    # 线程名前缀
+    thread-name-prefix: scheduler-
+    # 拒绝策略：CALLER_RUNS / ABORT / DISCARD / DISCARD_OLDEST
+    rejected-policy: CALLER_RUNS
+
+  # 文件上传/下载线程池
+  file:
+    # 核心线程数
+    core-pool-size: 8
+    # 最大线程数
+    max-pool-size: 16
+    # 队列容量
+    queue-capacity: 2000
+    # 空闲线程存活时间（秒）
+    keep-alive-time: 120
+    # 是否允许核心线程超时回收
+    allow-core-thread-time-out: true
+    # 线程名前缀（不配则默认为 file-）
+    thread-name-prefix: file-
+    # 拒绝策略：CALLER_RUNS / ABORT / DISCARD / DISCARD_OLDEST
+    rejected-policy: CALLER_RUNS
+

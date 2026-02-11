@@ -32,6 +32,12 @@
             <artifactId>mms-common-bc-core</artifactId>
         </dependency>
 
+        <!-- 依赖 mms-common-bc-threadpool 模块 -->
+        <dependency>
+            <groupId>com.mms</groupId>
+            <artifactId>mms-common-bc-threadpool</artifactId>
+        </dependency>
+
         <!-- 依赖 mms-common-bc-datasource 模块 -->
         <dependency>
             <groupId>com.mms</groupId>

@@ -7,6 +7,8 @@ spring:
     import:
       # 公共配置
       - optional:nacos:public-${spring.profiles.active}.yaml?refreshEnabled=true
+      # 线程池配置
+      - optional:nacos:threadpool-${spring.profiles.active}.yaml?refreshEnabled=true
       # MySQL配置
       - optional:nacos:mysql-${spring.profiles.active}.yaml?refreshEnabled=true
       # Redis配置

@@ -102,6 +102,11 @@
             </dependency>
             <dependency>
                 <groupId>com.mms</groupId>
+                <artifactId>mms-common-bc-threadpool</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.mms</groupId>
                 <artifactId>mms-common-bc-datasource</artifactId>
                 <version>${project.version}</version>
             </dependency>
