@@ -15,16 +15,24 @@
 
     <dependencies>
 
-        <!-- Redis 依赖 -->
+        <!-- Lombok -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
         </dependency>
 
         <!-- MyBatis Plus -->
         <dependency>
             <groupId>com.baomidou</groupId>
             <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+        </dependency>
+
+        <!-- 依赖 webmvc 模块（获取用户上下文） -->
+        <dependency>
+            <groupId>com.mms</groupId>
+            <artifactId>mms-common-bc-webmvc</artifactId>
+            <optional>true</optional>
         </dependency>
 
     </dependencies>

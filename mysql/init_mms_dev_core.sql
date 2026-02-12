@@ -8,7 +8,7 @@ USE `mms_dev_core`;
 
 CREATE TABLE IF NOT EXISTS `test`
 (
-    `id`          bigint auto_increment comment '主键'
+    `id`          bigint comment '主键'
         primary key,
     `title`       varchar(512) not null default '' comment '测试标题',
     `content`     text comment '测试内容',
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS `test`
 
 -- 1. 用户表
 CREATE TABLE IF NOT EXISTS `user` (
-    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '用户ID',
+    `id` bigint NOT NULL COMMENT '用户ID',
     `username` varchar(64) NOT NULL COMMENT '用户名（登录账号）',
     `password` varchar(255) NOT NULL COMMENT '密码（加密后）',
     `nickname` varchar(64) DEFAULT NULL COMMENT '昵称',
@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS `user` (
 
 -- 2. 用户登录日志表
 CREATE TABLE IF NOT EXISTS `user_login_log` (
-    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '日志ID',
+    `id` bigint NOT NULL COMMENT '日志ID',
     `user_id` bigint DEFAULT NULL COMMENT '用户ID',
     `username` varchar(64) DEFAULT NULL COMMENT '用户名',
     `login_type` varchar(32) DEFAULT NULL COMMENT '登录类型：password-密码登录，sms-短信登录，email-邮箱登录',
@@ -77,7 +77,7 @@ CREATE TABLE IF NOT EXISTS `user_login_log` (
 
 -- 3. 部门表
 CREATE TABLE IF NOT EXISTS `dept` (
-    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '部门ID',
+    `id` bigint NOT NULL COMMENT '部门ID',
     `parent_id` bigint NOT NULL DEFAULT 0 COMMENT '父部门ID，0表示顶级部门',
     `dept_name` varchar(64) NOT NULL COMMENT '部门名称',
     `dept_code` varchar(64) NOT NULL COMMENT '部门编码',
@@ -101,7 +101,7 @@ CREATE TABLE IF NOT EXISTS `dept` (
 
 -- 4. 岗位表
 CREATE TABLE IF NOT EXISTS `post` (
-    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '岗位ID',
+    `id` bigint NOT NULL COMMENT '岗位ID',
     `post_code` varchar(64) NOT NULL COMMENT '岗位编码',
     `post_name` varchar(64) NOT NULL COMMENT '岗位名称',
     `post_level` varchar(32) DEFAULT NULL COMMENT '岗位等级',
@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS `post` (
 
 -- 5. 角色表
 CREATE TABLE IF NOT EXISTS `role` (
-    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '角色ID',
+    `id` bigint NOT NULL COMMENT '角色ID',
     `role_code` varchar(64) NOT NULL COMMENT '角色编码',
     `role_name` varchar(64) NOT NULL COMMENT '角色名称',
     `role_type` varchar(32) DEFAULT NULL COMMENT '角色类型：system-系统角色，custom-自定义角色',
@@ -141,7 +141,7 @@ CREATE TABLE IF NOT EXISTS `role` (
 
 -- 6. 权限表（菜单/按钮/接口权限）
 CREATE TABLE IF NOT EXISTS `permission` (
-    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '权限ID',
+    `id` bigint NOT NULL COMMENT '权限ID',
     `parent_id` bigint NOT NULL DEFAULT 0 COMMENT '父权限ID，0表示顶级权限',
     `permission_type` varchar(32) NOT NULL COMMENT '权限类型：catalog-目录，menu-菜单，button-按钮，api-接口',
     `permission_name` varchar(64) NOT NULL COMMENT '权限名称',
@@ -171,7 +171,7 @@ CREATE TABLE IF NOT EXISTS `permission` (
 
 -- 7. 用户角色关联表
 CREATE TABLE IF NOT EXISTS `user_role` (
-    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '关联ID',
+    `id` bigint NOT NULL COMMENT '关联ID',
     `user_id` bigint NOT NULL COMMENT '用户ID',
     `role_id` bigint NOT NULL COMMENT '角色ID',
     `create_by` bigint DEFAULT NULL COMMENT '创建人ID',
@@ -184,7 +184,7 @@ CREATE TABLE IF NOT EXISTS `user_role` (
 
 -- 8. 角色权限关联表
 CREATE TABLE IF NOT EXISTS `role_permission` (
-    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '关联ID',
+    `id` bigint NOT NULL COMMENT '关联ID',
     `role_id` bigint NOT NULL COMMENT '角色ID',
     `permission_id` bigint NOT NULL COMMENT '权限ID',
     `create_by` bigint DEFAULT NULL COMMENT '创建人ID',
@@ -197,7 +197,7 @@ CREATE TABLE IF NOT EXISTS `role_permission` (
 
 -- 9. 用户部门关联表
 CREATE TABLE IF NOT EXISTS `user_dept` (
-    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '关联ID',
+    `id` bigint NOT NULL COMMENT '关联ID',
     `user_id` bigint NOT NULL COMMENT '用户ID',
     `dept_id` bigint NOT NULL COMMENT '部门ID',
     `is_primary` tinyint NOT NULL DEFAULT 0 COMMENT '是否主部门：0-否，1-是',
@@ -212,7 +212,7 @@ CREATE TABLE IF NOT EXISTS `user_dept` (
 
 -- 10. 用户岗位关联表
 CREATE TABLE IF NOT EXISTS `user_post` (
-    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '关联ID',
+    `id` bigint NOT NULL COMMENT '关联ID',
     `user_id` bigint NOT NULL COMMENT '用户ID',
     `post_id` bigint NOT NULL COMMENT '岗位ID',
     `is_primary` tinyint NOT NULL DEFAULT 0 COMMENT '是否主岗位：0-否，1-是',
@@ -227,7 +227,7 @@ CREATE TABLE IF NOT EXISTS `user_post` (
 
 -- 11. 系统配置表（用于系统配置，单个键值对）
 CREATE TABLE IF NOT EXISTS `config` (
-    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '配置ID',
+    `id` bigint NOT NULL COMMENT '配置ID',
     `config_key` varchar(128) NOT NULL COMMENT '配置键（唯一标识）',
     `config_value` text COMMENT '配置值',
     `config_type` varchar(32) NOT NULL DEFAULT 'string' COMMENT '配置类型：string-字符串，number-数字，boolean-布尔值，json-JSON对象',
@@ -250,7 +250,7 @@ CREATE TABLE IF NOT EXISTS `config` (
 
 -- 12. 数据字典类型表（字典分类）
 CREATE TABLE IF NOT EXISTS `dict_type` (
-    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '字典类型ID',
+    `id` bigint NOT NULL COMMENT '字典类型ID',
     `dict_type_code` varchar(64) NOT NULL COMMENT '字典类型编码（唯一标识）',
     `dict_type_name` varchar(128) NOT NULL COMMENT '字典类型名称',
     `status` tinyint NOT NULL DEFAULT 1 COMMENT '状态：0-禁用，1-启用',
@@ -270,7 +270,7 @@ CREATE TABLE IF NOT EXISTS `dict_type` (
 
 -- 13. 数据字典数据表（字典键值对，用于下拉框等）
 CREATE TABLE IF NOT EXISTS `dict_data` (
-    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '字典数据ID',
+    `id` bigint NOT NULL COMMENT '字典数据ID',
     `dict_type_id` bigint NOT NULL COMMENT '字典类型ID',
     `dict_label` varchar(128) NOT NULL COMMENT '字典标签（显示文本）',
     `dict_value` varchar(128) NOT NULL COMMENT '字典值（实际值）',
@@ -294,7 +294,7 @@ CREATE TABLE IF NOT EXISTS `dict_data` (
 
 -- 14. 附件表
 CREATE TABLE IF NOT EXISTS `attachment` (
-    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '附件ID',
+    `id` bigint NOT NULL COMMENT '附件ID',
     `file_name` varchar(255) NOT NULL COMMENT '文件名（存储文件名）',
     `original_name` varchar(255) NOT NULL COMMENT '原始文件名',
     `file_path` varchar(1024) NOT NULL COMMENT '文件存储路径',
@@ -323,7 +323,7 @@ CREATE TABLE IF NOT EXISTS `attachment` (
 
 -- 15. 定时任务定义表
 CREATE TABLE IF NOT EXISTS `job_def` (
-    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '任务定义ID',
+    `id` bigint NOT NULL COMMENT '任务定义ID',
     `service_name` varchar(64) NOT NULL COMMENT '所属服务',
     `job_code` varchar(128) NOT NULL COMMENT '任务编码',
     `job_name` varchar(255) NOT NULL COMMENT '任务名称',
@@ -347,9 +347,9 @@ CREATE TABLE IF NOT EXISTS `job_def` (
 
 -- 16. 定时任务执行记录表
 CREATE TABLE IF NOT EXISTS `job_run_log` (
-    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '执行记录ID',
+    `id` bigint NOT NULL COMMENT '执行记录ID',
     `job_id` bigint NOT NULL COMMENT '任务定义ID',
-    `run_id` varchar(64) NOT NULL COMMENT '本次执行唯一ID（建议UUID32）',
+    `run_id` varchar(64) NOT NULL COMMENT '本次执行唯一ID',
     `status` varchar(16) NOT NULL COMMENT '状态：RUNNING/SUCCESS/FAIL/TIMEOUT/SKIP',
     `start_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '开始时间',
     `end_time` datetime DEFAULT NULL COMMENT '结束时间',
@@ -367,7 +367,7 @@ CREATE TABLE IF NOT EXISTS `job_run_log` (
 
 -- 17. 定时任务执行锁表
 CREATE TABLE IF NOT EXISTS `job_lock` (
-    `id` bigint NOT NULL AUTO_INCREMENT COMMENT '锁ID',
+    `id` bigint NOT NULL COMMENT '锁ID',
     `job_id` bigint NOT NULL COMMENT '任务定义ID',
     `instance_id` varchar(128) NOT NULL COMMENT '持有锁的实例ID',
     `lock_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '锁定时间',
@@ -395,11 +395,11 @@ VALUES
     (2, 'admin', '管理员', 'system', 2, 1, '', 0, NOW(), NOW());
 
 -- 给用户分配角色
-INSERT IGNORE INTO `user_role` (`user_id`, `role_id`, `create_time`)
+INSERT IGNORE INTO `user_role` (`id`, `user_id`, `role_id`, `create_time`)
 VALUES
-    (1, 1, NOW()),
-    (2, 2, NOW()),
-    (3, 2, NOW());
+    (1, 1, 1, NOW()),
+    (2, 2, 2, NOW()),
+    (3, 3, 2, NOW());
 
 -- 初始化权限数据
 INSERT IGNORE INTO `permission` (`id`, `parent_id`, `permission_type`, `permission_name`, `permission_code`,
@@ -477,8 +477,12 @@ VALUES
     (51, 46, 'button', '任务监控-执行', 'SYSTEM_JOB_MONITOR_RUN', NULL, NULL, NULL, 95, 1, 1, 0, NOW(), NOW());
 
 -- 将权限授予角色
-INSERT IGNORE INTO `role_permission` (`role_id`, `permission_id`, `create_time`)
-SELECT rp.role_id, p.id AS permission_id, NOW() AS create_time
+INSERT IGNORE INTO `role_permission` (`id`, `role_id`, `permission_id`, `create_time`)
+SELECT 
+    ROW_NUMBER() OVER (ORDER BY rp.role_id, p.id) AS id,
+    rp.role_id, 
+    p.id AS permission_id, 
+    NOW() AS create_time
 FROM `permission` p
          CROSS JOIN (
              SELECT 1 AS role_id
@@ -568,29 +572,29 @@ VALUES
 
 
 -- 给用户分配部门（主部门：技术部）
-INSERT IGNORE INTO `user_dept` (`user_id`, `dept_id`, `is_primary`, `create_time`)
+INSERT IGNORE INTO `user_dept` (`id`, `user_id`, `dept_id`, `is_primary`, `create_time`)
 VALUES
-    (1, 2, 1, NOW()),
-    (2, 1, 1, NOW()),
-    (3, 1, 1, NOW());
+    (1, 1, 2, 1, NOW()),
+    (2, 2, 1, 1, NOW()),
+    (3, 3, 1, 1, NOW());
 
 -- 给用户分配岗位（主岗位：CTO）
-INSERT IGNORE INTO `user_post` (`user_id`, `post_id`, `is_primary`, `create_time`)
+INSERT IGNORE INTO `user_post` (`id`, `user_id`, `post_id`, `is_primary`, `create_time`)
 VALUES
-    (1, 6, 1, NOW()),
-    (2, 1, 1, NOW()),
-    (3, 2, 1, NOW());
+    (1, 1, 6, 1, NOW()),
+    (2, 2, 1, 1, NOW()),
+    (3, 3, 2, 1, NOW());
 
 -- 初始化系统配置数据
-INSERT IGNORE INTO `config` (`config_key`, `config_value`, `config_type`, `config_name`, `status`, `editable`, `remark`, `deleted`, `create_time`, `update_time`)
+INSERT IGNORE INTO `config` (`id`, `config_key`, `config_value`, `config_type`, `config_name`, `status`, `editable`, `remark`, `deleted`, `create_time`, `update_time`)
 VALUES
-    ('system.name', 'MyManagementSystem', 'string', '系统名称', 1, 0, '系统名称配置', 0, NOW(), NOW()),
-    ('system.version', '1.0.0', 'string', '系统版本', 1, 0, '系统版本号', 0, NOW(), NOW()),
-    ('system.copyright', '© 2025 MyManagementSystem', 'string', '版权信息', 1, 1, '系统版权信息', 0, NOW(), NOW()),
-    ('login.password.minLength', '6', 'number', '密码最小长度', 1, 1, '用户密码最小长度要求', 0, NOW(), NOW()),
-    ('login.password.maxLength', '20', 'number', '密码最大长度', 1, 1, '用户密码最大长度要求', 0, NOW(), NOW()),
-    ('file.upload.maxSize', '10485760', 'number', '文件上传最大大小（字节）', 1, 1, '单个文件上传的最大大小，默认10MB', 0, NOW(), NOW()),
-    ('file.upload.allowedTypes', 'jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx', 'string', '允许上传的文件类型', 1, 1, '允许上传的文件扩展名，用逗号分隔', 0, NOW(), NOW());
+    (1, 'system.name', 'MyManagementSystem', 'string', '系统名称', 1, 0, '系统名称配置', 0, NOW(), NOW()),
+    (2, 'system.version', '1.0.0', 'string', '系统版本', 1, 0, '系统版本号', 0, NOW(), NOW()),
+    (3, 'system.copyright', '© 2025 MyManagementSystem', 'string', '版权信息', 1, 1, '系统版权信息', 0, NOW(), NOW()),
+    (4, 'login.password.minLength', '6', 'number', '密码最小长度', 1, 1, '用户密码最小长度要求', 0, NOW(), NOW()),
+    (5, 'login.password.maxLength', '20', 'number', '密码最大长度', 1, 1, '用户密码最大长度要求', 0, NOW(), NOW()),
+    (6, 'file.upload.maxSize', '10485760', 'number', '文件上传最大大小（字节）', 1, 1, '单个文件上传的最大大小，默认10MB', 0, NOW(), NOW()),
+    (7, 'file.upload.allowedTypes', 'jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx', 'string', '允许上传的文件类型', 1, 1, '允许上传的文件扩展名，用逗号分隔', 0, NOW(), NOW());
 
 -- 初始化数据字典类型（通用字典类型放在前面）
 INSERT IGNORE INTO `dict_type` (`id`, `dict_type_code`, `dict_type_name`, `status`, `sort_order`, `remark`, `deleted`, `create_time`, `update_time`)
@@ -609,53 +613,53 @@ VALUES
     (10, 'permission_type', '权限类型', 1, 16, '权限类型分类', 0, NOW(), NOW());
 
 -- 初始化数据字典数据
-INSERT IGNORE INTO `dict_data` (`dict_type_id`, `dict_label`, `dict_value`, `dict_sort`, `is_default`, `status`, `remark`, `deleted`, `create_time`, `update_time`)
+INSERT IGNORE INTO `dict_data` (`id`, `dict_type_id`, `dict_label`, `dict_value`, `dict_sort`, `is_default`, `status`, `remark`, `deleted`, `create_time`, `update_time`)
 VALUES
     -- 通用状态
-    (1, '启用', '1', 1, 1, 1, '启用状态', 0, NOW(), NOW()),
-    (1, '禁用', '0', 2, 0, 1, '禁用状态', 0, NOW(), NOW()),
+    (1, 1, '启用', '1', 1, 1, 1, '启用状态', 0, NOW(), NOW()),
+    (2, 1, '禁用', '0', 2, 0, 1, '禁用状态', 0, NOW(), NOW()),
     -- 是否
-    (2, '是', '1', 1, 1, 1, '是 / true', 0, NOW(), NOW()),
-    (2, '否', '0', 2, 0, 1, '否 / false', 0, NOW(), NOW()),
+    (3, 2, '是', '1', 1, 1, 1, '是 / true', 0, NOW(), NOW()),
+    (4, 2, '否', '0', 2, 0, 1, '否 / false', 0, NOW(), NOW()),
     -- 菜单显示状态
-    (3, '显示', '1', 1, 1, 1, '菜单在前端展示', 0, NOW(), NOW()),
-    (3, '隐藏', '0', 2, 0, 1, '菜单在前端隐藏', 0, NOW(), NOW()),
+    (5, 3, '显示', '1', 1, 1, 1, '菜单在前端展示', 0, NOW(), NOW()),
+    (6, 3, '隐藏', '0', 2, 0, 1, '菜单在前端隐藏', 0, NOW(), NOW()),
     -- 参数配置类型
-    (4, '字符串', 'string', 1, 1, 1, '字符串类型配置', 0, NOW(), NOW()),
-    (4, '数字', 'number', 2, 0, 1, '数字类型配置', 0, NOW(), NOW()),
-    (4, '布尔', 'boolean', 3, 0, 1, '布尔类型配置', 0, NOW(), NOW()),
-    (4, 'JSON', 'json', 4, 0, 1, 'JSON 类型配置', 0, NOW(), NOW()),
+    (7, 4, '字符串', 'string', 1, 1, 1, '字符串类型配置', 0, NOW(), NOW()),
+    (8, 4, '数字', 'number', 2, 0, 1, '数字类型配置', 0, NOW(), NOW()),
+    (9, 4, '布尔', 'boolean', 3, 0, 1, '布尔类型配置', 0, NOW(), NOW()),
+    (10, 4, 'JSON', 'json', 4, 0, 1, 'JSON 类型配置', 0, NOW(), NOW()),
     -- 用户锁定状态
-    (5, '未锁定', '0', 1, 1, 1, '用户正常', 0, NOW(), NOW()),
-    (5, '已锁定', '1', 2, 0, 1, '用户被锁定', 0, NOW(), NOW()),
+    (11, 5, '未锁定', '0', 1, 1, 1, '用户正常', 0, NOW(), NOW()),
+    (12, 5, '已锁定', '1', 2, 0, 1, '用户被锁定', 0, NOW(), NOW()),
     -- 用户性别
-    (6, '未知', '0', 1, 1, 1, '性别未知', 0, NOW(), NOW()),
-    (6, '男', '1', 2, 0, 1, '男性', 0, NOW(), NOW()),
-    (6, '女', '2', 3, 0, 1, '女性', 0, NOW(), NOW()),
+    (13, 6, '未知', '0', 1, 1, 1, '性别未知', 0, NOW(), NOW()),
+    (14, 6, '男', '1', 2, 0, 1, '男性', 0, NOW(), NOW()),
+    (15, 6, '女', '2', 3, 0, 1, '女性', 0, NOW(), NOW()),
     -- 角色类型
-    (7, '系统角色', 'system', 1, 0, 1, '系统内置角色，不可删除', 0, NOW(), NOW()),
-    (7, '自定义角色', 'custom', 2, 1, 1, '用户自定义角色', 0, NOW(), NOW()),
+    (16, 7, '系统角色', 'system', 1, 0, 1, '系统内置角色，不可删除', 0, NOW(), NOW()),
+    (17, 7, '自定义角色', 'custom', 2, 1, 1, '用户自定义角色', 0, NOW(), NOW()),
     -- 附件业务类型
-    (8, '用户头像', 'user_avatar', 1, 0, 1, '业务ID为用户ID', 0, NOW(), NOW()),
-    (8, '系统附件', 'system_attachment', 2, 0, 1, '系统附件管理-资源库上传', 0, NOW(), NOW()),
+    (18, 8, '用户头像', 'user_avatar', 1, 0, 1, '业务ID为用户ID', 0, NOW(), NOW()),
+    (19, 8, '系统附件', 'system_attachment', 2, 0, 1, '系统附件管理-资源库上传', 0, NOW(), NOW()),
     -- 附件类型（扩展名）
-    (9, 'jpg', 'jpg', 1, 0, 1, 'jpg', 0, NOW(), NOW()),
-    (9, 'jpeg', 'jpeg', 2, 0, 1, 'jpeg', 0, NOW(), NOW()),
-    (9, 'png', 'png', 3, 0, 1, 'png', 0, NOW(), NOW()),
-    (9, 'gif', 'gif', 4, 0, 1, 'gif', 0, NOW(), NOW()),
-    (9, 'bmp', 'bmp', 5, 0, 1, 'bmp', 0, NOW(), NOW()),
-    (9, 'webp', 'webp', 6, 0, 1, 'webp', 0, NOW(), NOW()),
-    (9, 'doc', 'doc', 7, 0, 1, 'doc', 0, NOW(), NOW()),
-    (9, 'docx', 'docx', 8, 0, 1, 'docx', 0, NOW(), NOW()),
-    (9, 'xls', 'xls', 9, 0, 1, 'xls', 0, NOW(), NOW()),
-    (9, 'xlsx', 'xlsx', 10, 0, 1, 'xlsx', 0, NOW(), NOW()),
-    (9, 'ppt', 'ppt', 11, 0, 1, 'ppt', 0, NOW(), NOW()),
-    (9, 'pptx', 'pptx', 12, 0, 1, 'pptx', 0, NOW(), NOW()),
-    (9, 'pdf', 'pdf', 13, 0, 1, 'pdf', 0, NOW(), NOW()),
-    (9, 'txt', 'txt', 14, 0, 1, 'txt', 0, NOW(), NOW()),
-    (9, 'md', 'md', 15, 0, 1, 'md', 0, NOW(), NOW()),
+    (20, 9, 'jpg', 'jpg', 1, 0, 1, 'jpg', 0, NOW(), NOW()),
+    (21, 9, 'jpeg', 'jpeg', 2, 0, 1, 'jpeg', 0, NOW(), NOW()),
+    (22, 9, 'png', 'png', 3, 0, 1, 'png', 0, NOW(), NOW()),
+    (23, 9, 'gif', 'gif', 4, 0, 1, 'gif', 0, NOW(), NOW()),
+    (24, 9, 'bmp', 'bmp', 5, 0, 1, 'bmp', 0, NOW(), NOW()),
+    (25, 9, 'webp', 'webp', 6, 0, 1, 'webp', 0, NOW(), NOW()),
+    (26, 9, 'doc', 'doc', 7, 0, 1, 'doc', 0, NOW(), NOW()),
+    (27, 9, 'docx', 'docx', 8, 0, 1, 'docx', 0, NOW(), NOW()),
+    (28, 9, 'xls', 'xls', 9, 0, 1, 'xls', 0, NOW(), NOW()),
+    (29, 9, 'xlsx', 'xlsx', 10, 0, 1, 'xlsx', 0, NOW(), NOW()),
+    (30, 9, 'ppt', 'ppt', 11, 0, 1, 'ppt', 0, NOW(), NOW()),
+    (31, 9, 'pptx', 'pptx', 12, 0, 1, 'pptx', 0, NOW(), NOW()),
+    (32, 9, 'pdf', 'pdf', 13, 0, 1, 'pdf', 0, NOW(), NOW()),
+    (33, 9, 'txt', 'txt', 14, 0, 1, 'txt', 0, NOW(), NOW()),
+    (34, 9, 'md', 'md', 15, 0, 1, 'md', 0, NOW(), NOW()),
     -- 权限类型
-    (10, '目录', 'catalog', 1, 0, 1, '目录权限', 0, NOW(), NOW()),
-    (10, '菜单', 'menu', 2, 0, 1, '菜单权限', 0, NOW(), NOW()),
-    (10, '按钮', 'button', 3, 0, 1, '按钮权限', 0, NOW(), NOW()),
-    (10, '接口', 'api', 4, 0, 1, '接口权限', 0, NOW(), NOW());
+    (35, 10, '目录', 'catalog', 1, 0, 1, '目录权限', 0, NOW(), NOW()),
+    (36, 10, '菜单', 'menu', 2, 0, 1, '菜单权限', 0, NOW(), NOW()),
+    (37, 10, '按钮', 'button', 3, 0, 1, '按钮权限', 0, NOW(), NOW()),
+    (38, 10, '接口', 'api', 4, 0, 1, '接口权限', 0, NOW(), NOW());

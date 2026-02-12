@@ -1,13 +1,11 @@
 package com.mms.usercenter.common.auth.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.mms.common.datasource.entity.BaseIdEntity;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serial;
-import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
@@ -22,14 +20,10 @@ import java.time.LocalDateTime;
 @Data
 @TableName("user_login_log")
 @Schema(description = "用户登录日志实体")
-public class UserLoginLogEntity implements Serializable {
+public class UserLoginLogEntity extends BaseIdEntity {
 
     @Serial
     private static final long serialVersionUID = 1L;
-
-    @TableId(type = IdType.AUTO)
-    @Schema(description = "日志ID")
-    private Long id;
 
     @Schema(description = "用户ID")
     private Long userId;

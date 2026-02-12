@@ -1,4 +1,4 @@
-package com.mms.common.datasource.config;
+package com.mms.common.cache.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,6 +14,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
  * </p>
  * 
  * @author li.hongyu 15:37:28
+ * @date 2026-01-07 10:37:27
  */
 @Configuration
 public class RedisConfig {
@@ -39,4 +40,3 @@ public class RedisConfig {
         return redisTemplate;
     }
 }
-
