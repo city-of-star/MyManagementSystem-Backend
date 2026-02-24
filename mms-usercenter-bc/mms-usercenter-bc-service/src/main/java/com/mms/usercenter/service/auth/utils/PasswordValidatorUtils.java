@@ -2,6 +2,8 @@ package com.mms.usercenter.service.auth.utils;
 
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
+import lombok.extern.slf4j.Slf4j;
+import org.mindrot.jbcrypt.BCrypt;
 import org.springframework.util.StringUtils;
 
 import java.util.regex.Pattern;
@@ -17,6 +19,7 @@ import java.util.regex.Pattern;
  * @author li.hongyu
  * @date 2025-12-15 09:52:26
  */
+@Slf4j
 public class PasswordValidatorUtils {
 
     /**
@@ -162,6 +165,11 @@ public class PasswordValidatorUtils {
         }
 
         return "密码强度符合要求";
+    }
+
+    public static void main(String[] args) {
+        String password = "MMS2025_superAdmin";
+        log.info("原密码：{}, BCrypt加密密码：{}", password, BCrypt.hashpw(password, BCrypt.gensalt(12)));
     }
 
     /**

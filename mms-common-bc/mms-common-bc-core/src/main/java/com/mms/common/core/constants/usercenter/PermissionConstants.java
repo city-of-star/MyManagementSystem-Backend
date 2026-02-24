@@ -28,83 +28,93 @@ public final class PermissionConstants {
     /**
      * 系统管理（目录）
      */
-    public static final String SYSTEM_MANAGE = "SYSTEM";
+    public static final String SYSTEM = "SYSTEM";
 
     /**
      * 用户管理（菜单+按钮）
      */
-    public static final String SYSTEM_USER_MANAGE = "SYSTEM_USER";
-    public static final String USER_VIEW = "SYSTEM_USER_VIEW";
-    public static final String USER_CREATE = "SYSTEM_USER_CREATE";
-    public static final String USER_UPDATE = "SYSTEM_USER_UPDATE";
-    public static final String USER_DELETE = "SYSTEM_USER_DELETE";
-    public static final String USER_RESET_PASSWORD = "SYSTEM_USER_RESET_PASSWORD";
-    public static final String USER_UNLOCK = "SYSTEM_USER_UNLOCK";
+    public static final String SYSTEM_USER = "SYSTEM_USER";
+    public static final String SYSTEM_USER_VIEW = "SYSTEM_USER_VIEW";
+    public static final String SYSTEM_USER_CREATE = "SYSTEM_USER_CREATE";
+    public static final String SYSTEM_USER_UPDATE = "SYSTEM_USER_UPDATE";
+    public static final String SYSTEM_USER_DELETE = "SYSTEM_USER_DELETE";
+    public static final String SYSTEM_USER_RESET_PASSWORD = "SYSTEM_USER_RESET_PASSWORD";
+    public static final String SYSTEM_USER_UNLOCK = "SYSTEM_USER_UNLOCK";
 
     /**
      * 角色管理（菜单+按钮）
      */
-    public static final String SYSTEM_ROLE_MANAGE = "SYSTEM_ROLE";
-    public static final String ROLE_VIEW = "SYSTEM_ROLE_VIEW";
-    public static final String ROLE_CREATE = "SYSTEM_ROLE_CREATE";
-    public static final String ROLE_UPDATE = "SYSTEM_ROLE_UPDATE";
-    public static final String ROLE_DELETE = "SYSTEM_ROLE_DELETE";
-    public static final String ROLE_ASSIGN = "SYSTEM_ROLE_ASSIGN";
+    public static final String SYSTEM_ROLE = "SYSTEM_ROLE";
+    public static final String SYSTEM_ROLE_VIEW = "SYSTEM_ROLE_VIEW";
+    public static final String SYSTEM_ROLE_CREATE = "SYSTEM_ROLE_CREATE";
+    public static final String SYSTEM_ROLE_UPDATE = "SYSTEM_ROLE_UPDATE";
+    public static final String SYSTEM_ROLE_DELETE = "SYSTEM_ROLE_DELETE";
+    public static final String SYSTEM_ROLE_ASSIGN = "SYSTEM_ROLE_ASSIGN";
 
     /**
      * 菜单管理（菜单+按钮）
      */
-    public static final String SYSTEM_MENU_MANAGE = "SYSTEM_MENU";
-    public static final String PERMISSION_VIEW = "SYSTEM_MENU_VIEW";
-    public static final String PERMISSION_CREATE = "SYSTEM_MENU_CREATE";
-    public static final String PERMISSION_UPDATE = "SYSTEM_MENU_UPDATE";
-    public static final String PERMISSION_DELETE = "SYSTEM_MENU_DELETE";
+    public static final String SYSTEM_MENU = "SYSTEM_MENU";
+    public static final String SYSTEM_PERMISSION_VIEW = "SYSTEM_MENU_VIEW";
+    public static final String SYSTEM_PERMISSION_CREATE = "SYSTEM_MENU_CREATE";
+    public static final String SYSTEM_PERMISSION_UPDATE = "SYSTEM_MENU_UPDATE";
+    public static final String SYSTEM_PERMISSION_DELETE = "SYSTEM_MENU_DELETE";
 
     /**
      * 部门管理（菜单+按钮）
      */
-    public static final String SYSTEM_DEPT_MANAGE = "SYSTEM_DEPT";
-    public static final String DEPT_VIEW = "SYSTEM_DEPT_VIEW";
-    public static final String DEPT_CREATE = "SYSTEM_DEPT_CREATE";
-    public static final String DEPT_UPDATE = "SYSTEM_DEPT_UPDATE";
-    public static final String DEPT_DELETE = "SYSTEM_DEPT_DELETE";
+    public static final String SYSTEM_DEPT = "SYSTEM_DEPT";
+    public static final String SYSTEM_DEPT_VIEW = "SYSTEM_DEPT_VIEW";
+    public static final String SYSTEM_DEPT_CREATE = "SYSTEM_DEPT_CREATE";
+    public static final String SYSTEM_DEPT_UPDATE = "SYSTEM_DEPT_UPDATE";
+    public static final String SYSTEM_DEPT_DELETE = "SYSTEM_DEPT_DELETE";
 
     /**
      * 岗位管理（菜单+按钮）
      */
-    public static final String SYSTEM_POST_MANAGE = "SYSTEM_POST";
-    public static final String POST_VIEW = "SYSTEM_POST_VIEW";
-    public static final String POST_CREATE = "SYSTEM_POST_CREATE";
-    public static final String POST_UPDATE = "SYSTEM_POST_UPDATE";
-    public static final String POST_DELETE = "SYSTEM_POST_DELETE";
+    public static final String SYSTEM_POST = "SYSTEM_POST";
+    public static final String SYSTEM_POST_VIEW = "SYSTEM_POST_VIEW";
+    public static final String SYSTEM_POST_CREATE = "SYSTEM_POST_CREATE";
+    public static final String SYSTEM_POST_UPDATE = "SYSTEM_POST_UPDATE";
+    public static final String SYSTEM_POST_DELETE = "SYSTEM_POST_DELETE";
 
     /**
      * 系统配置管理（菜单+按钮）
      */
-    public static final String SYSTEM_CONFIG_MANAGE = "SYSTEM_CONFIG";
-    public static final String CONFIG_VIEW = "SYSTEM_CONFIG_VIEW";
-    public static final String CONFIG_CREATE = "SYSTEM_CONFIG_CREATE";
-    public static final String CONFIG_UPDATE = "SYSTEM_CONFIG_UPDATE";
-    public static final String CONFIG_DELETE = "SYSTEM_CONFIG_DELETE";
+    public static final String SYSTEM_CONFIG = "SYSTEM_CONFIG";
+    public static final String SYSTEM_CONFIG_VIEW = "SYSTEM_CONFIG_VIEW";
+    public static final String SYSTEM_CONFIG_CREATE = "SYSTEM_CONFIG_CREATE";
+    public static final String SYSTEM_CONFIG_UPDATE = "SYSTEM_CONFIG_UPDATE";
+    public static final String SYSTEM_CONFIG_DELETE = "SYSTEM_CONFIG_DELETE";
 
     /**
      * 数据字典管理（菜单+按钮）
      */
-    public static final String SYSTEM_DICT_MANAGE = "SYSTEM_DICT";
-    public static final String DICT_VIEW = "SYSTEM_DICT_VIEW";
-    public static final String DICT_CREATE = "SYSTEM_DICT_CREATE";
-    public static final String DICT_UPDATE = "SYSTEM_DICT_UPDATE";
-    public static final String DICT_DELETE = "SYSTEM_DICT_DELETE";
+    public static final String SYSTEM_DICT = "SYSTEM_DICT";
+    public static final String SYSTEM_DICT_VIEW = "SYSTEM_DICT_VIEW";
+    public static final String SYSTEM_DICT_CREATE = "SYSTEM_DICT_CREATE";
+    public static final String SYSTEM_DICT_UPDATE = "SYSTEM_DICT_UPDATE";
+    public static final String SYSTEM_DICT_DELETE = "SYSTEM_DICT_DELETE";
 
     /**
      * 附件管理（菜单+按钮）
      */
-    public static final String SYSTEM_ATTACHMENT_MANAGE = "SYSTEM_ATTACHMENT";
-    public static final String ATTACHMENT_VIEW = "SYSTEM_ATTACHMENT_VIEW";
-    public static final String ATTACHMENT_UPLOAD = "SYSTEM_ATTACHMENT_UPLOAD";
-    public static final String ATTACHMENT_UPDATE = "SYSTEM_ATTACHMENT_UPDATE";
-    public static final String ATTACHMENT_DELETE = "SYSTEM_ATTACHMENT_DELETE";
-    public static final String ATTACHMENT_DOWNLOAD = "SYSTEM_ATTACHMENT_DOWNLOAD";
+    public static final String SYSTEM_ATTACHMENT = "SYSTEM_ATTACHMENT";
+    public static final String SYSTEM_ATTACHMENT_VIEW = "SYSTEM_ATTACHMENT_VIEW";
+    public static final String SYSTEM_ATTACHMENT_UPLOAD = "SYSTEM_ATTACHMENT_UPLOAD";
+    public static final String SYSTEM_ATTACHMENT_UPDATE = "SYSTEM_ATTACHMENT_UPDATE";
+    public static final String SYSTEM_ATTACHMENT_DELETE = "SYSTEM_ATTACHMENT_DELETE";
+    public static final String SYSTEM_ATTACHMENT_DOWNLOAD = "SYSTEM_ATTACHMENT_DOWNLOAD";
+
+    /**
+     * 定时任务监控（菜单+按钮）
+     */
+    public static final String SYSTEM_SCHEDULED = "SYSTEM_SCHEDULED";
+    public static final String SYSTEM_SCHEDULED_VIEW = "SYSTEM_SCHEDULED_VIEW";
+    public static final String SYSTEM_SCHEDULED_CREATE = "SYSTEM_SCHEDULED_CREATE";
+    public static final String SYSTEM_SCHEDULED_UPDATE = "SYSTEM_SCHEDULED_UPDATE";
+    public static final String SYSTEM_SCHEDULED_DELETE = "SYSTEM_SCHEDULED_DELETE";
+    public static final String SYSTEM_SCHEDULED_RUN = "SYSTEM_SCHEDULED_RUN";
 
     /**
      * 私有构造函数，防止实例化

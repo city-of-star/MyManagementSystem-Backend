@@ -31,42 +31,42 @@ public class ConfigController {
     private ConfigService configService;
 
     @Operation(summary = "分页查询系统配置列表", description = "根据条件分页查询系统配置列表")
-    @RequiresPermission(PermissionConstants.CONFIG_VIEW)
+    @RequiresPermission(PermissionConstants.SYSTEM_CONFIG_VIEW)
     @PostMapping("/page")
     public Response<Page<ConfigVo>> getConfigPage(@RequestBody @Valid ConfigPageQueryDto dto) {
         return Response.success(configService.getConfigPage(dto));
     }
 
     @Operation(summary = "根据ID查询系统配置详情", description = "根据配置ID查询系统配置详细信息")
-    @RequiresPermission(PermissionConstants.CONFIG_VIEW)
+    @RequiresPermission(PermissionConstants.SYSTEM_CONFIG_VIEW)
     @GetMapping("/{configId}")
     public Response<ConfigVo> getConfigById(@PathVariable Long configId) {
         return Response.success(configService.getConfigById(configId));
     }
 
     @Operation(summary = "根据配置键查询系统配置", description = "根据配置键查询系统配置信息")
-    @RequiresPermission(PermissionConstants.CONFIG_VIEW)
+    @RequiresPermission(PermissionConstants.SYSTEM_CONFIG_VIEW)
     @GetMapping("/key/{configKey}")
     public Response<ConfigVo> getConfigByKey(@PathVariable String configKey) {
         return Response.success(configService.getConfigByKey(configKey));
     }
 
     @Operation(summary = "创建系统配置", description = "创建新系统配置")
-    @RequiresPermission(PermissionConstants.CONFIG_CREATE)
+    @RequiresPermission(PermissionConstants.SYSTEM_CONFIG_CREATE)
     @PostMapping("/create")
     public Response<ConfigVo> createConfig(@RequestBody @Valid ConfigCreateDto dto) {
         return Response.success(configService.createConfig(dto));
     }
 
     @Operation(summary = "更新系统配置信息", description = "更新系统配置的基本信息")
-    @RequiresPermission(PermissionConstants.CONFIG_UPDATE)
+    @RequiresPermission(PermissionConstants.SYSTEM_CONFIG_UPDATE)
     @PutMapping("/update")
     public Response<ConfigVo> updateConfig(@RequestBody @Valid ConfigUpdateDto dto) {
         return Response.success(configService.updateConfig(dto));
     }
 
     @Operation(summary = "删除系统配置", description = "逻辑删除系统配置（软删除）")
-    @RequiresPermission(PermissionConstants.CONFIG_DELETE)
+    @RequiresPermission(PermissionConstants.SYSTEM_CONFIG_DELETE)
     @DeleteMapping("/{configId}")
     public Response<Void> deleteConfig(@PathVariable Long configId) {
         configService.deleteConfig(configId);
@@ -74,7 +74,7 @@ public class ConfigController {
     }
 
     @Operation(summary = "批量删除系统配置", description = "批量逻辑删除系统配置（软删除）")
-    @RequiresPermission(PermissionConstants.CONFIG_DELETE)
+    @RequiresPermission(PermissionConstants.SYSTEM_CONFIG_DELETE)
     @PostMapping("/batch-delete")
     public Response<Void> batchDeleteConfig(@RequestBody @Valid ConfigBatchDeleteDto dto) {
         configService.batchDeleteConfig(dto);
@@ -82,7 +82,7 @@ public class ConfigController {
     }
 
     @Operation(summary = "切换系统配置状态", description = "启用或禁用系统配置")
-    @RequiresPermission(PermissionConstants.CONFIG_UPDATE)
+    @RequiresPermission(PermissionConstants.SYSTEM_CONFIG_UPDATE)
     @PostMapping("/switch-status")
     public Response<Void> switchConfigStatus(@RequestBody @Valid ConfigStatusSwitchDto dto) {
         configService.switchConfigStatus(dto);

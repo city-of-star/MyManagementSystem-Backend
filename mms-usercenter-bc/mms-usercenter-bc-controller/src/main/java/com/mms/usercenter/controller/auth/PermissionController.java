@@ -40,35 +40,35 @@ public class PermissionController {
     private PermissionService permissionService;
 
     @Operation(summary = "分页查询权限列表")
-    @RequiresPermission(PermissionConstants.PERMISSION_VIEW)
+    @RequiresPermission(PermissionConstants.SYSTEM_PERMISSION_VIEW)
     @PostMapping("/page")
     public Response<Page<PermissionVo>> getPermissionPage(@RequestBody @Valid PermissionPageQueryDto dto) {
         return Response.success(permissionService.getPermissionPage(dto));
     }
 
     @Operation(summary = "根据ID查询权限详情")
-    @RequiresPermission(PermissionConstants.PERMISSION_VIEW)
+    @RequiresPermission(PermissionConstants.SYSTEM_PERMISSION_VIEW)
     @GetMapping("/{permissionId}")
     public Response<PermissionVo> getPermissionById(@PathVariable Long permissionId) {
         return Response.success(permissionService.getPermissionById(permissionId));
     }
 
     @Operation(summary = "创建权限")
-    @RequiresPermission(PermissionConstants.PERMISSION_CREATE)
+    @RequiresPermission(PermissionConstants.SYSTEM_PERMISSION_CREATE)
     @PostMapping("/create")
     public Response<PermissionVo> createPermission(@RequestBody @Valid PermissionCreateDto dto) {
         return Response.success(permissionService.createPermission(dto));
     }
 
     @Operation(summary = "更新权限")
-    @RequiresPermission(PermissionConstants.PERMISSION_UPDATE)
+    @RequiresPermission(PermissionConstants.SYSTEM_PERMISSION_UPDATE)
     @PutMapping("/update")
     public Response<PermissionVo> updatePermission(@RequestBody @Valid PermissionUpdateDto dto) {
         return Response.success(permissionService.updatePermission(dto));
     }
 
     @Operation(summary = "删除权限")
-    @RequiresPermission(PermissionConstants.PERMISSION_DELETE)
+    @RequiresPermission(PermissionConstants.SYSTEM_PERMISSION_DELETE)
     @DeleteMapping("/{permissionId}")
     public Response<Void> deletePermission(@PathVariable Long permissionId) {
         permissionService.deletePermission(permissionId);
@@ -76,7 +76,7 @@ public class PermissionController {
     }
 
     @Operation(summary = "批量删除权限")
-    @RequiresPermission(PermissionConstants.PERMISSION_DELETE)
+    @RequiresPermission(PermissionConstants.SYSTEM_PERMISSION_DELETE)
     @PostMapping("/batch-delete")
     public Response<Void> batchDeletePermission(@RequestBody @Valid PermissionBatchDeleteDto dto) {
         permissionService.batchDeletePermission(dto);
@@ -84,7 +84,7 @@ public class PermissionController {
     }
 
     @Operation(summary = "切换权限状态（启用/禁用）")
-    @RequiresPermission(PermissionConstants.PERMISSION_UPDATE)
+    @RequiresPermission(PermissionConstants.SYSTEM_PERMISSION_UPDATE)
     @PostMapping("/switch-status")
     public Response<Void> switchPermissionStatus(@RequestBody @Valid PermissionStatusSwitchDto dto) {
         permissionService.switchPermissionStatus(dto);
@@ -92,7 +92,7 @@ public class PermissionController {
     }
 
     @Operation(summary = "查询权限树（全量，用于管理场景）")
-    @RequiresPermission(PermissionConstants.PERMISSION_VIEW)
+    @RequiresPermission(PermissionConstants.SYSTEM_PERMISSION_VIEW)
     @PostMapping("/tree")
     public Response<List<PermissionVo>> listPermissionTree(@RequestBody @Valid PermissionTreeQueryDto dto) {
         return Response.success(permissionService.listPermissionTree(dto));
@@ -106,14 +106,14 @@ public class PermissionController {
     }
 
     @Operation(summary = "查询权限关联的角色列表")
-    @RequiresPermission(PermissionConstants.PERMISSION_VIEW)
+    @RequiresPermission(PermissionConstants.SYSTEM_PERMISSION_VIEW)
     @GetMapping("/{permissionId}/roles")
     public Response<List<RoleVo>> listRolesByPermissionId(@PathVariable Long permissionId) {
         return Response.success(permissionService.listRolesByPermissionId(permissionId));
     }
 
     @Operation(summary = "移除权限与角色的关联")
-    @RequiresPermission(PermissionConstants.PERMISSION_UPDATE)
+    @RequiresPermission(PermissionConstants.SYSTEM_PERMISSION_UPDATE)
     @PostMapping("/remove-role")
     public Response<Void> removeRoleFromPermission(@RequestBody @Valid PermissionRemoveRoleDto dto) {
         permissionService.removeRoleFromPermission(dto);

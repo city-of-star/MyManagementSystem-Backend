@@ -381,12 +381,13 @@ CREATE TABLE IF NOT EXISTS `job_lock` (
 
 -- ==================== 初始化数据 ====================
 
--- 初始化用户（密码：123456）
+-- 初始化用户（密码：MMS2025_ + username，例如 MMS2025_superAdmin）
 INSERT IGNORE INTO `user` (`id`, `username`, `password`, `nickname`, `real_name`, `gender`, `email`, `phone`, `status`, `locked`, `remark`, `deleted`, `create_time`, `update_time`)
 VALUES
-    (1, 'superAdmin', '$2a$10$cU5acgjEYlHA.2cql1DmiOVcTKexIR0iKpKAIda0gJyLdKxeE8Lt.', '超级管理员', '超级管理员', 1,  '18888888888@qq.com', '18888888888', 1, 0, '系统用户不可删除', 0, NOW(), NOW()),
-    (2, 'lhy', '$2a$10$cU5acgjEYlHA.2cql1DmiOVcTKexIR0iKpKAIda0gJyLdKxeE8Lt.', 'redRain', '李鸿羽', 1,  '2722562862@qq.com', '18255097030', 1, 0, '今天又是一个晴朗的一天', 0, NOW(), NOW()),
-    (3, 'lqh', '$2a$10$cU5acgjEYlHA.2cql1DmiOVcTKexIR0iKpKAIda0gJyLdKxeE8Lt.', '洛', '刘齐慧', 1,  '2825646787@qq.com', '13855605201', 1, 0, '我要喝可乐', 0, NOW(), NOW());
+    (1, 'superAdmin', '$2a$12$nFjZno1HedIH3SyVi1pv.uTspMocaWdTKcQ/SqmAh5x81Monhzdga', '超级管理员', '超级管理员', 1,  '18888888888@qq.com', '18888888888', 1, 0, '系统用户不可删除', 0, NOW(), NOW()),
+    (2, 'lhy', '$2a$12$lKyKrCRR22NN.gybdvO3m.Oa08UNpJImvb6GB1C9v6oiXe6XYC7OS', 'redRain', '李鸿羽', 1,  '2722562862@qq.com', '18255097030', 1, 0, '今天又是一个晴朗的一天', 0, NOW(), NOW()),
+    (3, 'lqh', '$2a$12$Eah/5KgMiLiZtTOqGcrrEOAfS3K62MoLs4oZUw5NkNVdklN.Ie...', '洛', '刘齐慧', 2,  '2825646787@qq.com', '13855605201', 1, 0, '我要喝可乐', 0, NOW(), NOW()),
+    (4, 'ceshi', '$2a$12$5ly8VSaDSuTxhJZmbaX9yekAya69cdfldVCjOZo.hYVNKMsrxmSAW', '测试昵称', '测试用户', 0,  '1234567890@qq.com', '18866668888', 1, 0, '用于测试系统功能', 0, NOW(), NOW());
 
 -- 初始化角色
 INSERT IGNORE INTO `role` (`id`, `role_code`, `role_name`, `role_type`, `sort_order`, `status`, `remark`, `deleted`, `create_time`, `update_time`)
@@ -394,12 +395,14 @@ VALUES
     (1, 'superAdmin', '超级管理员', 'system', 1, 1, '系统角色不可删除', 0, NOW(), NOW()),
     (2, 'admin', '管理员', 'system', 2, 1, '', 0, NOW(), NOW());
 
+
 -- 给用户分配角色
 INSERT IGNORE INTO `user_role` (`id`, `user_id`, `role_id`, `create_time`)
 VALUES
     (1, 1, 1, NOW()),
     (2, 2, 2, NOW()),
-    (3, 3, 2, NOW());
+    (3, 3, 2, NOW()),
+    (4, 4, 2, NOW());
 
 -- 初始化权限数据
 INSERT IGNORE INTO `permission` (`id`, `parent_id`, `permission_type`, `permission_name`, `permission_code`,
@@ -427,10 +430,10 @@ VALUES
 
     -- 菜单管理（菜单 + 按钮）
     (15, 1, 'menu', '菜单管理', 'SYSTEM_MENU', '/system/menuPage', '/system/menu/MenuPage.vue', 'Menu', 30, 1, 1, 0, NOW(), NOW()),
-    (16, 15, 'button', '权限-查看', 'SYSTEM_MENU_VIEW', NULL, NULL, NULL, 31, 1, 1, 0, NOW(), NOW()),
-    (17, 15, 'button', '权限-新增', 'SYSTEM_MENU_CREATE', NULL, NULL, NULL, 32, 1, 1, 0, NOW(), NOW()),
-    (18, 15, 'button', '权限-编辑', 'SYSTEM_MENU_UPDATE', NULL, NULL, NULL, 33, 1, 1, 0, NOW(), NOW()),
-    (19, 15, 'button', '权限-删除', 'SYSTEM_MENU_DELETE', NULL, NULL, NULL, 34, 1, 1, 0, NOW(), NOW()),
+    (16, 15, 'button', '菜单-查看', 'SYSTEM_MENU_VIEW', NULL, NULL, NULL, 31, 1, 1, 0, NOW(), NOW()),
+    (17, 15, 'button', '菜单-新增', 'SYSTEM_MENU_CREATE', NULL, NULL, NULL, 32, 1, 1, 0, NOW(), NOW()),
+    (18, 15, 'button', '菜单-编辑', 'SYSTEM_MENU_UPDATE', NULL, NULL, NULL, 33, 1, 1, 0, NOW(), NOW()),
+    (19, 15, 'button', '菜单-删除', 'SYSTEM_MENU_DELETE', NULL, NULL, NULL, 34, 1, 1, 0, NOW(), NOW()),
 
     -- 部门管理（菜单 + 按钮）
     (20, 1, 'menu', '部门管理', 'SYSTEM_DEPT', '/system/deptPage', '/system/dept/DeptPage.vue', 'OfficeBuilding', 40, 1, 1, 0, NOW(), NOW()),
@@ -448,17 +451,17 @@ VALUES
 
     -- 系统配置管理（菜单 + 按钮）
     (30, 1, 'menu', '系统配置管理', 'SYSTEM_CONFIG', '/system/configPage', '/system/config/ConfigPage.vue', 'Monitor', 60, 1, 1, 0, NOW(), NOW()),
-    (31, 30, 'button', '配置-查看', 'SYSTEM_CONFIG_VIEW', NULL, NULL, NULL, 61, 1, 1, 0, NOW(), NOW()),
-    (32, 30, 'button', '配置-新增', 'SYSTEM_CONFIG_CREATE', NULL, NULL, NULL, 62, 1, 1, 0, NOW(), NOW()),
-    (33, 30, 'button', '配置-编辑', 'SYSTEM_CONFIG_UPDATE', NULL, NULL, NULL, 63, 1, 1, 0, NOW(), NOW()),
-    (34, 30, 'button', '配置-删除', 'SYSTEM_CONFIG_DELETE', NULL, NULL, NULL, 64, 1, 1, 0, NOW(), NOW()),
+    (31, 30, 'button', '系统配置-查看', 'SYSTEM_CONFIG_VIEW', NULL, NULL, NULL, 61, 1, 1, 0, NOW(), NOW()),
+    (32, 30, 'button', '系统配置-新增', 'SYSTEM_CONFIG_CREATE', NULL, NULL, NULL, 62, 1, 1, 0, NOW(), NOW()),
+    (33, 30, 'button', '系统配置-编辑', 'SYSTEM_CONFIG_UPDATE', NULL, NULL, NULL, 63, 1, 1, 0, NOW(), NOW()),
+    (34, 30, 'button', '系统配置-删除', 'SYSTEM_CONFIG_DELETE', NULL, NULL, NULL, 64, 1, 1, 0, NOW(), NOW()),
 
     -- 数据字典管理（菜单 + 按钮）
     (35, 1, 'menu', '数据字典管理', 'SYSTEM_DICT', '/system/dictPage', '/system/dict/DictPage.vue', 'Document', 70, 1, 1, 0, NOW(), NOW()),
-    (36, 35, 'button', '字典-查看', 'SYSTEM_DICT_VIEW', NULL, NULL, NULL, 71, 1, 1, 0, NOW(), NOW()),
-    (37, 35, 'button', '字典-新增', 'SYSTEM_DICT_CREATE', NULL, NULL, NULL, 72, 1, 1, 0, NOW(), NOW()),
-    (38, 35, 'button', '字典-编辑', 'SYSTEM_DICT_UPDATE', NULL, NULL, NULL, 73, 1, 1, 0, NOW(), NOW()),
-    (39, 35, 'button', '字典-删除', 'SYSTEM_DICT_DELETE', NULL, NULL, NULL, 74, 1, 1, 0, NOW(), NOW()),
+    (36, 35, 'button', '数据字典-查看', 'SYSTEM_DICT_VIEW', NULL, NULL, NULL, 71, 1, 1, 0, NOW(), NOW()),
+    (37, 35, 'button', '数据字典-新增', 'SYSTEM_DICT_CREATE', NULL, NULL, NULL, 72, 1, 1, 0, NOW(), NOW()),
+    (38, 35, 'button', '数据字典-编辑', 'SYSTEM_DICT_UPDATE', NULL, NULL, NULL, 73, 1, 1, 0, NOW(), NOW()),
+    (39, 35, 'button', '数据字典-删除', 'SYSTEM_DICT_DELETE', NULL, NULL, NULL, 74, 1, 1, 0, NOW(), NOW()),
 
     -- 附件管理（菜单 + 按钮）
     (40, 1, 'menu', '附件管理', 'SYSTEM_ATTACHMENT', '/system/attachmentPage', '/system/attachment/AttachmentPage.vue', 'Folder', 80, 1, 1, 0, NOW(), NOW()),
@@ -469,14 +472,14 @@ VALUES
     (45, 40, 'button', '附件-下载', 'SYSTEM_ATTACHMENT_DOWNLOAD', NULL, NULL, NULL, 85, 1, 1, 0, NOW(), NOW()),
 
     -- 定时任务监控（菜单 + 按钮）
-    (46, 1, 'menu', '定时任务监控', 'SYSTEM_JOB_MONITOR', '/system/jobMonitorPage', '/system/job/JobMonitorPage.vue', 'Timer', 90, 1, 1, 0, NOW(), NOW()),
-    (47, 46, 'button', '任务监控-查看', 'SYSTEM_JOB_MONITOR_VIEW', NULL, NULL, NULL, 91, 1, 1, 0, NOW(), NOW()),
-    (48, 46, 'button', '任务监控-新增', 'SYSTEM_JOB_MONITOR_CREATE', NULL, NULL, NULL, 92, 1, 1, 0, NOW(), NOW()),
-    (49, 46, 'button', '任务监控-编辑', 'SYSTEM_JOB_MONITOR_UPDATE', NULL, NULL, NULL, 93, 1, 1, 0, NOW(), NOW()),
-    (50, 46, 'button', '任务监控-删除', 'SYSTEM_JOB_MONITOR_DELETE', NULL, NULL, NULL, 94, 1, 1, 0, NOW(), NOW()),
-    (51, 46, 'button', '任务监控-执行', 'SYSTEM_JOB_MONITOR_RUN', NULL, NULL, NULL, 95, 1, 1, 0, NOW(), NOW());
+    (46, 1, 'menu', '定时任务监控', 'SYSTEM_SCHEDULED', '/system/scheduledPage', '/system/scheduled/scheduledPage.vue', 'Timer', 90, 1, 1, 0, NOW(), NOW()),
+    (47, 46, 'button', '定时任务-查看', 'SYSTEM_SCHEDULED_VIEW', NULL, NULL, NULL, 91, 1, 1, 0, NOW(), NOW()),
+    (48, 46, 'button', '定时任务-新增', 'SYSTEM_SCHEDULED_CREATE', NULL, NULL, NULL, 92, 1, 1, 0, NOW(), NOW()),
+    (49, 46, 'button', '定时任务-编辑', 'SYSTEM_SCHEDULED_UPDATE', NULL, NULL, NULL, 93, 1, 1, 0, NOW(), NOW()),
+    (50, 46, 'button', '定时任务-删除', 'SYSTEM_SCHEDULED_DELETE', NULL, NULL, NULL, 94, 1, 1, 0, NOW(), NOW()),
+    (51, 46, 'button', '定时任务-执行', 'SYSTEM_SCHEDULED_RUN', NULL, NULL, NULL, 95, 1, 1, 0, NOW(), NOW());
 
--- 将权限授予角色
+-- 将所有权限授予【超级管理员角色】和【管理员角色】
 INSERT IGNORE INTO `role_permission` (`id`, `role_id`, `permission_id`, `create_time`)
 SELECT 
     ROW_NUMBER() OVER (ORDER BY rp.role_id, p.id) AS id,
@@ -571,30 +574,28 @@ VALUES
     (32, 'Intern', '实习生', 'P8', 32, 1, '在校实习生', 0, NOW(), NOW());
 
 
--- 给用户分配部门（主部门：技术部）
+-- 给用户分配部门
 INSERT IGNORE INTO `user_dept` (`id`, `user_id`, `dept_id`, `is_primary`, `create_time`)
 VALUES
     (1, 1, 2, 1, NOW()),
     (2, 2, 1, 1, NOW()),
-    (3, 3, 1, 1, NOW());
+    (3, 3, 1, 1, NOW()),
+    (4, 4, 14, 1, NOW());
 
--- 给用户分配岗位（主岗位：CTO）
+-- 给用户分配岗位
 INSERT IGNORE INTO `user_post` (`id`, `user_id`, `post_id`, `is_primary`, `create_time`)
 VALUES
     (1, 1, 6, 1, NOW()),
     (2, 2, 1, 1, NOW()),
-    (3, 3, 2, 1, NOW());
+    (3, 3, 2, 1, NOW()),
+    (4, 4, 20, 1, NOW());
 
 -- 初始化系统配置数据
 INSERT IGNORE INTO `config` (`id`, `config_key`, `config_value`, `config_type`, `config_name`, `status`, `editable`, `remark`, `deleted`, `create_time`, `update_time`)
 VALUES
-    (1, 'system.name', 'MyManagementSystem', 'string', '系统名称', 1, 0, '系统名称配置', 0, NOW(), NOW()),
-    (2, 'system.version', '1.0.0', 'string', '系统版本', 1, 0, '系统版本号', 0, NOW(), NOW()),
-    (3, 'system.copyright', '© 2025 MyManagementSystem', 'string', '版权信息', 1, 1, '系统版权信息', 0, NOW(), NOW()),
-    (4, 'login.password.minLength', '6', 'number', '密码最小长度', 1, 1, '用户密码最小长度要求', 0, NOW(), NOW()),
-    (5, 'login.password.maxLength', '20', 'number', '密码最大长度', 1, 1, '用户密码最大长度要求', 0, NOW(), NOW()),
-    (6, 'file.upload.maxSize', '10485760', 'number', '文件上传最大大小（字节）', 1, 1, '单个文件上传的最大大小，默认10MB', 0, NOW(), NOW()),
-    (7, 'file.upload.allowedTypes', 'jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx', 'string', '允许上传的文件类型', 1, 1, '允许上传的文件扩展名，用逗号分隔', 0, NOW(), NOW());
+    (1, 'system.name', 'MyManagementSystem', 'string', '系统名称', 1, 1, '系统名称配置', 0, NOW(), NOW()),
+    (2, 'system.version', '1.0.0', 'string', '系统版本', 1, 1, '系统版本号', 0, NOW(), NOW()),
+    (3, 'system.copyright', '© 2025 MyManagementSystem', 'string', '版权信息', 1, 1, '系统版权信息', 0, NOW(), NOW());
 
 -- 初始化数据字典类型（通用字典类型放在前面）
 INSERT IGNORE INTO `dict_type` (`id`, `dict_type_code`, `dict_type_name`, `status`, `sort_order`, `remark`, `deleted`, `create_time`, `update_time`)

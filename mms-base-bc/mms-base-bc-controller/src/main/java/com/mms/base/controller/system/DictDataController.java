@@ -33,21 +33,21 @@ public class DictDataController {
     private DictDataService dictDataService;
 
     @Operation(summary = "分页查询数据字典数据列表", description = "根据条件分页查询数据字典数据列表")
-    @RequiresPermission(PermissionConstants.DICT_VIEW)
+    @RequiresPermission(PermissionConstants.SYSTEM_DICT_VIEW)
     @PostMapping("/page")
     public Response<Page<DictDataVo>> getDictDataPage(@RequestBody @Valid DictDataPageQueryDto dto) {
         return Response.success(dictDataService.getDictDataPage(dto));
     }
 
     @Operation(summary = "根据ID查询数据字典数据详情", description = "根据字典数据ID查询数据字典数据详细信息")
-    @RequiresPermission(PermissionConstants.DICT_VIEW)
+    @RequiresPermission(PermissionConstants.SYSTEM_DICT_VIEW)
     @GetMapping("/{dictDataId}")
     public Response<DictDataVo> getDictDataById(@PathVariable Long dictDataId) {
         return Response.success(dictDataService.getDictDataById(dictDataId));
     }
 
     @Operation(summary = "根据字典类型ID查询数据字典数据列表", description = "根据字典类型ID查询数据字典数据列表")
-    @RequiresPermission(PermissionConstants.DICT_VIEW)
+    @RequiresPermission(PermissionConstants.SYSTEM_DICT_VIEW)
     @GetMapping("/type-id/{dictTypeId}")
     public Response<List<DictDataVo>> getDictDataListByTypeId(@PathVariable Long dictTypeId) {
         return Response.success(dictDataService.getDictDataListByTypeId(dictTypeId));
@@ -60,21 +60,21 @@ public class DictDataController {
     }
 
     @Operation(summary = "创建数据字典数据", description = "创建新数据字典数据")
-    @RequiresPermission(PermissionConstants.DICT_CREATE)
+    @RequiresPermission(PermissionConstants.SYSTEM_DICT_CREATE)
     @PostMapping("/create")
     public Response<DictDataVo> createDictData(@RequestBody @Valid DictDataCreateDto dto) {
         return Response.success(dictDataService.createDictData(dto));
     }
 
     @Operation(summary = "更新数据字典数据信息", description = "更新数据字典数据的基本信息")
-    @RequiresPermission(PermissionConstants.DICT_UPDATE)
+    @RequiresPermission(PermissionConstants.SYSTEM_DICT_UPDATE)
     @PutMapping("/update")
     public Response<DictDataVo> updateDictData(@RequestBody @Valid DictDataUpdateDto dto) {
         return Response.success(dictDataService.updateDictData(dto));
     }
 
     @Operation(summary = "删除数据字典数据", description = "逻辑删除数据字典数据（软删除）")
-    @RequiresPermission(PermissionConstants.DICT_DELETE)
+    @RequiresPermission(PermissionConstants.SYSTEM_DICT_DELETE)
     @DeleteMapping("/{dictDataId}")
     public Response<Void> deleteDictData(@PathVariable Long dictDataId) {
         dictDataService.deleteDictData(dictDataId);
@@ -82,7 +82,7 @@ public class DictDataController {
     }
 
     @Operation(summary = "批量删除数据字典数据", description = "批量逻辑删除数据字典数据（软删除）")
-    @RequiresPermission(PermissionConstants.DICT_DELETE)
+    @RequiresPermission(PermissionConstants.SYSTEM_DICT_DELETE)
     @PostMapping("/batch-delete")
     public Response<Void> batchDeleteDictData(@RequestBody @Valid DictDataBatchDeleteDto dto) {
         dictDataService.batchDeleteDictData(dto);
@@ -90,7 +90,7 @@ public class DictDataController {
     }
 
     @Operation(summary = "切换数据字典数据状态", description = "启用或禁用数据字典数据")
-    @RequiresPermission(PermissionConstants.DICT_UPDATE)
+    @RequiresPermission(PermissionConstants.SYSTEM_DICT_UPDATE)
     @PostMapping("/switch-status")
     public Response<Void> switchDictDataStatus(@RequestBody @Valid DictDataStatusSwitchDto dto) {
         dictDataService.switchDictDataStatus(dto);

@@ -51,35 +51,35 @@ public class AttachmentController {
     private FileService fileService;
 
     @Operation(summary = "分页查询附件列表", description = "根据条件分页查询附件列表")
-    @RequiresPermission(PermissionConstants.ATTACHMENT_VIEW)
+    @RequiresPermission(PermissionConstants.SYSTEM_ATTACHMENT_VIEW)
     @PostMapping("/page")
     public Response<Page<AttachmentVo>> getAttachmentPage(@RequestBody @Valid AttachmentPageQueryDto dto) {
         return Response.success(attachmentService.getAttachmentPage(dto));
     }
 
     @Operation(summary = "根据ID查询附件详情", description = "根据附件ID查询附件详细信息")
-    @RequiresPermission(PermissionConstants.ATTACHMENT_VIEW)
+    @RequiresPermission(PermissionConstants.SYSTEM_ATTACHMENT_VIEW)
     @GetMapping("/{attachmentId}")
     public Response<AttachmentVo> getAttachmentById(@PathVariable Long attachmentId) {
         return Response.success(attachmentService.getAttachmentById(attachmentId));
     }
 
     @Operation(summary = "创建附件记录（元数据）", description = "创建附件元数据记录（不包含实际文件上传流程）")
-    @RequiresPermission(PermissionConstants.ATTACHMENT_UPLOAD)
+    @RequiresPermission(PermissionConstants.SYSTEM_ATTACHMENT_UPLOAD)
     @PostMapping("/create")
     public Response<AttachmentVo> createAttachment(@RequestBody @Valid AttachmentCreateDto dto) {
         return Response.success(attachmentService.createAttachment(dto));
     }
 
     @Operation(summary = "更新附件信息", description = "更新附件信息（如绑定业务、备注、状态等）")
-    @RequiresPermission(PermissionConstants.ATTACHMENT_UPDATE)
+    @RequiresPermission(PermissionConstants.SYSTEM_ATTACHMENT_UPDATE)
     @PutMapping("/update")
     public Response<AttachmentVo> updateAttachment(@RequestBody @Valid AttachmentUpdateDto dto) {
         return Response.success(attachmentService.updateAttachment(dto));
     }
 
     @Operation(summary = "删除附件", description = "逻辑删除附件（软删除）")
-    @RequiresPermission(PermissionConstants.ATTACHMENT_DELETE)
+    @RequiresPermission(PermissionConstants.SYSTEM_ATTACHMENT_DELETE)
     @DeleteMapping("/{attachmentId}")
     public Response<Void> deleteAttachment(@PathVariable Long attachmentId) {
         attachmentService.deleteAttachment(attachmentId);
@@ -87,7 +87,7 @@ public class AttachmentController {
     }
 
     @Operation(summary = "硬删除附件", description = "删除物理文件并逻辑删除附件记录，仅管理员使用")
-    @RequiresPermission(PermissionConstants.ATTACHMENT_DELETE)
+    @RequiresPermission(PermissionConstants.SYSTEM_ATTACHMENT_DELETE)
     @DeleteMapping("/{attachmentId}/hard")
     public Response<Void> hardDeleteAttachment(@PathVariable Long attachmentId) {
         attachmentService.hardDeleteAttachment(attachmentId);
@@ -95,7 +95,7 @@ public class AttachmentController {
     }
 
     @Operation(summary = "批量删除附件", description = "批量逻辑删除附件（软删除）")
-    @RequiresPermission(PermissionConstants.ATTACHMENT_DELETE)
+    @RequiresPermission(PermissionConstants.SYSTEM_ATTACHMENT_DELETE)
     @PostMapping("/batch-delete")
     public Response<Void> batchDeleteAttachment(@RequestBody @Valid AttachmentBatchDeleteDto dto) {
         attachmentService.batchDeleteAttachment(dto);
@@ -103,7 +103,7 @@ public class AttachmentController {
     }
 
     @Operation(summary = "切换附件状态", description = "启用或禁用附件")
-    @RequiresPermission(PermissionConstants.ATTACHMENT_UPDATE)
+    @RequiresPermission(PermissionConstants.SYSTEM_ATTACHMENT_UPDATE)
     @PostMapping("/switch-status")
     public Response<Void> switchAttachmentStatus(@RequestBody @Valid AttachmentStatusSwitchDto dto) {
         attachmentService.switchAttachmentStatus(dto);
@@ -111,7 +111,7 @@ public class AttachmentController {
     }
 
     @Operation(summary = "上传附件", description = "上传文件并创建附件记录（本地存储）")
-    @RequiresPermission(PermissionConstants.ATTACHMENT_UPLOAD)
+    @RequiresPermission(PermissionConstants.SYSTEM_ATTACHMENT_UPLOAD)
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Response<AttachmentVo> uploadAttachment(@RequestPart("file") MultipartFile file,
                                                    @RequestParam(value = "businessType", required = false) String businessType,

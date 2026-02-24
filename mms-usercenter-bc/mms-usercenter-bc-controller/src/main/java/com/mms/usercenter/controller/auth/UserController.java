@@ -32,42 +32,42 @@ public class UserController {
     private UserService userService;
 
     @Operation(summary = "分页查询用户列表", description = "根据条件分页查询用户列表")
-    @RequiresPermission(PermissionConstants.USER_VIEW)
+    @RequiresPermission(PermissionConstants.SYSTEM_USER_VIEW)
     @PostMapping("/page")
     public Response<Page<UserPageVo>> getUserPage(@RequestBody @Valid UserPageQueryDto dto) {
         return Response.success(userService.getUserPage(dto));
     }
 
     @Operation(summary = "根据ID查询用户详情", description = "根据用户ID查询用户详细信息")
-    @RequiresPermission(PermissionConstants.USER_VIEW)
+    @RequiresPermission(PermissionConstants.SYSTEM_USER_VIEW)
     @GetMapping("/{userId}")
     public Response<UserDetailVo> getUserById(@PathVariable Long userId) {
         return Response.success(userService.getUserById(userId));
     }
 
     @Operation(summary = "根据用户名查询用户", description = "根据用户名查询用户信息")
-    @RequiresPermission(PermissionConstants.USER_VIEW)
+    @RequiresPermission(PermissionConstants.SYSTEM_USER_VIEW)
     @GetMapping("/username/{username}")
     public Response<UserDetailVo> getUserByUsername(@PathVariable String username) {
         return Response.success(userService.getUserByUsername(username));
     }
 
     @Operation(summary = "创建用户", description = "创建新用户")
-    @RequiresPermission(PermissionConstants.USER_CREATE)
+    @RequiresPermission(PermissionConstants.SYSTEM_USER_CREATE)
     @PostMapping("/create")
     public Response<UserDetailVo> createUser(@RequestBody @Valid UserCreateDto dto) {
         return Response.success(userService.createUser(dto));
     }
 
     @Operation(summary = "更新用户信息", description = "更新用户的基本信息")
-    @RequiresPermission(PermissionConstants.USER_UPDATE)
+    @RequiresPermission(PermissionConstants.SYSTEM_USER_UPDATE)
     @PutMapping("/update")
     public Response<UserDetailVo> updateUser(@RequestBody @Valid UserUpdateDto dto) {
         return Response.success(userService.updateUser(dto));
     }
 
     @Operation(summary = "删除用户", description = "逻辑删除用户（软删除）")
-    @RequiresPermission(PermissionConstants.USER_DELETE)
+    @RequiresPermission(PermissionConstants.SYSTEM_USER_DELETE)
     @DeleteMapping("/{userId}")
     public Response<Void> deleteUser(@PathVariable Long userId) {
         userService.deleteUser(userId);
@@ -75,7 +75,7 @@ public class UserController {
     }
 
     @Operation(summary = "批量删除用户", description = "批量逻辑删除用户（软删除）")
-    @RequiresPermission(PermissionConstants.USER_DELETE)
+    @RequiresPermission(PermissionConstants.SYSTEM_USER_DELETE)
     @PostMapping("/batch-delete")
     public Response<Void> batchDeleteUser(@RequestBody @Valid UserBatchDeleteDto dto) {
         userService.batchDeleteUser(dto);
@@ -83,7 +83,7 @@ public class UserController {
     }
 
     @Operation(summary = "切换用户状态", description = "启用或禁用用户")
-    @RequiresPermission(PermissionConstants.USER_UPDATE)
+    @RequiresPermission(PermissionConstants.SYSTEM_USER_UPDATE)
     @PostMapping("/switch-status")
     public Response<Void> switchUserStatus(@RequestBody @Valid UserStatusSwitchDto dto) {
         userService.switchUserStatus(dto);
@@ -91,7 +91,7 @@ public class UserController {
     }
 
     @Operation(summary = "锁定/解锁用户", description = "锁定或解锁用户账号")
-    @RequiresPermission(PermissionConstants.USER_UNLOCK)
+    @RequiresPermission(PermissionConstants.SYSTEM_USER_UNLOCK)
     @PostMapping("/lock")
     public Response<Void> lockOrUnlockUser(@RequestBody @Valid UserLockDto dto) {
         userService.lockOrUnlockUser(dto);
@@ -99,7 +99,7 @@ public class UserController {
     }
 
     @Operation(summary = "重置用户密码", description = "管理员重置用户密码")
-    @RequiresPermission(PermissionConstants.USER_RESET_PASSWORD)
+    @RequiresPermission(PermissionConstants.SYSTEM_USER_RESET_PASSWORD)
     @PostMapping("/reset-password")
     public Response<Void> resetPassword(@RequestBody @Valid UserPasswordResetDto dto) {
         userService.resetPassword(dto);
@@ -132,7 +132,7 @@ public class UserController {
     }
 
     @Operation(summary = "为用户分配角色（覆盖）", description = "为用户分配角色，会覆盖原有角色")
-    @RequiresPermission(PermissionConstants.USER_UPDATE)
+    @RequiresPermission(PermissionConstants.SYSTEM_USER_UPDATE)
     @PostMapping("/assign-roles")
     public Response<Void> assignRoles(@RequestBody @Valid UserAssignRoleDto dto) {
         userService.assignRoles(dto);
@@ -140,7 +140,7 @@ public class UserController {
     }
 
     @Operation(summary = "查询用户已分配的角色ID列表", description = "查询用户当前拥有的角色ID列表")
-    @RequiresPermission(PermissionConstants.USER_VIEW)
+    @RequiresPermission(PermissionConstants.SYSTEM_USER_VIEW)
     @GetMapping("/{userId}/role-ids")
     public Response<java.util.List<Long>> listRoleIds(@PathVariable Long userId) {
         return Response.success(userService.listRoleIdsByUserId(userId));

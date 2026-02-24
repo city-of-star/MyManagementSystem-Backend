@@ -1,4 +1,4 @@
-package com.mms.base.common.job;
+package com.mms.base.common.system.entity;
 
 /**
  * 实现功能【】
@@ -9,6 +9,6 @@ package com.mms.base.common.job;
  * @author li.hongyu
  * @date 2026-02-11 10:07:31
  */
-public class JobEntity {
+public class ScheduledEntity {
 
 }

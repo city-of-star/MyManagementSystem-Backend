@@ -163,7 +163,7 @@ public class UserServiceImpl implements UserService {
             UserEntity user = new UserEntity();
             BeanUtils.copyProperties(dto, user);
             // 加密密码
-            user.setPassword(BCrypt.hashpw(dto.getPassword(), BCrypt.gensalt()));
+            user.setPassword(BCrypt.hashpw(dto.getPassword(), BCrypt.gensalt(12)));
             // 设置默认值
             if (user.getStatus() == null) {
                 user.setStatus(1);

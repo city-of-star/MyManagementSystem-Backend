@@ -40,35 +40,35 @@ public class RoleController {
     private RoleService roleService;
 
     @Operation(summary = "分页查询角色列表")
-    @RequiresPermission(PermissionConstants.ROLE_VIEW)
+    @RequiresPermission(PermissionConstants.SYSTEM_ROLE_VIEW)
     @PostMapping("/page")
     public Response<Page<RoleVo>> getRolePage(@RequestBody @Valid RolePageQueryDto dto) {
         return Response.success(roleService.getRolePage(dto));
     }
 
     @Operation(summary = "根据ID查询角色详情")
-    @RequiresPermission(PermissionConstants.ROLE_VIEW)
+    @RequiresPermission(PermissionConstants.SYSTEM_ROLE_VIEW)
     @GetMapping("/{roleId}")
     public Response<RoleVo> getRoleById(@PathVariable Long roleId) {
         return Response.success(roleService.getRoleById(roleId));
     }
 
     @Operation(summary = "创建角色")
-    @RequiresPermission(PermissionConstants.ROLE_CREATE)
+    @RequiresPermission(PermissionConstants.SYSTEM_ROLE_CREATE)
     @PostMapping("/create")
     public Response<RoleVo> createRole(@RequestBody @Valid RoleCreateDto dto) {
         return Response.success(roleService.createRole(dto));
     }
 
     @Operation(summary = "更新角色")
-    @RequiresPermission(PermissionConstants.ROLE_UPDATE)
+    @RequiresPermission(PermissionConstants.SYSTEM_ROLE_UPDATE)
     @PutMapping("/update")
     public Response<RoleVo> updateRole(@RequestBody @Valid RoleUpdateDto dto) {
         return Response.success(roleService.updateRole(dto));
     }
 
     @Operation(summary = "删除角色")
-    @RequiresPermission(PermissionConstants.ROLE_DELETE)
+    @RequiresPermission(PermissionConstants.SYSTEM_ROLE_DELETE)
     @DeleteMapping("/{roleId}")
     public Response<Void> deleteRole(@PathVariable Long roleId) {
         roleService.deleteRole(roleId);
@@ -76,7 +76,7 @@ public class RoleController {
     }
 
     @Operation(summary = "批量删除角色")
-    @RequiresPermission(PermissionConstants.ROLE_DELETE)
+    @RequiresPermission(PermissionConstants.SYSTEM_ROLE_DELETE)
     @PostMapping("/batch-delete")
     public Response<Void> batchDeleteRole(@RequestBody @Valid RoleBatchDeleteDto dto) {
         roleService.batchDeleteRole(dto);
@@ -84,7 +84,7 @@ public class RoleController {
     }
 
     @Operation(summary = "切换角色状态（启用/禁用）")
-    @RequiresPermission(PermissionConstants.ROLE_UPDATE)
+    @RequiresPermission(PermissionConstants.SYSTEM_ROLE_UPDATE)
     @PostMapping("/switch-status")
     public Response<Void> switchRoleStatus(@RequestBody @Valid RoleStatusSwitchDto dto) {
         roleService.switchRoleStatus(dto);
@@ -92,7 +92,7 @@ public class RoleController {
     }
 
     @Operation(summary = "为角色分配权限（覆盖）")
-    @RequiresPermission(PermissionConstants.ROLE_ASSIGN)
+    @RequiresPermission(PermissionConstants.SYSTEM_ROLE_ASSIGN)
     @PostMapping("/assign-permissions")
     public Response<Void> assignPermissions(@RequestBody @Valid RoleAssignPermissionDto dto) {
         roleService.assignPermissions(dto);
@@ -100,21 +100,21 @@ public class RoleController {
     }
 
     @Operation(summary = "查询角色已分配的权限ID列表")
-    @RequiresPermission(PermissionConstants.ROLE_ASSIGN)
+    @RequiresPermission(PermissionConstants.SYSTEM_ROLE_ASSIGN)
     @GetMapping("/{roleId}/permission-ids")
     public Response<List<Long>> listPermissionIds(@PathVariable Long roleId) {
         return Response.success(roleService.listPermissionIdsByRoleId(roleId));
     }
 
     @Operation(summary = "查询角色关联的用户列表")
-    @RequiresPermission(PermissionConstants.ROLE_VIEW)
+    @RequiresPermission(PermissionConstants.SYSTEM_ROLE_VIEW)
     @GetMapping("/{roleId}/users")
     public Response<List<UserDetailVo>> listUsersByRoleId(@PathVariable Long roleId) {
         return Response.success(roleService.listUsersByRoleId(roleId));
     }
 
     @Operation(summary = "移除角色的用户关联")
-    @RequiresPermission(PermissionConstants.ROLE_UPDATE)
+    @RequiresPermission(PermissionConstants.SYSTEM_ROLE_UPDATE)
     @PostMapping("/remove-user")
     public Response<Void> removeUserFromRole(@RequestBody @Valid RoleRemoveUserDto dto) {
         roleService.removeUserFromRole(dto);
