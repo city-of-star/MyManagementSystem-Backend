@@ -1,7 +1,7 @@
 package com.mms.base.service.system.service.impl;
 
-import com.mms.base.service.system.mapper.ScheduledMapper;
-import com.mms.base.service.system.service.ScheduledService;
+import com.mms.base.service.system.mapper.JobMapper;
+import com.mms.base.service.system.service.JobService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -17,8 +17,8 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service
-public class ScheduledServiceImpl implements ScheduledService {
+public class JobServiceImpl implements JobService {
 
     @Resource
-    private ScheduledMapper scheduledMapper;
+    private JobMapper jobMapper;
 }

@@ -9,6 +9,6 @@ package com.mms.base.service.system.service;
  * @author li.hongyu
  * @date 2026-02-11 10:09:47
  */
-public interface ScheduledService {
+public interface JobService {
 
 }

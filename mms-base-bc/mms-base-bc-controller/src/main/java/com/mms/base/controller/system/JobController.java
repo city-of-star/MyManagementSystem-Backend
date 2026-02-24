@@ -1,6 +1,6 @@
 package com.mms.base.controller.system;
 
-import com.mms.base.service.system.service.ScheduledService;
+import com.mms.base.service.system.service.JobService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,9 +17,9 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Tag(name = "定时任务服务管理", description = "定时任务服务管理相关接口")
 @RestController
-@RequestMapping("/scheduled")
-public class ScheduledController {
+@RequestMapping("/job")
+public class JobController {
 
     @Resource
-    private ScheduledService scheduledService;
+    private JobService jobService;
 }

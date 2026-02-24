@@ -28,7 +28,7 @@ public final class PermissionConstants {
     /**
      * 系统管理（目录）
      */
-    public static final String SYSTEM = "SYSTEM";
+    public static final String SYSTEM_MANAGE = "SYSTEM";
 
     /**
      * 用户管理（菜单+按钮）
@@ -109,12 +109,12 @@ public final class PermissionConstants {
     /**
      * 定时任务监控（菜单+按钮）
      */
-    public static final String SYSTEM_SCHEDULED = "SYSTEM_SCHEDULED";
-    public static final String SYSTEM_SCHEDULED_VIEW = "SYSTEM_SCHEDULED_VIEW";
-    public static final String SYSTEM_SCHEDULED_CREATE = "SYSTEM_SCHEDULED_CREATE";
-    public static final String SYSTEM_SCHEDULED_UPDATE = "SYSTEM_SCHEDULED_UPDATE";
-    public static final String SYSTEM_SCHEDULED_DELETE = "SYSTEM_SCHEDULED_DELETE";
-    public static final String SYSTEM_SCHEDULED_RUN = "SYSTEM_SCHEDULED_RUN";
+    public static final String SYSTEM_JOB = "SYSTEM_JOB";
+    public static final String SYSTEM_JOB_VIEW = "SYSTEM_JOB_VIEW";
+    public static final String SYSTEM_JOB_CREATE = "SYSTEM_JOB_CREATE";
+    public static final String SYSTEM_JOB_UPDATE = "SYSTEM_JOB_UPDATE";
+    public static final String SYSTEM_JOB_DELETE = "SYSTEM_JOB_DELETE";
+    public static final String SYSTEM_JOB_RUN = "SYSTEM_JOB_RUN";
 
     /**
      * 私有构造函数，防止实例化

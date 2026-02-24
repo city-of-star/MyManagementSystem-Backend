@@ -395,7 +395,6 @@ VALUES
     (1, 'superAdmin', '超级管理员', 'system', 1, 1, '系统角色不可删除', 0, NOW(), NOW()),
     (2, 'admin', '管理员', 'system', 2, 1, '', 0, NOW(), NOW());
 
-
 -- 给用户分配角色
 INSERT IGNORE INTO `user_role` (`id`, `user_id`, `role_id`, `create_time`)
 VALUES
@@ -472,12 +471,12 @@ VALUES
     (45, 40, 'button', '附件-下载', 'SYSTEM_ATTACHMENT_DOWNLOAD', NULL, NULL, NULL, 85, 1, 1, 0, NOW(), NOW()),
 
     -- 定时任务监控（菜单 + 按钮）
-    (46, 1, 'menu', '定时任务监控', 'SYSTEM_SCHEDULED', '/system/scheduledPage', '/system/scheduled/scheduledPage.vue', 'Timer', 90, 1, 1, 0, NOW(), NOW()),
-    (47, 46, 'button', '定时任务-查看', 'SYSTEM_SCHEDULED_VIEW', NULL, NULL, NULL, 91, 1, 1, 0, NOW(), NOW()),
-    (48, 46, 'button', '定时任务-新增', 'SYSTEM_SCHEDULED_CREATE', NULL, NULL, NULL, 92, 1, 1, 0, NOW(), NOW()),
-    (49, 46, 'button', '定时任务-编辑', 'SYSTEM_SCHEDULED_UPDATE', NULL, NULL, NULL, 93, 1, 1, 0, NOW(), NOW()),
-    (50, 46, 'button', '定时任务-删除', 'SYSTEM_SCHEDULED_DELETE', NULL, NULL, NULL, 94, 1, 1, 0, NOW(), NOW()),
-    (51, 46, 'button', '定时任务-执行', 'SYSTEM_SCHEDULED_RUN', NULL, NULL, NULL, 95, 1, 1, 0, NOW(), NOW());
+    (46, 1, 'menu', '定时任务监控', 'SYSTEM_JOB', '/system/jobPage', '/system/job/JobPage.vue', 'Timer', 90, 1, 1, 0, NOW(), NOW()),
+    (47, 46, 'button', '任务监控-查看', 'SYSTEM_JOB_VIEW', NULL, NULL, NULL, 91, 1, 1, 0, NOW(), NOW()),
+    (48, 46, 'button', '任务监控-新增', 'SYSTEM_JOB_CREATE', NULL, NULL, NULL, 92, 1, 1, 0, NOW(), NOW()),
+    (49, 46, 'button', '任务监控-编辑', 'SYSTEM_JOB_UPDATE', NULL, NULL, NULL, 93, 1, 1, 0, NOW(), NOW()),
+    (50, 46, 'button', '任务监控-删除', 'SYSTEM_JOB_DELETE', NULL, NULL, NULL, 94, 1, 1, 0, NOW(), NOW()),
+    (51, 46, 'button', '任务监控-执行', 'SYSTEM_JOB_RUN', NULL, NULL, NULL, 95, 1, 1, 0, NOW(), NOW());
 
 -- 将所有权限授予【超级管理员角色】和【管理员角色】
 INSERT IGNORE INTO `role_permission` (`id`, `role_id`, `permission_id`, `create_time`)

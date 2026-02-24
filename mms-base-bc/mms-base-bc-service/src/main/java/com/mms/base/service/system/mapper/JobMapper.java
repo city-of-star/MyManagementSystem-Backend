@@ -1,7 +1,7 @@
 package com.mms.base.service.system.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.mms.base.common.system.entity.ScheduledEntity;
+import com.mms.base.common.system.entity.JobEntity;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
@@ -14,6 +14,6 @@ import org.apache.ibatis.annotations.Mapper;
  * @date 2026-02-11 10:10:13
  */
 @Mapper
-public interface ScheduledMapper extends BaseMapper<ScheduledEntity> {
+public interface JobMapper extends BaseMapper<JobEntity> {
 
 }
