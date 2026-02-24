@@ -2,4 +2,45 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.mms.base.service.system.mapper.JobMapper">
 
+    <select id="getJobPage" resultType="com.mms.base.common.system.vo.JobVo">
+        SELECT
+            id,
+            service_name,
+            job_code,
+            job_name,
+            cron_expr,
+            run_mode,
+            enabled,
+            timeout_ms,
+            remark,
+            params_json,
+            create_by,
+            create_time,
+            update_by,
+            update_time
+        FROM job_def
+        <where>
+            deleted = 0
+            <if test="dto.serviceName != null and dto.serviceName != ''">
+                AND service_name LIKE CONCAT('%', #{dto.serviceName}, '%')
+            </if>
+            <if test="dto.jobCode != null and dto.jobCode != ''">
+                AND job_code LIKE CONCAT('%', #{dto.jobCode}, '%')
+            </if>
+            <if test="dto.jobName != null and dto.jobName != ''">
+                AND job_name LIKE CONCAT('%', #{dto.jobName}, '%')
+            </if>
+            <if test="dto.enabled != null">
+                AND enabled = #{dto.enabled}
+            </if>
+            <if test="dto.createTimeStart != null">
+                AND create_time <![CDATA[ >= ]]> #{dto.createTimeStart}
+            </if>
+            <if test="dto.createTimeEnd != null">
+                AND create_time <![CDATA[ <= ]]> #{dto.createTimeEnd}
+            </if>
+        </where>
+        ORDER BY create_time DESC, id DESC
+    </select>
+
 </mapper>
