@@ -2,6 +2,7 @@ package com.mms.common.webmvc.config;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
@@ -90,6 +91,10 @@ public class JacksonConfig {
 
             // 注册模块
             builder.modules(javaTimeModule);
+
+            // Long / long 统一序列化为字符串，防止前端 JS Number 精度丢失
+            builder.serializerByType(Long.class, ToStringSerializer.instance);
+            builder.serializerByType(Long.TYPE, ToStringSerializer.instance);
 
             // 禁用将日期序列化为时间戳
             builder.featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
