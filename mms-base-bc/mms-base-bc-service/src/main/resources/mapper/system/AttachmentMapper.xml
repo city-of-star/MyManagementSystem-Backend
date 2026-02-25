@@ -62,4 +62,30 @@
         DELETE FROM attachment WHERE id = #{id}
     </delete>
 
+    <select id="selectDeletedForClean" resultType="com.mms.base.common.system.entity.AttachmentEntity">
+        SELECT
+            id,
+            file_name,
+            original_name,
+            file_path,
+            file_url,
+            file_size,
+            file_type,
+            mime_type,
+            storage_type,
+            business_type,
+            business_id,
+            status,
+            remark,
+            create_by,
+            create_time,
+            update_by,
+            update_time,
+            deleted
+        FROM attachment
+        WHERE deleted = 1
+        ORDER BY id
+        LIMIT #{limit}
+    </select>
+
 </mapper>

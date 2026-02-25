@@ -8,6 +8,8 @@ import com.mms.base.common.system.vo.AttachmentVo;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+
 /**
  * 实现功能【附件实体 Mapper】
  *
@@ -25,6 +27,14 @@ public interface AttachmentMapper extends BaseMapper<AttachmentEntity> {
      * @return 分页结果
      */
     Page<AttachmentVo> getAttachmentPage(Page<AttachmentVo> page, @Param("dto") AttachmentPageQueryDto dto);
+
+    /**
+     * 查询一批【已逻辑删除】的附件记录，用于清理任务（物理删除）
+     *
+     * @param limit 本次最多查询多少条
+     * @return 已逻辑删除的附件列表（最多 limit 条）
+     */
+    List<AttachmentEntity> selectDeletedForClean(@Param("limit") int limit);
 
     /**
      * 硬删除：真正删除数据库记录
