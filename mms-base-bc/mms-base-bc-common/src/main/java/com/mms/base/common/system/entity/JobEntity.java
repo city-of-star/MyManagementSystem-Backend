@@ -37,6 +37,10 @@ public class JobEntity extends BaseEntity {
     @Schema(description = "任务名称")
     private String jobName;
 
+    @TableField("job_type")
+    @Schema(description = "任务类型")
+    private String jobType;
+
     @TableField("cron_expr")
     @Schema(description = "Cron表达式")
     private String cronExpr;

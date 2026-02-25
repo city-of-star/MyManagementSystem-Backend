@@ -23,43 +23,46 @@ import java.util.Map;
 @AllArgsConstructor
 public class JobHandlerRegistry {
 
+    // 定时服务处理器集合
     private final Map<String, JobHandler> handlerMap = new HashMap<>();
 
+    // 附件清理定时服务处理器
     private final AttachmentCleanJobHandler attachmentCleanJobHandler;
 
     /**
-     * 容器启动完成后，注册所有内置任务处理器
+     * 初始化注册所有定时任务处理器
      */
     @PostConstruct
     public void init() {
-        register(JobCodeEnum.ATTACHMENT_CLEAN, attachmentCleanJobHandler);
+        register(JobTypeEnum.ATTACHMENT_CLEAN, attachmentCleanJobHandler);
     }
 
     /**
-     * 按枚举注册任务处理器
+     * 按枚举注册定时任务处理器
      *
-     * @param jobCodeEnum 任务编码枚举
+     * @param jobTypeEnum 任务类型枚举
      * @param handler     任务处理器
      */
-    public void register(JobCodeEnum jobCodeEnum, JobHandler handler) {
-        if (jobCodeEnum == null || handler == null) {
+    public void register(JobTypeEnum jobTypeEnum, JobHandler handler) {
+        if (jobTypeEnum == null || handler == null) {
             return;
         }
-        String jobCode = jobCodeEnum.getCode();
-        handlerMap.put(jobCode, handler);
-        log.info("注册定时任务处理器：jobCode={}，handler={}", jobCode, handler.getClass().getSimpleName());
+        String jobType = jobTypeEnum.getType();
+        String jobDescription = jobTypeEnum.getDescription();
+        handlerMap.put(jobType, handler);
+        log.info("注册定时任务处理器：jobType={}，handler={}", jobType, jobDescription);
     }
 
     /**
      * 根据任务编码获取对应处理器
      *
-     * @param jobCode 任务编码
-     * @return 处理器实例，找不到时返回 {@code null}
+     * @param jobType 任务编码
+     * @return 处理器实例，找不到时返回 null
      */
-    public JobHandler getHandler(String jobCode) {
-        if (jobCode == null || jobCode.isEmpty()) {
+    public JobHandler getHandler(String jobType) {
+        if (jobType == null || jobType.isEmpty()) {
             return null;
         }
-        return handlerMap.get(jobCode);
+        return handlerMap.get(jobType);
     }
 }

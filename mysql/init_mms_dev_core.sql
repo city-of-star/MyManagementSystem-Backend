@@ -327,6 +327,7 @@ CREATE TABLE IF NOT EXISTS `job_def` (
     `service_name` varchar(64) NOT NULL COMMENT '所属服务',
     `job_code` varchar(128) NOT NULL COMMENT '任务编码',
     `job_name` varchar(255) NOT NULL COMMENT '任务名称',
+    `job_type` varchar(255) NOT NULL COMMENT '任务类型',
     `cron_expr` varchar(128) NOT NULL COMMENT 'Cron表达式',
     `run_mode` varchar(16) NOT NULL DEFAULT 'single' COMMENT '运行模式：single-集群只跑一份，all-每实例都跑',
     `enabled` tinyint NOT NULL DEFAULT 1 COMMENT '是否启用：0-禁用，1-启用',
@@ -610,7 +611,9 @@ VALUES
     (7, 'role_type', '角色类型', 1, 12, '角色类型分类', 0, NOW(), NOW()),
     (8, 'attachment_business_type', '附件业务类型', 1, 14, '附件业务类型', 0, NOW(), NOW()),
     (9, 'attachment_file_type', '附件文件类型', 1, 15, '扩展名', 0, NOW(), NOW()),
-    (10, 'permission_type', '权限类型', 1, 16, '权限类型分类', 0, NOW(), NOW());
+    (10, 'permission_type', '权限类型', 1, 16, '权限类型分类', 0, NOW(), NOW()),
+    (11, 'service_name', '服务名', 1, 17, '服务名', 0, NOW(), NOW()),
+    (12, 'job_type', '定时任务类型', 1, 18, '定时任务类型', 0, NOW(), NOW());
 
 -- 初始化数据字典数据
 INSERT IGNORE INTO `dict_data` (`id`, `dict_type_id`, `dict_label`, `dict_value`, `dict_sort`, `is_default`, `status`, `remark`, `deleted`, `create_time`, `update_time`)
@@ -662,4 +665,14 @@ VALUES
     (35, 10, '目录', 'catalog', 1, 0, 1, '目录权限', 0, NOW(), NOW()),
     (36, 10, '菜单', 'menu', 2, 0, 1, '菜单权限', 0, NOW(), NOW()),
     (37, 10, '按钮', 'button', 3, 0, 1, '按钮权限', 0, NOW(), NOW()),
-    (38, 10, '接口', 'api', 4, 0, 1, '接口权限', 0, NOW(), NOW());
+    (38, 10, '接口', 'api', 4, 0, 1, '接口权限', 0, NOW(), NOW()),
+    -- 服务名
+    (39, 11, '基础服务', 'base', 1, 0, 1, '基础服务', 0, NOW(), NOW()),
+    (40, 11, '用户中心服务', 'usercenter', 1, 0, 1, '用户中心服务', 0, NOW(), NOW()),
+    -- 定时任务类型
+    (41, 12, '附件清理任务', 'ATTACHMENT_CLEAN', 1, 0, 1, '附件清理任务', 0, NOW(), NOW());
+
+-- 初始化定时任务数据
+INSERT IGNORE INTO `job_def` (`id`,`service_name`,`job_code`,`job_name`,`job_type`,`cron_expr`,`run_mode`,`enabled`,`timeout_ms`,`remark`,`params_json`,`deleted`,`create_by`,`create_time`,`update_by`,`update_time`)
+VALUES
+    (1, 'base', 'ATTACHMENT_CLEAN', '附件清理任务（每天2点，批量100条）', 'ATTACHMENT_CLEAN', '0 0 2 * * ?', 'single', 1, 0, '定期清理已逻辑删除的附件，物理删除文件和记录', '{"batchSize":100}', 0, 1, NOW(), 1, NOW());
