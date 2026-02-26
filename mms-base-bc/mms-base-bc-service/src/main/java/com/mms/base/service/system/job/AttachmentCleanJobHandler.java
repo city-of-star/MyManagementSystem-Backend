@@ -4,8 +4,10 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mms.base.common.system.entity.AttachmentEntity;
 import com.mms.base.service.file.service.FileService;
-import com.mms.base.service.job.JobHandler;
 import com.mms.base.service.system.mapper.AttachmentMapper;
+import com.mms.job.common.annotation.JobDefinition;
+import com.mms.job.common.enums.JobTypeEnum;
+import com.mms.job.core.JobHandler;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -22,18 +24,12 @@ import java.util.List;
  * 定期扫描已被逻辑删除的附件记录，删除物理文件并物理删除数据库记录。
  * <p>
  *
- * 任务参数示例（保存到 job_def.params_json）：
- * <pre>
- * {
- *   "batchSize": 100
- * }
- * </pre>
- *
  * @author li.hongyu
  * @date 2026-02-25 11:08:20
  */
 @Slf4j
 @Component
+@JobDefinition(JobTypeEnum.ATTACHMENT_CLEAN)
 public class AttachmentCleanJobHandler implements JobHandler {
 
     @Resource

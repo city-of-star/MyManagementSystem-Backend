@@ -1,0 +1,37 @@
+spring:
+  application:
+    name: job
+  profiles:
+    active: DEV  # 开发的时候写死 DEV 就行，在服务器上运行的时候可以指定环境（DEV：本地环境 || PROD：生产环境 || TEST：测试环境）
+  config:
+    import:
+      # 公共配置
+      - optional:nacos:public-${spring.profiles.active}.yaml?refreshEnabled=true
+      # 线程池配置
+      - optional:nacos:threadpool-${spring.profiles.active}.yaml?refreshEnabled=true
+      # MySQL配置
+      - optional:nacos:mysql-${spring.profiles.active}.yaml?refreshEnabled=true
+      # Redis配置
+      - optional:nacos:redis-${spring.profiles.active}.yaml?refreshEnabled=true
+      # JWT配置
+      - optional:nacos:jwt-${spring.profiles.active}.yaml?refreshEnabled=true
+      # 密钥配置
+      - optional:nacos:secret-${spring.profiles.active}.yaml?refreshEnabled=true
+      # 白名单配置
+      - optional:nacos:whitelist-${spring.profiles.active}.yaml?refreshEnabled=true
+      # 日志配置
+      - optional:nacos:log-${spring.profiles.active}.yaml?refreshEnabled=true
+      # 服务专属配置
+      - optional:nacos:${spring.application.name}-${spring.profiles.active}.yaml?refreshEnabled=true
+  cloud:
+    nacos:
+      server-addr: 111.229.150.28:8848
+      username: nacos
+      password: zyntm123lhy
+      config:
+        namespace: ${spring.profiles.active}
+        group: DEFAULT_GROUP
+        file-extension: yaml
+      discovery:
+        namespace: ${spring.profiles.active}
+        group: DEFAULT_GROUP

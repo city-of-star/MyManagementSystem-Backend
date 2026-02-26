@@ -48,7 +48,7 @@ public class GatewaySignatureVerificationService {
         if (!StringUtils.hasText(userId) || !StringUtils.hasText(username) ||
                 !StringUtils.hasText(tokenJti) || !StringUtils.hasText(signature) ||
                 !StringUtils.hasText(timestampStr)) {
-            log.warn("网关签名验证失败: traceId={}, path={}, method={}, reason=确实请求头, userId={}, username={}, tokenJti={}, signature={}, timestamp={}",
+            log.warn("网关签名验证失败: traceId={}, path={}, method={}, reason=缺失请求头, userId={}, username={}, tokenJti={}, signature={}, timestamp={}",
                     traceId, path, method, userId, username, tokenJti, 
                     signature != null ? "存在" : "缺失", timestampStr);
             throw new BusinessException(ErrorCode.INVALID_TOKEN);

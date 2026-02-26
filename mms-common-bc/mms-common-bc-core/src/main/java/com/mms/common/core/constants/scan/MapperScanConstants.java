@@ -20,4 +20,9 @@ public class MapperScanConstants {
      * UserCenter 服务的 Mapper 扫描路径
      */
     public static final String USERCENTER_MAPPER_SCAN = "com.mms.usercenter.service.**.mapper";
+
+    /**
+     * Job 服务的 Mapper 扫描路径
+     */
+    public static final String JOB_MAPPER_SCAN = "com.mms.job.core.**.mapper";
 }

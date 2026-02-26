@@ -12,3 +12,4 @@ whitelist:
     - /auth/refresh
   base: # 基础数据服务
     - /attachment/stream/**
+  job: # 定时任务调度服务

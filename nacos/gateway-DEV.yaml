@@ -2,13 +2,41 @@
 server:
   port: 5092
 
-# 网关连接超时配置
 spring:
+  # 网关连接超时配置
   cloud:
     gateway:
       httpclient:
         connect-timeout: 5000  # 连接超时（5秒）
         response-timeout: 10s  # 响应超时（10秒）
+  # 网关路由转发配置
+  application:
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+      default-filters: []
+      routes:
+        - id: usercenter-route
+          uri: lb://usercenter
+          predicates:
+            - Path=/usercenter/**
+          filters:
+            - StripPrefix=1
+
+        - id: base-route
+          uri: lb://base
+          predicates:
+            - Path=/base/**
+          filters:
+            - StripPrefix=1
+
+        - id: job-route
+          uri: lb://job
+          predicates:
+            - Path=/job/**
+          filters:
+            - StripPrefix=1
 
 # 网关签名配置
 gateway:

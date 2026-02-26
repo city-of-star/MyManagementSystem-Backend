@@ -34,6 +34,18 @@
             <artifactId>mms-usercenter-bc-feign-api</artifactId>
         </dependency>
 
+        <!-- 依赖 mms-job-bc-common 模块 -->
+        <dependency>
+            <groupId>com.mms</groupId>
+            <artifactId>mms-job-bc-common</artifactId>
+        </dependency>
+
+        <!-- 依赖 mms-job-bc-core 模块 -->
+        <dependency>
+            <groupId>com.mms</groupId>
+            <artifactId>mms-job-bc-core</artifactId>
+        </dependency>
+
         <!-- ==================== 工具相关依赖引入 ==================== -->
 
         <!-- Lombok -->

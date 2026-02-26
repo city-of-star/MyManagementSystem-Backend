@@ -49,3 +49,10 @@ spring:
           filters:
             - StripPrefix=1
 
+        - id: job-route
+          uri: lb://job
+          predicates:
+            - Path=/job/**
+          filters:
+            - StripPrefix=1
+

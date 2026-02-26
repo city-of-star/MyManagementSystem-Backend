@@ -33,4 +33,9 @@ public class WhitelistProperties {
      * Base 服务专属白名单
      */
     private List<String> base = new ArrayList<>();
+
+    /**
+     * Job 服务专属白名单
+     */
+    private List<String> job = new ArrayList<>();
 }

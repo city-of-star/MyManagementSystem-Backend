@@ -29,7 +29,7 @@ public class GatewayWhitelistService extends AbstractWhitelistService {
     /**
      * 构建网关白名单路径列表
      * <p>
-     * 网关层面的路径需要包含服务前缀（/usercenter 或 /base）
+     * 网关层面的路径需要包含服务前缀
      * </p>
      */
     @Override
@@ -41,6 +41,7 @@ public class GatewayWhitelistService extends AbstractWhitelistService {
             String normalizedPattern = normalizePath(pattern);
             paths.add("/usercenter" + normalizedPattern);
             paths.add("/base" + normalizedPattern);
+            paths.add("/job" + normalizedPattern);
         }
 
         // usercenter 专属白名单
@@ -53,6 +54,12 @@ public class GatewayWhitelistService extends AbstractWhitelistService {
         for (String pattern : whitelistProperties.getBase()) {
             String normalizedPattern = normalizePath(pattern);
             paths.add("/base" + normalizedPattern);
+        }
+
+        // job 专属白名单
+        for (String pattern : whitelistProperties.getJob()) {
+            String normalizedPattern = normalizePath(pattern);
+            paths.add("/job" + normalizedPattern);
         }
         
         return paths;

@@ -32,6 +32,11 @@ public final class PackageScanConstants {
     public static final String GATEWAY_PACKAGE_SCAN = "com.mms.gateway";
 
     /**
+     * Job 服务的包扫描路径
+     */
+    public static final String JOB_PACKAGE_SCAN = "com.mms.job";
+
+    /**
      * 私有构造函数，防止实例化
      */
     private PackageScanConstants() {

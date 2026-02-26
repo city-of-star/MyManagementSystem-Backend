@@ -24,6 +24,7 @@
         <module>mms-base-bc</module>
         <module>mms-usercenter-bc</module>
         <module>mms-gateway-bc</module>
+        <module>mms-job-bc</module>
     </modules>
 
     <!-- 属性配置 -->
@@ -133,6 +134,18 @@
             <dependency>
                 <groupId>com.mms</groupId>
                 <artifactId>mms-common-bc-webmvc</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
+            <!-- MMS Job BC 模块版本管理 -->
+            <dependency>
+                <groupId>com.mms</groupId>
+                <artifactId>mms-job-bc-common</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.mms</groupId>
+                <artifactId>mms-job-bc-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
 
