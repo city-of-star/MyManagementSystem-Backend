@@ -2,6 +2,8 @@ package com.mms.common.job;
 
 import com.mms.job.common.annotation.JobDefinition;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.aop.support.AopUtils;
+import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
@@ -39,7 +41,8 @@ public class JobHandlerRegistry {
             return;
         }
         for (JobHandler handler : handlers) {
-            JobDefinition definition = handler.getClass().getAnnotation(JobDefinition.class);
+            Class<?> targetClass = AopUtils.getTargetClass(handler);
+            JobDefinition definition = AnnotationUtils.findAnnotation(targetClass, JobDefinition.class);
             if (definition == null) {
                 // 未标注 JobDefinition 的 Handler 不参与注册
                 log.debug("JobHandler 未标注 @JobDefinition，跳过注册：{}", handler.getClass().getName());
