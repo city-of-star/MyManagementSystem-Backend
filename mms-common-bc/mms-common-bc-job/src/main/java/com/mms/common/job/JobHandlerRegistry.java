@@ -1,4 +1,4 @@
-package com.mms.job.core;
+package com.mms.common.job;
 
 import com.mms.job.common.annotation.JobDefinition;
 import lombok.extern.slf4j.Slf4j;

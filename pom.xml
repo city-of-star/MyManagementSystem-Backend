@@ -136,6 +136,11 @@
                 <artifactId>mms-common-bc-webmvc</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.mms</groupId>
+                <artifactId>mms-common-bc-job</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
             <!-- MMS Job BC 模块版本管理 -->
             <dependency>

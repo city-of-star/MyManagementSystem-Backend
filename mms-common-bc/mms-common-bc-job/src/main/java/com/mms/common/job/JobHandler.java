@@ -1,4 +1,4 @@
-package com.mms.job.core;
+package com.mms.common.job;
 
 /**
  * 实现功能【定时任务处理器接口】
