@@ -6,6 +6,7 @@ import com.mms.common.job.JobHandler;
 import com.mms.common.job.JobHandlerRegistry;
 import com.mms.common.job.dto.JobExecuteDto;
 import com.mms.job.common.enums.JobTypeEnum;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
@@ -23,6 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @author li.hongyu
  * @date 2026-02-26 17:57:37
  */
+@Tag(name = "定时任务执行入口", description = "定时任务执行入口")
 @Slf4j
 @RestController
 @RequestMapping("/internal/job")

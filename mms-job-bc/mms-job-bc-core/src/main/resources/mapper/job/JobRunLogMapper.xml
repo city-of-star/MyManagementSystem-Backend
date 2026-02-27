@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mms.job.core.mapper.JobRunLogMapper">
+
+    <select id="getJobRunLogPage" resultType="com.mms.job.common.entity.JobRunLogEntity">
+        SELECT
+            id,
+            job_id,
+            run_id,
+            status,
+            start_time,
+            end_time,
+            duration_ms,
+            instance_id,
+            host,
+            error_message,
+            error_stack,
+            result_json
+        FROM job_run_log
+        <where>
+            1 = 1
+            <if test="dto.jobId != null">
+                AND job_id = #{dto.jobId}
+            </if>
+            <if test="dto.runId != null and dto.runId != ''">
+                AND run_id LIKE CONCAT('%', #{dto.runId}, '%')
+            </if>
+            <if test="dto.status != null and dto.status != ''">
+                AND status = #{dto.status}
+            </if>
+            <if test="dto.startTimeStart != null">
+                AND start_time <![CDATA[ >= ]]> #{dto.startTimeStart}
+            </if>
+            <if test="dto.startTimeEnd != null">
+                AND start_time <![CDATA[ <= ]]> #{dto.startTimeEnd}
+            </if>
+        </where>
+        ORDER BY start_time DESC, id DESC
+    </select>
+
+</mapper>

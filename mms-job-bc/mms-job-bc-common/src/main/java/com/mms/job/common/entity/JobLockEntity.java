@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 @Data
 @TableName("job_lock")
 @Schema(description = "定时任务执行锁实体")
-public class JobLock extends BaseIdEntity {
+public class JobLockEntity extends BaseIdEntity {
 
     @Serial
     private static final long serialVersionUID = 1L;

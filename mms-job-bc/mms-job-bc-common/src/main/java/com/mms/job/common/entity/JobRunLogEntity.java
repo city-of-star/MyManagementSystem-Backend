@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
 @Data
 @TableName("job_run_log")
 @Schema(description = "定时任务执行记录实体")
-public class JobRunLog extends BaseIdEntity {
+public class JobRunLogEntity extends BaseIdEntity {
 
     @Serial
     private static final long serialVersionUID = 1L;

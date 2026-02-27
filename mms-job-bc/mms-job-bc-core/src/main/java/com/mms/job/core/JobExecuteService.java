@@ -1,8 +1,11 @@
 package com.mms.job.core;
 
 import com.mms.common.core.response.Response;
+import com.mms.common.core.utils.IdUtils;
 import com.mms.common.job.dto.JobExecuteDto;
 import com.mms.job.common.entity.JobEntity;
+import com.mms.job.common.entity.JobRunLogEntity;
+import com.mms.job.core.service.JobRunLogService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -11,7 +14,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Objects;
-import java.util.UUID;
 
 /**
  * 实现功能【定时任务执行服务】
@@ -37,6 +39,9 @@ public class JobExecuteService {
      */
     @Resource
     private RestTemplate restTemplate;
+
+    @Resource
+    private JobRunLogService jobRunLogService;
 
     /**
      * 同步执行任务（在当前线程中执行）
@@ -70,29 +75,45 @@ public class JobExecuteService {
         dto.setJobType(jobType);
         dto.setParamsJson(job.getParamsJson());
         dto.setJobId(job.getId());
-        dto.setRequestId(UUID.randomUUID().toString());
+        String runId = IdUtils.timestampId();
+        dto.setRequestId(runId);
         // 拼接url
         String url = "http://gateway/" + serviceName + "/internal/job/execute";
 
         long start = System.currentTimeMillis();
+        // 记录执行开始日志
+        JobRunLogEntity runLog = jobRunLogService.startRun(job, runId);
         try {
             log.info("开始定时任务远程调用，serviceName={}，url={}，jobId={}，jobCode={}，jobType={}", serviceName, url, job.getId(), job.getJobCode(), jobType);
             Response<?> response = restTemplate.postForObject(url, dto, Response.class);
             long cost = System.currentTimeMillis() - start;
             if (response == null) {
                 log.error("定时任务远程调用返回为空，视为失败，jobId={}，jobCode={}，耗时={}ms", job.getId(), job.getJobCode(), cost);
+                jobRunLogService.markFail(runLog.getId(), cost, "远程调用返回为空", null);
                 return;
             }
             if (!Objects.equals(response.getCode(), Response.SUCCESS_CODE)) {
                 log.error("定时任务远程调用失败，jobId={}，jobCode={}，耗时={}ms，错误信息={}", job.getId(), job.getJobCode(), cost, response.getMessage());
+                jobRunLogService.markFail(runLog.getId(), cost, response.getMessage(), null);
                 return;
             }
             log.info("定时任务远程调用成功，jobId={}，jobCode={}，耗时={}ms", job.getId(), job.getJobCode(), cost);
+            jobRunLogService.markSuccess(runLog.getId(), cost);
         } catch (Exception e) {
             long cost = System.currentTimeMillis() - start;
             log.error("定时任务远程调用异常，jobId={}，jobCode={}，耗时={}ms，错误：{}", job.getId(), job.getJobCode(), cost, e.getMessage(), e);
+            jobRunLogService.markFail(runLog.getId(), cost, e.getMessage(), getStackTrace(e));
             // TODO: 后续可以在这里记录执行日志表、失败次数、告警通知等
         }
+    }
+
+    private String getStackTrace(Exception e) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(e.toString()).append("\n");
+        for (StackTraceElement element : e.getStackTrace()) {
+            sb.append("\tat ").append(element).append("\n");
+        }
+        return sb.toString();
     }
 
     /**
