@@ -1,6 +1,6 @@
-package com.mms.usercenter.feign.api;
+package com.mms.usercenter.feign;
 
-import com.mms.usercenter.feign.api.vo.UserInfoVo;
+import com.mms.usercenter.feign.vo.UserInfoVo;
 import com.mms.common.core.response.Response;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;

@@ -3,12 +3,12 @@ package com.mms.job.core;
 import com.mms.common.core.response.Response;
 import com.mms.common.job.dto.JobExecuteDto;
 import com.mms.job.common.entity.JobEntity;
+import com.mms.usercenter.feign.JobExecuteFeign;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.RestTemplate;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -32,11 +32,11 @@ public class JobExecuteService {
     @Resource(name = "schedulerTaskExecutor")
     private ThreadPoolTaskExecutor schedulerTaskExecutor;
 
-    /**
-     * 远程调用各业务服务使用的 RestTemplate
-     */
     @Resource
-    private RestTemplate restTemplate;
+    private com.mms.base.feign.JobExecuteFeign baseJobExecuteFeign;
+
+    @Resource
+    private JobExecuteFeign usercenterJobExecuteFeign;
 
     /**
      * 同步执行任务（在当前线程中执行）
@@ -71,13 +71,17 @@ public class JobExecuteService {
         dto.setParamsJson(job.getParamsJson());
         dto.setJobId(job.getId());
         dto.setRequestId(UUID.randomUUID().toString());
-        // 拼接url
-        String url = "http://" + serviceName + "/internal/job/execute";
 
         long start = System.currentTimeMillis();
         try {
-            log.info("开始定时任务远程调用，serviceName={}，url={}，jobId={}，jobCode={}，jobType={}", serviceName, url, job.getId(), job.getJobCode(), jobType);
-            Response<?> response = restTemplate.postForObject(url, dto, Response.class);
+            log.info("开始定时任务远程调用，serviceName={}，jobId={}，jobCode={}，jobType={}", serviceName, job.getId(), job.getJobCode(), jobType);
+            Response<?> response = new Response<>();
+            switch (serviceName) {
+                case "base": response = baseJobExecuteFeign.execute(dto);
+                    break;
+                case "usercenter": response = usercenterJobExecuteFeign.execute(dto);
+                    break;
+            }
             long cost = System.currentTimeMillis() - start;
             if (response == null) {
                 log.error("定时任务远程调用返回为空，视为失败，jobId={}，jobCode={}，耗时={}ms", job.getId(), job.getJobCode(), cost);

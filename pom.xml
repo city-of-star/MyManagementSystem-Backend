@@ -154,6 +154,18 @@
                 <version>${project.version}</version>
             </dependency>
 
+            <!-- MMS BC Feign Api 模块版本管理 -->
+            <dependency>
+                <groupId>com.mms</groupId>
+                <artifactId>mms-base-bc-feign-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.mms</groupId>
+                <artifactId>mms-usercenter-bc-feign-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+
             <!-- MyBatis Plus -->
             <dependency>
                 <groupId>com.baomidou</groupId>
