@@ -1,11 +1,13 @@
 package com.mms.common.job.web;
 
+import com.mms.common.core.enums.error.ErrorCode;
+import com.mms.common.core.response.Response;
 import com.mms.common.job.JobHandler;
 import com.mms.common.job.JobHandlerRegistry;
-import com.mms.common.job.dto.JobExecuteRequest;
-import com.mms.common.job.dto.JobExecuteResponse;
+import com.mms.common.job.dto.JobExecuteDto;
+import com.mms.job.common.enums.JobTypeEnum;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -13,11 +15,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 实现功能【通用任务执行入口（执行器）】
+ * 实现功能【任务执行入口】
  * <p>
- * 放在公共模块中，供各业务服务通过扫描自动加载。
+ * 定时任务调度平台通过调用此服务来远程调用当前服务的定时任务
  * <p>
- * 开关：mms.job.executor.enabled=true 时才会生效，避免默认暴露内部接口。
  *
  * @author li.hongyu
  * @date 2026-02-26 17:57:37
@@ -25,42 +26,39 @@ import org.springframework.web.bind.annotation.RestController;
 @Slf4j
 @RestController
 @RequestMapping("/internal/job")
+@AllArgsConstructor
 public class JobExecuteController {
 
+    /**
+     * 任务处理器注册中心
+     */
     private final JobHandlerRegistry jobHandlerRegistry;
-
-    public JobExecuteController(JobHandlerRegistry jobHandlerRegistry) {
-        this.jobHandlerRegistry = jobHandlerRegistry;
-    }
 
     /**
      * 执行任务
-     * <p>
-     * 调度中心调用业务服务：POST /internal/job/execute
      */
     @PostMapping("/execute")
-    public JobExecuteResponse execute(@RequestBody JobExecuteRequest request) {
-        if (request == null || !StringUtils.hasText(request.getJobKey())) {
-            return JobExecuteResponse.fail("jobKey 不能为空");
+    public Response<?> execute(@RequestBody JobExecuteDto dto) {
+        if (dto == null || !StringUtils.hasText(dto.getJobType())) {
+            return Response.error(ErrorCode.PARAM_INVALID.getCode(), "任务类型（jobType）不能为空");
         }
-
-        String jobKey = request.getJobKey();
-        JobHandler handler = jobHandlerRegistry.getHandler(jobKey);
+        // 判断是否有此类型的任务处理器
+        String jobType = dto.getJobType();
+        String jobName = JobTypeEnum.getNameByType(jobType);
+        JobHandler handler = jobHandlerRegistry.getHandler(jobType);
         if (handler == null) {
-            log.warn("未找到任务处理器，jobKey={}，requestId={}", jobKey, request.getRequestId());
-            return JobExecuteResponse.fail("未找到任务处理器：" + jobKey);
+            return Response.error(ErrorCode.PARAM_INVALID.getCode(), "未找到任务处理器：" + jobName + "（" + jobType + "）");
         }
-
+        // 执行任务
         long start = System.currentTimeMillis();
         try {
-            log.info("开始执行任务，jobKey={}，jobId={}，requestId={}", jobKey, request.getJobId(), request.getRequestId());
-            handler.execute(request.getParamsJson());
-            log.info("任务执行完成，jobKey={}，耗时={}ms，requestId={}", jobKey, System.currentTimeMillis() - start, request.getRequestId());
-            return JobExecuteResponse.ok();
+            log.info("开始执行任务，jobType={}，jobId={}，requestId={}", jobType, dto.getJobId(), dto.getRequestId());
+            handler.execute(dto.getParamsJson());
+            log.info("任务执行完成，jobType={}，耗时={}ms，requestId={}", jobType, System.currentTimeMillis() - start, dto.getRequestId());
+            return Response.success();
         } catch (Exception e) {
-            log.error("任务执行失败，jobKey={}，耗时={}ms，requestId={}，错误：{}",
-                    jobKey, System.currentTimeMillis() - start, request.getRequestId(), e.getMessage(), e);
-            return JobExecuteResponse.fail(e.getMessage());
+            log.error("任务执行失败，jobType={}，耗时={}ms，requestId={}，错误：{}", jobType, System.currentTimeMillis() - start, dto.getRequestId(), e.getMessage(), e);
+            return Response.error(ErrorCode.SYSTEM_ERROR.getCode(), e.getMessage());
         }
     }
 }

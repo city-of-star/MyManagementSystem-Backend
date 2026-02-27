@@ -44,10 +44,7 @@ public class JobScheduler {
             log.info("当前无启用中的定时任务");
             return;
         }
-
         log.info("本次扫描到启用中的定时任务数量：{}", jobList.size());
-
-        // 简单起见：本示例中每次扫描到的任务都提交一次执行
         for (JobEntity job : jobList) {
             try {
                 jobExecuteService.submitAsync(job);

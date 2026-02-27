@@ -1,7 +1,7 @@
 package com.mms.job.core;
 
-import com.mms.common.job.dto.JobExecuteRequest;
-import com.mms.common.job.dto.JobExecuteResponse;
+import com.mms.common.core.response.Response;
+import com.mms.common.job.dto.JobExecuteDto;
 import com.mms.job.common.entity.JobEntity;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +16,8 @@ import java.util.UUID;
 /**
  * 实现功能【定时任务执行服务】
  * <p>
- * Job 调度中心：根据任务定义，远程调用各业务服务的通用执行入口 /internal/job/execute。
+ *
+ * <p>
  *
  * @author li.hongyu
  * @date 2026-02-25 11:07:14
@@ -33,8 +34,6 @@ public class JobExecuteService {
 
     /**
      * 远程调用各业务服务使用的 RestTemplate
-     * <p>
-     * 建议在公共模块中声明为 @LoadBalanced RestTemplate，支持服务名调用。
      */
     @Resource
     private RestTemplate restTemplate;
@@ -54,50 +53,44 @@ public class JobExecuteService {
             return;
         }
 
-        // 路由目标服务 & 任务 key（使用 jobType，与 @JobDefinition 注册保持一致）
+        // 服务名和任务类型不能为空
         String serviceName = job.getServiceName();
-        String jobKey = job.getJobType();
+        String jobType = job.getJobType();
         if (!StringUtils.hasText(serviceName)) {
-            log.warn("任务所属服务 serviceName 为空，跳过执行，jobId={}，jobCode={}", job.getId(), job.getJobCode());
+            log.warn("任务所属服务（serviceName）为空，跳过执行，jobId={}，jobCode={}", job.getId(), job.getJobCode());
             return;
         }
-        if (!StringUtils.hasText(jobKey)) {
-            log.warn("任务类型 jobType 为空，跳过执行，jobId={}，jobCode={}", job.getId(), job.getJobCode());
+        if (!StringUtils.hasText(jobType)) {
+            log.warn("任务类型（jobType）为空，跳过执行，jobId={}，jobCode={}", job.getId(), job.getJobCode());
             return;
         }
 
         // 组装请求
-        JobExecuteRequest request = new JobExecuteRequest();
-        request.setJobKey(jobKey);
-        request.setParamsJson(job.getParamsJson());
-        request.setJobId(job.getId());
-        request.setRequestId(UUID.randomUUID().toString());
-
+        JobExecuteDto dto = new JobExecuteDto();
+        dto.setJobType(jobType);
+        dto.setParamsJson(job.getParamsJson());
+        dto.setJobId(job.getId());
+        dto.setRequestId(UUID.randomUUID().toString());
+        // 拼接url
         String url = "http://" + serviceName + "/internal/job/execute";
 
         long start = System.currentTimeMillis();
         try {
-            log.info("开始远程执行定时任务，serviceName={}，url={}，jobId={}，jobCode={}，jobType={}",
-                    serviceName, url, job.getId(), job.getJobCode(), jobKey);
-
-            JobExecuteResponse response = restTemplate.postForObject(url, request, JobExecuteResponse.class);
-
+            log.info("开始定时任务远程调用，serviceName={}，url={}，jobId={}，jobCode={}，jobType={}", serviceName, url, job.getId(), job.getJobCode(), jobType);
+            Response<?> response = restTemplate.postForObject(url, dto, Response.class);
             long cost = System.currentTimeMillis() - start;
             if (response == null) {
-                log.error("定时任务执行返回为空，视为失败，jobId={}，jobCode={}，耗时={}ms", job.getId(), job.getJobCode(), cost);
+                log.error("定时任务远程调用返回为空，视为失败，jobId={}，jobCode={}，耗时={}ms", job.getId(), job.getJobCode(), cost);
                 return;
             }
-            if (!response.isSuccess()) {
-                log.error("定时任务执行失败，jobId={}，jobCode={}，耗时={}ms，错误信息={}",
-                        job.getId(), job.getJobCode(), cost, response.getMessage());
+            if (!Objects.equals(response.getCode(), Response.SUCCESS_CODE)) {
+                log.error("定时任务远程调用失败，jobId={}，jobCode={}，耗时={}ms，错误信息={}", job.getId(), job.getJobCode(), cost, response.getMessage());
                 return;
             }
-
-            log.info("定时任务执行成功，jobId={}，jobCode={}，耗时={}ms", job.getId(), job.getJobCode(), cost);
+            log.info("定时任务远程调用成功，jobId={}，jobCode={}，耗时={}ms", job.getId(), job.getJobCode(), cost);
         } catch (Exception e) {
             long cost = System.currentTimeMillis() - start;
-            log.error("定时任务远程调用异常，jobId={}，jobCode={}，耗时={}ms，错误：{}",
-                    job.getId(), job.getJobCode(), cost, e.getMessage(), e);
+            log.error("定时任务远程调用异常，jobId={}，jobCode={}，耗时={}ms，错误：{}", job.getId(), job.getJobCode(), cost, e.getMessage(), e);
             // TODO: 后续可以在这里记录执行日志表、失败次数、告警通知等
         }
     }

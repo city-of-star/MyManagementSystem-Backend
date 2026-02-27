@@ -3,7 +3,7 @@ package com.mms.job.common.enums;
 import lombok.Getter;
 
 /**
- * 实现功能【定时任务编码枚举】
+ * 实现功能【定时任务类型枚举】
  * <p>
  *
  * <p>
@@ -25,12 +25,27 @@ public enum JobTypeEnum {
     private final String type;
 
     /**
-     * 中文描述，便于展示
+     * 任务名称
      */
-    private final String description;
+    private final String name;
 
-    JobTypeEnum(String type, String description) {
+    JobTypeEnum(String type, String name) {
         this.type = type;
-        this.description = description;
+        this.name = name;
+    }
+
+    /**
+     * 根据任务类型获取任务名称
+     */
+    public static String getNameByType(String type) {
+        if (type == null) {
+            return null;
+        }
+        for (JobTypeEnum value : JobTypeEnum.values()) {
+            if (value.type.equals(type)) {
+                return value.name;
+            }
+        }
+        return null;
     }
 }

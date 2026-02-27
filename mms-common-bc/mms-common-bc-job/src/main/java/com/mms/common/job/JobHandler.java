@@ -3,7 +3,7 @@ package com.mms.common.job;
 /**
  * 实现功能【定时任务处理器接口】
  * <p>
- * 所有具体的业务定时任务都需要实现该接口
+ * 所有的定时任务处理器都需要实现该接口
  * <p>
  *
  * @author li.hongyu
