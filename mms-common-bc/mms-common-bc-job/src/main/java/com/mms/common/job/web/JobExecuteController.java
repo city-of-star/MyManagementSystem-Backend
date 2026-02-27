@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
@@ -24,8 +25,9 @@ import org.springframework.web.bind.annotation.RestController;
  */
 @Slf4j
 @RestController
+@RequestMapping("/internal/job")
 @AllArgsConstructor
-public class JobExecuteController implements JobExecuteApi {
+public class JobExecuteController {
 
     /**
      * 任务处理器注册中心
@@ -35,7 +37,7 @@ public class JobExecuteController implements JobExecuteApi {
     /**
      * 执行任务
      */
-    @PostMapping(JobExecuteApi.JOB_EXECUTE_PATH)
+    @PostMapping("/execute")
     public Response<?> execute(@RequestBody JobExecuteDto dto) {
         if (dto == null || !StringUtils.hasText(dto.getJobType())) {
             return Response.error(ErrorCode.PARAM_INVALID.getCode(), "任务类型（jobType）不能为空");

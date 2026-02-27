@@ -74,12 +74,6 @@
             <artifactId>mms-common-bc-webmvc</artifactId>
         </dependency>
 
-        <!-- 依赖 mms-common-bc-job 模块 -->
-        <dependency>
-            <groupId>com.mms</groupId>
-            <artifactId>mms-common-bc-job</artifactId>
-        </dependency>
-
     </dependencies>
 
     <!-- 依赖版本管理 -->
