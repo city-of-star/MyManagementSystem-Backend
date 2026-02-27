@@ -38,6 +38,7 @@ public class JobRunLogServiceImpl implements JobRunLogService {
     public JobRunLogEntity startRun(JobEntity job, String runId) {
         JobRunLogEntity logEntity = new JobRunLogEntity();
         logEntity.setJobId(job.getId());
+        logEntity.setJobName(job.getJobName());
         logEntity.setRunId(runId);
         logEntity.setStatus("RUNNING");
         logEntity.setStartTime(LocalDateTime.now());

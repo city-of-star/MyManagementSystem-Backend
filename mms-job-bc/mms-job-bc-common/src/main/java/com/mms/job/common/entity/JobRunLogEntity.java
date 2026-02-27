@@ -30,6 +30,10 @@ public class JobRunLogEntity extends BaseIdEntity {
     @Schema(description = "任务定义ID")
     private Long jobId;
 
+    @TableField("job_name")
+    @Schema(description = "任务名称（冗余）")
+    private String jobName;
+
     @TableField("run_id")
     @Schema(description = "本次执行唯一ID")
     private String runId;

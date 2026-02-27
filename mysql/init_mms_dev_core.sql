@@ -352,6 +352,7 @@ CREATE TABLE IF NOT EXISTS `job_def` (
 CREATE TABLE IF NOT EXISTS `job_run_log` (
     `id` bigint NOT NULL COMMENT '执行记录ID',
     `job_id` bigint NOT NULL COMMENT '任务定义ID',
+    `job_name` varchar(255) DEFAULT NULL COMMENT '任务名称（冗余）',
     `run_id` varchar(64) NOT NULL COMMENT '本次执行唯一ID',
     `status` varchar(16) NOT NULL COMMENT '状态：RUNNING/SUCCESS/FAIL/TIMEOUT/SKIP',
     `start_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '开始时间',
@@ -477,7 +478,7 @@ VALUES
     (46, 0, 'catalog', '定时任务', 'JOB', NULL, NULL, 'Timer', 90, 1, 1, 0, NOW(), NOW()),
 
     -- 定时任务管理（菜单 + 按钮）
-    (47, 46, 'menu', '定时任务管理', 'JOB_MANAGEMENT', '/job/jobPage', '/job/management/JobPage.vue', 'Timer', 91, 1, 1, 0, NOW(), NOW()),
+    (47, 46, 'menu', '定时任务管理', 'JOB_MANAGEMENT', '/mms-job/jobPage', '/job/management/JobPage.vue', 'Timer', 91, 1, 1, 0, NOW(), NOW()),
     (48, 47, 'button', '定时任务-查看', 'JOB_MANAGEMENT_VIEW', NULL, NULL, NULL, 92, 1, 1, 0, NOW(), NOW()),
     (49, 47, 'button', '定时任务-新增', 'JOB_MANAGEMENT_CREATE', NULL, NULL, NULL, 93, 1, 1, 0, NOW(), NOW()),
     (50, 47, 'button', '定时任务-编辑', 'JOB_MANAGEMENT_UPDATE', NULL, NULL, NULL, 94, 1, 1, 0, NOW(), NOW()),
@@ -485,7 +486,7 @@ VALUES
     (52, 47, 'button', '定时任务-执行', 'JOB_MANAGEMENT_RUN', NULL, NULL, NULL, 96, 1, 1, 0, NOW(), NOW()),
 
     -- 定时任务执行记录（菜单 + 按钮）
-    (53, 46, 'menu', '定时任务执行记录', 'JOB_RUN_LOG', '/job/jobRunLogPage', '/job/log/JobRunLogPage.vue', 'List', 100, 1, 1, 0, NOW(), NOW()),
+    (53, 46, 'menu', '定时任务执行记录', 'JOB_RUN_LOG', '/mms-job/jobRunLogPage', '/job/log/JobRunLogPage.vue', 'List', 100, 1, 1, 0, NOW(), NOW()),
     (54, 53, 'button', '定时任务执行记录-查看', 'JOB_RUN_LOG_VIEW', NULL, NULL, NULL, 101, 1, 1, 0, NOW(), NOW()),
     (55, 53, 'button', '定时任务执行记录-删除', 'JOB_RUN_LOG_DELETE', NULL, NULL, NULL, 102, 1, 1, 0, NOW(), NOW()),
     (56, 53, 'button', '定时任务执行记录-导出', 'JOB_RUN_LOG_EXPORT', NULL, NULL, NULL, 103, 1, 1, 0, NOW(), NOW()),
