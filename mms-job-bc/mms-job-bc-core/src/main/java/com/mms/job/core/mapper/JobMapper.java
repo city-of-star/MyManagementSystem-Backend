@@ -8,6 +8,9 @@ import com.mms.job.common.vo.JobVo;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 /**
  * 实现功能【定时任务实体 Mapper】
  * <p>
@@ -28,4 +31,19 @@ public interface JobMapper extends BaseMapper<JobEntity> {
      * @return 分页结果
      */
     Page<JobVo> getJobPage(Page<JobVo> page, @Param("dto") JobPageQueryDto dto);
+
+    /**
+     * 查询到点需要执行的任务
+     *
+     * @param now 当前时间
+     */
+    List<JobEntity> selectDueJobs(@Param("now") LocalDateTime now);
+
+    /**
+     * 仅更新 next_run_time
+     *
+     * @param id          任务ID
+     * @param nextRunTime 下一次触发时间
+     */
+    int updateNextRunTime(@Param("id") Long id, @Param("nextRunTime") LocalDateTime nextRunTime);
 }

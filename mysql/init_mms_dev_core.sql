@@ -329,6 +329,7 @@ CREATE TABLE IF NOT EXISTS `job_def` (
     `job_name` varchar(255) NOT NULL COMMENT '任务名称',
     `job_type` varchar(255) NOT NULL COMMENT '任务类型',
     `cron_expr` varchar(128) NOT NULL COMMENT 'Cron表达式',
+    `next_run_time` datetime DEFAULT NULL COMMENT '下一次触发时间',
     `run_mode` varchar(16) NOT NULL DEFAULT 'single' COMMENT '运行模式：single-集群单实例执行，all-全实例执行',
     `enabled` tinyint NOT NULL DEFAULT 1 COMMENT '是否启用：0-禁用，1-启用',
     `timeout_ms` int NOT NULL DEFAULT 0 COMMENT '超时毫秒（0表示不超时）',
@@ -342,6 +343,7 @@ CREATE TABLE IF NOT EXISTS `job_def` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_service_job_code` (`service_name`, `job_code`),
     KEY `idx_service_enabled` (`service_name`, `enabled`),
+    KEY `idx_next_run_time` (`next_run_time`),
     KEY `idx_deleted` (`deleted`),
     KEY `idx_create_time` (`create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='定时任务定义表';

@@ -10,6 +10,7 @@
             job_name,
             job_type,
             cron_expr,
+            next_run_time,
             run_mode,
             enabled,
             timeout_ms,
@@ -46,5 +47,38 @@
         </where>
         ORDER BY create_time DESC, id DESC
     </select>
+
+    <select id="selectDueJobs" resultType="com.mms.job.common.entity.JobEntity">
+        SELECT id,
+               service_name,
+               job_code,
+               job_name,
+               job_type,
+               cron_expr,
+               next_run_time,
+               run_mode,
+               enabled,
+               timeout_ms,
+               remark,
+               params_json,
+               deleted,
+               create_by,
+               create_time,
+               update_by,
+               update_time
+        FROM job_def
+        WHERE deleted = 0
+          AND enabled = 1
+          AND next_run_time IS NOT NULL
+          AND next_run_time <![CDATA[ <= ]]> #{now}
+        ORDER BY next_run_time, id
+    </select>
+
+    <update id="updateNextRunTime">
+        UPDATE job_def
+        SET next_run_time = #{nextRunTime}
+        WHERE id = #{id}
+          AND deleted = 0
+    </update>
 
 </mapper>

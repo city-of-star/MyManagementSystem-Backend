@@ -7,6 +7,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 import java.io.Serial;
+import java.time.LocalDateTime;
 
 /**
  * 实现功能【定时任务实体类】
@@ -44,6 +45,10 @@ public class JobEntity extends BaseEntity {
     @TableField("cron_expr")
     @Schema(description = "Cron表达式")
     private String cronExpr;
+
+    @TableField("next_run_time")
+    @Schema(description = "下一次触发时间")
+    private LocalDateTime nextRunTime;
 
     @TableField("run_mode")
     @Schema(description = "运行模式：single-集群只跑一份，all-每实例都跑")
