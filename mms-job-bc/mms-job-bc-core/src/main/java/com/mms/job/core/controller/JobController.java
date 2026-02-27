@@ -31,35 +31,35 @@ public class JobController {
     private JobService jobService;
 
     @Operation(summary = "分页查询定时任务列表", description = "根据条件分页查询定时任务定义列表")
-    @RequiresPermission(PermissionConstants.SYSTEM_JOB_VIEW)
+    @RequiresPermission(PermissionConstants.JOB_MANAGEMENT_VIEW)
     @PostMapping("/page")
     public Response<Page<JobVo>> getJobPage(@RequestBody @Valid JobPageQueryDto dto) {
         return Response.success(jobService.getJobPage(dto));
     }
 
     @Operation(summary = "根据ID查询定时任务详情", description = "根据任务ID查询定时任务定义详细信息")
-    @RequiresPermission(PermissionConstants.SYSTEM_JOB_VIEW)
+    @RequiresPermission(PermissionConstants.JOB_MANAGEMENT_VIEW)
     @GetMapping("/{jobId}")
     public Response<JobVo> getJobById(@PathVariable Long jobId) {
         return Response.success(jobService.getJobById(jobId));
     }
 
     @Operation(summary = "创建定时任务", description = "创建新的定时任务定义")
-    @RequiresPermission(PermissionConstants.SYSTEM_JOB_CREATE)
+    @RequiresPermission(PermissionConstants.JOB_MANAGEMENT_CREATE)
     @PostMapping("/create")
     public Response<JobVo> createJob(@RequestBody @Valid JobCreateDto dto) {
         return Response.success(jobService.createJob(dto));
     }
 
     @Operation(summary = "更新定时任务信息", description = "更新定时任务定义的基本信息")
-    @RequiresPermission(PermissionConstants.SYSTEM_JOB_UPDATE)
+    @RequiresPermission(PermissionConstants.JOB_MANAGEMENT_UPDATE)
     @PutMapping("/update")
     public Response<JobVo> updateJob(@RequestBody @Valid JobUpdateDto dto) {
         return Response.success(jobService.updateJob(dto));
     }
 
     @Operation(summary = "删除定时任务", description = "逻辑删除定时任务定义（软删除）")
-    @RequiresPermission(PermissionConstants.SYSTEM_JOB_DELETE)
+    @RequiresPermission(PermissionConstants.JOB_MANAGEMENT_DELETE)
     @DeleteMapping("/{jobId}")
     public Response<Void> deleteJob(@PathVariable Long jobId) {
         jobService.deleteJob(jobId);
@@ -67,7 +67,7 @@ public class JobController {
     }
 
     @Operation(summary = "批量删除定时任务", description = "批量逻辑删除定时任务定义（软删除）")
-    @RequiresPermission(PermissionConstants.SYSTEM_JOB_DELETE)
+    @RequiresPermission(PermissionConstants.JOB_MANAGEMENT_DELETE)
     @PostMapping("/batch-delete")
     public Response<Void> batchDeleteJob(@RequestBody @Valid JobBatchDeleteDto dto) {
         jobService.batchDeleteJob(dto);
@@ -75,7 +75,7 @@ public class JobController {
     }
 
     @Operation(summary = "切换定时任务启用状态", description = "启用或禁用定时任务定义")
-    @RequiresPermission(PermissionConstants.SYSTEM_JOB_UPDATE)
+    @RequiresPermission(PermissionConstants.JOB_MANAGEMENT_UPDATE)
     @PostMapping("/switch-status")
     public Response<Void> switchJobStatus(@RequestBody @Valid JobStatusSwitchDto dto) {
         jobService.switchJobStatus(dto);

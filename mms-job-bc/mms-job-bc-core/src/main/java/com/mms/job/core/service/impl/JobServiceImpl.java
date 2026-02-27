@@ -12,6 +12,7 @@ import com.mms.job.core.mapper.JobMapper;
 import com.mms.job.core.service.JobService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.support.CronExpression;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -94,6 +95,13 @@ public class JobServiceImpl implements JobService {
             entity.setRemark(dto.getRemark());
             entity.setParamsJson(dto.getParamsJson());
             entity.setDeleted(0);
+
+            // 初始化 next_run_time
+            if (Objects.equals(entity.getEnabled(), 1)) {
+                entity.setNextRunTime(calcNextRunTimeOrThrow(entity.getCronExpr(), LocalDateTime.now()));
+            } else {
+                entity.setNextRunTime(null);
+            }
             jobMapper.insert(entity);
             return convertToVo(entity);
         } catch (BusinessException e) {
@@ -113,6 +121,8 @@ public class JobServiceImpl implements JobService {
             if (job == null || Objects.equals(job.getDeleted(), 1)) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "定时任务不存在");
             }
+            String oldCronExpr = job.getCronExpr();
+            Integer oldEnabled = job.getEnabled();
             if (StringUtils.hasText(dto.getServiceName())) {
                 job.setServiceName(dto.getServiceName());
             }
@@ -143,6 +153,20 @@ public class JobServiceImpl implements JobService {
             if (StringUtils.hasText(dto.getParamsJson())) {
                 job.setParamsJson(dto.getParamsJson());
             }
+
+            boolean cronChanged = StringUtils.hasText(dto.getCronExpr()) && !Objects.equals(oldCronExpr, job.getCronExpr());
+            boolean enabledTurnedOn = Objects.equals(oldEnabled, 0) && Objects.equals(job.getEnabled(), 1);
+            boolean enabledTurnedOff = Objects.equals(oldEnabled, 1) && Objects.equals(job.getEnabled(), 0);
+
+            // next_run_time 策略：
+            // - 禁用：清空 next_run_time，避免被扫描触发
+            // - 启用且 cron 变更/从禁用切启用/next_run_time 为空：重算 next_run_time
+            if (enabledTurnedOff || Objects.equals(job.getEnabled(), 0)) {
+                job.setNextRunTime(null);
+            } else if (Objects.equals(job.getEnabled(), 1) && (cronChanged || enabledTurnedOn || job.getNextRunTime() == null)) {
+                job.setNextRunTime(calcNextRunTimeOrThrow(job.getCronExpr(), LocalDateTime.now()));
+            }
+
             jobMapper.updateById(job);
             return convertToVo(job);
         } catch (BusinessException e) {
@@ -206,6 +230,11 @@ public class JobServiceImpl implements JobService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "启用状态值只能是0或1");
             }
             job.setEnabled(dto.getEnabled());
+            if (Objects.equals(dto.getEnabled(), 1)) {
+                job.setNextRunTime(calcNextRunTimeOrThrow(job.getCronExpr(), LocalDateTime.now()));
+            } else {
+                job.setNextRunTime(null);
+            }
             job.setUpdateTime(LocalDateTime.now());
             jobMapper.updateById(job);
         } catch (BusinessException e) {
@@ -235,5 +264,29 @@ public class JobServiceImpl implements JobService {
         JobVo vo = new JobVo();
         BeanUtils.copyProperties(entity, vo);
         return vo;
+    }
+
+    /**
+     * 计算下一次触发时间（用于初始化/更新 next_run_time）。
+     * <p>
+     * 注意：调度扫描依赖 next_run_time；如果 cron 变更但 next_run_time 不重算，会表现为“到点不执行”。
+     */
+    private LocalDateTime calcNextRunTimeOrThrow(String cronExpr, LocalDateTime baseTime) {
+        if (!StringUtils.hasText(cronExpr)) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "Cron 表达式不能为空");
+        }
+        try {
+            CronExpression cron = CronExpression.parse(cronExpr);
+            LocalDateTime next = cron.next(baseTime);
+            if (next == null) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "Cron 表达式无法计算下一次触发时间");
+            }
+            return next;
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            // 这里直接抛业务异常，让前端在保存时就能看到 cron 不合法，而不是“保存成功但永远不触发”
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "Cron 表达式不合法：" + e.getMessage());
+        }
     }
 }

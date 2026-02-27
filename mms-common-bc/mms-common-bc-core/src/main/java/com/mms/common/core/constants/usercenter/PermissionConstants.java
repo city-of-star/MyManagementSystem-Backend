@@ -107,14 +107,29 @@ public final class PermissionConstants {
     public static final String SYSTEM_ATTACHMENT_DOWNLOAD = "SYSTEM_ATTACHMENT_DOWNLOAD";
 
     /**
-     * 定时任务监控（菜单+按钮）
+     * 定时任务管理（目录）
      */
-    public static final String SYSTEM_JOB = "SYSTEM_JOB";
-    public static final String SYSTEM_JOB_VIEW = "SYSTEM_JOB_VIEW";
-    public static final String SYSTEM_JOB_CREATE = "SYSTEM_JOB_CREATE";
-    public static final String SYSTEM_JOB_UPDATE = "SYSTEM_JOB_UPDATE";
-    public static final String SYSTEM_JOB_DELETE = "SYSTEM_JOB_DELETE";
-    public static final String SYSTEM_JOB_RUN = "SYSTEM_JOB_RUN";
+    public static final String JOB = "JOB";
+
+    /**
+     * 定时任务管理（菜单+按钮）
+     */
+    public static final String JOB_MANAGEMENT = "JOB_MANAGEMENT";
+    public static final String JOB_MANAGEMENT_VIEW = "JOB_MANAGEMENT_VIEW";
+    public static final String JOB_MANAGEMENT_CREATE = "JOB_MANAGEMENT_CREATE";
+    public static final String JOB_MANAGEMENT_UPDATE = "JOB_MANAGEMENT_UPDATE";
+    public static final String JOB_MANAGEMENT_DELETE = "JOB_MANAGEMENT_DELETE";
+    public static final String JOB_MANAGEMENT_RUN = "JOB_MANAGEMENT_RUN";
+
+    /**
+     * 定时任务执行记录（菜单+按钮）
+     */
+    public static final String JOB_RUN_LOG = "JOB_RUN_LOG";
+    public static final String JOB_RUN_LOG_VIEW = "JOB_RUN_LOG_VIEW";
+    public static final String JOB_RUN_LOG_DELETE = "JOB_RUN_LOG_DELETE";
+    public static final String JOB_RUN_LOG_EXPORT = "JOB_RUN_LOG_EXPORT";
+    public static final String JOB_RUN_LOG_RETRY = "JOB_RUN_LOG_RETRY";
+    public static final String JOB_RUN_LOG_TERMINATE = "JOB_RUN_LOG_TERMINATE";
 
     /**
      * 私有构造函数，防止实例化

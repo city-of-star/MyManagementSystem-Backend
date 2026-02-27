@@ -473,13 +473,24 @@ VALUES
     (44, 40, 'button', '附件-删除', 'SYSTEM_ATTACHMENT_DELETE', NULL, NULL, NULL, 84, 1, 1, 0, NOW(), NOW()),
     (45, 40, 'button', '附件-下载', 'SYSTEM_ATTACHMENT_DOWNLOAD', NULL, NULL, NULL, 85, 1, 1, 0, NOW(), NOW()),
 
-    -- 定时任务监控（菜单 + 按钮）
-    (46, 1, 'menu', '定时任务监控', 'SYSTEM_JOB', '/system/jobPage', '/system/job/JobPage.vue', 'Timer', 90, 1, 1, 0, NOW(), NOW()),
-    (47, 46, 'button', '任务监控-查看', 'SYSTEM_JOB_VIEW', NULL, NULL, NULL, 91, 1, 1, 0, NOW(), NOW()),
-    (48, 46, 'button', '任务监控-新增', 'SYSTEM_JOB_CREATE', NULL, NULL, NULL, 92, 1, 1, 0, NOW(), NOW()),
-    (49, 46, 'button', '任务监控-编辑', 'SYSTEM_JOB_UPDATE', NULL, NULL, NULL, 93, 1, 1, 0, NOW(), NOW()),
-    (50, 46, 'button', '任务监控-删除', 'SYSTEM_JOB_DELETE', NULL, NULL, NULL, 94, 1, 1, 0, NOW(), NOW()),
-    (51, 46, 'button', '任务监控-执行', 'SYSTEM_JOB_RUN', NULL, NULL, NULL, 95, 1, 1, 0, NOW(), NOW());
+    -- 定时任务（目录）
+    (46, 0, 'catalog', '定时任务', 'JOB', NULL, NULL, 'Timer', 90, 1, 1, 0, NOW(), NOW()),
+
+    -- 定时任务管理（菜单 + 按钮）
+    (47, 46, 'menu', '定时任务管理', 'JOB_MANAGEMENT', '/job/jobPage', '/job/management/JobPage.vue', 'Timer', 91, 1, 1, 0, NOW(), NOW()),
+    (48, 47, 'button', '定时任务-查看', 'JOB_MANAGEMENT_VIEW', NULL, NULL, NULL, 92, 1, 1, 0, NOW(), NOW()),
+    (49, 47, 'button', '定时任务-新增', 'JOB_MANAGEMENT_CREATE', NULL, NULL, NULL, 93, 1, 1, 0, NOW(), NOW()),
+    (50, 47, 'button', '定时任务-编辑', 'JOB_MANAGEMENT_UPDATE', NULL, NULL, NULL, 94, 1, 1, 0, NOW(), NOW()),
+    (51, 47, 'button', '定时任务-删除', 'JOB_MANAGEMENT_DELETE', NULL, NULL, NULL, 95, 1, 1, 0, NOW(), NOW()),
+    (52, 47, 'button', '定时任务-执行', 'JOB_MANAGEMENT_RUN', NULL, NULL, NULL, 96, 1, 1, 0, NOW(), NOW()),
+
+    -- 定时任务执行记录（菜单 + 按钮）
+    (53, 46, 'menu', '定时任务执行记录', 'JOB_RUN_LOG', '/job/jobRunLogPage', '/job/log/JobRunLogPage.vue', 'List', 100, 1, 1, 0, NOW(), NOW()),
+    (54, 53, 'button', '定时任务执行记录-查看', 'JOB_RUN_LOG_VIEW', NULL, NULL, NULL, 101, 1, 1, 0, NOW(), NOW()),
+    (55, 53, 'button', '定时任务执行记录-删除', 'JOB_RUN_LOG_DELETE', NULL, NULL, NULL, 102, 1, 1, 0, NOW(), NOW()),
+    (56, 53, 'button', '定时任务执行记录-导出', 'JOB_RUN_LOG_EXPORT', NULL, NULL, NULL, 103, 1, 1, 0, NOW(), NOW()),
+    (57, 53, 'button', '定时任务执行记录-重试执行', 'JOB_RUN_LOG_RETRY', NULL, NULL, NULL, 104, 1, 1, 0, NOW(), NOW()),
+    (58, 53, 'button', '定时任务执行记录-终止执行', 'JOB_RUN_LOG_TERMINATE', NULL, NULL, NULL, 105, 1, 1, 0, NOW(), NOW());
 
 -- 将所有权限授予【超级管理员角色】和【管理员角色】
 INSERT IGNORE INTO `role_permission` (`id`, `role_id`, `permission_id`, `create_time`)
