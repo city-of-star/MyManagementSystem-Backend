@@ -354,7 +354,7 @@ CREATE TABLE IF NOT EXISTS `job_run_log` (
     `job_id` bigint NOT NULL COMMENT '任务定义ID',
     `job_name` varchar(255) DEFAULT NULL COMMENT '任务名称（冗余）',
     `run_id` varchar(64) NOT NULL COMMENT '本次执行唯一ID',
-    `status` varchar(16) NOT NULL COMMENT '状态：RUNNING/SUCCESS/FAIL/TIMEOUT/SKIP',
+    `status` varchar(16) NOT NULL COMMENT '状态：running/success/fail/timeout/skip',
     `start_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '开始时间',
     `end_time` datetime DEFAULT NULL COMMENT '结束时间',
     `duration_ms` bigint DEFAULT NULL COMMENT '耗时毫秒',
@@ -628,7 +628,8 @@ VALUES
     (10, 'permission_type', '权限类型', 1, 16, '权限类型分类', 0, NOW(), NOW()),
     (11, 'service_name', '服务名', 1, 17, '服务名', 0, NOW(), NOW()),
     (12, 'job_type', '定时任务类型', 1, 18, '定时任务类型', 0, NOW(), NOW()),
-    (13, 'Job_run_mode', '定时任务运行模式', 1, 19, '定时任务运行模式', 0, NOW(), NOW());
+    (13, 'Job_run_mode', '定时任务运行模式', 1, 19, '定时任务运行模式', 0, NOW(), NOW()),
+    (14, 'job_status', '定时任务状态', 1, 20, '定时任务状态', 0, NOW(), NOW());
 
 -- 初始化数据字典数据
 INSERT IGNORE INTO `dict_data` (`id`, `dict_type_id`, `dict_label`, `dict_value`, `dict_sort`, `is_default`, `status`, `remark`, `deleted`, `create_time`, `update_time`)
@@ -688,8 +689,13 @@ VALUES
     (41, 12, '附件清理任务', 'ATTACHMENT_CLEAN', 1, 0, 1, '附件清理任务', 0, NOW(), NOW()),
     -- 定时任务运行模式
     (42, 13, '集群单实例执行', 'single', 1, 1, 1, '集群单实例执行', 0, NOW(), NOW()),
-    (43, 13, '全实例执行', 'all', 2, 0, 1, '全实例执行', 0, NOW(), NOW());
-
+    (43, 13, '全实例执行', 'all', 2, 0, 1, '全实例执行', 0, NOW(), NOW()),
+    -- 定时任务运行模式
+    (44, 14, '运行中', 'running', 1, 0, 1, '运行中', 0, NOW(), NOW()),
+    (45, 14, '成功', 'success', 2, 0, 1, '成功', 0, NOW(), NOW()),
+    (46, 14, '失败', 'fail', 3, 0, 1, '失败', 0, NOW(), NOW()),
+    (47, 14, '超时', 'timeout', 4, 0, 1, '超时''', 0, NOW(), NOW()),
+    (48, 14, '跳过', 'skip', 5, 0, 1, '跳过', 0, NOW(), NOW());
 -- 初始化定时任务数据
 INSERT IGNORE INTO `job_def` (`id`,`service_name`,`job_code`,`job_name`,`job_type`,`cron_expr`,`run_mode`,`enabled`,`timeout_ms`,`remark`,`params_json`,`deleted`,`create_by`,`create_time`,`update_by`,`update_time`)
 VALUES
