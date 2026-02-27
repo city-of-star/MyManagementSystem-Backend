@@ -36,7 +36,7 @@ public class MyBatisPlusConfig {
      */
     @Bean
     public Interceptor sqlLogInterceptor() {
-        return new SqlLogInterceptor();
+        return new SqlOneLineLogInterceptor();
     }
 }
 

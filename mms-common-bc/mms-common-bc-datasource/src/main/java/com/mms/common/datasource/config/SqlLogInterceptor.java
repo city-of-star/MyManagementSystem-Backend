@@ -69,8 +69,7 @@ public class SqlLogInterceptor implements Interceptor {
             
             // 自定义日志输出，使用彩色SQL日志（sql已经在formatSql中进行了格式化和颜色化）
             String methodName = mappedStatement.getId();
-            log.info("\n\n{}执行SQL - 耗时: {} ms{}\n{}方法: {}{}\n{}{}\n",
-                    ANSI_CYAN, elapsed, ANSI_RESET, ANSI_YELLOW, methodName, ANSI_RESET, sql, ANSI_RESET);
+            log.info("\n\n{}执行SQL - 耗时: {} ms{}\n{}方法: {}{}\n{}{}\n", ANSI_CYAN, elapsed, ANSI_RESET, ANSI_YELLOW, methodName, ANSI_RESET, sql, ANSI_RESET);
 
             return result;
         } catch (Exception e) {
@@ -81,9 +80,7 @@ public class SqlLogInterceptor implements Interceptor {
             BoundSql boundSql = mappedStatement.getBoundSql(parameter);
             Configuration configuration = mappedStatement.getConfiguration();
             String sql = formatSql(configuration, boundSql);
-            log.error("\n\n{}执行SQL失败 - 耗时: {} ms{}\n{}方法: {}{}\n{}{}\n{}错误: {}{}\n",
-                    ANSI_RED, elapsed, ANSI_RESET, ANSI_YELLOW, mappedStatement.getId(), ANSI_RESET, 
-                    sql, ANSI_RESET, ANSI_RED, e.getMessage(), ANSI_RESET);
+            log.error("\n\n{}执行SQL失败 - 耗时: {} ms{}\n{}方法: {}{}\n{}{}\n{}错误: {}{}\n", ANSI_RED, elapsed, ANSI_RESET, ANSI_YELLOW, mappedStatement.getId(), ANSI_RESET, sql, ANSI_RESET, ANSI_RED, e.getMessage(), ANSI_RESET);
             throw e;
         }
     }
