@@ -10,6 +10,8 @@
     </parent>
 
     <artifactId>mms-usercenter-bc-server</artifactId>
+    <name>MMS Usercenter BC Server</name>
+    <description>用户中心服务启动模块</description>
     <packaging>jar</packaging>
 
     <dependencies>

@@ -11,7 +11,7 @@
 
     <artifactId>mms-common-bc-security</artifactId>
     <name>MMS Common BC Security</name>
-    <description>公共安全组件</description>
+    <description>公共安全模块</description>
 
     <dependencies>
 

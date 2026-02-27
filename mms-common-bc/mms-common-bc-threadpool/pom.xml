@@ -11,7 +11,7 @@
 
     <artifactId>mms-common-bc-threadpool</artifactId>
     <name>MMS Common BC ThreadPool</name>
-    <description>线程池通用组件</description>
+    <description>线程池通用模块</description>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>

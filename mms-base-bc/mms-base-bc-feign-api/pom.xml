@@ -10,6 +10,8 @@
     </parent>
 
     <artifactId>mms-base-bc-feign-api</artifactId>
+    <name>MMS Base BC Feign Api</name>
+    <description>基础数据Feign模块</description>
 
     <dependencies>
 

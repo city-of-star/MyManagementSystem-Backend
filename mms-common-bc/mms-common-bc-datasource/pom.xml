@@ -11,7 +11,7 @@
 
     <artifactId>mms-common-bc-datasource</artifactId>
     <name>MMS Common BC Database</name>
-    <description>数据存储组件</description>
+    <description>数据存储模块</description>
 
     <dependencies>
 

@@ -10,6 +10,8 @@
     </parent>
 
     <artifactId>mms-common-bc-es</artifactId>
+    <name>MMS Common BC ES</name>
+    <description>ES搜索模块</description>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>

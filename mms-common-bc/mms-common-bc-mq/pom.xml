@@ -10,6 +10,8 @@
     </parent>
 
     <artifactId>mms-common-bc-mq</artifactId>
+    <name>MMS Common BC Mq</name>
+    <description>消息队列模块</description>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>

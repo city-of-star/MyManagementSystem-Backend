@@ -11,7 +11,7 @@
 
     <artifactId>mms-common-bc-cache</artifactId>
     <name>MMS Common BC Cache</name>
-    <description>缓存组件</description>
+    <description>缓存模块</description>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>

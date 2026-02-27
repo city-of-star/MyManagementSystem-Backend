@@ -10,6 +10,8 @@
     </parent>
 
     <artifactId>mms-base-bc-server</artifactId>
+    <name>MMS Base BC Server</name>
+    <description>基础数据服务启动模块</description>
     <packaging>jar</packaging>
 
     <dependencies>

@@ -10,6 +10,8 @@
     </parent>
 
     <artifactId>mms-usercenter-bc-feign-api</artifactId>
+    <name>MMS Usercenter BC Feign Api</name>
+    <description>用户中心Feign模块</description>
 
     <dependencies>
 

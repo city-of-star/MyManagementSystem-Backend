@@ -10,6 +10,8 @@
     </parent>
 
     <artifactId>mms-base-bc-controller</artifactId>
+    <name>MMS Base BC Controller</name>
+    <description>基础数据控制器模块</description>
 
     <dependencies>
 

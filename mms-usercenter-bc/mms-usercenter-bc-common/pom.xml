@@ -10,6 +10,8 @@
     </parent>
 
     <artifactId>mms-usercenter-bc-common</artifactId>
+    <name>MMS Usercenter BC Common</name>
+    <description>用户中心通用模块</description>
 
     <dependencies>
 

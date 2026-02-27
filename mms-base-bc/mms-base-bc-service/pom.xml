@@ -10,6 +10,8 @@
     </parent>
 
     <artifactId>mms-base-bc-service</artifactId>
+    <name>MMS Base BC Service</name>
+    <description>基础数据服务模块</description>
 
     <dependencies>
 

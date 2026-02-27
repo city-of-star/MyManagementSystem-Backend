@@ -10,6 +10,8 @@
     </parent>
 
     <artifactId>mms-base-bc-common</artifactId>
+    <name>MMS Base BC Common</name>
+    <description>基础数据通用模块</description>
 
     <dependencies>
 

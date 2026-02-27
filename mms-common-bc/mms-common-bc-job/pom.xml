@@ -10,6 +10,8 @@
     </parent>
 
     <artifactId>mms-common-bc-job</artifactId>
+    <name>MMS Common BC Job</name>
+    <description>定时任务模块</description>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
