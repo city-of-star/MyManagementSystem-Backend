@@ -45,6 +45,8 @@ public class AttachmentCleanJobHandler implements JobHandler {
     public void execute(String dtoJson) {
         // 解析参数
         AttachmentCleanJobDto dto = JobParamUtils.parseParams(dtoJson, AttachmentCleanJobDto.class);
+
+        int a = 1 / 0;
         
         log.info("开始执行附件清理任务，参数：batchSize={}, deletedDays={}, deletePhysicalFile={}, storageType={}, businessType={}, fileType={}, maxFileSize={}, minFileSize={}, pathPattern={}, retryCount={}, continueOnError={}, orderBy={}",
                 dto.getBatchSize(), dto.getDeletedDays(), dto.getDeletePhysicalFile(),

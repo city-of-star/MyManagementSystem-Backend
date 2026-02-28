@@ -69,6 +69,13 @@ public interface JobService {
     void switchJobStatus(JobStatusSwitchDto dto);
 
     /**
+     * 执行定时任务
+     *
+     * @param jobId 任务ID
+     */
+    void executeJob(Long jobId);
+
+    /**
      * 判断某服务下任务编码是否已存在
      *
      * @param serviceName 所属服务

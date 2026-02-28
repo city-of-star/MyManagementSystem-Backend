@@ -81,4 +81,12 @@ public class JobController {
         jobService.switchJobStatus(dto);
         return Response.success();
     }
+
+    @Operation(summary = "执行定时任务", description = "立即触发执行一次定时任务")
+    @RequiresPermission(PermissionConstants.JOB_MANAGEMENT_UPDATE)
+    @PostMapping("/execute")
+    public Response<Void> executeJob(@RequestBody @Valid JobExecuteDto dto) {
+        jobService.executeJob(dto.getJobId());
+        return Response.success();
+    }
 }

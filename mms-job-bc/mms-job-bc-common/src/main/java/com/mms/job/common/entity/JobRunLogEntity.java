@@ -39,7 +39,7 @@ public class JobRunLogEntity extends BaseIdEntity {
     private String runId;
 
     @TableField("status")
-    @Schema(description = "状态：RUNNING/SUCCESS/FAIL/TIMEOUT/SKIP")
+    @Schema(description = "状态：running/success/fail/timeout/skip")
     private String status;
 
     @TableField("start_time")

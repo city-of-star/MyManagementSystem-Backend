@@ -10,6 +10,7 @@ import com.mms.common.job.dto.JobValidateDto;
 import com.mms.job.common.dto.*;
 import com.mms.job.common.entity.JobEntity;
 import com.mms.job.common.vo.JobVo;
+import com.mms.job.core.JobExecuteService;
 import com.mms.job.core.mapper.JobMapper;
 import com.mms.job.core.service.JobService;
 import jakarta.annotation.Resource;
@@ -39,6 +40,9 @@ public class JobServiceImpl implements JobService {
 
     @Resource
     private JobMapper jobMapper;
+
+    @Resource
+    private JobExecuteService jobExecuteService;
 
     /**
      * 远程调用各业务服务使用的 RestTemplate
@@ -248,6 +252,27 @@ public class JobServiceImpl implements JobService {
         } catch (Exception e) {
             log.error("切换定时任务状态失败：{}", e.getMessage(), e);
             throw new ServerException("切换定时任务状态失败", e);
+        }
+    }
+
+    @Override
+    public void executeJob(Long jobId) {
+        try {
+            log.info("执行定时任务，jobId：{}", jobId);
+            if (jobId == null) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "任务ID不能为空");
+            }
+            JobEntity job = jobMapper.selectById(jobId);
+            if (job == null || Objects.equals(job.getDeleted(), 1)) {
+                throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "定时任务不存在");
+            }
+            // 异步执行
+            jobExecuteService.submitAsync(job);
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("执行定时任务失败：{}", e.getMessage(), e);
+            throw new ServerException("执行定时任务失败", e);
         }
     }
 
