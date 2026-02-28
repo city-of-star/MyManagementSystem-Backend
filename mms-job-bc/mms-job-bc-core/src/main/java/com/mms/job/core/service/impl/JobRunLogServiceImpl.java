@@ -134,9 +134,9 @@ public class JobRunLogServiceImpl implements JobRunLogService {
             if (logEntity == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "定时任务执行记录不存在");
             }
-            // 仅当状态为 FAIL / TIMEOUT / SKIP 时允许重试
+            // 仅当状态为 fail / timeout / skip 时允许重试
             String status = logEntity.getStatus();
-            if (!"FAIL".equals(status) && !"TIMEOUT".equals(status) && !"SKIP".equals(status)) {
+            if (!"fail".equals(status) && !"timeout".equals(status) && !"skip".equals(status)) {
                 throw new BusinessException(ErrorCode.INVALID_OPERATION, "仅失败、超时或已跳过的执行记录支持重试");
             }
             Long jobId = logEntity.getJobId();
@@ -169,8 +169,8 @@ public class JobRunLogServiceImpl implements JobRunLogService {
             if (logEntity == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "定时任务执行记录不存在");
             }
-            // 仅 RUNNING 状态允许终止
-            if (!Objects.equals(logEntity.getStatus(), "RUNNING")) {
+            // 仅 running 状态允许终止
+            if (!Objects.equals(logEntity.getStatus(), "running")) {
                 throw new BusinessException(ErrorCode.INVALID_OPERATION, "仅运行中的执行记录支持终止");
             }
             LocalDateTime now = LocalDateTime.now();
@@ -180,13 +180,13 @@ public class JobRunLogServiceImpl implements JobRunLogService {
             }
             JobRunLogEntity update = new JobRunLogEntity();
             update.setId(logId);
-            // 这里用 SKIP 状态表示“被人工终止/跳过”
-            update.setStatus("SKIP");
+            // 这里用 skip 状态表示“被人工终止/跳过”
+            update.setStatus("skip");
             update.setEndTime(now);
             update.setDurationMs(durationMs);
             update.setErrorMessage("执行被人工终止");
             jobRunLogMapper.updateById(update);
-            log.info("已将执行记录标记为 SKIP（人工终止），logId={}", logId);
+            log.info("已将执行记录标记为 skip（人工终止），logId={}", logId);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
