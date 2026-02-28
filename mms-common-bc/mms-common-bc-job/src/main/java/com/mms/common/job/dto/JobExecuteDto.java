@@ -3,7 +3,7 @@ package com.mms.common.job.dto;
 import lombok.Data;
 
 /**
- * 实现功能【通用任务执行请求】
+ * 实现功能【定时任务执行请求 Dto】
  * <p>
  *
  * <p>
@@ -19,7 +19,7 @@ public class JobExecuteDto {
     private String jobType;
 
     /**
-     * 任务参数 JSON（允许为空）
+     * 任务参数 JSON
      */
     private String paramsJson;
 

@@ -5,6 +5,8 @@ import com.mms.common.core.response.Response;
 import com.mms.common.job.JobHandler;
 import com.mms.common.job.JobHandlerRegistry;
 import com.mms.common.job.dto.JobExecuteDto;
+import com.mms.common.job.dto.JobValidateDto;
+import com.mms.common.job.utils.JobParamUtils;
 import com.mms.job.common.enums.JobTypeEnum;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
@@ -62,6 +64,25 @@ public class JobExecuteController {
             log.error("任务执行失败，jobType={}，耗时={}ms，requestId={}，错误：{}", jobType, System.currentTimeMillis() - start, dto.getRequestId(), e.getMessage(), e);
             return Response.error(ErrorCode.SYSTEM_ERROR.getCode(), e.getMessage());
         }
+    }
+
+    /**
+     * 验证JSON参数是否能被正确解析
+     */
+    @PostMapping("/validate")
+    public Response<?> validate(@RequestBody JobValidateDto dto) {
+        if (dto == null || !StringUtils.hasText(dto.getJobType())) {
+            return Response.error(ErrorCode.PARAM_INVALID.getCode(), "任务类型（jobType）不能为空");
+        }
+        // 根据任务处理器类型获取对应的Dto类型
+        Class<?> paramClass = jobHandlerRegistry.getParamClass(dto.getJobType());
+        // 解析JSON参数
+        try {
+            JobParamUtils.parseParams(dto.getParamsJson(), paramClass);
+        } catch (Exception e) {
+            return Response.error(ErrorCode.PARAM_INVALID.getCode(), e.getMessage());
+        }
+        return Response.success();
     }
 }
 

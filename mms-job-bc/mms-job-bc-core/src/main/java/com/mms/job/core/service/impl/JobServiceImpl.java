@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
+import com.mms.common.core.response.Response;
+import com.mms.common.job.dto.JobValidateDto;
 import com.mms.job.common.dto.*;
 import com.mms.job.common.entity.JobEntity;
 import com.mms.job.common.vo.JobVo;
@@ -17,6 +19,7 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.Objects;
@@ -36,6 +39,12 @@ public class JobServiceImpl implements JobService {
 
     @Resource
     private JobMapper jobMapper;
+
+    /**
+     * 远程调用各业务服务使用的 RestTemplate
+     */
+    @Resource
+    private RestTemplate restTemplate;
 
     @Override
     public Page<JobVo> getJobPage(JobPageQueryDto dto) {
@@ -93,9 +102,10 @@ public class JobServiceImpl implements JobService {
             entity.setEnabled(dto.getEnabled() == null ? 1 : dto.getEnabled());
             entity.setTimeoutMs(dto.getTimeoutMs() == null ? 0 : dto.getTimeoutMs());
             entity.setRemark(dto.getRemark());
+            // 验证JSON参数能否被正确解析
+            validateParamsJson(dto.getServiceName(), dto.getJobType(), dto.getParamsJson());
             entity.setParamsJson(dto.getParamsJson());
             entity.setDeleted(0);
-
             // 初始化 next_run_time
             if (Objects.equals(entity.getEnabled(), 1)) {
                 entity.setNextRunTime(calcNextRunTimeOrThrow(entity.getCronExpr(), LocalDateTime.now()));
@@ -122,7 +132,6 @@ public class JobServiceImpl implements JobService {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "定时任务不存在");
             }
             String oldCronExpr = job.getCronExpr();
-            Integer oldEnabled = job.getEnabled();
             if (StringUtils.hasText(dto.getServiceName())) {
                 job.setServiceName(dto.getServiceName());
             }
@@ -151,22 +160,19 @@ public class JobServiceImpl implements JobService {
                 job.setRemark(dto.getRemark());
             }
             if (StringUtils.hasText(dto.getParamsJson())) {
+                // 验证JSON参数能否被正确解析
+                validateParamsJson(dto.getServiceName(), dto.getJobType(), dto.getParamsJson());
                 job.setParamsJson(dto.getParamsJson());
             }
-
+            // cron表达式是否改变
             boolean cronChanged = StringUtils.hasText(dto.getCronExpr()) && !Objects.equals(oldCronExpr, job.getCronExpr());
-            boolean enabledTurnedOn = Objects.equals(oldEnabled, 0) && Objects.equals(job.getEnabled(), 1);
-            boolean enabledTurnedOff = Objects.equals(oldEnabled, 1) && Objects.equals(job.getEnabled(), 0);
-
-            // next_run_time 策略：
-            // - 禁用：清空 next_run_time，避免被扫描触发
-            // - 启用且 cron 变更/从禁用切启用/next_run_time 为空：重算 next_run_time
-            if (enabledTurnedOff || Objects.equals(job.getEnabled(), 0)) {
+            if (Objects.equals(job.getEnabled(), 0)) {
+                // 任务禁用：清空 next_run_time，避免被扫描触发
                 job.setNextRunTime(null);
-            } else if (Objects.equals(job.getEnabled(), 1) && (cronChanged || enabledTurnedOn || job.getNextRunTime() == null)) {
+            } else if (Objects.equals(job.getEnabled(), 1) && cronChanged) {
+                // 任务启用且 cron 变更：重算 next_run_time
                 job.setNextRunTime(calcNextRunTimeOrThrow(job.getCronExpr(), LocalDateTime.now()));
             }
-
             jobMapper.updateById(job);
             return convertToVo(job);
         } catch (BusinessException e) {
@@ -267,9 +273,7 @@ public class JobServiceImpl implements JobService {
     }
 
     /**
-     * 计算下一次触发时间（用于初始化/更新 next_run_time）。
-     * <p>
-     * 注意：调度扫描依赖 next_run_time；如果 cron 变更但 next_run_time 不重算，会表现为“到点不执行”。
+     * 计算下一次触发时间（用于初始化/更新 next_run_time）
      */
     private LocalDateTime calcNextRunTimeOrThrow(String cronExpr, LocalDateTime baseTime) {
         if (!StringUtils.hasText(cronExpr)) {
@@ -287,6 +291,28 @@ public class JobServiceImpl implements JobService {
         } catch (Exception e) {
             // 这里直接抛业务异常，让前端在保存时就能看到 cron 不合法，而不是“保存成功但永远不触发”
             throw new BusinessException(ErrorCode.PARAM_INVALID, "Cron 表达式不合法：" + e.getMessage());
+        }
+    }
+
+    /**
+     * 验证JSON参数是否能被正确解析
+     */
+    private void validateParamsJson(String serviceName, String jobType, String paramsJson) {
+        JobValidateDto dto = new JobValidateDto();
+        dto.setJobType(jobType);
+        dto.setParamsJson(paramsJson);
+        // 拼接url
+        String url = "http://gateway/" + serviceName + "/internal/job/validate";
+        try {
+            Response<?> response = restTemplate.postForObject(url, dto, Response.class);
+            if (response != null && !Objects.equals(response.getCode(), Response.SUCCESS_CODE)) {
+                // 验证失败
+                throw new BusinessException(ErrorCode.PARAM_INVALID, response.getMessage());
+            }
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR);
         }
     }
 }

@@ -83,8 +83,25 @@
             update_time,
             deleted
         FROM attachment
-        WHERE deleted = 1
-        ORDER BY id
+        <where>
+            deleted = 1
+            <if test="deleteBeforeTime != null">
+                AND update_time <![CDATA[ <= ]]> #{deleteBeforeTime}
+            </if>
+            <if test="storageType != null and storageType != ''">
+                AND storage_type = #{storageType}
+            </if>
+            <if test="businessType != null and businessType != ''">
+                AND business_type = #{businessType}
+            </if>
+        </where>
+        ORDER BY
+        <choose>
+            <when test="orderBy == 'updateTime'">update_time, id</when>
+            <when test="orderBy == 'createTime'">create_time, id</when>
+            <when test="orderBy == 'fileSize'">file_size, id</when>
+            <otherwise>id</otherwise>
+        </choose>
         LIMIT #{limit}
     </select>
 

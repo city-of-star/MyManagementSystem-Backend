@@ -7,7 +7,7 @@ whitelist:
     - /webjars/**
     - /swagger-resources/**
     - /favicon.ico
-    - /internal/job/execute
+    - /internal/job/**
   usercenter: # 用户中心服务
     - /auth/login
     - /auth/refresh

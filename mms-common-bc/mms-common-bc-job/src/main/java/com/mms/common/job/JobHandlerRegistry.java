@@ -1,6 +1,7 @@
 package com.mms.common.job;
 
 import com.mms.job.common.annotation.JobDefinition;
+import com.mms.job.common.enums.JobTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.core.annotation.AnnotationUtils;
@@ -31,6 +32,11 @@ public class JobHandlerRegistry {
     private final Map<String, JobHandler> handlerMap = new HashMap<>();
 
     /**
+     * 任务参数DTO类型Map（任务类型 -> DTO类型）
+     */
+    private final Map<String, Class<?>> paramClassMap = new HashMap<>();
+
+    /**
      * 注册当前服务的所有任务处理器
      */
     public JobHandlerRegistry(List<JobHandler> handlers) {
@@ -47,18 +53,20 @@ public class JobHandlerRegistry {
                 log.debug("{} 未标注 @JobDefinition，跳过注册", handler.getClass().getName());
                 continue;
             }
-            // 获取任务类型和任务名称
-            String jobType = definition.value().getType();
-            String jobName = definition.value().getName();
-            if (!StringUtils.hasText(jobType)) {
-                log.warn("{} 注解中未提供任务处理器类型，跳过注册", handler.getClass().getName());
+            // 获取任务类型、参数DTO类型
+            JobTypeEnum jobType = definition.type();
+            Class<?> paramClass = definition.paramClass();
+            if (jobType == null || paramClass == null) {
+                log.warn("{} 注解中未提供任务处理器类型或者参数DTO类型，跳过注册", handler.getClass().getName());
                 continue;
             }
-            if (handlerMap.containsKey(jobType)) {
-                log.warn("检测到重复的任务处理器类型={}，后注册的处理器={} 将覆盖之前的处理器={}", jobType, handler.getClass().getName(), handlerMap.get(jobType).getClass().getName());
+            if (handlerMap.containsKey(jobType.getType())) {
+                log.warn("检测到重复的任务处理器类型={}，后注册的处理器={} 将覆盖之前的处理器={}", jobType.getType(), handler.getClass().getName(), handlerMap.get(jobType.getType()).getClass().getName());
             }
-            handlerMap.put(jobType, handler);
-            log.info("注册成功：任务处理器名称={}，任务处理器类型={}，任务处理器类名={}", jobName, jobType, handler.getClass().getSimpleName());
+            // 注册任务处理器和Dto类型
+            handlerMap.put(jobType.getType(), handler);
+            paramClassMap.put(jobType.getType(), paramClass);
+            log.info("注册成功：任务处理器名称={}，任务处理器类型={}，任务处理器类名={}，参数DTO类型={}", jobType.getName(), jobType.getType(), handler.getClass().getSimpleName(), paramClass.getSimpleName());
         }
         long cost = System.currentTimeMillis() - start;
         log.info("定时任务处理器注册耗时={}ms", cost);
@@ -72,5 +80,15 @@ public class JobHandlerRegistry {
             return null;
         }
         return handlerMap.get(jobType);
+    }
+
+    /**
+     * 根据任务类型获取对应的参数DTO类型
+     */
+    public Class<?> getParamClass(String jobType) {
+        if (!StringUtils.hasText(jobType)) {
+            return null;
+        }
+        return paramClassMap.get(jobType);
     }
 }
