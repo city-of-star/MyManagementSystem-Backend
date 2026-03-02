@@ -37,6 +37,10 @@ public class RedisConfig {
         redisTemplate.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
 
         redisTemplate.afterPropertiesSet();
+        
+        // 注入到RedisUtils工具类中，方便使用
+        com.mms.common.cache.utils.RedisUtils.setRedisTemplate(redisTemplate);
+        
         return redisTemplate;
     }
 }
