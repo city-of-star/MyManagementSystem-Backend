@@ -1,7 +1,5 @@
 package com.mms.common.cache.constants;
 
-import java.util.concurrent.TimeUnit;
-
 /**
  * 实现功能【缓存 TTL 约定常量类】
  * <p>
@@ -32,11 +30,6 @@ public final class CacheTtl {
      * 超长期缓存：1 天（适合字典、配置等很少变化的数据）
      */
     public static final long VERY_LONG_SECONDS = 24 * 60 * 60;
-
-    /**
-     * 默认时间单位：秒
-     */
-    public static final TimeUnit DEFAULT_TIME_UNIT = TimeUnit.SECONDS;
 
     /**
      * 私有构造函数，防止实例化

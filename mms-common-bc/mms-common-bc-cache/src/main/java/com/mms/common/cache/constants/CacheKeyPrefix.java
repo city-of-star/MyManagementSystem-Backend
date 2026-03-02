@@ -13,44 +13,24 @@ package com.mms.common.cache.constants;
 public final class CacheKeyPrefix {
 
     /**
-     * 用户相关缓存前缀
+     * 网关服务缓存前缀
      */
-    public static final String USER = "mms:cache:user:";
+    public static final String GATEWAY = "mms:cache:gateway:";
 
     /**
-     * 权限相关缓存前缀
+     * 用户中心服务缓存前缀
      */
-    public static final String PERMISSION = "mms:cache:permission:";
+    public static final String USERCENTER = "mms:cache:usercenter:";
 
     /**
-     * 角色相关缓存前缀
+     * 基础数据服务缓存前缀
      */
-    public static final String ROLE = "mms:cache:role:";
+    public static final String BASE = "mms:cache:base:";
 
     /**
-     * 认证相关缓存前缀
+     * 定时任务服务缓存前缀
      */
-    public static final String AUTH = "mms:cache:auth:";
-
-    /**
-     * Token黑名单前缀
-     */
-    public static final String TOKEN_BLACKLIST = "mms:cache:token:blacklist:";
-
-    /**
-     * Refresh Token前缀
-     */
-    public static final String REFRESH_TOKEN = "mms:cache:token:refresh:";
-
-    /**
-     * 验证码前缀
-     */
-    public static final String CAPTCHA = "mms:cache:captcha:";
-
-    /**
-     * 分布式锁前缀
-     */
-    public static final String LOCK = "mms:cache:lock:";
+     public static final String JOB = "mms:cache:job:";
 
     /**
      * 私有构造函数，防止实例化

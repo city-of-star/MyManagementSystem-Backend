@@ -1,7 +1,9 @@
 package com.mms.usercenter.common.security.constants;
 
+import com.mms.common.cache.constants.CacheKeyPrefix;
+
 /**
- * 实现功能【登录安全常量】
+ * 实现功能【Redis缓存前缀-登录安全常量】
  * <p>
  *
  * <p>
@@ -12,16 +14,19 @@ package com.mms.usercenter.common.security.constants;
 public final class LoginSecurityConstants {
 
     /**
-     * 登录失败次数缓存前缀
-     * 示例：mms:usercenter:login:attempts:{username}
+     * 用户中心-登录相关缓存前缀
      */
-    public static final String LOGIN_ATTEMPT_PREFIX = "mms:usercenter:login:attempts:";
+    public static final String USERCENTER_LOGIN = CacheKeyPrefix.USERCENTER + "login:";
+
+    /**
+     * 登录失败次数缓存前缀
+     */
+    public static final String LOGIN_ATTEMPT_PREFIX = USERCENTER_LOGIN + "attempts:";
 
     /**
      * 账号锁定状态缓存前缀
-     * 示例：mms:usercenter:login:lock:{username}
      */
-    public static final String ACCOUNT_LOCK_PREFIX = "mms:usercenter:login:lock:";
+    public static final String ACCOUNT_LOCK_PREFIX = USERCENTER_LOGIN + "lock:";
 
     /**
      * 私有构造函数，防止实例化

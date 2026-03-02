@@ -1,7 +1,10 @@
 package com.mms.usercenter.service.security.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.mms.common.core.constants.usercenter.UserAuthorityConstants;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.mms.common.cache.constants.CacheTtl;
+import com.mms.common.cache.utils.RedisUtils;
+import com.mms.usercenter.common.security.constants.UserAuthorityConstants;
 import com.mms.common.core.exceptions.ServerException;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.auth.entity.UserRoleEntity;
@@ -15,18 +18,15 @@ import com.mms.usercenter.service.auth.mapper.UserRoleMapper;
 import com.mms.usercenter.service.security.service.UserAuthorityService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 /**
@@ -56,9 +56,6 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
     @Resource
     private RolePermissionMapper rolePermissionMapper;
 
-    @Resource
-    private RedisTemplate<String, Object> redisTemplate;
-
     /**
      * 获取用户权限信息（包含角色和权限）
      *
@@ -79,6 +76,64 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
     }
 
     /**
+     * 加载用户角色集合
+     * 采用缓存优先策略：先查缓存，缓存不存在再查数据库
+     *
+     * @param username 用户名
+     * @return 用户角色编码集合
+     */
+    private Set<String> loadUserRoles(String username) {
+        if (!StringUtils.hasText(username)) {
+            return Collections.emptySet();
+        }
+        // 构建用户角色缓存键
+        String cacheKey = UserAuthorityConstants.USER_ROLE_PREFIX + username;
+        // 尝试从缓存获取
+        Set<String> cachedRoles = RedisUtils.get(cacheKey, new TypeReference<Set<String>>(){});
+        if (!CollectionUtils.isEmpty(cachedRoles)) {
+            return cachedRoles;
+        }
+        // 缓存未命中，查询数据库
+        List<String> roleCodeList = roleMapper.selectRoleCodesByUsername(username);
+        // 过滤并转换成Set集合
+        Set<String> roleCodes = roleCodeList.stream()
+                .filter(StringUtils::hasText)
+                .collect(Collectors.toSet());
+        // 写入缓存
+        RedisUtils.set(cacheKey, roleCodes, CacheTtl.LONG_SECONDS);
+        return roleCodes;
+    }
+
+    /**
+     * 加载用户权限集合
+     * 采用缓存优先策略：先查缓存，缓存不存在再查数据库
+     *
+     * @param username 用户名
+     * @return 用户权限编码集合
+     */
+    private Set<String> loadUserPermissions(String username) {
+        if (!StringUtils.hasText(username)) {
+            return Collections.emptySet();
+        }
+        // 构建用户权限缓存键
+        String cacheKey = UserAuthorityConstants.USER_PERMISSION_PREFIX + username;
+        // 尝试从缓存获取
+        Set<String> cachedPermissions = RedisUtils.get(cacheKey, new TypeReference<Set<String>>(){});
+        if (!CollectionUtils.isEmpty(cachedPermissions)) {
+            return cachedPermissions;
+        }
+        // 缓存未命中，查询数据库
+        List<String> permissionCodeList = permissionMapper.selectPermissionCodesByUsername(username);
+        // 过滤并转换数据
+        Set<String> permissionCodes = permissionCodeList.stream()
+                .filter(StringUtils::hasText)
+                .collect(Collectors.toSet());
+        // 写入缓存
+        RedisUtils.set(cacheKey, permissionCodes, CacheTtl.LONG_SECONDS);
+        return permissionCodes;
+    }
+
+    /**
      * 清除指定用户的权限缓存
      *
      * @param userId 用户ID
@@ -94,12 +149,12 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
             if (StringUtils.hasText(username)) {
                 String roleCacheKey = UserAuthorityConstants.USER_ROLE_PREFIX + username;
                 String permissionCacheKey = UserAuthorityConstants.USER_PERMISSION_PREFIX + username;
-                redisTemplate.delete(roleCacheKey);
-                redisTemplate.delete(permissionCacheKey);
+                RedisUtils.delete(roleCacheKey);
+                RedisUtils.delete(permissionCacheKey);
                 log.info("已清除用户 {} 的权限缓存", username);
             }
         } catch (Exception e) {
-            // 缓存清除失败不应该影响主流程，只记录日志
+            // 缓存清除失败不影响主流程，只记录日志
             log.error("清除用户 {} 的权限缓存失败：{}", userId, e.getMessage(), e);
         }
     }
@@ -132,13 +187,13 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
             }
             log.info("已清除角色 {} 关联的 {} 个用户的权限缓存", roleId, userIds.size());
         } catch (Exception e) {
-            // 缓存清除失败不应该影响主流程，只记录日志
+            // 缓存清除失败不影响主流程，只记录日志
             log.error("清除角色 {} 关联用户的权限缓存失败：{}", roleId, e.getMessage(), e);
         }
     }
 
     /**
-     * 清除“包含指定权限”的所有角色下用户的权限缓存
+     * 清除包含指定权限的所有角色下用户的权限缓存
      *
      * @param permissionId 权限ID
      */
@@ -166,157 +221,8 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
             }
             log.info("已清除权限 {} 关联的 {} 个角色下用户的权限缓存", permissionId, roleIds.size());
         } catch (Exception e) {
-            // 缓存清除失败不应该影响主流程，只记录日志
+            // 缓存清除失败不影响主流程，只记录日志
             log.error("清除权限 {} 关联角色下用户的权限缓存失败：{}", permissionId, e.getMessage(), e);
-        }
-    }
-
-    /**
-     * 加载用户角色集合
-     * 采用缓存优先策略：先查缓存，缓存不存在再查数据库
-     *
-     * @param username 用户名
-     * @return 用户角色编码集合
-     */
-    private Set<String> loadUserRoles(String username) {
-        if (!StringUtils.hasText(username)) {
-            return Collections.emptySet();
-        }
-
-        // 构建缓存键
-        String cacheKey = UserAuthorityConstants.USER_ROLE_PREFIX + username;
-
-        // 先尝试从缓存获取
-        Set<String> cachedRoles = convertToStringSet(redisTemplate.opsForValue().get(cacheKey));
-        if (!CollectionUtils.isEmpty(cachedRoles)) {
-            return cachedRoles;
-        }
-
-        // 缓存未命中，查询数据库
-        List<String> roleCodeList = roleMapper.selectRoleCodesByUsername(username);
-        if (CollectionUtils.isEmpty(roleCodeList)) {
-            // 空结果也进行缓存，防止缓存穿透
-            cacheEmptySet(cacheKey);
-            return Collections.emptySet();
-        }
-
-        // 过滤并转换数据
-        Set<String> roleCodes = roleCodeList.stream()
-                .filter(StringUtils::hasText)
-                .collect(Collectors.toSet());
-
-        // 写入缓存
-        cacheSet(roleCodes, cacheKey);
-        return roleCodes;
-    }
-
-    /**
-     * 加载用户权限集合
-     * 采用缓存优先策略：先查缓存，缓存不存在再查数据库
-     *
-     * @param username 用户名
-     * @return 用户权限编码集合
-     */
-    private Set<String> loadUserPermissions(String username) {
-        if (!StringUtils.hasText(username)) {
-            return Collections.emptySet();
-        }
-
-        // 构建缓存键
-        String cacheKey = UserAuthorityConstants.USER_PERMISSION_PREFIX + username;
-
-        // 先尝试从缓存获取
-        Set<String> cachedPermissions = convertToStringSet(redisTemplate.opsForValue().get(cacheKey));
-        if (!CollectionUtils.isEmpty(cachedPermissions)) {
-            return cachedPermissions;
-        }
-
-        // 缓存未命中，查询数据库
-        List<String> permissionCodeList = permissionMapper.selectPermissionCodesByUsername(username);
-        if (CollectionUtils.isEmpty(permissionCodeList)) {
-            // 空结果也进行缓存，防止缓存穿透
-            cacheEmptySet(cacheKey);
-            return Collections.emptySet();
-        }
-
-        // 过滤并转换数据
-        Set<String> permissionCodes = permissionCodeList.stream()
-                .filter(StringUtils::hasText)
-                .collect(Collectors.toSet());
-
-        // 写入缓存
-        cacheSet(permissionCodes, cacheKey);
-        return permissionCodes;
-    }
-
-    /**
-     * 将缓存对象转换为字符串集合
-     * 支持Set、List和单对象等多种格式的转换
-     *
-     * @param cached 缓存对象
-     * @return 字符串集合
-     */
-    private Set<String> convertToStringSet(Object cached) {
-        if (cached == null) {
-            return Collections.emptySet();
-        }
-
-        // 处理Set类型
-        if (cached instanceof Set<?> set) {
-            return set.stream()
-                    .filter(Objects::nonNull)
-                    .map(Object::toString)
-                    .collect(Collectors.toSet());
-        }
-
-        // 处理List类型
-        if (cached instanceof List<?> list) {
-            return list.stream()
-                    .filter(Objects::nonNull)
-                    .map(Object::toString)
-                    .collect(Collectors.toSet());
-        }
-
-        // 处理单对象类型
-        return Collections.singleton(cached.toString());
-    }
-
-    /**
-     * 缓存集合数据
-     * 支持同时缓存到多个key（批量操作）
-     *
-     * @param values 要缓存的值集合
-     * @param keys 缓存键（可变参数）
-     */
-    private void cacheSet(Set<String> values, String... keys) {
-        if (values == null) {
-            values = Collections.emptySet();
-        }
-
-        for (String key : keys) {
-            redisTemplate.opsForValue().set(
-                    key,
-                    values,
-                    UserAuthorityConstants.AUTHORITY_CACHE_TTL_MINUTES,
-                    TimeUnit.MINUTES
-            );
-        }
-    }
-
-    /**
-     * 缓存空集合
-     * 用于防止缓存穿透，对空结果也进行缓存
-     *
-     * @param keys 缓存键（可变参数）
-     */
-    private void cacheEmptySet(String... keys) {
-        for (String key : keys) {
-            redisTemplate.opsForValue().set(
-                    key,
-                    new HashSet<>(),
-                    UserAuthorityConstants.AUTHORITY_CACHE_TTL_MINUTES,
-                    TimeUnit.MINUTES
-            );
         }
     }
 }

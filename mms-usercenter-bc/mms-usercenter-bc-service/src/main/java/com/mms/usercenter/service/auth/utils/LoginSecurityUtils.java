@@ -1,9 +1,9 @@
 package com.mms.usercenter.service.auth.utils;
 
+import com.mms.common.cache.utils.RedisUtils;
 import com.mms.usercenter.common.security.constants.LoginSecurityConstants;
 import com.mms.usercenter.common.security.properties.LoginSecurityProperties;
 import jakarta.annotation.Resource;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.concurrent.TimeUnit;
@@ -21,9 +21,6 @@ import java.util.concurrent.TimeUnit;
 public class LoginSecurityUtils {
 
     @Resource
-    private RedisTemplate<String, Object> redisTemplate;
-
-    @Resource
     private LoginSecurityProperties securityProperties;
 
     /**
@@ -31,9 +28,8 @@ public class LoginSecurityUtils {
      */
     public void incrementLoginAttempts(String username) {
         String key = LoginSecurityConstants.LOGIN_ATTEMPT_PREFIX + username;
-        redisTemplate.opsForValue().increment(key, 1);
-        // 设置过期时间24h，避免永久存储
-        redisTemplate.expire(key, 24, TimeUnit.HOURS);
+        RedisUtils.increment(key);
+        RedisUtils.expire(key, securityProperties.getAttemptWindow(), TimeUnit.MINUTES);
     }
 
     /**
@@ -41,8 +37,8 @@ public class LoginSecurityUtils {
      */
     public int getLoginAttempts(String username) {
         String key = LoginSecurityConstants.LOGIN_ATTEMPT_PREFIX + username;
-        Object attempts = redisTemplate.opsForValue().get(key);
-        return attempts == null ? 0 : Integer.parseInt(attempts.toString());
+        Integer attempts = RedisUtils.get(key, Integer.class);
+        return attempts == null ? 0 : attempts;
     }
 
     /**
@@ -50,7 +46,7 @@ public class LoginSecurityUtils {
      */
     public void resetLoginAttempts(String username) {
         String key = LoginSecurityConstants.LOGIN_ATTEMPT_PREFIX + username;
-        redisTemplate.delete(key);
+        RedisUtils.delete(key);
     }
 
     /**
@@ -58,10 +54,7 @@ public class LoginSecurityUtils {
      */
     public void lockAccount(String username) {
         String lockKey = LoginSecurityConstants.ACCOUNT_LOCK_PREFIX + username;
-        redisTemplate.opsForValue().set(lockKey, "locked",
-                securityProperties.getLockTime(), TimeUnit.MINUTES);
-
-        // 清空失败次数
+        RedisUtils.set(lockKey, "登录失败次数过多", securityProperties.getLockTime(), TimeUnit.MINUTES);
         resetLoginAttempts(username);
     }
 
@@ -70,15 +63,16 @@ public class LoginSecurityUtils {
      */
     public boolean isAccountLocked(String username) {
         String lockKey = LoginSecurityConstants.ACCOUNT_LOCK_PREFIX + username;
-        return Boolean.TRUE.equals(redisTemplate.hasKey(lockKey));
+        return Boolean.TRUE.equals(RedisUtils.exists(lockKey));
     }
 
     /**
-     * 获取剩余锁定时间
+     * 获取剩余锁定时间（秒）
      */
     public long getLockRemainingTime(String username) {
         String lockKey = LoginSecurityConstants.ACCOUNT_LOCK_PREFIX + username;
-        return redisTemplate.getExpire(lockKey, TimeUnit.SECONDS);
+        Long expire = RedisUtils.getExpire(lockKey);
+        return expire == null ? -2L : expire;
     }
 
     /**
@@ -86,7 +80,6 @@ public class LoginSecurityUtils {
      */
     public void clearAccountLock(String username) {
         String lockKey = LoginSecurityConstants.ACCOUNT_LOCK_PREFIX + username;
-        redisTemplate.delete(lockKey);
+        RedisUtils.delete(lockKey);
     }
 }
-

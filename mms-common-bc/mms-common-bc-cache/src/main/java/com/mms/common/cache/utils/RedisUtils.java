@@ -1,5 +1,7 @@
 package com.mms.common.cache.utils;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.util.StringUtils;
 
@@ -17,6 +19,11 @@ import java.util.concurrent.TimeUnit;
 public class RedisUtils {
 
     private static RedisTemplate<String, Object> redisTemplate;
+
+    /**
+     * Jackson ObjectMapper，用于基于 TypeReference 的类型转换
+     */
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     /**
      * 设置RedisTemplate（通过Spring注入）
@@ -66,8 +73,7 @@ public class RedisUtils {
     }
 
     /**
-     * 获取缓存
-     * 用于获取对象，自动类型转换
+     * 获取缓存（简单类型或对象）
      *
      * @param key   键
      * @param clazz 类型
@@ -84,6 +90,25 @@ public class RedisUtils {
             return null;
         }
         return (T) value;
+    }
+
+    /**
+     * 获取缓存（支持泛型的复杂类型）
+     *
+     * @param key     键
+     * @param typeRef 类型引用（带泛型）
+     * @param <T>     目标类型
+     * @return 值
+     */
+    public static <T> T get(String key, TypeReference<T> typeRef) {
+        if (!StringUtils.hasText(key)) {
+            return null;
+        }
+        Object value = redisTemplate.opsForValue().get(key);
+        if (value == null) {
+            return null;
+        }
+        return OBJECT_MAPPER.convertValue(value, typeRef);
     }
 
     /**

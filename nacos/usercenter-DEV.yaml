@@ -11,6 +11,7 @@ spring:
 login:
   security:
     max-attempts: 5   # 最大登录失败次数
+    attempt-window: 30 # 连续登录失败时间窗口（分钟）
     lock-time: 30  # 锁定时间（分钟）
     attempt-key-prefix: "login_attempts:"  # 登录失败次数缓存前缀
     lock-key-prefix: "account_lock:"  # 账号锁定缓存前缀

@@ -17,14 +17,20 @@ import org.springframework.stereotype.Component;
 @Component
 @ConfigurationProperties(prefix = "login.security")
 public class LoginSecurityProperties {
+
     /**
      * 最大登录失败次数
      */
-    private int maxAttempts = 5;
+    private Integer maxAttempts = 5;
+
+    /**
+     * 连续登录失败时间窗口（分钟）
+     */
+    private Integer attemptWindow = 30;
 
     /**
      * 锁定时间（分钟）
      */
-    private int lockTime = 30;
+    private Integer lockTime = 30;
 }
 

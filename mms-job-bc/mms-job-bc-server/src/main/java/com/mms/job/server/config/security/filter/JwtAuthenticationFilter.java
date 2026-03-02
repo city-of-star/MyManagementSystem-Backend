@@ -1,7 +1,6 @@
 package com.mms.job.server.config.security.filter;
 
 import com.mms.common.core.constants.gateway.GatewayConstants;
-import com.mms.common.core.constants.usercenter.UserAuthorityConstants;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.response.Response;
@@ -120,7 +119,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         Set<GrantedAuthority> authorities = new HashSet<>();
         if (!CollectionUtils.isEmpty(roles)) {
             authorities.addAll(roles.stream()
-                    .map(role -> new SimpleGrantedAuthority(UserAuthorityConstants.ROLE_PREFIX + role))
+                    .map(SimpleGrantedAuthority::new)
                     .toList());
         }
         if (!CollectionUtils.isEmpty(permissions)) {

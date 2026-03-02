@@ -1,7 +1,6 @@
 package com.mms.base.server.security.filter;
 
 import com.mms.common.core.constants.gateway.GatewayConstants;
-import com.mms.common.core.constants.usercenter.UserAuthorityConstants;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.response.Response;
@@ -71,9 +70,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * 7. 继续过滤器链
      */
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
 
         String path = request.getRequestURI();
         String method = request.getMethod();
@@ -100,8 +97,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         
         // 网关签名验证通过后，必须要有用户名
         if (!StringUtils.hasText(username)) {
-            log.warn("网关签名验证通过但缺少用户名: traceId={}, path={}, method={}, userId={}", 
-                    traceId, path, method, userId);
+            log.warn("网关签名验证通过但缺少用户名: traceId={}, path={}, method={}, userId={}", traceId, path, method, userId);
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
 
@@ -120,7 +116,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         Set<GrantedAuthority> authorities = new HashSet<>();
         if (!CollectionUtils.isEmpty(roles)) {
             authorities.addAll(roles.stream()
-                    .map(role -> new SimpleGrantedAuthority(UserAuthorityConstants.ROLE_PREFIX + role))
+                    .map(SimpleGrantedAuthority::new)
                     .toList());
         }
         if (!CollectionUtils.isEmpty(permissions)) {
