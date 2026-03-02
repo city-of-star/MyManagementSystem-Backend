@@ -20,7 +20,6 @@ public class RestTemplateConfig {
 
     /**
      * 供 JobExecuteService 等通过服务名调用其他服务使用：
-     * 例如 http://base/internal/job/execute
      */
     @Bean
     @LoadBalanced
