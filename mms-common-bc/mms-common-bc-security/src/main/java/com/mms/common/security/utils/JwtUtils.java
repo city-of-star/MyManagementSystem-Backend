@@ -3,8 +3,8 @@ package com.mms.common.security.utils;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.utils.IdUtils;
-import com.mms.common.security.constants.JwtConstants;
 import com.mms.common.core.enums.jwt.TokenType;
+import com.mms.common.security.constants.JwtClaimsConstants;
 import com.mms.common.security.properties.JwtProperties;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -60,9 +60,9 @@ public class JwtUtils {
 
 		return Jwts.builder()
 				.id(jti)
-				.claim(JwtConstants.Claims.USER_ID, userId)
-				.claim(JwtConstants.Claims.USERNAME, username)
-				.claim(JwtConstants.Claims.TOKEN_TYPE, tokenType.name())
+				.claim(JwtClaimsConstants.USER_ID, userId)
+				.claim(JwtClaimsConstants.USERNAME, username)
+				.claim(JwtClaimsConstants.TOKEN_TYPE, tokenType.name())
 				.issuedAt(now)
 				.expiration(expiryDate)
 				.signWith(getSigningKey())
@@ -104,7 +104,7 @@ public class JwtUtils {
 	 * @return Token类型，如果不存在则返回null
 	 */
 	public TokenType extractTokenType(Claims claims) {
-		Object tokenTypeObj = claims.get(JwtConstants.Claims.TOKEN_TYPE);
+		Object tokenTypeObj = claims.get(JwtClaimsConstants.TOKEN_TYPE);
 		if (tokenTypeObj == null) {
 			return null;
 		}

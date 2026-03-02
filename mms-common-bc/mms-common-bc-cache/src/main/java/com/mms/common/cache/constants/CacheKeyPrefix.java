@@ -4,13 +4,17 @@ package com.mms.common.cache.constants;
  * 实现功能【缓存Key前缀常量类】
  * <p>
  * 统一管理各业务模块的缓存Key前缀，避免硬编码
- * 命名规范：业务模块:功能:标识
  * </p>
  *
  * @author li.hongyu
  * @date 2026-03-02 09:48:24
  */
 public final class CacheKeyPrefix {
+
+    /**
+     * 通用安全模块缓存前缀
+     */
+    public static final String SECURITY = "mms:cache:security:";
 
     /**
      * 网关服务缓存前缀

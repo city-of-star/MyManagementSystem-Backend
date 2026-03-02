@@ -19,7 +19,12 @@
         <dependency>
             <groupId>com.mms</groupId>
             <artifactId>mms-common-bc-core</artifactId>
-            <version>${project.version}</version>
+        </dependency>
+
+        <!-- 依赖 mms-common-bc-cache 模块 -->
+        <dependency>
+            <groupId>com.mms</groupId>
+            <artifactId>mms-common-bc-cache</artifactId>
         </dependency>
 
         <!-- Spring Boot 自动装配（作为库使用） -->
@@ -68,12 +73,6 @@
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
             <scope>runtime</scope>
-        </dependency>
-
-        <!-- Redis 依赖 -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
         <!-- Jakarta Servlet API -->

@@ -3,7 +3,7 @@ package com.mms.usercenter.service.auth.service.impl;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
-import com.mms.common.security.constants.JwtConstants;
+import com.mms.common.security.constants.JwtClaimsConstants;
 import com.mms.common.security.utils.RefreshTokenUtils;
 import com.mms.common.security.utils.TokenBlacklistUtils;
 import com.mms.common.security.utils.JwtUtils;
@@ -134,10 +134,10 @@ public class AuthServiceImpl implements AuthService {
         // 解析并验证Refresh Token
         Claims refreshClaims = tokenValidatorUtils.parseAndValidate(dto.getRefreshToken(), TokenType.REFRESH);
         // 提取用户名、用户ID
-        String username = Optional.ofNullable(refreshClaims.get(JwtConstants.Claims.USERNAME))
+        String username = Optional.ofNullable(refreshClaims.get(JwtClaimsConstants.USERNAME))
                 .map(Object::toString)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN));
-        Long userId = Optional.ofNullable(refreshClaims.get(JwtConstants.Claims.USER_ID))
+        Long userId = Optional.ofNullable(refreshClaims.get(JwtClaimsConstants.USER_ID))
                 .map(Object::toString)
                 .filter(StringUtils::hasText)
                 .map(Long::valueOf)
@@ -172,7 +172,7 @@ public class AuthServiceImpl implements AuthService {
         // 将Refresh Token加入黑名单
         tokenBlacklistUtils.addToBlacklist(refreshClaims);
         // 从Token中获取用户名
-        Optional.ofNullable(refreshClaims.get(JwtConstants.Claims.USERNAME))
+        Optional.ofNullable(refreshClaims.get(JwtClaimsConstants.USERNAME))
                 .map(Object::toString)
                 // 从Redis中删除对应的Refresh Token，确保旧Refresh Token立即失效，实现单点登录
                 .ifPresent(username -> refreshTokenUtils.removeRefreshToken(username));

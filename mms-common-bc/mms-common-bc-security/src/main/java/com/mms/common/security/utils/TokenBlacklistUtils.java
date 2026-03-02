@@ -1,10 +1,10 @@
 package com.mms.common.security.utils;
 
-import com.mms.common.security.constants.JwtConstants;
+import com.mms.common.cache.utils.RedisUtils;
 import com.mms.common.core.enums.jwt.TokenType;
+import com.mms.common.security.constants.JwtCacheKeyConstants;
+import com.mms.common.security.constants.JwtClaimsConstants;
 import io.jsonwebtoken.Claims;
-import lombok.AllArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.util.StringUtils;
 
 import java.util.Date;
@@ -20,10 +20,7 @@ import java.util.concurrent.TimeUnit;
  * @author li.hongyu
  * @date 2025-12-11 14:22:16
  */
-@AllArgsConstructor
 public class TokenBlacklistUtils {
-
-    private final RedisTemplate<String, Object> redisTemplate;
 
     /**
      * 检查Token是否在黑名单中
@@ -35,8 +32,8 @@ public class TokenBlacklistUtils {
         if (!StringUtils.hasText(jti)) {
             return false;
         }
-        String key = JwtConstants.CacheKeys.TOKEN_BLACKLIST_PREFIX + jti;
-        return Boolean.TRUE.equals(redisTemplate.hasKey(key));
+        String key = JwtCacheKeyConstants.TOKEN_BLACKLIST_PREFIX + jti;
+        return Boolean.TRUE.equals(RedisUtils.exists(key));
     }
 
     /**
@@ -85,8 +82,8 @@ public class TokenBlacklistUtils {
         }
 
         // 将Token加入黑名单，TTL设置为Token的剩余有效时间
-        String key = JwtConstants.CacheKeys.TOKEN_BLACKLIST_PREFIX + jti;
-        redisTemplate.opsForValue().set(key, tokenType != null ? tokenType.name() : "ACCESS", ttl, TimeUnit.MILLISECONDS);
+        String key = JwtCacheKeyConstants.TOKEN_BLACKLIST_PREFIX + jti;
+        RedisUtils.set(key, tokenType != null ? tokenType.name() : "ACCESS", ttl, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -96,7 +93,7 @@ public class TokenBlacklistUtils {
      * @return Token类型，如果不存在则返回null
      */
     private TokenType extractTokenType(Claims claims) {
-        Object tokenTypeObj = claims.get(JwtConstants.Claims.TOKEN_TYPE);
+        Object tokenTypeObj = claims.get(JwtClaimsConstants.TOKEN_TYPE);
         if (tokenTypeObj == null) {
             return null;
         }

@@ -1,7 +1,7 @@
 package com.mms.common.security.feign;
 
 import com.mms.common.core.constants.gateway.GatewayConstants;
-import com.mms.common.security.constants.JwtConstants;
+import com.mms.common.security.constants.JwtHeaderConstants;
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
 import jakarta.servlet.http.HttpServletRequest;
@@ -56,9 +56,9 @@ public class FeignHeaderRelayInterceptor implements RequestInterceptor {
         HttpServletRequest request = attributes.getRequest();
 
         // 透传 Authorization 头
-        String authHeader = request.getHeader(JwtConstants.Headers.AUTHORIZATION);
+        String authHeader = request.getHeader(JwtHeaderConstants.AUTHORIZATION);
         if (StringUtils.hasText(authHeader)) {
-            template.header(JwtConstants.Headers.AUTHORIZATION, authHeader);
+            template.header(JwtHeaderConstants.AUTHORIZATION, authHeader);
         }
 
         // 透传网关相关请求头

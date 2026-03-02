@@ -4,7 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.mms.common.cache.constants.CacheTtl;
 import com.mms.common.cache.utils.RedisUtils;
-import com.mms.usercenter.common.security.constants.UserAuthorityConstants;
+import com.mms.usercenter.common.security.constants.UserAuthorityCacheKeyConstants;
 import com.mms.common.core.exceptions.ServerException;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.auth.entity.UserRoleEntity;
@@ -87,7 +87,7 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
             return Collections.emptySet();
         }
         // 构建用户角色缓存键
-        String cacheKey = UserAuthorityConstants.USER_ROLE_PREFIX + username;
+        String cacheKey = UserAuthorityCacheKeyConstants.USER_ROLE_PREFIX + username;
         // 尝试从缓存获取
         Set<String> cachedRoles = RedisUtils.get(cacheKey, new TypeReference<Set<String>>(){});
         if (!CollectionUtils.isEmpty(cachedRoles)) {
@@ -116,7 +116,7 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
             return Collections.emptySet();
         }
         // 构建用户权限缓存键
-        String cacheKey = UserAuthorityConstants.USER_PERMISSION_PREFIX + username;
+        String cacheKey = UserAuthorityCacheKeyConstants.USER_PERMISSION_PREFIX + username;
         // 尝试从缓存获取
         Set<String> cachedPermissions = RedisUtils.get(cacheKey, new TypeReference<Set<String>>(){});
         if (!CollectionUtils.isEmpty(cachedPermissions)) {
@@ -147,8 +147,8 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
             }
             String username = user.getUsername();
             if (StringUtils.hasText(username)) {
-                String roleCacheKey = UserAuthorityConstants.USER_ROLE_PREFIX + username;
-                String permissionCacheKey = UserAuthorityConstants.USER_PERMISSION_PREFIX + username;
+                String roleCacheKey = UserAuthorityCacheKeyConstants.USER_ROLE_PREFIX + username;
+                String permissionCacheKey = UserAuthorityCacheKeyConstants.USER_PERMISSION_PREFIX + username;
                 RedisUtils.delete(roleCacheKey);
                 RedisUtils.delete(permissionCacheKey);
                 log.info("已清除用户 {} 的权限缓存", username);

@@ -1,9 +1,8 @@
 package com.mms.common.security.utils;
 
-import com.mms.common.security.constants.JwtConstants;
+import com.mms.common.cache.utils.RedisUtils;
+import com.mms.common.security.constants.JwtCacheKeyConstants;
 import io.jsonwebtoken.Claims;
-import lombok.AllArgsConstructor;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.util.StringUtils;
 
 import java.util.Date;
@@ -19,10 +18,7 @@ import java.util.concurrent.TimeUnit;
  * @author li.hongyu
  * @date 2025-12-11 15:25:09
  */
-@AllArgsConstructor
 public class RefreshTokenUtils {
-
-    private final RedisTemplate<String, Object> redisTemplate;
 
     /**
      * 将Refresh Token存储到Redis
@@ -50,9 +46,9 @@ public class RefreshTokenUtils {
 
         // 存储Refresh Token，key格式：mms:auth:refresh:{username}
         // value存储refresh token的jti，用于后续验证
-        String key = JwtConstants.CacheKeys.REFRESH_TOKEN_PREFIX + username;
+        String key = JwtCacheKeyConstants.REFRESH_TOKEN_PREFIX + username;
         String jti = refreshClaims.getId();
-        redisTemplate.opsForValue().set(key, jti, ttl, TimeUnit.MILLISECONDS);
+        RedisUtils.set(key, jti, ttl, TimeUnit.MILLISECONDS);
     }
 
     /**
@@ -66,9 +62,8 @@ public class RefreshTokenUtils {
             return null;
         }
 
-        String key = JwtConstants.CacheKeys.REFRESH_TOKEN_PREFIX + username;
-        Object value = redisTemplate.opsForValue().get(key);
-        return value != null ? value.toString() : null;
+        String key = JwtCacheKeyConstants.REFRESH_TOKEN_PREFIX + username;
+        return RedisUtils.get(key, String.class);
     }
 
     /**
@@ -100,7 +95,7 @@ public class RefreshTokenUtils {
             return;
         }
 
-        String key = JwtConstants.CacheKeys.REFRESH_TOKEN_PREFIX + username;
-        redisTemplate.delete(key);
+        String key = JwtCacheKeyConstants.REFRESH_TOKEN_PREFIX + username;
+        RedisUtils.delete(key);
     }
 }

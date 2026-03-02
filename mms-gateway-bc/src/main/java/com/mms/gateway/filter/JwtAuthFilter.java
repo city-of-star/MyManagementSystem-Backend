@@ -2,8 +2,9 @@ package com.mms.gateway.filter;
 
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
-import com.mms.common.security.constants.JwtConstants;
 import com.mms.common.core.enums.jwt.TokenType;
+import com.mms.common.security.constants.JwtClaimsConstants;
+import com.mms.common.security.constants.JwtHeaderConstants;
 import com.mms.common.security.utils.ReactiveTokenValidatorUtils;
 import com.mms.gateway.service.GatewayWhitelistService;
 import com.mms.common.core.constants.gateway.GatewayConstants;
@@ -66,7 +67,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         }
 
         // 读取 Authorization 头部
-        String authHeader = request.getHeaders().getFirst(JwtConstants.Headers.AUTHORIZATION);
+        String authHeader = request.getHeaders().getFirst(JwtHeaderConstants.AUTHORIZATION);
         
         // 提取 JWT Token
         String token;
@@ -82,11 +83,11 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         return reactiveTokenValidatorUtils.parseAndValidate(token, TokenType.ACCESS)
             .flatMap(claims -> {
                 // 从 Token 中获取 userId
-                String userId = Optional.ofNullable(claims.get(JwtConstants.Claims.USER_ID))
+                String userId = Optional.ofNullable(claims.get(JwtClaimsConstants.USER_ID))
                         .map(Object::toString)
                         .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN));
                 // 从 Token 中获取 username
-                String username = Optional.ofNullable(claims.get(JwtConstants.Claims.USERNAME))
+                String username = Optional.ofNullable(claims.get(JwtClaimsConstants.USERNAME))
                         .map(Object::toString)
                         .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN));
                 // 从 Token 中获取 jti（Token 标识）

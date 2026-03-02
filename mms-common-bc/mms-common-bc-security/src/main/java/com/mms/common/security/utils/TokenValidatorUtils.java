@@ -2,8 +2,8 @@ package com.mms.common.security.utils;
 
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
-import com.mms.common.security.constants.JwtConstants;
 import com.mms.common.core.enums.jwt.TokenType;
+import com.mms.common.security.constants.JwtHeaderConstants;
 import io.jsonwebtoken.Claims;
 import lombok.AllArgsConstructor;
 import org.springframework.util.StringUtils;
@@ -82,11 +82,11 @@ public class TokenValidatorUtils {
             throw new BusinessException(ErrorCode.INVALID_AUTH_HEADER);
         }
 
-        if (!authHeader.startsWith(JwtConstants.Headers.BEARER_PREFIX)) {
+        if (!authHeader.startsWith(JwtHeaderConstants.BEARER_PREFIX)) {
             throw new BusinessException(ErrorCode.INVALID_AUTH_HEADER);
         }
 
-        String token = authHeader.substring(JwtConstants.Headers.BEARER_PREFIX.length()).trim();
+        String token = authHeader.substring(JwtHeaderConstants.BEARER_PREFIX.length()).trim();
         if (!StringUtils.hasText(token)) {
             throw new BusinessException(ErrorCode.INVALID_AUTH_HEADER);
         }

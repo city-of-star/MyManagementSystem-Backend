@@ -63,8 +63,8 @@ public class AutoConfiguration {
 	@Bean
 	@ConditionalOnBean(RedisTemplate.class)
 	@ConditionalOnMissingBean(ReactiveStringRedisTemplate.class)
-	public TokenBlacklistUtils tokenBlacklistUtils(RedisTemplate<String, Object> redisTemplate) {
-		return new TokenBlacklistUtils(redisTemplate);
+	public TokenBlacklistUtils tokenBlacklistUtils() {
+		return new TokenBlacklistUtils();
 	}
 
 	/**
@@ -74,8 +74,8 @@ public class AutoConfiguration {
 	@Bean
 	@ConditionalOnBean(RedisTemplate.class)
 	@ConditionalOnMissingBean(ReactiveStringRedisTemplate.class)
-	public RefreshTokenUtils refreshTokenUtils(RedisTemplate<String, Object> redisTemplate) {
-		return new RefreshTokenUtils(redisTemplate);
+	public RefreshTokenUtils refreshTokenUtils() {
+		return new RefreshTokenUtils();
 	}
 
 	/**

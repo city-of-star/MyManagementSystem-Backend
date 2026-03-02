@@ -11,10 +11,10 @@ import com.mms.common.cache.constants.CacheKeyPrefix;
  * @author li.hongyu
  * @date 2025-12-19 16:55:20
  */
-public final class UserAuthorityConstants {
+public final class UserAuthorityCacheKeyConstants {
 
     /**
-     * 认证相关缓存前缀
+     * 用户认证相关缓存前缀
      */
     public static final String USERCENTER_AUTH = CacheKeyPrefix.USERCENTER + "auth:";
 
@@ -31,7 +31,7 @@ public final class UserAuthorityConstants {
     /**
      * 私有构造函数，防止实例化
      */
-    private UserAuthorityConstants() {
+    private UserAuthorityCacheKeyConstants() {
         throw new UnsupportedOperationException("常量类不允许实例化");
     }
 }

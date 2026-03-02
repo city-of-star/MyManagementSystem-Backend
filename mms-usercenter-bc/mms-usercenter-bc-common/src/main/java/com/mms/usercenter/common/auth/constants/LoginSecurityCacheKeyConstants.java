@@ -1,4 +1,4 @@
-package com.mms.usercenter.common.security.constants;
+package com.mms.usercenter.common.auth.constants;
 
 import com.mms.common.cache.constants.CacheKeyPrefix;
 
@@ -11,10 +11,10 @@ import com.mms.common.cache.constants.CacheKeyPrefix;
  * @author li.hongyu
  * @date 2025-12-29 15:54:54
  */
-public final class LoginSecurityConstants {
+public final class LoginSecurityCacheKeyConstants {
 
     /**
-     * 用户中心-登录相关缓存前缀
+     * 登录相关缓存前缀
      */
     public static final String USERCENTER_LOGIN = CacheKeyPrefix.USERCENTER + "login:";
 
@@ -31,7 +31,7 @@ public final class LoginSecurityConstants {
     /**
      * 私有构造函数，防止实例化
      */
-    private LoginSecurityConstants() {
+    private LoginSecurityCacheKeyConstants() {
         throw new UnsupportedOperationException("常量类不允许实例化");
     }
 

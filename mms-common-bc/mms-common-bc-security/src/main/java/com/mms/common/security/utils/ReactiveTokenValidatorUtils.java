@@ -2,8 +2,9 @@ package com.mms.common.security.utils;
 
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
-import com.mms.common.security.constants.JwtConstants;
 import com.mms.common.core.enums.jwt.TokenType;
+import com.mms.common.security.constants.JwtCacheKeyConstants;
+import com.mms.common.security.constants.JwtHeaderConstants;
 import io.jsonwebtoken.Claims;
 import lombok.AllArgsConstructor;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
@@ -70,7 +71,7 @@ public class ReactiveTokenValidatorUtils {
         }
         
         // 构建黑名单Redis key，检查Token是否在黑名单中
-        String key = JwtConstants.CacheKeys.TOKEN_BLACKLIST_PREFIX + jti;
+        String key = JwtCacheKeyConstants.TOKEN_BLACKLIST_PREFIX + jti;
         return reactiveStringRedisTemplate.hasKey(key)
                 .defaultIfEmpty(false)
                 .flatMap(exists -> {
@@ -98,11 +99,11 @@ public class ReactiveTokenValidatorUtils {
             throw new BusinessException(ErrorCode.INVALID_AUTH_HEADER);
         }
 
-        if (!authHeader.startsWith(JwtConstants.Headers.BEARER_PREFIX)) {
+        if (!authHeader.startsWith(JwtHeaderConstants.BEARER_PREFIX)) {
             throw new BusinessException(ErrorCode.INVALID_AUTH_HEADER);
         }
 
-        String token = authHeader.substring(JwtConstants.Headers.BEARER_PREFIX.length()).trim();
+        String token = authHeader.substring(JwtHeaderConstants.BEARER_PREFIX.length()).trim();
         if (!StringUtils.hasText(token)) {
             throw new BusinessException(ErrorCode.INVALID_AUTH_HEADER);
         }

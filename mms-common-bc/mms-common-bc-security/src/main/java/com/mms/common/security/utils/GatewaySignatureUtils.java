@@ -114,7 +114,7 @@ public class GatewaySignatureUtils {
     /**
      * 解析RSA私钥（PKCS#8格式，Base64编码）
      */
-    private static PrivateKey parsePrivateKey(String privateKeyStr) throws Exception {
+    private static PrivateKey parsePrivateKey(String privateKeyStr) {
         try {
             // 移除可能的PEM格式标记
             String keyContent = privateKeyStr
@@ -135,7 +135,7 @@ public class GatewaySignatureUtils {
     /**
      * 解析RSA公钥（X.509格式，Base64编码）
      */
-    private static PublicKey parsePublicKey(String publicKeyStr) throws Exception {
+    private static PublicKey parsePublicKey(String publicKeyStr) {
         try {
             // 移除可能的PEM格式标记
             String keyContent = publicKeyStr
