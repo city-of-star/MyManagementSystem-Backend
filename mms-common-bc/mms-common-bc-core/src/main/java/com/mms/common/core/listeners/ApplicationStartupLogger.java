@@ -7,7 +7,6 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.context.ApplicationListener;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -30,7 +29,6 @@ import java.time.format.DateTimeFormatter;
  * @date 2025-12-10 16:12:56
  */
 @Slf4j
-@Component
 public class ApplicationStartupLogger implements ApplicationListener<ApplicationReadyEvent> {
 
     @Value("${spring.application.name:application}")

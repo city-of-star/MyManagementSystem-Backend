@@ -5,7 +5,6 @@ import com.mms.job.common.enums.JobTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.util.HashMap;
@@ -23,7 +22,6 @@ import java.util.Map;
  * @date 2026-02-25 11:07:06
  */
 @Slf4j
-@Component
 public class JobHandlerRegistry {
 
     /**

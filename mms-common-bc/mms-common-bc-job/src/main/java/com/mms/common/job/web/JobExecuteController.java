@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * 实现功能【任务执行入口】
+ * 实现功能【定时任务执行入口】
  * <p>
  * 定时任务调度平台通过调用此服务来远程调用当前服务的定时任务
  * <p>

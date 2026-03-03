@@ -8,22 +8,23 @@ import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
 import java.util.List;
 
 /**
- * Swagger / OpenAPI 配置
+ * 实现功能【Swagger / OpenAPI 配置】
+ * <p>
  * 说明：
  * - 仅用于 Spring MVC 业务服务，不用于 Gateway（WebFlux）
  * - 默认通过网关访问当前服务的接口：{gateway-url}/{spring.application.name}
+ * </p>
+ *
+ * @author li.hongyu
+ * @date 2025-11-10 15:36:17
  */
-@Configuration
 public class SwaggerConfig {
 
     /**
-     * 网关地址（可通过配置文件覆盖，默认 http://localhost:5092）
+     * 网关地址
      */
     @Value("${swagger.gateway-url:http://localhost:5092}")
     private String gatewayUrl;
@@ -46,7 +47,6 @@ public class SwaggerConfig {
     /**
      * 配置 OpenAPI 信息与服务器地址
      */
-    @Bean
     public OpenAPI customOpenAPI() {
         String displayName = (applicationName == null || applicationName.isEmpty())
                 ? "API"

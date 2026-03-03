@@ -6,7 +6,6 @@ import jakarta.servlet.*;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.MDC;
 import org.springframework.core.Ordered;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 
@@ -22,7 +21,6 @@ import java.io.IOException;
  * @author li.hongyu
  * @date 2025-11-10 15:36:17
  */
-@Component
 public class TraceIdMvcFilter implements Filter, Ordered {
 
 	@Override

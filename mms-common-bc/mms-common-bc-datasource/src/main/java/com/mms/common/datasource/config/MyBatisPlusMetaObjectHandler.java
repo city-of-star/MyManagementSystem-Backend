@@ -3,7 +3,6 @@ package com.mms.common.datasource.config;
 import com.baomidou.mybatisplus.core.handlers.MetaObjectHandler;
 import com.mms.common.webmvc.utils.UserContextUtils;
 import org.apache.ibatis.reflection.MetaObject;
-import org.springframework.stereotype.Component;
 
 import java.time.LocalDateTime;
 
@@ -16,7 +15,6 @@ import java.time.LocalDateTime;
  * @author li.hongyu
  * @date 2025-12-10 10:24:56
  */
-@Component
 public class MyBatisPlusMetaObjectHandler implements MetaObjectHandler {
 
     /**
