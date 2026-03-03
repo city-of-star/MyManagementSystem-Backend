@@ -25,6 +25,7 @@
         <module>mms-common-bc-security</module>
         <module>mms-common-bc-webmvc</module>
         <module>mms-common-bc-job</module>
+        <module>mms-common-bc-websocket</module>
     </modules>
 
 </project>
