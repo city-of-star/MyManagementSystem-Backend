@@ -37,15 +37,9 @@ public class JobExecuteService {
     @Resource(name = "schedulerTaskExecutor")
     private ThreadPoolTaskExecutor schedulerTaskExecutor;
 
-    /**
-     * 远程调用各业务服务使用的 RestTemplate
-     */
     @Resource
     private RestTemplate restTemplate;
 
-    /**
-     * 执行记录 Mapper（直接写入执行日志，避免形成循环依赖）
-     */
     @Resource
     private JobRunLogMapper jobRunLogMapper;
 
@@ -184,6 +178,9 @@ public class JobExecuteService {
         jobRunLogMapper.updateById(entity);
     }
 
+    /**
+     * 获取实例ID
+     */
     private String getInstanceId() {
         try {
             return InetAddress.getLocalHost().getHostName();
@@ -193,6 +190,9 @@ public class JobExecuteService {
         }
     }
 
+    /**
+     * 获取Host
+     */
     private String getHost() {
         try {
             return InetAddress.getLocalHost().getHostAddress();

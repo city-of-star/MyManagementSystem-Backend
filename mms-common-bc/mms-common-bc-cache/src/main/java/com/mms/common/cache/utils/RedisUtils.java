@@ -20,15 +20,8 @@ public class RedisUtils {
 
     private static RedisTemplate<String, Object> redisTemplate;
 
-    /**
-     * Jackson ObjectMapper，用于基于 TypeReference 的类型转换
-     */
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
-    /**
-     * 设置RedisTemplate（通过Spring注入）
-     * 注意：需要在配置类中调用此方法注入RedisTemplate
-     */
     public static void setRedisTemplate(RedisTemplate<String, Object> redisTemplate) {
         RedisUtils.redisTemplate = redisTemplate;
     }

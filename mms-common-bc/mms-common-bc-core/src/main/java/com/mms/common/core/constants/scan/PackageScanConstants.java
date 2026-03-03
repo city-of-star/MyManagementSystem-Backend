@@ -12,19 +12,14 @@ package com.mms.common.core.constants.scan;
 public final class PackageScanConstants {
 
     /**
-     * 公共模块的包扫描路径
+     * UserCenter 服务的包扫描路径
      */
-    public static final String COMMON_PACKAGE_SCAN = "com.mms.common";
+    public static final String USERCENTER_PACKAGE_SCAN = "com.mms.usercenter";
 
     /**
      * Base 服务的包扫描路径
      */
     public static final String BASE_PACKAGE_SCAN = "com.mms.base";
-
-    /**
-     * UserCenter 服务的包扫描路径
-     */
-    public static final String USERCENTER_PACKAGE_SCAN = "com.mms.usercenter";
 
     /**
      * Gateway 服务的包扫描路径

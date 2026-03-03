@@ -14,7 +14,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableDiscoveryClient
 @MapperScan(MapperScanConstants.BASE_MAPPER_SCAN)
 @EnableFeignClients(basePackages = {FeignScanConstants.USERCENTER_FEIGN_SCAN})
-@SpringBootApplication(scanBasePackages = {PackageScanConstants.BASE_PACKAGE_SCAN, PackageScanConstants.COMMON_PACKAGE_SCAN})
+@SpringBootApplication(scanBasePackages = PackageScanConstants.BASE_PACKAGE_SCAN)
 public class BaseApplication {
     public static void main(String[] args) {
         SpringApplication.run(BaseApplication.class, args);

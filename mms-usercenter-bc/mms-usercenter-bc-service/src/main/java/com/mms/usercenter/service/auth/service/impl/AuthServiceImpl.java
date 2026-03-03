@@ -212,7 +212,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     /**
-     * 解除因密码输入错误次数过多导致的临时锁定账号（管理员使用）
+     * 解除因密码输入错误次数过多导致的临时锁定账号
      */
     public void unlockAccount(String username) {
         // 重置登录失败次数

@@ -1,46 +1,38 @@
-package com.mms.common.cache.config;
+package com.mms.common.cache.builder;
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import com.mms.common.cache.utils.RedisUtils;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 /**
- * 实现功能【Redis配置类】
+ * 实现功能【RedisTemplate构建器】
  * <p>
  *
  * </p>
- * 
+ *
  * @author li.hongyu 15:37:28
  * @date 2026-01-07 10:37:27
  */
-@Configuration
-public class RedisConfig {
+public class RedisTemplateBuilder {
 
     /**
-     * 配置RedisTemplate
+     * 构建RedisTemplate
      * 使用String序列化key，JSON序列化value
      */
-    @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+    public RedisTemplate<String, Object> buildRedisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> redisTemplate = new RedisTemplate<>();
         redisTemplate.setConnectionFactory(connectionFactory);
-
         // 设置key序列化方式为String
         redisTemplate.setKeySerializer(new StringRedisSerializer());
         redisTemplate.setHashKeySerializer(new StringRedisSerializer());
-
         // 设置value序列化方式为JSON
         redisTemplate.setValueSerializer(new GenericJackson2JsonRedisSerializer());
         redisTemplate.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
-
         redisTemplate.afterPropertiesSet();
-        
-        // 注入到RedisUtils工具类中，方便使用
-        com.mms.common.cache.utils.RedisUtils.setRedisTemplate(redisTemplate);
-        
+        // 注入到RedisUtils工具类
+        RedisUtils.setRedisTemplate(redisTemplate);
         return redisTemplate;
     }
 }
