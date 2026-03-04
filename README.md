@@ -33,7 +33,7 @@ MMS（Management System）是一个企业级管理系统，采用微服务架构
 
 ### 工具类库
 - **Lombok**: 1.18.30
-- **Hutool**: 5.8.25
+- **Hutool**: 5.3.1
 
 ### 文档工具
 - **Knife4j**: 4.4.0（API文档）
@@ -47,10 +47,13 @@ MMS（Management System）是一个企业级管理系统，采用微服务架构
 MyManagementSystem-Backend/
 ├── mms-common-bc/                  # 公共模块
 │   ├── mms-common-bc-core/         # 核心工具类（异常、响应、上下文等）
-│   ├── mms-common-bc-web-mvc/      # Web MVC模块（全局异常处理器、Swagger配置）
-│   ├── mms-common-bc-database/     # 数据库配置（MyBatis Plus、Redis）
+│   ├── mms-common-bc-webmvc/       # Web MVC模块（全局异常处理器、Swagger/Knife4j配置等）
+│   ├── mms-common-bc-datasource/   # 数据源配置（MyBatis Plus等）
+│   ├── mms-common-bc-cache/        # 缓存组件（Redis等）
 │   ├── mms-common-bc-security/     # 安全组件（JWT工具类）
-│   └── mms-common-bc-all/          # Common模块聚合包
+│   ├── mms-common-bc-threadpool/   # 线程池组件（统一线程池配置）
+│   ├── mms-common-bc-websocket/    # WebSocket组件
+│   └── mms-common-bc-job/          # Job公共能力组件
 ├── mms-gateway-bc/                 # API网关服务
 │   └── src/main/java/              # 网关路由、鉴权、过滤器等
 ├── mms-base-bc/                    # 基础数据服务
@@ -59,6 +62,10 @@ MyManagementSystem-Backend/
 │   ├── mms-base-bc-feign-api/      # Feign接口
 │   ├── mms-base-bc-server/         # 服务启动类
 │   └── mms-base-bc-service/        # 业务逻辑层
+├── mms-job-bc/                     # 作业/定时任务服务
+│   ├── mms-job-bc-common/
+│   ├── mms-job-bc-core/
+│   └── mms-job-bc-server/
 └── mms-usercenter-bc/              # 用户中心服务
     ├── mms-usercenter-bc-common/   # 公共组件（实体、DTO、VO等）
     ├── mms-usercenter-bc-controller/ # 控制器层
@@ -97,6 +104,12 @@ MyManagementSystem-Backend/
   - 系统配置管理
   - 基础业务数据维护
 
+### 作业服务 (mms-job-bc)
+- **端口**: 5093
+- **服务名**: job
+- **功能**:
+  - 定时任务/作业调度相关能力
+
 ## 环境要求
 
 - **JDK**: 17+
@@ -129,17 +142,21 @@ mysql -u root -p < mysql/init_mms_dev_core.sql
 确保Nacos服务已启动，并在Nacos控制台配置以下配置文件：
 
 - `public-DEV.yaml`    - 公共配置（Spring 公共配置、Swagger 等）
+- `threadpool-DEV.yaml`- 线程池配置（各服务通用）
 - `mysql-DEV.yaml`     - MySQL 数据源通用配置（用户名/密码为占位符）
 - `redis-DEV.yaml`     - Redis 通用配置（地址/密码为占位符）
 - `jwt-DEV.yaml`       - JWT 配置（密钥为占位符）
 - `gateway-DEV.yaml`   - 网关服务配置（端口、超时、网关私钥为占位符）
 - `usercenter-DEV.yaml`- 用户中心服务配置（端口、数据源 URL 为占位符）
 - `base-DEV.yaml`      - 基础数据服务配置（端口、数据源 URL 为占位符）
+- `job-DEV.yaml`       - 作业服务配置（端口、数据源 URL 为占位符）
 - `secret-DEV.yaml`    - 网关公钥等安全相关通用配置（公钥为占位符）
 - `log-DEV.yaml`       - 日志级别与输出路径配置
 - `whitelist-DEV.yaml` - 网关与各服务的接口白名单配置
 
 > 说明：仓库中的上述 `*-DEV.yaml` 文件仅作为 **示例模板**，所有数据库账号、密码、JWT 密钥、RSA 密钥等敏感信息均已使用 `YOUR_***` 占位符处理，请在 **Nacos 控制台中创建同名配置并填入真实值**，不要将真实敏感信息写回到代码仓库。
+
+> 补充：部分服务的 `application.yml` 里可能存在示例的 `spring.cloud.nacos.server-addr/username/password`（用于本地开发演示）。实际使用时请替换为你自己的环境配置，或通过 JVM 参数/环境变量覆盖，避免把真实账号密码提交到仓库。
 
 **Nacos连接信息**（请根据自己环境填写）示例：
 - 地址: `http://YOUR_NACOS_HOST:8848`
@@ -156,7 +173,7 @@ mvn clean install
 
 **启动顺序**：
 1. 先启动网关服务
-2. 再启动业务服务（usercenter、base）
+2. 再启动业务服务（usercenter、base、job）
 
 **启动方式**：
 
@@ -165,6 +182,7 @@ mvn clean install
 cd mms-gateway-bc && mvn spring-boot:run
 cd mms-usercenter-bc/mms-usercenter-bc-server && mvn spring-boot:run
 cd mms-base-bc/mms-base-bc-server && mvn spring-boot:run
+cd mms-job-bc/mms-job-bc-server && mvn spring-boot:run
 
 # 方式2: 使用IDE启动
 # 分别运行各服务的启动类
@@ -176,6 +194,7 @@ cd mms-base-bc/mms-base-bc-server && mvn spring-boot:run
 - **API文档** (通过网关访问):
   - 用户中心文档: http://localhost:5092/usercenter/doc.html
   - 基础数据文档: http://localhost:5092/base/doc.html
+  - 作业服务文档: http://localhost:5092/job/doc.html
 
 ## 开发说明
 
