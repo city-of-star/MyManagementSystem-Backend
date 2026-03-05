@@ -43,7 +43,6 @@ public class SecurityUser implements UserDetails, Serializable {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        // Spring Security 约定角色加前缀，权限原样放行
         Set<GrantedAuthority> authorities = new HashSet<>();
         if (roles != null) {
             authorities.addAll(roles.stream()

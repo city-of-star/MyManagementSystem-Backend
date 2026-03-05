@@ -4,11 +4,15 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.mms.common.cache.constants.CacheTtl;
 import com.mms.common.cache.utils.RedisUtils;
+import com.mms.common.core.enums.error.ErrorCode;
+import com.mms.common.core.exceptions.BusinessException;
 import com.mms.usercenter.common.security.constants.UserAuthorityCacheKeyConstants;
 import com.mms.common.core.exceptions.ServerException;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.auth.entity.UserRoleEntity;
 import com.mms.usercenter.common.auth.entity.RolePermissionEntity;
+import com.mms.usercenter.common.security.dto.SecurityUserDto;
+import com.mms.usercenter.common.security.entity.SecurityUser;
 import com.mms.usercenter.common.security.vo.UserAuthorityVo;
 import com.mms.usercenter.service.auth.mapper.PermissionMapper;
 import com.mms.usercenter.service.auth.mapper.RoleMapper;
@@ -57,6 +61,62 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
     private RolePermissionMapper rolePermissionMapper;
 
     /**
+     * 根据用户名查询用户认证信息（带缓存）
+     * @param username 用户名
+     * @return 用户认证信息
+     */
+    @Override
+    public SecurityUser getSecurityUserByUsername(String username) {
+        try {
+            // 从缓存中尝试获取 SecurityUser
+            String cacheKey = UserAuthorityCacheKeyConstants.USER_AUTH_INFO_CACHE_PREFIX + username;
+            SecurityUserDto cachedUser = RedisUtils.get(cacheKey, SecurityUserDto.class);
+            if (cachedUser != null) {
+                SecurityUser securityUser = new SecurityUser();
+                securityUser.setUserId(cachedUser.getUserId());
+                securityUser.setUsername(cachedUser.getUsername());
+                securityUser.setPassword(cachedUser.getPassword());
+                securityUser.setRealName(cachedUser.getRealName());
+                securityUser.setStatus(cachedUser.getStatus());
+                securityUser.setLocked(cachedUser.getLocked());
+                securityUser.setLastLoginIp(cachedUser.getLastLoginIp());
+                securityUser.setLastLoginTime(cachedUser.getLastLoginTime());
+                return securityUser;
+            }
+            // 缓存未命中，查询数据库
+            UserEntity user = userMapper.selectByUsername(username);
+            if (user == null) {
+                throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+            }
+            // 构建 SecurityUser
+            SecurityUser securityUser = new SecurityUser();
+            securityUser.setUserId(user.getId());
+            securityUser.setUsername(user.getUsername());
+            securityUser.setPassword(user.getPassword());
+            securityUser.setRealName(user.getRealName());
+            securityUser.setStatus(user.getStatus());
+            securityUser.setLocked(user.getLocked());
+            securityUser.setLastLoginIp(user.getLastLoginIp());
+            securityUser.setLastLoginTime(user.getLastLoginTime());
+            // 构建 SecurityUserDto
+            SecurityUserDto securityUserDto = new SecurityUserDto();
+            securityUserDto.setUserId(user.getId());
+            securityUserDto.setUsername(user.getUsername());
+            securityUserDto.setPassword(user.getPassword());
+            securityUserDto.setRealName(user.getRealName());
+            securityUserDto.setStatus(user.getStatus());
+            securityUserDto.setLocked(user.getLocked());
+            securityUserDto.setLastLoginIp(user.getLastLoginIp());
+            securityUserDto.setLastLoginTime(user.getLastLoginTime());
+            // 写入缓存
+            RedisUtils.set(cacheKey, securityUserDto, CacheTtl.LONG_SECONDS);
+            return securityUser;
+        } catch (Exception e) {
+            throw new ServerException("获取用户认证信息失败", e);
+        }
+    }
+
+    /**
      * 获取用户权限信息（包含角色和权限）
      *
      * @param username 用户名
@@ -73,6 +133,16 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
         } catch (Exception e) {
             throw new ServerException("获取用户权限信息失败", e);
         }
+    }
+
+    /**
+     * 清除指定用户的认证信息缓存
+     * @param username 用户名
+     */
+    @Override
+    public void clearSecurityUserByUsername(String username) {
+        String cacheKey = UserAuthorityCacheKeyConstants.USER_AUTH_INFO_CACHE_PREFIX + username;
+        RedisUtils.delete(cacheKey);
     }
 
     /**

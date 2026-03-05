@@ -2,10 +2,9 @@ package com.mms.usercenter.service.security.service.impl;
 
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
-import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.security.entity.SecurityUser;
-import com.mms.usercenter.service.auth.mapper.UserMapper;
 import com.mms.usercenter.common.security.vo.UserAuthorityVo;
+import com.mms.usercenter.service.auth.mapper.UserMapper;
 import com.mms.usercenter.service.security.service.UserAuthorityService;
 import jakarta.annotation.Resource;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,13 +12,13 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 /**
  * 实现功能【用户详情服务实现类】
  * <p>
  * 实现 Spring Security 的 UserDetailsService 接口
- * 根据用户名从数据库加载用户信息
- * 加载用户角色和权限
+ * 根据用户名从数据库加载用户信息，并缓存用户基本信息和权限数据
  * 返回 SecurityUser 对象
  * <p>
  *
@@ -38,26 +37,15 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     @Override
     @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        UserEntity user = userMapper.selectByUsername(username);
-        if (user == null) {
-            throw new BusinessException(ErrorCode.USER_NOT_FOUND, "用户不存在");
+        if (!StringUtils.hasText(username)) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "用户名不能为空");
         }
-
-        SecurityUser securityUser = new SecurityUser();
-        securityUser.setUserId(user.getId());
-        securityUser.setUsername(user.getUsername());
-        securityUser.setPassword(user.getPassword());
-        securityUser.setRealName(user.getRealName());
-        securityUser.setStatus(user.getStatus());
-        securityUser.setLocked(user.getLocked());
-        securityUser.setLastLoginIp(user.getLastLoginIp());
-        securityUser.setLastLoginTime(user.getLastLoginTime());
-
-        // 角色、权限查询（缓存）
-        UserAuthorityVo authorities = userAuthorityService.getUserAuthorities(user.getUsername());
+        // 用户信息查询（带缓存）
+        SecurityUser securityUser = userAuthorityService.getSecurityUserByUsername(username);
+        // 角色、权限查询（带缓存）
+        UserAuthorityVo authorities = userAuthorityService.getUserAuthorities(username);
         securityUser.setRoles(authorities.getRoles());
         securityUser.setPermissions(authorities.getPermissions());
-
         return securityUser;
     }
 }

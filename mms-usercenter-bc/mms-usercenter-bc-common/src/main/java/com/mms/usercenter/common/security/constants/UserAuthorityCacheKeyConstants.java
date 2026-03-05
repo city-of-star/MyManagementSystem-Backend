@@ -19,6 +19,11 @@ public final class UserAuthorityCacheKeyConstants {
     public static final String USERCENTER_AUTH = CacheKeyPrefix.USERCENTER + "auth:";
 
     /**
+     * 用户信息（只包含认证相关）缓存前缀
+     */
+    public static final String USER_AUTH_INFO_CACHE_PREFIX = CacheKeyPrefix.USERCENTER + "userAuthInfo:";
+
+    /**
      * 用户角色集合缓存前缀
      */
     public static final String USER_ROLE_PREFIX = USERCENTER_AUTH + "roles:";

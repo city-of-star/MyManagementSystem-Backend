@@ -297,6 +297,8 @@ public class UserServiceImpl implements UserService {
             vo.setPrimaryPost(postService.getPrimaryPostByUserId(dto.getId()));
             vo.setDepts(deptService.getDeptListByUserId(dto.getId()));
             vo.setPosts(postService.getPostListByUserId(dto.getId()));
+            // 删除用户认证信息缓存
+            userAuthorityService.clearSecurityUserByUsername(user.getUsername());
             log.info("更新用户信息成功，userId：{}", user.getId());
             return vo;
         } catch (BusinessException e) {
@@ -319,19 +321,18 @@ public class UserServiceImpl implements UserService {
             if (user == null) {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
             }
-
             // 删除部门关联
             LambdaQueryWrapper<UserDeptEntity> deptWrapper = new LambdaQueryWrapper<>();
             deptWrapper.eq(UserDeptEntity::getUserId, userId);
             userDeptMapper.delete(deptWrapper);
-
             // 删除岗位关联
             LambdaQueryWrapper<UserPostEntity> postWrapper = new LambdaQueryWrapper<>();
             postWrapper.eq(UserPostEntity::getUserId, userId);
             userPostMapper.delete(postWrapper);
-
             // 逻辑删除
             userMapper.deleteById(userId);
+            // 删除用户认证信息缓存
+            userAuthorityService.clearSecurityUserByUsername(user.getUsername());
             log.info("删除用户成功，userId：{}", userId);
         } catch (BusinessException e) {
             throw e;
@@ -376,6 +377,8 @@ public class UserServiceImpl implements UserService {
             }
             user.setStatus(dto.getStatus());
             userMapper.updateById(user);
+            // 删除用户认证信息缓存
+            userAuthorityService.clearSecurityUserByUsername(user.getUsername());
             log.info("切换用户状态成功，userId：{}，status：{}", dto.getUserId(), dto.getStatus());
         } catch (BusinessException e) {
             throw e;
@@ -411,6 +414,8 @@ public class UserServiceImpl implements UserService {
                 user.setLockReason(null);
             }
             userMapper.updateById(user);
+            // 删除用户认证信息缓存
+            userAuthorityService.clearSecurityUserByUsername(user.getUsername());
             log.info("锁定/解锁用户成功，userId：{}，locked：{}", dto.getUserId(), dto.getLocked());
         } catch (BusinessException e) {
             throw e;
@@ -434,6 +439,8 @@ public class UserServiceImpl implements UserService {
             user.setPassword(hashedPassword);
             user.setPasswordUpdateTime(LocalDateTime.now());
             userMapper.updateById(user);
+            // 删除用户认证信息缓存
+            userAuthorityService.clearSecurityUserByUsername(user.getUsername());
             log.info("重置用户密码成功，userId：{}", dto.getUserId());
         } catch (BusinessException e) {
             throw e;
@@ -464,6 +471,8 @@ public class UserServiceImpl implements UserService {
             user.setPassword(hashedPassword);
             user.setPasswordUpdateTime(LocalDateTime.now());
             userMapper.updateById(user);
+            // 删除用户认证信息缓存
+            userAuthorityService.clearSecurityUserByUsername(user.getUsername());
             log.info("修改用户密码成功，userId：{}", currentUserId);
         } catch (BusinessException e) {
             throw e;

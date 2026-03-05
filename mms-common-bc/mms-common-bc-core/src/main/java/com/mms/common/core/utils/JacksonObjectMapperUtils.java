@@ -3,6 +3,8 @@ package com.mms.common.core.utils;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.databind.jsontype.impl.LaissezFaireSubTypeValidator;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
@@ -74,15 +76,19 @@ public final class JacksonObjectMapperUtils {
     }
 
     /**
-     * 为 Redis 场景创建 ObjectMapper，目前与通用配置保持一致。
-     * <p>
-     * 如果后续对 Redis 有特殊需求（比如不同的时区策略、额外的模块），
-     * 可以在这里单独扩展，而不影响其它场景。
+     * 为 Redis 场景创建 ObjectMapper
      *
      * @return 用于 Redis 序列化的 ObjectMapper
      */
     public static ObjectMapper createRedisObjectMapper() {
-        return createCommonObjectMapper();
+        ObjectMapper objectMapper = createCommonObjectMapper();
+        // Redis 场景需要保留类型信息，否则反序列化时可能只得到 LinkedHashMap，导致强转异常
+        objectMapper.activateDefaultTyping(
+                LaissezFaireSubTypeValidator.instance,
+                ObjectMapper.DefaultTyping.NON_FINAL,
+                JsonTypeInfo.As.PROPERTY
+        );
+        return objectMapper;
     }
 
     private JacksonObjectMapperUtils() {

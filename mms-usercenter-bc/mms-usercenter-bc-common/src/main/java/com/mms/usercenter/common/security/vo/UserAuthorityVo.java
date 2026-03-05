@@ -8,7 +8,13 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * 用户角色/权限返回对象
+ * 实现功能【用户角色/权限返回对象】
+ * <p>
+ *
+ * </p>
+ *
+ * @author li.hongyu
+ * @date 2025-12-23 20:31:11
  */
 @Data
 public class UserAuthorityVo implements Serializable {

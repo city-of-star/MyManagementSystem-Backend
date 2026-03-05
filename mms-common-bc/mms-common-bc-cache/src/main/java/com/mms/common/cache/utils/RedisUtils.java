@@ -77,7 +77,6 @@ public class RedisUtils {
      * @param <T>   泛型
      * @return 值
      */
-    @SuppressWarnings("unchecked")
     public static <T> T get(String key, Class<T> clazz) {
         if (!StringUtils.hasText(key)) {
             return null;
@@ -86,7 +85,11 @@ public class RedisUtils {
         if (value == null) {
             return null;
         }
-        return (T) value;
+        // Redis 反序列化可能得到 LinkedHashMap（未携带类型信息时）
+        if (clazz.isInstance(value)) {
+            return clazz.cast(value);
+        }
+        return OBJECT_MAPPER.convertValue(value, clazz);
     }
 
     /**
