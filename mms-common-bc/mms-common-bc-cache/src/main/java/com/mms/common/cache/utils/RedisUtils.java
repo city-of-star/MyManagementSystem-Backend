@@ -2,6 +2,7 @@ package com.mms.common.cache.utils;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mms.common.core.utils.JacksonObjectMapperUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.util.StringUtils;
 
@@ -20,7 +21,10 @@ public class RedisUtils {
 
     private static RedisTemplate<String, Object> redisTemplate;
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    /**
+     * 专用于 Redis 序列化的 ObjectMapper，支持 Java 8 时间类型
+     */
+    private static final ObjectMapper OBJECT_MAPPER = JacksonObjectMapperUtils.createRedisObjectMapper();
 
     public static void setRedisTemplate(RedisTemplate<String, Object> redisTemplate) {
         RedisUtils.redisTemplate = redisTemplate;
