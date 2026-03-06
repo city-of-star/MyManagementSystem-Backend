@@ -1,6 +1,6 @@
 package com.mms.usercenter.service.security.service;
 
-import com.mms.usercenter.common.security.entity.SecurityUser;
+import com.mms.usercenter.common.security.dto.SecurityUserDto;
 import com.mms.usercenter.common.security.vo.UserAuthorityVo;
 
 /**
@@ -22,7 +22,7 @@ public interface UserAuthorityService {
      * @param username 用户名
      * @return 用户认证信息
      */
-    SecurityUser getSecurityUserByUsername(String username);
+    SecurityUserDto getSecurityUserDtoByUsername(String username);
 
     /**
      * 根据用户名查询角色与权限（带缓存）

@@ -2,6 +2,7 @@ package com.mms.usercenter.service.security.service.impl;
 
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
+import com.mms.usercenter.common.security.dto.SecurityUserDto;
 import com.mms.usercenter.common.security.entity.SecurityUser;
 import com.mms.usercenter.common.security.vo.UserAuthorityVo;
 import com.mms.usercenter.service.auth.mapper.UserMapper;
@@ -40,9 +41,18 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         if (!StringUtils.hasText(username)) {
             throw new BusinessException(ErrorCode.PARAM_INVALID, "用户名不能为空");
         }
-        // 用户信息查询（带缓存）
-        SecurityUser securityUser = userAuthorityService.getSecurityUserByUsername(username);
-        // 角色、权限查询（带缓存）
+        SecurityUser securityUser = new SecurityUser();
+        // 用户认证信息查询（带缓存）
+        SecurityUserDto securityUserDto = userAuthorityService.getSecurityUserDtoByUsername(username);
+        securityUser.setUserId(securityUserDto.getUserId());
+        securityUser.setUsername(securityUserDto.getUsername());
+        securityUser.setPassword(securityUserDto.getPassword());
+        securityUser.setRealName(securityUserDto.getRealName());
+        securityUser.setStatus(securityUserDto.getStatus());
+        securityUser.setLocked(securityUserDto.getLocked());
+        securityUser.setLastLoginIp(securityUserDto.getLastLoginIp());
+        securityUser.setLastLoginTime(securityUserDto.getLastLoginTime());
+        // 用户角色、权限查询（带缓存）
         UserAuthorityVo authorities = userAuthorityService.getUserAuthorities(username);
         securityUser.setRoles(authorities.getRoles());
         securityUser.setPermissions(authorities.getPermissions());

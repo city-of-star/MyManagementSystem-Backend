@@ -7,9 +7,9 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 
 /**
- * 实现功能【】
+ * 实现功能【用户认证信息缓存】
  * <p>
- *
+ * 因为直接缓存SecurityUser类型有问题，所以创建了这个纯Dto类来缓存
  * <p>
  *
  * @author li.hongyu
