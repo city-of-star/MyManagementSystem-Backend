@@ -2,6 +2,9 @@ package com.mms.base.service.system.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.mms.common.cache.constants.CacheTtl;
+import com.mms.common.cache.utils.RedisUtils;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
@@ -102,6 +105,11 @@ public class DictDataServiceImpl implements DictDataService {
             if (!StringUtils.hasText(dictTypeCode)) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "字典类型编码不能为空");
             }
+            // 查询缓存
+            List<DictDataVo> res = RedisUtils.get("mms:cache:base:dict:" + dictTypeCode, new TypeReference<List<DictDataVo>>() {});
+            if (!CollectionUtils.isEmpty(res)) {
+                return res;
+            }
             // 先查询字典类型
             LambdaQueryWrapper<DictTypeEntity> typeWrapper = new LambdaQueryWrapper<>();
             typeWrapper.eq(DictTypeEntity::getDictTypeCode, dictTypeCode)
@@ -116,7 +124,10 @@ public class DictDataServiceImpl implements DictDataService {
                     .eq(DictDataEntity::getStatus, 1)
                     .orderByAsc(DictDataEntity::getDictSort);
             List<DictDataEntity> list = dictDataMapper.selectList(wrapper);
-            return list.stream().map(this::convertToVo).collect(Collectors.toList());
+            List<DictDataVo> list1 = list.stream().map(this::convertToVo).collect(Collectors.toList());
+            // 设置缓存
+            RedisUtils.set("mms:cache:base:dict:" + dictTypeCode, list1, CacheTtl.LONG_SECONDS);
+            return list1;
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
