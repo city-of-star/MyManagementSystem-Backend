@@ -33,7 +33,6 @@ public final class JacksonObjectMapperUtils {
 
     /**
      * 创建统一配置的 JavaTimeModule
-     * <p>
      * - LocalDateTime：yyyy-MM-dd HH:mm:ss
      * - LocalDate：yyyy-MM-dd
      * - LocalTime：HH:mm:ss
@@ -53,8 +52,7 @@ public final class JacksonObjectMapperUtils {
     }
 
     /**
-     * 创建一个“通用”的 ObjectMapper 配置：
-     * <p>
+     * 创建一个通用的 ObjectMapper 配置：
      * - 支持 Java 8 时间类型（使用 {@link #createJavaTimeModule()}）
      * - 关闭写时间戳（使用可读字符串）
      * - 统一旧版 java.util.Date 格式
@@ -84,9 +82,9 @@ public final class JacksonObjectMapperUtils {
         ObjectMapper objectMapper = createCommonObjectMapper();
         // Redis 场景需要保留类型信息，否则反序列化时可能只得到 LinkedHashMap，导致强转异常
         objectMapper.activateDefaultTyping(
-                LaissezFaireSubTypeValidator.instance,
-                ObjectMapper.DefaultTyping.NON_FINAL,
-                JsonTypeInfo.As.PROPERTY
+                LaissezFaireSubTypeValidator.instance, // 子类型校验器：这里使用“放行式”校验器，几乎不过滤子类型
+                ObjectMapper.DefaultTyping.NON_FINAL,  // 默认启用多态的范围：对所有非 final 类型（如自定义实体类、集合等）写入类型信息
+                JsonTypeInfo.As.PROPERTY               // 类型信息写入方式：作为 JSON 的一个字段（例如 @class）存储在对象属性中
         );
         return objectMapper;
     }

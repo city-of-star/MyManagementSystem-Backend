@@ -85,10 +85,10 @@ public class RedisUtils {
         if (value == null) {
             return null;
         }
-        // Redis 反序列化可能得到 LinkedHashMap（未携带类型信息时）
         if (clazz.isInstance(value)) {
             return clazz.cast(value);
         }
+        // 兜底：Redis 反序列化可能得到 LinkedHashMap（未携带类型信息时）
         return OBJECT_MAPPER.convertValue(value, clazz);
     }
 
