@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,7 +24,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 /**
  * 实现功能【附件服务实现类】
@@ -64,7 +64,7 @@ public class AttachmentServiceImpl implements AttachmentService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "附件ID不能为空");
             }
             AttachmentEntity attachment = attachmentMapper.selectById(attachmentId);
-            if (attachment == null || Objects.equals(attachment.getDeleted(), 1)) {
+            if (attachment == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "附件不存在");
             }
             return convertToVo(attachment);
@@ -94,7 +94,6 @@ public class AttachmentServiceImpl implements AttachmentService {
             entity.setBusinessId(dto.getBusinessId());
             entity.setStatus(dto.getStatus() == null ? 1 : dto.getStatus());
             entity.setRemark(dto.getRemark());
-            entity.setDeleted(0);
             attachmentMapper.insert(entity);
             return convertToVo(entity);
         } catch (BusinessException e) {
@@ -111,7 +110,7 @@ public class AttachmentServiceImpl implements AttachmentService {
         try {
             log.info("更新附件信息，参数：{}", dto);
             AttachmentEntity attachment = attachmentMapper.selectById(dto.getId());
-            if (attachment == null || Objects.equals(attachment.getDeleted(), 1)) {
+            if (attachment == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "附件不存在");
             }
             if (StringUtils.hasText(dto.getBusinessType())) {
@@ -142,7 +141,7 @@ public class AttachmentServiceImpl implements AttachmentService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "附件ID不能为空");
             }
             AttachmentEntity attachment = attachmentMapper.selectById(attachmentId);
-            if (attachment == null || Objects.equals(attachment.getDeleted(), 1)) {
+            if (attachment == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "附件不存在");
             }
             attachmentMapper.deleteById(attachmentId);
@@ -163,7 +162,7 @@ public class AttachmentServiceImpl implements AttachmentService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "附件ID不能为空");
             }
             AttachmentEntity attachment = attachmentMapper.selectById(attachmentId);
-            if (attachment == null || Objects.equals(attachment.getDeleted(), 1)) {
+            if (attachment == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "附件不存在或已删除");
             }
             // 组装相对文件路径
@@ -185,7 +184,7 @@ public class AttachmentServiceImpl implements AttachmentService {
     public void batchDeleteAttachment(AttachmentBatchDeleteDto dto) {
         try {
             log.info("批量删除附件，ids：{}", dto.getIds());
-            if (dto.getIds() == null || dto.getIds().isEmpty()) {
+            if (CollectionUtils.isEmpty(dto.getIds())) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "附件ID列表不能为空");
             }
             for (Long id : dto.getIds()) {
@@ -205,11 +204,8 @@ public class AttachmentServiceImpl implements AttachmentService {
         try {
             log.info("切换附件状态，id：{}，status：{}", dto.getId(), dto.getStatus());
             AttachmentEntity attachment = attachmentMapper.selectById(dto.getId());
-            if (attachment == null || Objects.equals(attachment.getDeleted(), 1)) {
+            if (attachment == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "附件不存在");
-            }
-            if (dto.getStatus() != 0 && dto.getStatus() != 1) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "状态值只能是0或1");
             }
             attachment.setStatus(dto.getStatus());
             attachment.setUpdateTime(LocalDateTime.now());
@@ -246,7 +242,6 @@ public class AttachmentServiceImpl implements AttachmentService {
             entity.setBusinessId(businessId);
             entity.setStatus(1);
             entity.setRemark(remark);
-            entity.setDeleted(0);
             attachmentMapper.insert(entity);
             // 转换为 VO 返回
             return convertToVo(entity);

@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import org.hibernate.validator.constraints.Range;
 
 /**
  * 实现功能【更新数据字典类型请求 DTO】
@@ -22,14 +23,11 @@ public class DictTypeUpdateDto {
     @Schema(description = "字典类型ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Long id;
 
-    @Size(max = 64, message = "字典类型编码长度不能超过64个字符")
-    @Schema(description = "字典类型编码（唯一标识）", example = "user_status")
-    private String dictTypeCode;
-
     @Size(max = 128, message = "字典类型名称长度不能超过128个字符")
     @Schema(description = "字典类型名称", example = "用户状态")
     private String dictTypeName;
 
+    @Range(min = 0, max = 1, message = "状态值只能是0或1")
     @Schema(description = "状态：0-禁用，1-启用", example = "1")
     private Integer status;
 

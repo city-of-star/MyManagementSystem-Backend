@@ -17,11 +17,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -63,7 +63,7 @@ public class DictDataServiceImpl implements DictDataService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "字典数据ID不能为空");
             }
             DictDataEntity dictData = dictDataMapper.selectById(dictDataId);
-            if (dictData == null || Objects.equals(dictData.getDeleted(), 1)) {
+            if (dictData == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "数据字典数据不存在");
             }
             return convertToVo(dictData);
@@ -84,7 +84,6 @@ public class DictDataServiceImpl implements DictDataService {
             }
             LambdaQueryWrapper<DictDataEntity> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(DictDataEntity::getDictTypeId, dictTypeId)
-                    .eq(DictDataEntity::getDeleted, 0)
                     .orderByAsc(DictDataEntity::getDictSort);
             List<DictDataEntity> list = dictDataMapper.selectList(wrapper);
             return list.stream().map(this::convertToVo).collect(Collectors.toList());
@@ -106,8 +105,7 @@ public class DictDataServiceImpl implements DictDataService {
             // 先查询字典类型
             LambdaQueryWrapper<DictTypeEntity> typeWrapper = new LambdaQueryWrapper<>();
             typeWrapper.eq(DictTypeEntity::getDictTypeCode, dictTypeCode)
-                    .eq(DictTypeEntity::getStatus, 1)
-                    .eq(DictTypeEntity::getDeleted, 0);
+                    .eq(DictTypeEntity::getStatus, 1);
             DictTypeEntity dictType = dictTypeMapper.selectOne(typeWrapper);
             if (dictType == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "数据字典类型不存在或已禁用");
@@ -116,7 +114,6 @@ public class DictDataServiceImpl implements DictDataService {
             LambdaQueryWrapper<DictDataEntity> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(DictDataEntity::getDictTypeId, dictType.getId())
                     .eq(DictDataEntity::getStatus, 1)
-                    .eq(DictDataEntity::getDeleted, 0)
                     .orderByAsc(DictDataEntity::getDictSort);
             List<DictDataEntity> list = dictDataMapper.selectList(wrapper);
             return list.stream().map(this::convertToVo).collect(Collectors.toList());
@@ -135,14 +132,13 @@ public class DictDataServiceImpl implements DictDataService {
             log.info("创建数据字典数据，参数：{}", dto);
             // 检查字典类型是否存在
             DictTypeEntity dictType = dictTypeMapper.selectById(dto.getDictTypeId());
-            if (dictType == null || Objects.equals(dictType.getDeleted(), 1)) {
+            if (dictType == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "字典类型不存在");
             }
             // 检查同一字典类型下字典值是否重复
             LambdaQueryWrapper<DictDataEntity> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(DictDataEntity::getDictTypeId, dto.getDictTypeId())
-                    .eq(DictDataEntity::getDictValue, dto.getDictValue())
-                    .eq(DictDataEntity::getDeleted, 0);
+                    .eq(DictDataEntity::getDictValue, dto.getDictValue());
             if (dictDataMapper.selectCount(wrapper) > 0) {
                 throw new BusinessException(ErrorCode.UNIQUE_CONSTRAINT_ERROR, "该字典类型下字典值已存在");
             }
@@ -154,7 +150,6 @@ public class DictDataServiceImpl implements DictDataService {
             entity.setIsDefault(dto.getIsDefault() == null ? 0 : dto.getIsDefault());
             entity.setStatus(dto.getStatus() == null ? 1 : dto.getStatus());
             entity.setRemark(dto.getRemark());
-            entity.setDeleted(0);
             dictDataMapper.insert(entity);
             return convertToVo(entity);
         } catch (BusinessException e) {
@@ -171,16 +166,8 @@ public class DictDataServiceImpl implements DictDataService {
         try {
             log.info("更新数据字典数据，参数：{}", dto);
             DictDataEntity dictData = dictDataMapper.selectById(dto.getId());
-            if (dictData == null || Objects.equals(dictData.getDeleted(), 1)) {
+            if (dictData == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "数据字典数据不存在");
-            }
-            if (dto.getDictTypeId() != null && !dto.getDictTypeId().equals(dictData.getDictTypeId())) {
-                // 检查新的字典类型是否存在
-                DictTypeEntity dictType = dictTypeMapper.selectById(dto.getDictTypeId());
-                if (dictType == null || Objects.equals(dictType.getDeleted(), 1)) {
-                    throw new BusinessException(ErrorCode.PARAM_INVALID, "字典类型不存在");
-                }
-                dictData.setDictTypeId(dto.getDictTypeId());
             }
             if (StringUtils.hasText(dto.getDictLabel())) {
                 dictData.setDictLabel(dto.getDictLabel());
@@ -190,8 +177,7 @@ public class DictDataServiceImpl implements DictDataService {
                 LambdaQueryWrapper<DictDataEntity> wrapper = new LambdaQueryWrapper<>();
                 wrapper.eq(DictDataEntity::getDictTypeId, dictData.getDictTypeId())
                         .eq(DictDataEntity::getDictValue, dto.getDictValue())
-                        .ne(DictDataEntity::getId, dto.getId())
-                        .eq(DictDataEntity::getDeleted, 0);
+                        .ne(DictDataEntity::getId, dto.getId());
                 if (dictDataMapper.selectCount(wrapper) > 0) {
                     throw new BusinessException(ErrorCode.UNIQUE_CONSTRAINT_ERROR, "该字典类型下字典值已存在");
                 }
@@ -201,15 +187,9 @@ public class DictDataServiceImpl implements DictDataService {
                 dictData.setDictSort(dto.getDictSort());
             }
             if (dto.getIsDefault() != null) {
-                if (dto.getIsDefault() != 0 && dto.getIsDefault() != 1) {
-                    throw new BusinessException(ErrorCode.PARAM_INVALID, "是否默认值只能是0或1");
-                }
                 dictData.setIsDefault(dto.getIsDefault());
             }
             if (dto.getStatus() != null) {
-                if (dto.getStatus() != 0 && dto.getStatus() != 1) {
-                    throw new BusinessException(ErrorCode.PARAM_INVALID, "状态值只能是0或1");
-                }
                 dictData.setStatus(dto.getStatus());
             }
             if (StringUtils.hasText(dto.getRemark())) {
@@ -234,7 +214,7 @@ public class DictDataServiceImpl implements DictDataService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "字典数据ID不能为空");
             }
             DictDataEntity dictData = dictDataMapper.selectById(dictDataId);
-            if (dictData == null || Objects.equals(dictData.getDeleted(), 1)) {
+            if (dictData == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "数据字典数据不存在");
             }
             dictDataMapper.deleteById(dictDataId);
@@ -251,7 +231,7 @@ public class DictDataServiceImpl implements DictDataService {
     public void batchDeleteDictData(DictDataBatchDeleteDto dto) {
         try {
             log.info("批量删除数据字典数据，dictDataIds：{}", dto.getDictDataIds());
-            if (dto.getDictDataIds() == null || dto.getDictDataIds().isEmpty()) {
+            if (CollectionUtils.isEmpty(dto.getDictDataIds())) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "字典数据ID列表不能为空");
             }
             for (Long dictDataId : dto.getDictDataIds()) {
@@ -271,11 +251,8 @@ public class DictDataServiceImpl implements DictDataService {
         try {
             log.info("切换数据字典数据状态，dictDataId：{}，status：{}", dto.getDictDataId(), dto.getStatus());
             DictDataEntity dictData = dictDataMapper.selectById(dto.getDictDataId());
-            if (dictData == null || Objects.equals(dictData.getDeleted(), 1)) {
+            if (dictData == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "数据字典数据不存在");
-            }
-            if (dto.getStatus() != 0 && dto.getStatus() != 1) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "状态值只能是0或1");
             }
             dictData.setStatus(dto.getStatus());
             dictData.setUpdateTime(LocalDateTime.now());

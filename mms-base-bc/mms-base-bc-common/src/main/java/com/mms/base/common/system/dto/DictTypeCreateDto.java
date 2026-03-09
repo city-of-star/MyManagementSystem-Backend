@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import org.hibernate.validator.constraints.Range;
 
 /**
  * 实现功能【创建数据字典类型请求 DTO】
@@ -28,6 +29,7 @@ public class DictTypeCreateDto {
     @Schema(description = "字典类型名称", requiredMode = Schema.RequiredMode.REQUIRED, example = "用户状态")
     private String dictTypeName;
 
+    @Range(min = 0, max = 1, message = "状态值只能是0或1")
     @Schema(description = "状态：0-禁用，1-启用，默认为1", example = "1")
     private Integer status = 1;
 

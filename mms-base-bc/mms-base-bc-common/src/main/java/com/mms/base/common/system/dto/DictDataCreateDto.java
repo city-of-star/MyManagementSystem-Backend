@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import org.hibernate.validator.constraints.Range;
 
 /**
  * 实现功能【创建数据字典数据请求 DTO】
@@ -36,9 +37,11 @@ public class DictDataCreateDto {
     @Schema(description = "排序号，默认为0", example = "0")
     private Integer dictSort = 0;
 
+    @Range(min = 0, max = 1, message = "默认值只能是0或1")
     @Schema(description = "是否默认值：0-否，1-是，默认为0", example = "0")
     private Integer isDefault = 0;
 
+    @Range(min = 0, max = 1, message = "状态值只能是0或1")
     @Schema(description = "状态：0-禁用，1-启用，默认为1", example = "1")
     private Integer status = 1;
 

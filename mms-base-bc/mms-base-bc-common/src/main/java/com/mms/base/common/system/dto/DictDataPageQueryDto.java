@@ -2,6 +2,7 @@ package com.mms.base.common.system.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import org.hibernate.validator.constraints.Range;
 
 import java.time.LocalDateTime;
 
@@ -33,6 +34,7 @@ public class DictDataPageQueryDto {
     @Schema(description = "字典值（模糊查询）", example = "1")
     private String dictValue;
 
+    @Range(min = 0, max = 1, message = "状态值只能是0或1")
     @Schema(description = "状态：0-禁用，1-启用", example = "1")
     private Integer status;
 

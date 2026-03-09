@@ -17,11 +17,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -63,7 +63,7 @@ public class DictTypeServiceImpl implements DictTypeService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "字典类型ID不能为空");
             }
             DictTypeEntity dictType = dictTypeMapper.selectById(dictTypeId);
-            if (dictType == null || Objects.equals(dictType.getDeleted(), 1)) {
+            if (dictType == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "数据字典类型不存在");
             }
             return convertToVo(dictType);
@@ -83,8 +83,7 @@ public class DictTypeServiceImpl implements DictTypeService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "字典类型编码不能为空");
             }
             LambdaQueryWrapper<DictTypeEntity> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(DictTypeEntity::getDictTypeCode, dictTypeCode)
-                    .eq(DictTypeEntity::getDeleted, 0);
+            wrapper.eq(DictTypeEntity::getDictTypeCode, dictTypeCode);
             DictTypeEntity dictType = dictTypeMapper.selectOne(wrapper);
             if (dictType == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "数据字典类型不存在");
@@ -103,9 +102,7 @@ public class DictTypeServiceImpl implements DictTypeService {
         try {
             log.info("查询所有启用的数据字典类型列表");
             LambdaQueryWrapper<DictTypeEntity> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(DictTypeEntity::getStatus, 1)
-                    .eq(DictTypeEntity::getDeleted, 0)
-                    .orderByAsc(DictTypeEntity::getSortOrder);
+            wrapper.eq(DictTypeEntity::getStatus, 1);
             List<DictTypeEntity> list = dictTypeMapper.selectList(wrapper);
             return list.stream().map(this::convertToVo).collect(Collectors.toList());
         } catch (Exception e) {
@@ -128,7 +125,6 @@ public class DictTypeServiceImpl implements DictTypeService {
             entity.setStatus(dto.getStatus() == null ? 1 : dto.getStatus());
             entity.setSortOrder(dto.getSortOrder() == null ? 0 : dto.getSortOrder());
             entity.setRemark(dto.getRemark());
-            entity.setDeleted(0);
             dictTypeMapper.insert(entity);
             return convertToVo(entity);
         } catch (BusinessException e) {
@@ -145,22 +141,13 @@ public class DictTypeServiceImpl implements DictTypeService {
         try {
             log.info("更新数据字典类型，参数：{}", dto);
             DictTypeEntity dictType = dictTypeMapper.selectById(dto.getId());
-            if (dictType == null || Objects.equals(dictType.getDeleted(), 1)) {
+            if (dictType == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "数据字典类型不存在");
-            }
-            if (StringUtils.hasText(dto.getDictTypeCode()) && !dto.getDictTypeCode().equals(dictType.getDictTypeCode())) {
-                if (existsByDictTypeCode(dto.getDictTypeCode())) {
-                    throw new BusinessException(ErrorCode.UNIQUE_CONSTRAINT_ERROR, "字典类型编码已存在");
-                }
-                dictType.setDictTypeCode(dto.getDictTypeCode());
             }
             if (StringUtils.hasText(dto.getDictTypeName())) {
                 dictType.setDictTypeName(dto.getDictTypeName());
             }
             if (dto.getStatus() != null) {
-                if (dto.getStatus() != 0 && dto.getStatus() != 1) {
-                    throw new BusinessException(ErrorCode.PARAM_INVALID, "状态值只能是0或1");
-                }
                 dictType.setStatus(dto.getStatus());
             }
             if (dto.getSortOrder() != null) {
@@ -188,13 +175,12 @@ public class DictTypeServiceImpl implements DictTypeService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "字典类型ID不能为空");
             }
             DictTypeEntity dictType = dictTypeMapper.selectById(dictTypeId);
-            if (dictType == null || Objects.equals(dictType.getDeleted(), 1)) {
+            if (dictType == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "数据字典类型不存在");
             }
             // 检查是否存在关联的字典数据
             LambdaQueryWrapper<DictDataEntity> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(DictDataEntity::getDictTypeId, dictTypeId)
-                    .eq(DictDataEntity::getDeleted, 0);
+            wrapper.eq(DictDataEntity::getDictTypeId, dictTypeId);
             if (dictDataMapper.selectCount(wrapper) > 0) {
                 throw new BusinessException(ErrorCode.DATA_IN_USE, "存在关联的字典数据，无法删除");
             }
@@ -212,7 +198,7 @@ public class DictTypeServiceImpl implements DictTypeService {
     public void batchDeleteDictType(DictTypeBatchDeleteDto dto) {
         try {
             log.info("批量删除数据字典类型，dictTypeIds：{}", dto.getDictTypeIds());
-            if (dto.getDictTypeIds() == null || dto.getDictTypeIds().isEmpty()) {
+            if (CollectionUtils.isEmpty(dto.getDictTypeIds())) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "字典类型ID列表不能为空");
             }
             for (Long dictTypeId : dto.getDictTypeIds()) {
@@ -232,11 +218,8 @@ public class DictTypeServiceImpl implements DictTypeService {
         try {
             log.info("切换数据字典类型状态，dictTypeId：{}，status：{}", dto.getDictTypeId(), dto.getStatus());
             DictTypeEntity dictType = dictTypeMapper.selectById(dto.getDictTypeId());
-            if (dictType == null || Objects.equals(dictType.getDeleted(), 1)) {
+            if (dictType == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "数据字典类型不存在");
-            }
-            if (dto.getStatus() != 0 && dto.getStatus() != 1) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "状态值只能是0或1");
             }
             dictType.setStatus(dto.getStatus());
             dictType.setUpdateTime(LocalDateTime.now());
@@ -255,8 +238,7 @@ public class DictTypeServiceImpl implements DictTypeService {
             return false;
         }
         LambdaQueryWrapper<DictTypeEntity> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(DictTypeEntity::getDictTypeCode, dictTypeCode)
-                .eq(DictTypeEntity::getDeleted, 0);
+        wrapper.eq(DictTypeEntity::getDictTypeCode, dictTypeCode);
         return dictTypeMapper.selectCount(wrapper) > 0;
     }
 

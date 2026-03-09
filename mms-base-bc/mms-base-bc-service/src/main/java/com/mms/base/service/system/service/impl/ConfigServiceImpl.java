@@ -18,7 +18,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
-import java.util.Objects;
 
 /**
  * 实现功能【系统配置服务实现类】
@@ -56,7 +55,7 @@ public class ConfigServiceImpl implements ConfigService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "配置ID不能为空");
             }
             ConfigEntity config = configMapper.selectById(configId);
-            if (config == null || Objects.equals(config.getDeleted(), 1)) {
+            if (config == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "系统配置不存在");
             }
             return convertToVo(config);
@@ -76,8 +75,7 @@ public class ConfigServiceImpl implements ConfigService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "配置键不能为空");
             }
             LambdaQueryWrapper<ConfigEntity> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(ConfigEntity::getConfigKey, configKey)
-                    .eq(ConfigEntity::getDeleted, 0);
+            wrapper.eq(ConfigEntity::getConfigKey, configKey);
             ConfigEntity config = configMapper.selectOne(wrapper);
             if (config == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "系统配置不存在");
@@ -107,7 +105,6 @@ public class ConfigServiceImpl implements ConfigService {
             entity.setStatus(dto.getStatus() == null ? 1 : dto.getStatus());
             entity.setEditable(dto.getEditable() == null ? 1 : dto.getEditable());
             entity.setRemark(dto.getRemark());
-            entity.setDeleted(0);
             configMapper.insert(entity);
             return convertToVo(entity);
         } catch (BusinessException e) {
@@ -124,7 +121,7 @@ public class ConfigServiceImpl implements ConfigService {
         try {
             log.info("更新系统配置，参数：{}", dto);
             ConfigEntity config = configMapper.selectById(dto.getId());
-            if (config == null || Objects.equals(config.getDeleted(), 1)) {
+            if (config == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "系统配置不存在");
             }
             if (config.getEditable() != null && config.getEditable() == 0) {
@@ -140,15 +137,9 @@ public class ConfigServiceImpl implements ConfigService {
                 config.setConfigName(dto.getConfigName());
             }
             if (dto.getStatus() != null) {
-                if (dto.getStatus() != 0 && dto.getStatus() != 1) {
-                    throw new BusinessException(ErrorCode.PARAM_INVALID, "状态值只能是0或1");
-                }
                 config.setStatus(dto.getStatus());
             }
             if (dto.getEditable() != null) {
-                if (dto.getEditable() != 0 && dto.getEditable() != 1) {
-                    throw new BusinessException(ErrorCode.PARAM_INVALID, "可编辑值只能是0或1");
-                }
                 config.setEditable(dto.getEditable());
             }
             if (StringUtils.hasText(dto.getRemark())) {
@@ -173,7 +164,7 @@ public class ConfigServiceImpl implements ConfigService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "配置ID不能为空");
             }
             ConfigEntity config = configMapper.selectById(configId);
-            if (config == null || Objects.equals(config.getDeleted(), 1)) {
+            if (config == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "系统配置不存在");
             }
             if (config.getEditable() != null && config.getEditable() == 0) {
@@ -213,11 +204,8 @@ public class ConfigServiceImpl implements ConfigService {
         try {
             log.info("切换系统配置状态，configId：{}，status：{}", dto.getConfigId(), dto.getStatus());
             ConfigEntity config = configMapper.selectById(dto.getConfigId());
-            if (config == null || Objects.equals(config.getDeleted(), 1)) {
+            if (config == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "系统配置不存在");
-            }
-            if (dto.getStatus() != 0 && dto.getStatus() != 1) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "状态值只能是0或1");
             }
             config.setStatus(dto.getStatus());
             config.setUpdateTime(LocalDateTime.now());
@@ -236,8 +224,7 @@ public class ConfigServiceImpl implements ConfigService {
             return false;
         }
         LambdaQueryWrapper<ConfigEntity> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(ConfigEntity::getConfigKey, configKey)
-                .eq(ConfigEntity::getDeleted, 0);
+        wrapper.eq(ConfigEntity::getConfigKey, configKey);
         return configMapper.selectCount(wrapper) > 0;
     }
 

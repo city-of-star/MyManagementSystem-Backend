@@ -44,9 +44,8 @@ public class RedisManagerConfig {
                 .disableCachingNullValues(); // 不缓存null值
         // 按cacheName配置不同的TTL
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
-        // 用户中心相关缓存
-        cacheConfigurations.put(CacheKeyPrefix.USERCENTER + "userInfo", defaultConfig);
-        cacheConfigurations.put(CacheKeyPrefix.USERCENTER + "userMenuTree", defaultConfig);
+        // 基础数据服务相关缓存
+        cacheConfigurations.put(CacheKeyPrefix.BASE + "dict", defaultConfig);
         return RedisCacheManager.builder(Objects.requireNonNull(connectionFactory))
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigurations)

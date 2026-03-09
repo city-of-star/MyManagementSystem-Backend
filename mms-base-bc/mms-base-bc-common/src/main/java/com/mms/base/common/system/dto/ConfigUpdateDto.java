@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
+import org.hibernate.validator.constraints.Range;
 
 /**
  * 实现功能【更新系统配置请求 DTO】
@@ -33,9 +34,11 @@ public class ConfigUpdateDto {
     @Schema(description = "配置名称/描述", example = "系统名称")
     private String configName;
 
+    @Range(min = 0, max = 1, message = "状态值只能是0或1")
     @Schema(description = "状态：0-禁用，1-启用", example = "1")
     private Integer status;
 
+    @Range(min = 0, max = 1, message = "编辑值只能是0或1")
     @Schema(description = "是否可编辑：0-否（系统配置），1-是（用户配置）", example = "1")
     private Integer editable;
 

@@ -2,6 +2,7 @@ package com.mms.base.common.system.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
+import org.hibernate.validator.constraints.Range;
 
 import java.time.LocalDateTime;
 
@@ -33,9 +34,11 @@ public class ConfigPageQueryDto {
     @Schema(description = "配置类型", example = "string")
     private String configType;
 
+    @Range(min = 0, max = 1, message = "状态值只能是0或1")
     @Schema(description = "状态：0-禁用，1-启用", example = "1")
     private Integer status;
 
+    @Range(min = 0, max = 1, message = "编辑值值只能是0或1")
     @Schema(description = "是否可编辑：0-否（系统配置），1-是（用户配置）", example = "1")
     private Integer editable;
 
