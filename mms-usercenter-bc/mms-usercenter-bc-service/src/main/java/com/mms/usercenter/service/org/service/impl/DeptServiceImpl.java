@@ -6,7 +6,6 @@ import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
 import com.mms.usercenter.common.auth.dto.UserAssignDeptDto;
-import com.mms.usercenter.common.auth.entity.RoleEntity;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.org.dto.*;
 import com.mms.usercenter.common.org.entity.DeptEntity;
@@ -29,7 +28,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import java.util.stream.Collectors;
 
 /**
@@ -71,8 +69,7 @@ public class DeptServiceImpl implements DeptService {
         try {
             log.info("查询部门树，入参：{}", dto);
             LambdaQueryWrapper<DeptEntity> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(DeptEntity::getDeleted, 0)
-                    .orderByAsc(DeptEntity::getParentId)
+            wrapper.orderByAsc(DeptEntity::getParentId)
                     .orderByAsc(DeptEntity::getSortOrder)
                     .orderByDesc(DeptEntity::getCreateTime);
 
@@ -204,13 +201,12 @@ public class DeptServiceImpl implements DeptService {
             }
             // 查询部门
             DeptEntity dept = deptMapper.selectById(deptId);
-            if (dept == null || Objects.equals(dept.getDeleted(), 1)) {
+            if (dept == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "部门不存在或已被删除");
             }
             // 检查是否有子部门
             LambdaQueryWrapper<DeptEntity> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(DeptEntity::getParentId, deptId)
-                    .eq(DeptEntity::getDeleted, 0);
+            wrapper.eq(DeptEntity::getParentId, deptId);
             if (deptMapper.selectCount(wrapper) > 0) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "该部门下存在子部门，无法删除");
             }
@@ -236,7 +232,7 @@ public class DeptServiceImpl implements DeptService {
     public void batchDeleteDept(DeptBatchDeleteDto dto) {
         try {
             log.info("批量删除部门，deptIds：{}", dto.getDeptIds());
-            if (dto.getDeptIds() == null || dto.getDeptIds().isEmpty()) {
+            if (CollectionUtils.isEmpty(dto.getDeptIds())) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "部门ID列表不能为空");
             }
             // 批量逻辑删除
@@ -260,9 +256,6 @@ public class DeptServiceImpl implements DeptService {
             DeptEntity dept = deptMapper.selectById(dto.getDeptId());
             if (dept == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "部门不存在");
-            }
-            if (dto.getStatus() != 0 && dto.getStatus() != 1) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "状态值只能是0或1");
             }
             dept.setStatus(dto.getStatus());
             deptMapper.updateById(dept);

@@ -8,7 +8,6 @@ import com.mms.common.core.exceptions.ServerException;
 import com.mms.usercenter.common.auth.dto.UserAssignPostDto;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.org.dto.*;
-import com.mms.usercenter.common.org.entity.DeptEntity;
 import com.mms.usercenter.common.org.entity.PostEntity;
 import com.mms.usercenter.common.org.entity.UserPostEntity;
 import com.mms.usercenter.common.org.vo.PostVo;
@@ -104,7 +103,6 @@ public class PostServiceImpl implements PostService {
             if (post.getSortOrder() == null) {
                 post.setSortOrder(0);
             }
-            post.setDeleted(0);
             // 保存岗位
             postMapper.insert(post);
             log.info("创建岗位成功，postId：{}", post.getId());
@@ -161,7 +159,7 @@ public class PostServiceImpl implements PostService {
             }
             // 查询岗位
             PostEntity post = postMapper.selectById(postId);
-            if (post == null || Objects.equals(post.getDeleted(), 1)) {
+            if (post == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "岗位不存在或已被删除");
             }
             // 检查是否有用户绑定该岗位
@@ -186,7 +184,7 @@ public class PostServiceImpl implements PostService {
     public void batchDeletePost(PostBatchDeleteDto dto) {
         try {
             log.info("批量删除岗位，postIds：{}", dto.getPostIds());
-            if (dto.getPostIds() == null || dto.getPostIds().isEmpty()) {
+            if (CollectionUtils.isEmpty(dto.getPostIds())) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "岗位ID列表不能为空");
             }
             // 批量逻辑删除
@@ -210,9 +208,6 @@ public class PostServiceImpl implements PostService {
             PostEntity post = postMapper.selectById(dto.getPostId());
             if (post == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "岗位不存在");
-            }
-            if (dto.getStatus() != 0 && dto.getStatus() != 1) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "状态值只能是0或1");
             }
             post.setStatus(dto.getStatus());
             postMapper.updateById(post);
@@ -351,8 +346,7 @@ public class PostServiceImpl implements PostService {
             return false;
         }
         LambdaQueryWrapper<PostEntity> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(PostEntity::getPostCode, postCode)
-                .eq(PostEntity::getDeleted, 0);
+        wrapper.eq(PostEntity::getPostCode, postCode);
         return postMapper.selectCount(wrapper) > 0;
     }
 

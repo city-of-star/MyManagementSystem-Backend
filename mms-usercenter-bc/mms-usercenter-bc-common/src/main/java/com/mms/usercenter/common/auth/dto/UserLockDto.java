@@ -3,6 +3,7 @@ package com.mms.usercenter.common.auth.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import org.hibernate.validator.constraints.Range;
 
 /**
  * 实现功能【锁定/解锁用户请求 DTO】
@@ -22,6 +23,7 @@ public class UserLockDto {
     private Long userId;
 
     @NotNull(message = "锁定状态不能为空")
+    @Range(min = 0, max = 1, message = "锁定状态值只能是0或1")
     @Schema(description = "是否锁定：0-解锁，1-锁定", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Integer locked;
 

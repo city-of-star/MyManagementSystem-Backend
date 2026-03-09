@@ -169,7 +169,6 @@ public class UserServiceImpl implements UserService {
                 user.setStatus(1);
             }
             user.setLocked(0);
-            user.setDeleted(0);
             // 保存用户
             userMapper.insert(user);
             // 处理部门关联
@@ -219,7 +218,6 @@ public class UserServiceImpl implements UserService {
             if (StringUtils.hasText(dto.getEmail()) && !dto.getEmail().equals(user.getEmail())) {
                 LambdaQueryWrapper<UserEntity> emailWrapper = new LambdaQueryWrapper<>();
                 emailWrapper.eq(UserEntity::getEmail, dto.getEmail())
-                        .eq(UserEntity::getDeleted, 0)
                         .ne(UserEntity::getId, dto.getId());
                 if (userMapper.selectCount(emailWrapper) > 0) {
                     throw new BusinessException(ErrorCode.EMAIL_EXISTS);
@@ -229,7 +227,6 @@ public class UserServiceImpl implements UserService {
             if (StringUtils.hasText(dto.getPhone()) && !dto.getPhone().equals(user.getPhone())) {
                 LambdaQueryWrapper<UserEntity> phoneWrapper = new LambdaQueryWrapper<>();
                 phoneWrapper.eq(UserEntity::getPhone, dto.getPhone())
-                        .eq(UserEntity::getDeleted, 0)
                         .ne(UserEntity::getId, dto.getId());
                 if (userMapper.selectCount(phoneWrapper) > 0) {
                     throw new BusinessException(ErrorCode.PHONE_EXISTS);
@@ -347,7 +344,7 @@ public class UserServiceImpl implements UserService {
     public void batchDeleteUser(UserBatchDeleteDto dto) {
         try {
             log.info("批量删除用户，userIds：{}", dto.getUserIds());
-            if (dto.getUserIds() == null || dto.getUserIds().isEmpty()) {
+            if (CollectionUtils.isEmpty(dto.getUserIds())) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "用户ID列表不能为空");
             }
             // 批量逻辑删除
@@ -372,9 +369,6 @@ public class UserServiceImpl implements UserService {
             if (user == null) {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
             }
-            if (dto.getStatus() != 0 && dto.getStatus() != 1) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "状态值只能是0或1");
-            }
             user.setStatus(dto.getStatus());
             userMapper.updateById(user);
             // 删除用户认证信息缓存
@@ -396,9 +390,6 @@ public class UserServiceImpl implements UserService {
             UserEntity user = userMapper.selectById(dto.getUserId());
             if (user == null) {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-            }
-            if (dto.getLocked() != 0 && dto.getLocked() != 1) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "锁定状态值只能是0或1");
             }
             user.setLocked(dto.getLocked());
             if (dto.getLocked() == 1) {
@@ -542,8 +533,7 @@ public class UserServiceImpl implements UserService {
                 return false;
             }
             LambdaQueryWrapper<UserEntity> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(UserEntity::getUsername, username)
-                    .eq(UserEntity::getDeleted, 0);
+            wrapper.eq(UserEntity::getUsername, username);
             return userMapper.selectCount(wrapper) > 0;
         } catch (Exception e) {
             log.error("检查用户名是否存在失败：{}", e.getMessage(), e);
@@ -558,8 +548,7 @@ public class UserServiceImpl implements UserService {
                 return false;
             }
             LambdaQueryWrapper<UserEntity> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(UserEntity::getEmail, email)
-                    .eq(UserEntity::getDeleted, 0);
+            wrapper.eq(UserEntity::getEmail, email);
             return userMapper.selectCount(wrapper) > 0;
         } catch (Exception e) {
             log.error("检查邮箱是否存在失败：{}", e.getMessage(), e);
@@ -574,8 +563,7 @@ public class UserServiceImpl implements UserService {
                 return false;
             }
             LambdaQueryWrapper<UserEntity> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(UserEntity::getPhone, phone)
-                    .eq(UserEntity::getDeleted, 0);
+            wrapper.eq(UserEntity::getPhone, phone);
             return userMapper.selectCount(wrapper) > 0;
         } catch (Exception e) {
             log.error("检查手机号是否存在失败：{}", e.getMessage(), e);

@@ -31,11 +31,7 @@ import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.BeanUtils;
@@ -85,7 +81,7 @@ public class PermissionServiceImpl implements PermissionService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "权限ID不能为空");
             }
             PermissionEntity permission = permissionMapper.selectById(permissionId);
-            if (permission == null || Objects.equals(permission.getDeleted(), 1)) {
+            if (permission == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "权限不存在");
             }
             return convertToVo(permission);
@@ -115,7 +111,6 @@ public class PermissionServiceImpl implements PermissionService {
             entity.setSortOrder(dto.getSortOrder() == null ? 0 : dto.getSortOrder());
             entity.setVisible(dto.getVisible() == null ? 1 : dto.getVisible());
             entity.setStatus(dto.getStatus() == null ? 1 : dto.getStatus());
-            entity.setDeleted(0);
             permissionMapper.insert(entity);
             log.info("创建权限成功，permissionId：{}", entity.getId());
             return convertToVo(entity);
@@ -134,7 +129,7 @@ public class PermissionServiceImpl implements PermissionService {
             log.info("更新权限，参数：{}", dto);
             // 查询权限
             PermissionEntity permission = permissionMapper.selectById(dto.getId());
-            if (permission == null || Objects.equals(permission.getDeleted(), 1)) {
+            if (permission == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "权限不存在");
             }
             if (StringUtils.hasText(dto.getPermissionName())) {
@@ -188,13 +183,12 @@ public class PermissionServiceImpl implements PermissionService {
             }
             // 检查权限是否存在
             PermissionEntity permission = permissionMapper.selectById(permissionId);
-            if (permission == null || Objects.equals(permission.getDeleted(), 1)) {
+            if (permission == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "权限不存在");
             }
             // 检查是否有子权限
             LambdaQueryWrapper<PermissionEntity> childWrapper = new LambdaQueryWrapper<>();
-            childWrapper.eq(PermissionEntity::getParentId, permissionId)
-                    .eq(PermissionEntity::getDeleted, 0);
+            childWrapper.eq(PermissionEntity::getParentId, permissionId);
             if (permissionMapper.selectCount(childWrapper) > 0) {
                 throw new BusinessException(ErrorCode.DATA_IN_USE, "存在子权限，无法删除");
             }
@@ -240,7 +234,7 @@ public class PermissionServiceImpl implements PermissionService {
         try {
             log.info("切换权限状态，permissionId：{}，status：{}", dto.getPermissionId(), dto.getStatus());
             PermissionEntity permission = permissionMapper.selectById(dto.getPermissionId());
-            if (permission == null || Objects.equals(permission.getDeleted(), 1)) {
+            if (permission == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "权限不存在");
             }
             if (dto.getStatus() != 0 && dto.getStatus() != 1) {
@@ -267,8 +261,7 @@ public class PermissionServiceImpl implements PermissionService {
 
             // 查询权限列表
             LambdaQueryWrapper<PermissionEntity> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(PermissionEntity::getDeleted, 0)
-                    .orderByAsc(PermissionEntity::getParentId)
+            wrapper.orderByAsc(PermissionEntity::getParentId)
                     .orderByAsc(PermissionEntity::getSortOrder)
                     .orderByDesc(PermissionEntity::getCreateTime);
             if (dto != null && StringUtils.hasText(dto.getPermissionType())) {
@@ -319,8 +312,7 @@ public class PermissionServiceImpl implements PermissionService {
 
             // 固定查询条件：启用、可见、目录或菜单类型
             LambdaQueryWrapper<PermissionEntity> wrapper = new LambdaQueryWrapper<>();
-            wrapper.eq(PermissionEntity::getDeleted, 0)
-                    .eq(PermissionEntity::getStatus, 1)
+            wrapper.eq(PermissionEntity::getStatus, 1)
                     .eq(PermissionEntity::getVisible, 1)
                     .in(PermissionEntity::getPermissionType, "catalog", "menu")
                     .orderByAsc(PermissionEntity::getParentId)
@@ -356,7 +348,7 @@ public class PermissionServiceImpl implements PermissionService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "权限ID不能为空");
             }
             PermissionEntity permission = permissionMapper.selectById(permissionId);
-            if (permission == null || Objects.equals(permission.getDeleted(), 1)) {
+            if (permission == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "权限不存在");
             }
             LambdaQueryWrapper<RolePermissionEntity> rpWrapper = new LambdaQueryWrapper<>();
@@ -371,7 +363,7 @@ public class PermissionServiceImpl implements PermissionService {
                     .toList();
             List<RoleEntity> roleList = roleMapper.selectBatchIds(roleIds);
             return roleList.stream()
-                    .filter(role -> role != null && !Objects.equals(role.getDeleted(), 1))
+                    .filter(Objects::nonNull)
                     .map(this::convertRoleToVo)
                     .toList();
         } catch (BusinessException e) {
@@ -394,11 +386,11 @@ public class PermissionServiceImpl implements PermissionService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "角色ID不能为空");
             }
             PermissionEntity permission = permissionMapper.selectById(dto.getPermissionId());
-            if (permission == null || Objects.equals(permission.getDeleted(), 1)) {
+            if (permission == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "权限不存在");
             }
             RoleEntity role = roleMapper.selectById(dto.getRoleId());
-            if (role == null || Objects.equals(role.getDeleted(), 1)) {
+            if (role == null) {
                 throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
             }
             LambdaQueryWrapper<RolePermissionEntity> rpWrapper = new LambdaQueryWrapper<>();
@@ -458,8 +450,7 @@ public class PermissionServiceImpl implements PermissionService {
             return false;
         }
         LambdaQueryWrapper<PermissionEntity> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(PermissionEntity::getPermissionCode, permissionCode)
-                .eq(PermissionEntity::getDeleted, 0);
+        wrapper.eq(PermissionEntity::getPermissionCode, permissionCode);
         return permissionMapper.selectCount(wrapper) > 0;
     }
 
@@ -471,7 +462,7 @@ public class PermissionServiceImpl implements PermissionService {
             return false;
         }
         PermissionEntity entity = permissionMapper.selectById(id);
-        return entity != null && !Objects.equals(entity.getDeleted(), 1);
+        return entity != null;
     }
 
     // ==================== 实体转换方法 ====================

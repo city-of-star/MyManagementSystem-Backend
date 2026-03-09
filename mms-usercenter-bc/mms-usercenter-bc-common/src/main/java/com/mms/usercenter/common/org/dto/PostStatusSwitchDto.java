@@ -3,6 +3,7 @@ package com.mms.usercenter.common.org.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import org.hibernate.validator.constraints.Range;
 
 /**
  * 实现功能【切换岗位状态请求 DTO】
@@ -22,6 +23,7 @@ public class PostStatusSwitchDto {
     private Long postId;
 
     @NotNull(message = "状态不能为空")
+    @Range(min = 0, max = 1, message = "状态值只能是0或1")
     @Schema(description = "状态：0-禁用，1-启用", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
     private Integer status;
 }

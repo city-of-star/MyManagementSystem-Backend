@@ -90,7 +90,7 @@ public class RoleServiceImpl implements RoleService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "角色ID不能为空");
             }
             RoleEntity role = roleMapper.selectById(roleId);
-            if (role == null || Objects.equals(role.getDeleted(), 1)) {
+            if (role == null) {
                 throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
             }
             return convertToVo(role);
@@ -142,7 +142,7 @@ public class RoleServiceImpl implements RoleService {
             log.info("更新角色，参数：{}", dto);
             // 查询角色
             RoleEntity role = roleMapper.selectById(dto.getId());
-            if (role == null || Objects.equals(role.getDeleted(), 1)) {
+            if (role == null) {
                 throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
             }
             // 检查角色名称是否已存在
@@ -183,7 +183,7 @@ public class RoleServiceImpl implements RoleService {
             }
             // 检查角色是否存在
             RoleEntity role = roleMapper.selectById(roleId);
-            if (role == null || Objects.equals(role.getDeleted(), 1)) {
+            if (role == null) {
                 throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
             }
             // 检查是否有用户关联
@@ -233,11 +233,8 @@ public class RoleServiceImpl implements RoleService {
         try {
             log.info("切换角色状态，roleId：{}，status：{}", dto.getRoleId(), dto.getStatus());
             RoleEntity role = roleMapper.selectById(dto.getRoleId());
-            if (role == null || Objects.equals(role.getDeleted(), 1)) {
+            if (role == null) {
                 throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
-            }
-            if (dto.getStatus() != 0 && dto.getStatus() != 1) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "状态值只能是0或1");
             }
             role.setStatus(dto.getStatus());
             roleMapper.updateById(role);
@@ -262,7 +259,7 @@ public class RoleServiceImpl implements RoleService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "角色ID不能为空");
             }
             RoleEntity role = roleMapper.selectById(dto.getRoleId());
-            if (role == null || Objects.equals(role.getDeleted(), 1)) {
+            if (role == null) {
                 throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
             }
             if (CollectionUtils.isEmpty(dto.getPermissionIds())) {
@@ -315,7 +312,7 @@ public class RoleServiceImpl implements RoleService {
             }
             // 验证角色是否存在
             RoleEntity role = roleMapper.selectById(roleId);
-            if (role == null || Objects.equals(role.getDeleted(), 1)) {
+            if (role == null) {
                 throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
             }
             // 查询角色关联的用户ID列表

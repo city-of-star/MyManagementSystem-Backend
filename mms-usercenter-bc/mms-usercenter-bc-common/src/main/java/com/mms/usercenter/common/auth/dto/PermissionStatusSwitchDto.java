@@ -3,6 +3,7 @@ package com.mms.usercenter.common.auth.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+import org.hibernate.validator.constraints.Range;
 
 /**
  * 实现功能【权限状态切换 DTO】
@@ -19,6 +20,7 @@ public class PermissionStatusSwitchDto {
     private Long permissionId;
 
     @NotNull(message = "状态不能为空")
+    @Range(min = 0, max = 1, message = "状态值只能是0或1")
     @Schema(description = "状态：0-禁用，1-启用", example = "1")
     private Integer status;
 }
