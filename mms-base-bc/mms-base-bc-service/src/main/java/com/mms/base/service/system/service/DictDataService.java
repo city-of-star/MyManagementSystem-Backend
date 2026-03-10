@@ -85,4 +85,11 @@ public interface DictDataService {
      * @param dto 状态切换参数
      */
     void switchDictDataStatus(DictDataStatusSwitchDto dto);
+
+    /**
+     * 清除指定字典类型编码的字典数据缓存
+     *
+     * @param dictTypeCode 字典类型编码
+     */
+    void clearDictCacheByCode(String dictTypeCode);
 }

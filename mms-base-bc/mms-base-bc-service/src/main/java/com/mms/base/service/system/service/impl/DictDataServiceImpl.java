@@ -18,6 +18,7 @@ import com.mms.base.service.system.service.DictDataService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -39,6 +40,13 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class DictDataServiceImpl implements DictDataService {
+
+    /**
+     * 通过代理对象触发 Spring Cache AOP（避免类内自调用导致 @CacheEvict 不生效）
+     */
+    @Resource
+    @Lazy
+    private DictDataService dictDataServiceProxy;
 
     @Resource
     private DictDataMapper dictDataMapper;
@@ -280,6 +288,7 @@ public class DictDataServiceImpl implements DictDataService {
     /**
      * 根据字典类型编码清除缓存
      */
+    @Override
     @CacheEvict(cacheNames = CacheNameConstants.Base.DICT_DATE, key = "#dictTypeCode")
     public void clearDictCacheByCode(String dictTypeCode) {}
 
@@ -294,7 +303,7 @@ public class DictDataServiceImpl implements DictDataService {
         if (dictType == null) {
             return;
         }
-        clearDictCacheByCode(dictType.getDictTypeCode());
+        dictDataServiceProxy.clearDictCacheByCode(dictType.getDictTypeCode());
     }
 
     private DictDataVo convertToVo(DictDataEntity entity) {

@@ -20,6 +20,7 @@ import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -42,6 +43,13 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class UserAuthorityServiceImpl implements UserAuthorityService {
+
+    /**
+     * 通过代理对象触发 Spring Cache AOP（避免类内自调用导致 @CacheEvict 不生效）
+     */
+    @Resource
+    @Lazy
+    private UserAuthorityService userAuthorityServiceProxy;
 
     @Resource
     private UserMapper userMapper;
@@ -142,7 +150,7 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
             }
             String username = user.getUsername();
             if (StringUtils.hasText(username)) {
-                clearUserAuthorityCacheByUsername(username);
+                userAuthorityServiceProxy.clearUserAuthorityCacheByUsername(username);
                 log.info("已清除用户 {} 的权限缓存", username);
             }
         } catch (Exception e) {
