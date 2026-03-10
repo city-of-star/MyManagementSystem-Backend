@@ -1,8 +1,5 @@
 package com.mms.base.server.security.filter;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.mms.common.cache.constants.CacheNameConstants;
-import com.mms.common.cache.utils.RedisUtils;
 import com.mms.common.core.constants.gateway.GatewayConstants;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
@@ -99,7 +96,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         // 从用户中心获取角色和权限
         Response<UserAuthorityVo> resp = userAuthorityFeign.getUserAuthorities(username);
-        if (resp == null || !Response.SUCCESS_CODE.equals(resp.getCode()) && resp.getData() == null) {
+        if (resp == null || !Response.SUCCESS_CODE.equals(resp.getCode()) || resp.getData() == null) {
             throw new ServletException(ErrorCode.SYSTEM_ERROR.getMessage());
         }
         // 组装用户权限
