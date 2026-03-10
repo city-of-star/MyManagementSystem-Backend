@@ -45,7 +45,7 @@ public class RedisManagerConfig {
         // 按cacheName配置不同的TTL
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
         // 基础数据服务相关缓存
-        cacheConfigurations.put(CacheKeyPrefix.BASE + "dict", defaultConfig);
+        cacheConfigurations.put(CacheKeyPrefix.BASE + "dict", defaultConfig.entryTtl(Duration.ofSeconds(CacheTtl.VERY_LONG_SECONDS)));
         return RedisCacheManager.builder(Objects.requireNonNull(connectionFactory))
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigurations)

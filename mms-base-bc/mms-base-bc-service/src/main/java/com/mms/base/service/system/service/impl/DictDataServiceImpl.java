@@ -2,12 +2,13 @@ package com.mms.base.service.system.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.mms.common.cache.constants.CacheTtl;
-import com.mms.common.cache.utils.RedisUtils;
+import com.mms.common.cache.constants.CacheKeyPrefix;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.Cacheable;
 import com.mms.base.common.system.dto.*;
 import com.mms.base.common.system.entity.DictDataEntity;
 import com.mms.base.common.system.entity.DictTypeEntity;
@@ -45,6 +46,9 @@ public class DictDataServiceImpl implements DictDataService {
 
     @Resource
     private DictTypeMapper dictTypeMapper;
+
+    @Resource
+    private CacheManager cacheManager;
 
     @Override
     public Page<DictDataVo> getDictDataPage(DictDataPageQueryDto dto) {
@@ -99,16 +103,12 @@ public class DictDataServiceImpl implements DictDataService {
     }
 
     @Override
+    @Cacheable(cacheNames = CacheKeyPrefix.BASE + "dict", key = "#dictTypeCode", unless = "#result == null || #result.isEmpty()")
     public List<DictDataVo> getDictDataListByTypeCode(String dictTypeCode) {
         try {
             log.info("根据字典类型编码查询启用的数据字典数据列表，dictTypeCode：{}", dictTypeCode);
             if (!StringUtils.hasText(dictTypeCode)) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "字典类型编码不能为空");
-            }
-            // 查询缓存
-            List<DictDataVo> res = RedisUtils.get("mms:cache:base:dict:" + dictTypeCode, new TypeReference<List<DictDataVo>>() {});
-            if (!CollectionUtils.isEmpty(res)) {
-                return res;
             }
             // 先查询字典类型
             LambdaQueryWrapper<DictTypeEntity> typeWrapper = new LambdaQueryWrapper<>();
@@ -124,10 +124,7 @@ public class DictDataServiceImpl implements DictDataService {
                     .eq(DictDataEntity::getStatus, 1)
                     .orderByAsc(DictDataEntity::getDictSort);
             List<DictDataEntity> list = dictDataMapper.selectList(wrapper);
-            List<DictDataVo> list1 = list.stream().map(this::convertToVo).collect(Collectors.toList());
-            // 设置缓存
-            RedisUtils.set("mms:cache:base:dict:" + dictTypeCode, list1, CacheTtl.LONG_SECONDS);
-            return list1;
+            return list.stream().map(this::convertToVo).collect(Collectors.toList());
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -162,6 +159,8 @@ public class DictDataServiceImpl implements DictDataService {
             entity.setStatus(dto.getStatus() == null ? 1 : dto.getStatus());
             entity.setRemark(dto.getRemark());
             dictDataMapper.insert(entity);
+            // 清除缓存
+            evictDictCacheByCode(dictType.getDictTypeCode());
             return convertToVo(entity);
         } catch (BusinessException e) {
             throw e;
@@ -207,6 +206,8 @@ public class DictDataServiceImpl implements DictDataService {
                 dictData.setRemark(dto.getRemark());
             }
             dictDataMapper.updateById(dictData);
+            // 清除缓存
+            evictDictCacheById(dictData.getDictTypeId());
             return convertToVo(dictData);
         } catch (BusinessException e) {
             throw e;
@@ -229,6 +230,8 @@ public class DictDataServiceImpl implements DictDataService {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "数据字典数据不存在");
             }
             dictDataMapper.deleteById(dictDataId);
+            // 清除缓存
+            evictDictCacheById(dictData.getDictTypeId());
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -268,12 +271,42 @@ public class DictDataServiceImpl implements DictDataService {
             dictData.setStatus(dto.getStatus());
             dictData.setUpdateTime(LocalDateTime.now());
             dictDataMapper.updateById(dictData);
+            // 清除缓存
+            evictDictCacheById(dictData.getDictTypeId());
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
             log.error("切换数据字典数据状态失败：{}", e.getMessage(), e);
             throw new ServerException("切换数据字典数据状态失败", e);
         }
+    }
+
+    /**
+     * 根据字典类型编码清除缓存
+     */
+    private void evictDictCacheByCode(String dictTypeCode) {
+        if (!StringUtils.hasText(dictTypeCode)) {
+            return;
+        }
+        Cache cache = cacheManager.getCache(CacheKeyPrefix.BASE + "dict");
+        if (cache == null) {
+            return;
+        }
+        cache.evict(dictTypeCode);
+    }
+
+    /**
+     * 根据字典类型ID清除缓存
+     */
+    private void evictDictCacheById(Long dictTypeId) {
+        if (dictTypeId == null) {
+            return;
+        }
+        DictTypeEntity dictType = dictTypeMapper.selectById(dictTypeId);
+        if (dictType == null) {
+            return;
+        }
+        evictDictCacheByCode(dictType.getDictTypeCode());
     }
 
     private DictDataVo convertToVo(DictDataEntity entity) {
