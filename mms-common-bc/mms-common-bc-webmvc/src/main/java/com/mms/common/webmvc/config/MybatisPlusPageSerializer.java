@@ -26,16 +26,13 @@ public class MybatisPlusPageSerializer extends JsonSerializer<Page<?>> {
             return;
         }
         gen.writeStartObject();
-
         // records
         gen.writeFieldName("records");
         serializers.defaultSerializeValue(value.getRecords(), gen);
-
         // total/size/current 输出为 int
         gen.writeNumberField("total", safeToInt(value.getTotal()));
         gen.writeNumberField("size", safeToInt(value.getSize()));
         gen.writeNumberField("current", safeToInt(value.getCurrent()));
-
         gen.writeEndObject();
     }
 
