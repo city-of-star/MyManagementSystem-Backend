@@ -9,7 +9,7 @@ package com.mms.common.cache.constants;
  * @author li.hongyu
  * @date 2026-03-02 11:33:37
  */
-public final class CacheTtl {
+public final class CacheTtlConstants {
 
     /**
      * 短期缓存：5 分钟（适合验证码、临时状态）
@@ -34,7 +34,7 @@ public final class CacheTtl {
     /**
      * 私有构造函数，防止实例化
      */
-    private CacheTtl() {
+    private CacheTtlConstants() {
         throw new UnsupportedOperationException("常量类不允许实例化");
     }
 }

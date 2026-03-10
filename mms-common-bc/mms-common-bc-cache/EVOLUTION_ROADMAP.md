@@ -7,7 +7,7 @@
 - **Redis 基础配置**：`com.mms.common.cache.config.RedisConfig`
   - Key 序列化：`StringRedisSerializer`
   - Value 序列化：`GenericJackson2JsonRedisSerializer`（JSON，企业级常见做法）
-- **Key 前缀常量**：`com.mms.common.cache.constants.CacheKeyPrefix`
+- **Key 前缀常量**：`com.mms.common.cache.constants.CacheKeyPrefixConstants`
 - **常用操作工具**：`com.mms.common.cache.utils.RedisUtils`
   - `set/get/delete/exists/expire`
   - `increment/decrement`

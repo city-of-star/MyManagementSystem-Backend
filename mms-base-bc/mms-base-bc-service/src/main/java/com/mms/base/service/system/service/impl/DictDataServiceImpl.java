@@ -2,12 +2,11 @@ package com.mms.base.service.system.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.mms.common.cache.constants.CacheKeyPrefix;
+import com.mms.common.cache.constants.CacheNameConstants;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import com.mms.base.common.system.dto.*;
 import com.mms.base.common.system.entity.DictDataEntity;
@@ -46,9 +45,6 @@ public class DictDataServiceImpl implements DictDataService {
 
     @Resource
     private DictTypeMapper dictTypeMapper;
-
-    @Resource
-    private CacheManager cacheManager;
 
     @Override
     public Page<DictDataVo> getDictDataPage(DictDataPageQueryDto dto) {
@@ -103,7 +99,7 @@ public class DictDataServiceImpl implements DictDataService {
     }
 
     @Override
-    @Cacheable(cacheNames = CacheKeyPrefix.BASE + "dict", key = "#dictTypeCode", unless = "#result == null || #result.isEmpty()")
+    @Cacheable(cacheNames = CacheNameConstants.Base.DICT_DATE, key = "#dictTypeCode", unless = "#result == null || #result.isEmpty()")
     public List<DictDataVo> getDictDataListByTypeCode(String dictTypeCode) {
         try {
             log.info("根据字典类型编码查询启用的数据字典数据列表，dictTypeCode：{}", dictTypeCode);
@@ -160,7 +156,7 @@ public class DictDataServiceImpl implements DictDataService {
             entity.setRemark(dto.getRemark());
             dictDataMapper.insert(entity);
             // 清除缓存
-            evictDictCacheByCode(dictType.getDictTypeCode());
+            clearDictCacheByCode(dictType.getDictTypeCode());
             return convertToVo(entity);
         } catch (BusinessException e) {
             throw e;
@@ -207,7 +203,7 @@ public class DictDataServiceImpl implements DictDataService {
             }
             dictDataMapper.updateById(dictData);
             // 清除缓存
-            evictDictCacheById(dictData.getDictTypeId());
+            clearDictCacheById(dictData.getDictTypeId());
             return convertToVo(dictData);
         } catch (BusinessException e) {
             throw e;
@@ -231,7 +227,7 @@ public class DictDataServiceImpl implements DictDataService {
             }
             dictDataMapper.deleteById(dictDataId);
             // 清除缓存
-            evictDictCacheById(dictData.getDictTypeId());
+            clearDictCacheById(dictData.getDictTypeId());
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -272,7 +268,7 @@ public class DictDataServiceImpl implements DictDataService {
             dictData.setUpdateTime(LocalDateTime.now());
             dictDataMapper.updateById(dictData);
             // 清除缓存
-            evictDictCacheById(dictData.getDictTypeId());
+            clearDictCacheById(dictData.getDictTypeId());
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -284,21 +280,13 @@ public class DictDataServiceImpl implements DictDataService {
     /**
      * 根据字典类型编码清除缓存
      */
-    private void evictDictCacheByCode(String dictTypeCode) {
-        if (!StringUtils.hasText(dictTypeCode)) {
-            return;
-        }
-        Cache cache = cacheManager.getCache(CacheKeyPrefix.BASE + "dict");
-        if (cache == null) {
-            return;
-        }
-        cache.evict(dictTypeCode);
-    }
+    @CacheEvict(cacheNames = CacheNameConstants.Base.DICT_DATE, key = "#dictTypeCode")
+    public void clearDictCacheByCode(String dictTypeCode) {}
 
     /**
      * 根据字典类型ID清除缓存
      */
-    private void evictDictCacheById(Long dictTypeId) {
+    private void clearDictCacheById(Long dictTypeId) {
         if (dictTypeId == null) {
             return;
         }
@@ -306,7 +294,7 @@ public class DictDataServiceImpl implements DictDataService {
         if (dictType == null) {
             return;
         }
-        evictDictCacheByCode(dictType.getDictTypeCode());
+        clearDictCacheByCode(dictType.getDictTypeCode());
     }
 
     private DictDataVo convertToVo(DictDataEntity entity) {

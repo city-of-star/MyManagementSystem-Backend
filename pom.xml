@@ -63,6 +63,9 @@
         
         <!-- Jakarta Servlet API -->
         <jakarta.servlet-api.version>6.0.0</jakarta.servlet-api.version>
+
+        <!-- JSR-305 (javax.annotation.meta.When etc.) -->
+        <jsr305.version>3.0.2</jsr305.version>
     </properties>
 
     <!-- 依赖管理 -->
@@ -219,6 +222,13 @@
                 <groupId>jakarta.servlet</groupId>
                 <artifactId>jakarta.servlet-api</artifactId>
                 <version>${jakarta.servlet-api.version}</version>
+            </dependency>
+
+            <!-- JSR-305 annotations (fixes javac "unknown enum constant javax.annotation.meta.When.MAYBE") -->
+            <dependency>
+                <groupId>com.google.code.findbugs</groupId>
+                <artifactId>jsr305</artifactId>
+                <version>${jsr305.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

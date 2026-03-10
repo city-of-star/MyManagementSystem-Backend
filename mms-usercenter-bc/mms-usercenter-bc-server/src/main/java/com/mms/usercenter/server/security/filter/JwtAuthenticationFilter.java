@@ -63,53 +63,39 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * 7. 继续过滤器链
      */
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain) throws ServletException, IOException {
-
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
         String path = request.getRequestURI();
         String method = request.getMethod();
         String traceId = request.getHeader(GatewayConstants.Headers.TRACE_ID);
-
         // 检查是否已有认证信息
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
             filterChain.doFilter(request, response);
             return;
         }
-
         // 白名单请求：不需要签名验证，直接放行
         if (serviceWhitelistUtils.isWhitelisted(path)) {
             filterChain.doFilter(request, response);
             return;
         }
-
         // 验证网关签名
         gatewaySignatureVerificationService.validate(request);
-
         // 获取用户名和用户ID
         String username = request.getHeader(GatewayConstants.Headers.USER_NAME);
         String userId = request.getHeader(GatewayConstants.Headers.USER_ID);
-
         // 网关签名验证通过后，必须要有用户名
         if (!StringUtils.hasText(username)) {
             log.warn("网关签名验证通过但缺少用户名: traceId={}, path={}, method={}, userId={}", 
                     traceId, path, method, userId);
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
-
         // 加载用户详情和权限
         SecurityUser userDetails = (SecurityUser) userDetailsService.loadUserByUsername(username);
-
         // 创建 Authentication 对象，并添加用户信息和权限
-        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                userDetails, null, userDetails.getAuthorities());
-
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
         // 设置认证详情（IP 地址、Session ID 等）
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
         // 设置到 SecurityContext
         SecurityContextHolder.getContext().setAuthentication(authentication);
-
         // 继续过滤器链
         filterChain.doFilter(request, response);
     }

@@ -1,6 +1,6 @@
 package com.mms.common.security.constants;
 
-import com.mms.common.cache.constants.CacheKeyPrefix;
+import com.mms.common.cache.constants.CacheKeyPrefixConstants;
 
 /**
  * 实现功能【JWT缓存前缀】
@@ -16,7 +16,7 @@ public final class JwtCacheKeyConstants {
     /**
      * JWT相关缓存前缀
      */
-    public static final String SECURITY_JWT = CacheKeyPrefix.SECURITY + "jwt:";
+    public static final String SECURITY_JWT = CacheKeyPrefixConstants.SECURITY + "jwt:";
 
     /**
      * Token黑名单的key前缀

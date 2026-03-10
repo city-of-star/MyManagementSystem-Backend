@@ -9,7 +9,7 @@ package com.mms.common.cache.constants;
  * @author li.hongyu
  * @date 2026-03-02 09:48:24
  */
-public final class CacheKeyPrefix {
+public final class CacheKeyPrefixConstants {
 
     /**
      * 通用安全模块缓存前缀
@@ -39,7 +39,7 @@ public final class CacheKeyPrefix {
     /**
      * 私有构造函数，防止实例化
      */
-    private CacheKeyPrefix() {
+    private CacheKeyPrefixConstants() {
         throw new UnsupportedOperationException("常量类不允许实例化");
     }
 }

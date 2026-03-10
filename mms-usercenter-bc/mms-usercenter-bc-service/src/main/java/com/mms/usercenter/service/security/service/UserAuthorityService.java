@@ -38,7 +38,13 @@ public interface UserAuthorityService {
     void clearSecurityUserByUsername(String username);
 
     /**
-     * 清除指定用户的权限缓存
+     * 清除指定用户的权限缓存（通过用户名）
+     * @param username 用户名
+     */
+    void clearUserAuthorityCacheByUsername(String username);
+
+    /**
+     * 清除指定用户的权限缓存（通过用户ID）
      * @param userId 用户ID
      */
     void clearUserAuthorityCacheByUserId(Long userId);

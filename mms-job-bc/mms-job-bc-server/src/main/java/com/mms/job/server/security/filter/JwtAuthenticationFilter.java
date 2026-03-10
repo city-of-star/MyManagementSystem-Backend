@@ -1,6 +1,7 @@
-package com.mms.job.server.config.security.filter;
+package com.mms.job.server.security.filter;
 
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.mms.common.cache.constants.CacheNameConstants;
 import com.mms.common.cache.utils.RedisUtils;
 import com.mms.common.core.constants.gateway.GatewayConstants;
 import com.mms.common.core.enums.error.ErrorCode;
@@ -8,7 +9,6 @@ import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.response.Response;
 import com.mms.common.security.service.GatewaySignatureVerificationService;
 import com.mms.common.security.service.ServiceWhitelistService;
-import com.mms.usercenter.common.security.constants.UserAuthorityCacheKeyConstants;
 import com.mms.usercenter.feign.UserAuthorityFeign;
 import com.mms.usercenter.feign.vo.UserAuthorityVo;
 import jakarta.servlet.FilterChain;
@@ -28,7 +28,6 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -98,24 +97,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             log.warn("网关签名验证通过但缺少用户名: traceId={}, path={}, method={}, userId={}", traceId, path, method, userId);
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
-        // 从 Redis 获取权限
-        String roleCacheKey = UserAuthorityCacheKeyConstants.USER_ROLE_PREFIX + username;
-        String permissionCacheKey = UserAuthorityCacheKeyConstants.USER_PERMISSION_PREFIX + username;
-        Set<String> roles = RedisUtils.get(roleCacheKey, new TypeReference<Set<String>>() {});
-        Set<String> permissions = RedisUtils.get(permissionCacheKey, new TypeReference<Set<String>>() {});
-        // Redis 未命中，回源用户中心
-        if (roles == null || permissions == null) {
-            Response<UserAuthorityVo> resp = userAuthorityFeign.getUserAuthorities(username);
-            if (resp != null && Response.SUCCESS_CODE.equals(resp.getCode()) && resp.getData() != null) {
-                roles = resp.getData().getRoles() == null ? Collections.emptySet() : resp.getData().getRoles();
-                permissions = resp.getData().getPermissions() == null ? Collections.emptySet() : resp.getData().getPermissions();
-            } else {
-                roles = Collections.emptySet();
-                permissions = Collections.emptySet();
-            }
+        // 从用户中心获取角色和权限
+        Response<UserAuthorityVo> resp = userAuthorityFeign.getUserAuthorities(username);
+        if (resp == null || !Response.SUCCESS_CODE.equals(resp.getCode()) && resp.getData() == null) {
+            throw new ServletException(ErrorCode.SYSTEM_ERROR.getMessage());
         }
         // 组装用户权限
         Set<GrantedAuthority> authorities = new HashSet<>();
+        Set<String> roles = resp.getData().getRoles();
+        Set<String> permissions = resp.getData().getPermissions();
         if (!CollectionUtils.isEmpty(roles)) {
             authorities.addAll(roles.stream()
                     .map(SimpleGrantedAuthority::new)
@@ -127,8 +117,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     .collect(Collectors.toSet()));
         }
         // 创建 Authentication 对象，并添加用户名和权限
-        UsernamePasswordAuthenticationToken authentication =
-                new UsernamePasswordAuthenticationToken(username, null, authorities);
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(username, null, authorities);
         // 设置认证详情（IP 地址、Session ID 等）
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         // 设置到 SecurityContext

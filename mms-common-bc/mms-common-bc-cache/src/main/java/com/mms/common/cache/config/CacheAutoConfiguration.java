@@ -1,5 +1,7 @@
 package com.mms.common.cache.config;
 
+import com.mms.common.cache.builder.KeyGeneratorBuilder;
+import com.mms.common.cache.builder.RedisManagerBuilder;
 import com.mms.common.cache.builder.RedisTemplateBuilder;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cache.CacheManager;
@@ -26,7 +28,7 @@ import org.springframework.data.redis.core.RedisTemplate;
 @Configuration
 public class CacheAutoConfiguration {
 
-    private final KeyGeneratorConfig keyGeneratorConfig = new KeyGeneratorConfig();
+    private final KeyGeneratorBuilder keyGeneratorBuilder = new KeyGeneratorBuilder();
 
     /**
      * 创建 RedisTemplate Bean
@@ -43,7 +45,7 @@ public class CacheAutoConfiguration {
     @Bean(name = "userKeyGenerator")
     @ConditionalOnMissingBean(name = "userKeyGenerator")
     public KeyGenerator userKeyGenerator() {
-        return keyGeneratorConfig.userKeyGenerator();
+        return keyGeneratorBuilder.userKeyGenerator();
     }
 
     /**
@@ -52,7 +54,7 @@ public class CacheAutoConfiguration {
     @Bean(name = "baseKeyGenerator")
     @ConditionalOnMissingBean(name = "baseKeyGenerator")
     public KeyGenerator baseKeyGenerator() {
-        return keyGeneratorConfig.baseKeyGenerator();
+        return keyGeneratorBuilder.baseKeyGenerator();
     }
 
     /**
@@ -61,7 +63,7 @@ public class CacheAutoConfiguration {
     @Bean(name = "gatewayKeyGenerator")
     @ConditionalOnMissingBean(name = "gatewayKeyGenerator")
     public KeyGenerator gatewayKeyGenerator() {
-        return keyGeneratorConfig.gatewayKeyGenerator();
+        return keyGeneratorBuilder.gatewayKeyGenerator();
     }
 
     /**
@@ -70,6 +72,6 @@ public class CacheAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        return new RedisManagerConfig().cacheManager(connectionFactory);
+        return new RedisManagerBuilder().cacheManager(connectionFactory);
     }
 }

@@ -1,6 +1,6 @@
 package com.mms.usercenter.common.auth.constants;
 
-import com.mms.common.cache.constants.CacheKeyPrefix;
+import com.mms.common.cache.constants.CacheKeyPrefixConstants;
 
 /**
  * 实现功能【Redis缓存前缀-登录安全常量】
@@ -16,7 +16,7 @@ public final class LoginSecurityCacheKeyConstants {
     /**
      * 登录相关缓存前缀
      */
-    public static final String USERCENTER_LOGIN = CacheKeyPrefix.USERCENTER + "login:";
+    public static final String USERCENTER_LOGIN = CacheKeyPrefixConstants.USERCENTER + "login:";
 
     /**
      * 登录失败次数缓存前缀

@@ -1,7 +1,7 @@
 package com.mms.job.server.config;
 
 import com.mms.common.security.service.ServiceWhitelistService;
-import com.mms.job.server.config.security.filter.JwtAuthenticationFilter;
+import com.mms.job.server.security.filter.JwtAuthenticationFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
