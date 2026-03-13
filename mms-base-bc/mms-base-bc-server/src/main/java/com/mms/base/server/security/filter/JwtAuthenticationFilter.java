@@ -106,7 +106,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (!CollectionUtils.isEmpty(roles)) {
             authorities.addAll(roles.stream()
                     .map(SimpleGrantedAuthority::new)
-                    .toList());
+                    .collect(Collectors.toSet()));
         }
         if (!CollectionUtils.isEmpty(permissions)) {
             authorities.addAll(permissions.stream()

@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
+import com.mms.common.webmvc.utils.UserContextUtils;
 import com.mms.usercenter.common.auth.dto.PermissionBatchDeleteDto;
 import com.mms.usercenter.common.auth.dto.PermissionCreateDto;
 import com.mms.usercenter.common.auth.dto.PermissionPageQueryDto;
@@ -24,7 +25,9 @@ import com.mms.usercenter.service.auth.service.PermissionService;
 import com.mms.usercenter.service.security.service.UserAuthorityService;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import com.mms.usercenter.service.security.utils.SecurityUtils;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
@@ -300,14 +303,17 @@ public class PermissionServiceImpl implements PermissionService {
     public List<PermissionVo> listCurrentUserPermissionTree() {
         try {
             // 获取当前用户的权限编码集合
-            Set<String> userPermissionCodes = SecurityUtils.getPermissions();
-            if (CollectionUtils.isEmpty(userPermissionCodes)) {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            if (authentication == null || authentication.getAuthorities() == null) {
                 log.info("当前用户没有任何权限，返回空权限树");
                 return new ArrayList<>();
             }
+            Set<String> userPermissionCodes = authentication.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.toSet());
 
             // 获取当前用户的用户名
-            String username = SecurityUtils.getUsername();
+            String username = UserContextUtils.getUsername();
             log.info("查询用户 {} 的菜单权限树，权限编码数量：{}", username, userPermissionCodes.size());
 
             // 固定查询条件：启用、可见、目录或菜单类型

@@ -5,7 +5,8 @@ import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.security.service.GatewaySignatureVerificationService;
 import com.mms.common.security.service.ServiceWhitelistService;
-import com.mms.usercenter.common.security.entity.SecurityUser;
+import com.mms.usercenter.common.security.vo.UserAuthorityVo;
+import com.mms.usercenter.service.security.service.UserAuthorityService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -13,14 +14,19 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 实现功能【网关签名验证过滤器】
@@ -46,7 +52,7 @@ import java.io.IOException;
 @AllArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final UserDetailsService userDetailsService;
+    private final UserAuthorityService userAuthorityService;
     private final GatewaySignatureVerificationService gatewaySignatureVerificationService;
     private final ServiceWhitelistService serviceWhitelistUtils;
 
@@ -84,14 +90,27 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         String userId = request.getHeader(GatewayConstants.Headers.USER_ID);
         // 网关签名验证通过后，必须要有用户名
         if (!StringUtils.hasText(username)) {
-            log.warn("网关签名验证通过但缺少用户名: traceId={}, path={}, method={}, userId={}", 
-                    traceId, path, method, userId);
+            log.warn("网关签名验证通过但缺少用户名: traceId={}, path={}, method={}, userId={}", traceId, path, method, userId);
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
-        // 加载用户详情和权限
-        SecurityUser userDetails = (SecurityUser) userDetailsService.loadUserByUsername(username);
-        // 创建 Authentication 对象，并添加用户信息和权限
-        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        // 获取用户角色和权限
+        UserAuthorityVo authoritiesVo = userAuthorityService.getUserAuthorities(username);
+        // 组装用户权限
+        Set<GrantedAuthority> authorities = new HashSet<>();
+        Set<String> roles = authoritiesVo.getRoles();
+        Set<String> permissions = authoritiesVo.getPermissions();
+        if (!CollectionUtils.isEmpty(roles)) {
+            authorities.addAll(roles.stream()
+                    .map(SimpleGrantedAuthority::new)
+                    .collect(Collectors.toSet()));
+        }
+        if (!CollectionUtils.isEmpty(permissions)) {
+            authorities.addAll(permissions.stream()
+                    .map(SimpleGrantedAuthority::new)
+                    .collect(Collectors.toSet()));
+        }
+        // 创建 Authentication 对象，并添加用户名和权限
+        UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(username, null, authorities);
         // 设置认证详情（IP 地址、Session ID 等）
         authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
         // 设置到 SecurityContext

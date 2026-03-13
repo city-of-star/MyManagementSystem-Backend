@@ -23,7 +23,6 @@ import com.mms.usercenter.service.org.mapper.UserPostMapper;
 import com.mms.usercenter.service.org.service.DeptService;
 import com.mms.usercenter.service.org.service.PostService;
 import com.mms.usercenter.service.security.service.UserAuthorityService;
-import com.mms.usercenter.service.security.utils.SecurityUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.mindrot.jbcrypt.BCrypt;
@@ -32,6 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
+import com.mms.common.webmvc.utils.UserContextUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -445,7 +445,7 @@ public class UserServiceImpl implements UserService {
     @Transactional(rollbackFor = Exception.class)
     public void changePassword(UserPasswordChangeDto dto) {
         try {
-            Long currentUserId = SecurityUtils.getUserId();
+            Long currentUserId = UserContextUtils.getUserId();
             log.info("修改用户密码，userId：{}", currentUserId);
             UserEntity user = userMapper.selectById(currentUserId);
             if (user == null) {
