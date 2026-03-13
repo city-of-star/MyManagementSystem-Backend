@@ -1,7 +1,7 @@
 package com.mms.usercenter.controller.security;
 
 import com.mms.common.core.response.Response;
-import com.mms.usercenter.common.security.vo.UserAuthorityVo;
+import com.mms.common.security.vo.UserAuthorityVo;
 import com.mms.usercenter.service.security.service.UserAuthorityService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

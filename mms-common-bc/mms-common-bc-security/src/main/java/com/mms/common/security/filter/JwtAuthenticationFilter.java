@@ -1,18 +1,16 @@
-package com.mms.job.server.security.filter;
+package com.mms.common.security.filter;
 
 import com.mms.common.core.constants.gateway.GatewayConstants;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
-import com.mms.common.core.response.Response;
 import com.mms.common.security.service.GatewaySignatureVerificationService;
 import com.mms.common.security.service.ServiceWhitelistService;
-import com.mms.usercenter.feign.UserAuthorityFeign;
-import com.mms.usercenter.feign.vo.UserAuthorityVo;
+import com.mms.common.security.vo.UserAuthorityVo;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
+import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
@@ -30,32 +28,21 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * 实现功能【网关签名验证过滤器】
+ * 实现功能【通用Jwt过滤器】
  * <p>
- * 作用说明：
- * 1. 检查请求路径是否在白名单中，如果是则直接放行
- * 2. 验证网关签名（使用RSA公钥），确保请求来自网关且未被篡改
- * 3. 从请求头获取用户信息（网关已验证并透传）
- * 4. 根据 username 优先从 Redis 读取角色/权限（未命中再调用用户中心 Feign）
- * 5. 组装 Authentication 填充到 SecurityContext
- * 6. 便于 PermissionCheckAspect 正常获取权限
+ *
  * <p>
- * 安全架构：
- * - 网关层（JwtAuthFilter）：完整验证JWT token（签名、过期、黑名单），使用RSA私钥生成签名
- * - 服务层（本过滤器）：验证网关签名（RSA公钥），信任网关透传的用户信息，加载权限
- * - 数字签名架构：网关做完整验证并签名，服务层做签名验证，防止请求头篡改和绕过网关
  *
  * @author li.hongyu
- * @date 2025-01-04 11:15:36
+ * @date 2026-03-13 15:51:56
  */
 @Slf4j
-@Component
-@RequiredArgsConstructor
+@AllArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private final UserAuthorityFeign userAuthorityFeign;
+    private final UserAuthorityProvider userAuthorityProvider;
     private final GatewaySignatureVerificationService gatewaySignatureVerificationService;
-    private final ServiceWhitelistService serviceWhitelistService;
+    private final ServiceWhitelistService serviceWhitelistUtils;
 
     /**
      * 过滤器核心逻辑
@@ -65,7 +52,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
      * 2. 检查请求路径是否在白名单中，如果是则直接放行（不需要签名验证）
      * 3. 验证网关签名（使用RSA公钥），确保请求来自网关且未被篡改
      * 4. 从请求头获取用户信息（网关已验证并透传）
-     * 5. 加载用户角色和权限
+     * 5. 加载用户详情和权限
      * 6. 创建 Authentication 对象并设置到 SecurityContext
      * 7. 继续过滤器链
      */
@@ -80,7 +67,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
         // 白名单请求：不需要签名验证，直接放行
-        if (serviceWhitelistService.isWhitelisted(path)) {
+        if (serviceWhitelistUtils.isWhitelisted(path)) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -94,19 +81,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             log.warn("网关签名验证通过但缺少用户名: traceId={}, path={}, method={}, userId={}", traceId, path, method, userId);
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
-        // 从用户中心获取角色和权限
-        Response<UserAuthorityVo> resp = userAuthorityFeign.getUserAuthorities(username);
-        if (resp == null || !Response.SUCCESS_CODE.equals(resp.getCode()) || resp.getData() == null) {
-            throw new ServletException(ErrorCode.SYSTEM_ERROR.getMessage());
-        }
+        // 获取用户角色和权限
+        UserAuthorityVo authoritiesVo = userAuthorityProvider.getUserAuthoritiesFromSource(username);
         // 组装用户权限
         Set<GrantedAuthority> authorities = new HashSet<>();
-        Set<String> roles = resp.getData().getRoles();
-        Set<String> permissions = resp.getData().getPermissions();
+        Set<String> roles = authoritiesVo.getRoles();
+        Set<String> permissions = authoritiesVo.getPermissions();
         if (!CollectionUtils.isEmpty(roles)) {
             authorities.addAll(roles.stream()
                     .map(SimpleGrantedAuthority::new)
-                    .toList());
+                    .collect(Collectors.toSet()));
         }
         if (!CollectionUtils.isEmpty(permissions)) {
             authorities.addAll(permissions.stream()
@@ -123,4 +107,3 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 }
-

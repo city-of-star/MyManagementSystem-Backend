@@ -2,14 +2,11 @@ package com.mms.usercenter.service.security.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.mms.common.cache.constants.CacheNameConstants;
-import com.mms.common.core.enums.error.ErrorCode;
-import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.auth.entity.UserRoleEntity;
 import com.mms.usercenter.common.auth.entity.RolePermissionEntity;
-import com.mms.usercenter.common.security.dto.SecurityUserDto;
-import com.mms.usercenter.common.security.vo.UserAuthorityVo;
+import com.mms.common.security.vo.UserAuthorityVo;
 import com.mms.usercenter.service.auth.mapper.PermissionMapper;
 import com.mms.usercenter.service.auth.mapper.RoleMapper;
 import com.mms.usercenter.service.auth.mapper.RolePermissionMapper;
@@ -67,38 +64,6 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
     private RolePermissionMapper rolePermissionMapper;
 
     /**
-     * 根据用户名查询用户认证信息（带缓存）
-     *
-     * @param username 用户名
-     * @return 用户认证信息
-     */
-    @Override
-    @Transactional(readOnly = true)
-    @Cacheable(cacheNames = CacheNameConstants.UserCenter.USER_AUTH_INFO, key = "#username", unless = "#result == null")
-    public SecurityUserDto getSecurityUserDtoByUsername(String username) {
-        try {
-            // 查询用户信息
-            UserEntity user = userMapper.selectByUsername(username);
-            if (user == null) {
-                throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-            }
-            // 构建 SecurityUserDto
-            SecurityUserDto securityUserDto = new SecurityUserDto();
-            securityUserDto.setUserId(user.getId());
-            securityUserDto.setUsername(user.getUsername());
-            securityUserDto.setPassword(user.getPassword());
-            securityUserDto.setRealName(user.getRealName());
-            securityUserDto.setStatus(user.getStatus());
-            securityUserDto.setLocked(user.getLocked());
-            securityUserDto.setLastLoginIp(user.getLastLoginIp());
-            securityUserDto.setLastLoginTime(user.getLastLoginTime());
-            return securityUserDto;
-        } catch (Exception e) {
-            throw new ServerException("获取用户认证信息失败", e);
-        }
-    }
-
-    /**
      * 根据用户名查询用户角色和权限（带缓存）
      *
      * @param username 用户名
@@ -117,15 +82,6 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
             throw new ServerException("获取用户权限信息失败", e);
         }
     }
-
-    /**
-     * 清除指定用户的认证信息缓存
-     *
-     * @param username 用户名
-     */
-    @Override
-    @CacheEvict(cacheNames = CacheNameConstants.UserCenter.USER_AUTH_INFO, key = "#username")
-    public void clearSecurityUserByUsername(String username) {}
 
     /**
      * 清除指定用户的角色和权限缓存（通过用户名）
