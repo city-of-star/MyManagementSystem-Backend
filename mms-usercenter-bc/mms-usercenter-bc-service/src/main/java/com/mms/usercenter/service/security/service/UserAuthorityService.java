@@ -1,6 +1,6 @@
 package com.mms.usercenter.service.security.service;
 
-import com.mms.common.security.vo.UserAuthorityVo;
+import com.mms.common.security.core.vo.UserAuthorityVo;
 
 /**
  * 实现功能【用户认证服务】

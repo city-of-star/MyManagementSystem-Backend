@@ -6,7 +6,7 @@ import com.mms.common.core.exceptions.ServerException;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.auth.entity.UserRoleEntity;
 import com.mms.usercenter.common.auth.entity.RolePermissionEntity;
-import com.mms.common.security.vo.UserAuthorityVo;
+import com.mms.common.security.core.vo.UserAuthorityVo;
 import com.mms.usercenter.service.auth.mapper.PermissionMapper;
 import com.mms.usercenter.service.auth.mapper.RoleMapper;
 import com.mms.usercenter.service.auth.mapper.RolePermissionMapper;

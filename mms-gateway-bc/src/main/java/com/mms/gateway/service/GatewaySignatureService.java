@@ -1,7 +1,7 @@
 package com.mms.gateway.service;
 
-import com.mms.common.security.properties.GatewaySignatureProperties;
-import com.mms.common.security.utils.GatewaySignatureUtils;
+import com.mms.common.security.core.properties.GatewaySignatureProperties;
+import com.mms.common.security.core.utils.GatewaySignatureUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

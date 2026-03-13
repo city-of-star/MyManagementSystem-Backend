@@ -1,7 +1,7 @@
 package com.mms.gateway.service;
 
-import com.mms.common.security.properties.WhitelistProperties;
-import com.mms.common.security.service.AbstractWhitelistService;
+import com.mms.common.security.core.properties.WhitelistProperties;
+import com.mms.common.security.core.service.AbstractWhitelistService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Configuration;

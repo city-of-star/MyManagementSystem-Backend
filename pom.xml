@@ -131,7 +131,12 @@
             </dependency>
             <dependency>
                 <groupId>com.mms</groupId>
-                <artifactId>mms-common-bc-security</artifactId>
+                <artifactId>mms-common-bc-security-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.mms</groupId>
+                <artifactId>mms-common-bc-security-servlet</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

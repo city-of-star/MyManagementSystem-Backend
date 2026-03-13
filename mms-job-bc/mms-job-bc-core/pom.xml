@@ -84,10 +84,10 @@
             <artifactId>mms-common-bc-mq</artifactId>
         </dependency>
 
-        <!-- 依赖 mms-common-bc-security 模块 -->
+        <!-- 依赖 mms-common-bc-security Servlet 模块 -->
         <dependency>
             <groupId>com.mms</groupId>
-            <artifactId>mms-common-bc-security</artifactId>
+            <artifactId>mms-common-bc-security-servlet</artifactId>
         </dependency>
 
         <!-- 依赖 mms-common-bc-webmvc 模块 -->

@@ -1,8 +1,8 @@
 package com.mms.common.websocket.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mms.common.security.utils.JwtUtils;
-import com.mms.common.security.utils.TokenValidatorUtils;
+import com.mms.common.security.core.utils.JwtUtils;
+import com.mms.common.security.core.utils.TokenValidatorUtils;
 import com.mms.common.websocket.auth.PrincipalHandshakeHandler;
 import com.mms.common.websocket.auth.WebSocketHandshakeInterceptor;
 import com.mms.common.websocket.handler.DefaultTextWebSocketHandler;

@@ -1,7 +1,7 @@
 package com.mms.usercenter.server.security;
 
-import com.mms.common.security.filter.UserAuthorityProvider;
-import com.mms.common.security.vo.UserAuthorityVo;
+import com.mms.common.security.servlet.filter.UserAuthorityProvider;
+import com.mms.common.security.core.vo.UserAuthorityVo;
 import com.mms.usercenter.service.security.service.UserAuthorityService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Component;

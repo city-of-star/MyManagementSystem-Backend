@@ -1,9 +1,9 @@
 package com.mms.common.websocket.auth;
 
 import com.mms.common.core.enums.jwt.TokenType;
-import com.mms.common.security.constants.JwtClaimsConstants;
-import com.mms.common.security.utils.JwtUtils;
-import com.mms.common.security.utils.TokenValidatorUtils;
+import com.mms.common.security.core.constants.JwtClaimsConstants;
+import com.mms.common.security.core.utils.JwtUtils;
+import com.mms.common.security.core.utils.TokenValidatorUtils;
 import com.mms.common.websocket.properties.WebSocketProperties;
 import io.jsonwebtoken.Claims;
 import lombok.extern.slf4j.Slf4j;

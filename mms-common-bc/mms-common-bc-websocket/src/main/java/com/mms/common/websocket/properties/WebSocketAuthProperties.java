@@ -2,7 +2,7 @@ package com.mms.common.websocket.properties;
 
 import com.mms.common.core.constants.gateway.GatewayConstants;
 import com.mms.common.core.enums.jwt.TokenType;
-import com.mms.common.security.constants.JwtHeaderConstants;
+import com.mms.common.security.core.constants.JwtHeaderConstants;
 import com.mms.common.websocket.auth.WebSocketAuthMode;
 import lombok.Data;
 

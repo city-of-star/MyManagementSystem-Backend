@@ -3,7 +3,7 @@ package com.mms.usercenter.controller.org;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.common.core.constants.usercenter.PermissionConstants;
 import com.mms.common.core.response.Response;
-import com.mms.common.security.annotations.RequiresPermission;
+import com.mms.common.security.servlet.annotations.RequiresPermission;
 import com.mms.usercenter.common.auth.dto.UserAssignPostDto;
 import com.mms.usercenter.common.org.dto.*;
 import com.mms.usercenter.common.org.vo.PostVo;

@@ -3,6 +3,7 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>com.mms</groupId>
         <artifactId>mms-common-bc</artifactId>
@@ -10,103 +11,77 @@
     </parent>
 
     <artifactId>mms-common-bc-security</artifactId>
+    <packaging>pom</packaging>
     <name>MMS Common BC Security</name>
     <description>公共安全模块</description>
 
-    <dependencies>
+    <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <!-- 依赖 mms-common-bc-core 模块 -->
-        <dependency>
-            <groupId>com.mms</groupId>
-            <artifactId>mms-common-bc-core</artifactId>
-        </dependency>
+        <!-- 作为“标准模板”时，建议在这里统一 BOM 版本 -->
+        <spring-boot.version>3.2.4</spring-boot.version>
+        <spring-cloud.version>2023.0.1</spring-cloud.version>
+        <jjwt.version>0.12.5</jjwt.version>
+    </properties>
 
-        <!-- 依赖 mms-common-bc-cache 模块 -->
-        <dependency>
-            <groupId>com.mms</groupId>
-            <artifactId>mms-common-bc-cache</artifactId>
-        </dependency>
+    <modules>
+        <module>mms-common-bc-security-core</module>
+        <module>mms-common-bc-security-servlet</module>
+    </modules>
 
-        <!-- Spring Boot 自动装配（作为库使用） -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-autoconfigure</artifactId>
-        </dependency>
+    <!-- 父 POM 只负责版本管理和模块聚合；具体依赖由子模块声明 -->
+    <dependencyManagement>
+        <dependencies>
+            <!-- 管理本聚合工程内子模块版本（避免子模块互相依赖时缺少 version） -->
+            <dependency>
+                <groupId>com.mms</groupId>
+                <artifactId>mms-common-bc-security-core</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.mms</groupId>
+                <artifactId>mms-common-bc-security-servlet</artifactId>
+                <version>${project.version}</version>
+            </dependency>
 
-        <!-- Spring Security Core（用于权限校验切面，访问 Authentication / GrantedAuthority 等类型） -->
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-core</artifactId>
-        </dependency>
+            <!-- Spring Boot BOM -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 
-        <!-- Spring Security Web -->
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-web</artifactId>
-        </dependency>
+            <!-- Spring Cloud BOM -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 
-        <!-- Spring Boot Starter Security -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
-
-        <!-- Spring Security Config -->
-        <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-config</artifactId>
-        </dependency>
-
-        <!-- Spring Cloud Context（用于配置刷新事件监听） -->
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-context</artifactId>
-        </dependency>
-
-        <!-- Feign Core（仅用于 RequestInterceptor 等类型声明，运行时由业务服务提供） -->
-        <dependency>
-            <groupId>io.github.openfeign</groupId>
-            <artifactId>feign-core</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- JJWT -->
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-impl</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.jsonwebtoken</groupId>
-            <artifactId>jjwt-jackson</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-
-        <!-- Jakarta Servlet API -->
-        <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
-            <scope>provided</scope>
-        </dependency>
-
-        <!-- AspectJ Weaver（用于 AOP 切面，如权限校验切面） -->
-        <dependency>
-            <groupId>org.aspectj</groupId>
-            <artifactId>aspectjweaver</artifactId>
-        </dependency>
-
-    </dependencies>
+            <!-- JJWT（不在 Boot BOM 中时显式管理版本） -->
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
 </project>
 

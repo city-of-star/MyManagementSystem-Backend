@@ -31,29 +31,10 @@
             </exclusions>
         </dependency>
 
-        <!-- 依赖 mms-common-bc-security 模块 -->
+        <!-- 依赖 mms-common-bc-security-core 模块 -->
         <dependency>
             <groupId>com.mms</groupId>
-            <artifactId>mms-common-bc-security</artifactId>
-            <exclusions>
-                <!-- 网关不需要 Spring Security（避免默认安全链导致 CSRF/登录页/403 等问题） -->
-                <exclusion>
-                    <groupId>org.springframework.boot</groupId>
-                    <artifactId>spring-boot-starter-security</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.springframework.security</groupId>
-                    <artifactId>spring-security-core</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.springframework.security</groupId>
-                    <artifactId>spring-security-web</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.springframework.security</groupId>
-                    <artifactId>spring-security-config</artifactId>
-                </exclusion>
-            </exclusions>
+            <artifactId>mms-common-bc-security-core</artifactId>
         </dependency>
 
         <!-- Spring Cloud Gateway -->
