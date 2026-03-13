@@ -17,11 +17,6 @@ public final class CacheNameConstants {
     public static final class UserCenter {
 
         /**
-         * 用户认证信息
-         */
-        public static final String USER_AUTH_INFO = CacheKeyPrefixConstants.USERCENTER + "userAuthInfo:";
-
-        /**
          * 用户权限
          */
         public static final String USER_AUTHORITY = CacheKeyPrefixConstants.USERCENTER + "userAuthority:";

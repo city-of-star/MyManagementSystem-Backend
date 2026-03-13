@@ -46,7 +46,6 @@ public class RedisManagerBuilder {
         // 按cacheName配置不同的TTL
         Map<String, RedisCacheConfiguration> cacheConfigurations = new HashMap<>();
         // 用户中心服务相关缓存
-        cacheConfigurations.put(CacheNameConstants.UserCenter.USER_AUTH_INFO, defaultConfig);
         cacheConfigurations.put(CacheNameConstants.UserCenter.USER_AUTHORITY, defaultConfig);
         // 基础数据服务相关缓存
         cacheConfigurations.put(CacheNameConstants.Base.DICT_DATE, defaultConfig.entryTtl(Duration.ofSeconds(CacheTtlConstants.VERY_LONG_SECONDS)));
