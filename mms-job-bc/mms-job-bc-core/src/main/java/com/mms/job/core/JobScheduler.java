@@ -35,14 +35,14 @@ public class JobScheduler {
      */
     @Scheduled(fixedDelay = 1_000)
     public void scanAndTriggerJobs() {
-        log.info("开始扫描到点的定时任务...");
+        log.debug("开始扫描到点的定时任务...");
 
         LocalDateTime now = LocalDateTime.now();
 
         // 查询所有已到执行时间的启用任务
         List<JobEntity> jobList = jobMapper.selectDueJobs(now);
         if (jobList == null || jobList.isEmpty()) {
-            log.info("当前无到点需要执行的定时任务");
+            log.debug("当前无到点需要执行的定时任务");
             return;
         }
         log.info("本次扫描到点的定时任务数量：{}", jobList.size());
