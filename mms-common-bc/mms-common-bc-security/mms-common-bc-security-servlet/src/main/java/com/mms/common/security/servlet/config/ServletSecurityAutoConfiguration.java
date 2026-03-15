@@ -1,11 +1,12 @@
 package com.mms.common.security.servlet.config;
 
+import com.mms.common.security.core.properties.GatewaySignatureProperties;
+import com.mms.common.security.core.properties.WhitelistProperties;
+import com.mms.common.security.servlet.aop.PermissionCheckAspect;
 import com.mms.common.security.servlet.feign.FeignHeaderRelayInterceptor;
 import com.mms.common.security.servlet.feign.FeignLogger;
 import com.mms.common.security.servlet.filter.JwtAuthenticationFilter;
 import com.mms.common.security.servlet.filter.UserAuthorityProvider;
-import com.mms.common.security.core.properties.GatewaySignatureProperties;
-import com.mms.common.security.core.properties.WhitelistProperties;
 import com.mms.common.security.servlet.service.GatewaySignatureVerificationService;
 import com.mms.common.security.servlet.service.ServiceWhitelistService;
 import feign.Logger;
@@ -79,6 +80,15 @@ public class ServletSecurityAutoConfiguration {
     @ConditionalOnBean({JwtAuthenticationFilter.class, ServiceWhitelistService.class})
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter, ServiceWhitelistService serviceWhitelistService) throws Exception {
         return SecurityConfig.buildDefaultSecurityFilterChain(http, jwtAuthenticationFilter, serviceWhitelistService);
+    }
+
+    /**
+     * 注册权限校验切面
+     */
+    @Bean
+    @ConditionalOnMissingBean
+    public PermissionCheckAspect permissionCheckAspect() {
+        return new PermissionCheckAspect();
     }
 
     /**
