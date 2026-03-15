@@ -145,10 +145,6 @@ public class RoleServiceImpl implements RoleService {
             if (role == null) {
                 throw new BusinessException(ErrorCode.ROLE_NOT_FOUND);
             }
-            // 检查角色名称是否已存在
-            if (existsByRoleName(dto.getRoleName())) {
-                throw new BusinessException(ErrorCode.ROLE_NAME_EXISTS);
-            }
             // 更新字段
             if (StringUtils.hasText(dto.getRoleName())) {
                 role.setRoleName(dto.getRoleName());
