@@ -20,3 +20,14 @@ login:
 springdoc:
   swagger-ui:
     url: /usercenter/v3/api-docs
+
+# 刷新令牌 Cookie 配置
+security:
+  cookie:
+    refresh-token:
+      name: "refreshToken"
+      path: "/usercenter/auth"
+      http-only: true
+      secure: false
+      same-site: "Lax"
+      domain:

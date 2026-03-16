@@ -11,8 +11,6 @@ import com.mms.common.core.enums.jwt.TokenType;
 import com.mms.common.security.core.utils.TokenValidatorUtils;
 import com.mms.common.webmvc.utils.UserContextUtils;
 import com.mms.usercenter.common.auth.dto.LoginDto;
-import com.mms.usercenter.common.auth.dto.LogoutDto;
-import com.mms.usercenter.common.auth.dto.RefreshTokenDto;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.auth.vo.LoginVo;
 import com.mms.usercenter.common.auth.vo.UserDetailVo;
@@ -130,9 +128,9 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public LoginVo refreshToken(RefreshTokenDto dto) {
+    public LoginVo refreshToken(String refreshToken) {
         // 解析并验证Refresh Token
-        Claims refreshClaims = tokenValidatorUtils.parseAndValidate(dto.getRefreshToken(), TokenType.REFRESH);
+        Claims refreshClaims = tokenValidatorUtils.parseAndValidate(refreshToken, TokenType.REFRESH);
         // 提取用户名、用户ID
         String username = Optional.ofNullable(refreshClaims.get(JwtClaimsConstants.USERNAME))
                 .map(Object::toString)
@@ -158,7 +156,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public void logout(LogoutDto dto) {
+    public void logout(String refreshToken) {
         // 从请求上下文获取 Access Token 信息（网关已验证并透传）
         String accessTokenJti = UserContextUtils.getTokenJti();
         String accessTokenExp = UserContextUtils.getTokenExp();
@@ -168,7 +166,7 @@ public class AuthServiceImpl implements AuthService {
             tokenBlacklistUtils.addToBlacklist(accessTokenJti, expirationTime, TokenType.ACCESS);
         }
         // 解析并验证Refresh Token
-        Claims refreshClaims = tokenValidatorUtils.parseAndValidate(dto.getRefreshToken(), TokenType.REFRESH);
+        Claims refreshClaims = tokenValidatorUtils.parseAndValidate(refreshToken, TokenType.REFRESH);
         // 将Refresh Token加入黑名单
         tokenBlacklistUtils.addToBlacklist(refreshClaims);
         // 从Token中获取用户名

@@ -9,7 +9,7 @@ logging:
     root: INFO
 
     # ========== 业务代码（详细调试） ==========
-    com.mms: DEBUG                    # 业务代码
+    com.mms: INFO                    # 业务代码
 
     # ========== Spring 框架 ==========
     org.springframework: INFO

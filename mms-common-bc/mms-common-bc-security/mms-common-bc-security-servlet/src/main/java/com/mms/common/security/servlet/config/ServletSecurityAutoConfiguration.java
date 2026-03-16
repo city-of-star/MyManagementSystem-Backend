@@ -7,6 +7,7 @@ import com.mms.common.security.servlet.feign.FeignHeaderRelayInterceptor;
 import com.mms.common.security.servlet.feign.FeignLogger;
 import com.mms.common.security.servlet.filter.JwtAuthenticationFilter;
 import com.mms.common.security.servlet.filter.UserAuthorityProvider;
+import com.mms.common.security.servlet.properties.CookieProperties;
 import com.mms.common.security.servlet.service.GatewaySignatureVerificationService;
 import com.mms.common.security.servlet.service.ServiceWhitelistService;
 import feign.Logger;
@@ -16,6 +17,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -38,6 +40,7 @@ import org.springframework.security.web.SecurityFilterChain;
  */
 @Configuration
 @ConditionalOnClass(HttpServletRequest.class)
+@EnableConfigurationProperties({CookieProperties .class})  // 在此类当中注入配置属性Bean
 public class ServletSecurityAutoConfiguration {
 
     /**
