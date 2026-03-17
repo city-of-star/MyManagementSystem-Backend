@@ -14,10 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.DateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.Locale;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * 实现功能【SQL日志拦截器（一行SQL版）】
@@ -36,6 +33,14 @@ public class SqlOneLineLogInterceptor implements Interceptor {
 
     private static final Logger log = LoggerFactory.getLogger(SqlOneLineLogInterceptor.class);
 
+    // 支持配置多个排除的 mapper 或方法
+    private static final Set<String> EXCLUDE_STATEMENT_PREFIXES = Set.of(
+            "com.mms.job.core.mapper.JobMapper"   // 整个 JobMapper 不打印
+    );
+    private static final Set<String> EXCLUDE_STATEMENTS = Set.of(
+            "com.mms.job.core.mapper.JobMapper.selectDueJobs" // 只排除这个方法
+    );
+
     /** ANSI颜色代码常量 */
     private static final String ANSI_RESET = "\033[0m";
     private static final String ANSI_RED = "\033[31m";
@@ -43,11 +48,25 @@ public class SqlOneLineLogInterceptor implements Interceptor {
     @Override
     public Object intercept(Invocation invocation) throws Throwable {
         long startTime = System.currentTimeMillis();
+
+        // 获取 SQL 信息
+        MappedStatement mappedStatement = (MappedStatement) invocation.getArgs()[0];
+        String statementId = mappedStatement.getId();
+        // 1. 精确方法排除
+        if (EXCLUDE_STATEMENTS.contains(statementId)) {
+            return invocation.proceed();
+        }
+        // 2. 整个 mapper 排除
+        for (String prefix : EXCLUDE_STATEMENT_PREFIXES) {
+            if (statementId.startsWith(prefix + ".")) {
+                return invocation.proceed();
+            }
+        }
+        
         try {
             Object result = invocation.proceed();
             long elapsed = System.currentTimeMillis() - startTime;
 
-            MappedStatement mappedStatement = (MappedStatement) invocation.getArgs()[0];
             Object parameter = invocation.getArgs().length > 1 ? invocation.getArgs()[1] : null;
             BoundSql boundSql = mappedStatement.getBoundSql(parameter);
             Configuration configuration = mappedStatement.getConfiguration();
@@ -58,7 +77,6 @@ public class SqlOneLineLogInterceptor implements Interceptor {
         } catch (Exception e) {
             long elapsed = System.currentTimeMillis() - startTime;
 
-            MappedStatement mappedStatement = (MappedStatement) invocation.getArgs()[0];
             Object parameter = invocation.getArgs().length > 1 ? invocation.getArgs()[1] : null;
             BoundSql boundSql = mappedStatement.getBoundSql(parameter);
             Configuration configuration = mappedStatement.getConfiguration();
