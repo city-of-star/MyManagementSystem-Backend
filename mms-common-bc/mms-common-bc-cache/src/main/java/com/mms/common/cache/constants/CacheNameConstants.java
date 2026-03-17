@@ -30,7 +30,7 @@ public final class CacheNameConstants {
         /**
          * 字典数据
          */
-        public static final String DICT_DATE = CacheKeyPrefixConstants.BASE + "dictDate:";
+        public static final String DICT_DATA = CacheKeyPrefixConstants.BASE + "dictData:";
     }
 
 }

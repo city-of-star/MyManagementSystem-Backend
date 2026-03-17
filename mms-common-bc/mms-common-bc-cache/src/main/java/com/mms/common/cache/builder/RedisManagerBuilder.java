@@ -48,7 +48,7 @@ public class RedisManagerBuilder {
         // 用户中心服务相关缓存
         cacheConfigurations.put(CacheNameConstants.UserCenter.USER_AUTHORITY, defaultConfig);
         // 基础数据服务相关缓存
-        cacheConfigurations.put(CacheNameConstants.Base.DICT_DATE, defaultConfig.entryTtl(Duration.ofSeconds(CacheTtlConstants.VERY_LONG_SECONDS)));
+        cacheConfigurations.put(CacheNameConstants.Base.DICT_DATA, defaultConfig.entryTtl(Duration.ofSeconds(CacheTtlConstants.VERY_LONG_SECONDS)));
         return RedisCacheManager.builder(Objects.requireNonNull(connectionFactory))
                 .cacheDefaults(defaultConfig)
                 .withInitialCacheConfigurations(cacheConfigurations)

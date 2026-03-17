@@ -38,10 +38,6 @@ public class DictDataUpdateDto {
     @Schema(description = "是否默认值：0-否，1-是", example = "0")
     private Integer isDefault;
 
-    @Range(min = 0, max = 1, message = "状态值只能是0或1")
-    @Schema(description = "状态：0-禁用，1-启用", example = "1")
-    private Integer status;
-
     @Schema(description = "备注", example = "用户账号启用")
     private String remark;
 }

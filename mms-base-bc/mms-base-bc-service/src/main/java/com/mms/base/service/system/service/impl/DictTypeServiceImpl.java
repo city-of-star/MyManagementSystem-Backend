@@ -2,6 +2,7 @@ package com.mms.base.service.system.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.mms.base.service.system.service.DictCacheService;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
@@ -42,6 +43,9 @@ public class DictTypeServiceImpl implements DictTypeService {
 
     @Resource
     private DictDataMapper dictDataMapper;
+
+    @Resource
+    private DictCacheService dictCacheService;
 
     @Override
     public Page<DictTypeVo> getDictTypePage(DictTypePageQueryDto dto) {
@@ -147,9 +151,6 @@ public class DictTypeServiceImpl implements DictTypeService {
             if (StringUtils.hasText(dto.getDictTypeName())) {
                 dictType.setDictTypeName(dto.getDictTypeName());
             }
-            if (dto.getStatus() != null) {
-                dictType.setStatus(dto.getStatus());
-            }
             if (dto.getSortOrder() != null) {
                 dictType.setSortOrder(dto.getSortOrder());
             }
@@ -184,6 +185,8 @@ public class DictTypeServiceImpl implements DictTypeService {
             if (dictDataMapper.selectCount(wrapper) > 0) {
                 throw new BusinessException(ErrorCode.DATA_IN_USE, "存在关联的字典数据，无法删除");
             }
+            // 清除缓存
+            dictCacheService.clearDictCacheById(dictTypeId);
             dictTypeMapper.deleteById(dictTypeId);
         } catch (BusinessException e) {
             throw e;
@@ -224,6 +227,8 @@ public class DictTypeServiceImpl implements DictTypeService {
             dictType.setStatus(dto.getStatus());
             dictType.setUpdateTime(LocalDateTime.now());
             dictTypeMapper.updateById(dictType);
+            // 清除缓存
+            dictCacheService.clearDictCacheById(dto.getDictTypeId());
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
