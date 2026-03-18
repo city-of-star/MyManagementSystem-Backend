@@ -137,9 +137,8 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
                 return GatewayResponseUtils.writeError(exchange, HttpStatus.UNAUTHORIZED, e.getMessage());
             })
             .onErrorResume(e -> {
-                // Token验证失败（系统异常）
-                log.error("JWT认证异常: traceId={}, path={}, method={}, error={}", traceId, path, method, e.getMessage(), e);
-                return GatewayResponseUtils.writeError(exchange, HttpStatus.UNAUTHORIZED, ErrorCode.LOGIN_EXPIRED.getMessage());
+                log.error("网关链路异常: traceId={}, path={}, method={}, error={}", traceId, path, method, e.getMessage(), e);
+                return Mono.error(e);
             });
     }
 
