@@ -1,12 +1,19 @@
-# MMS 管理系统
+# MMS 管理系统后端（MyManagementSystem-Backend）
 
-一个基于Spring Boot 3.2.4和Spring Cloud的微服务管理系统项目
+一个基于 **Spring Boot 3.2.4**、**Spring Cloud 2023.0.1**、**Spring Cloud Alibaba 2023.0.1.0** 的微服务管理系统后端，包含网关鉴权、用户中心、基础数据、作业服务等模块，并提供完整的 RBAC 权限体系与统一的响应/异常/链路追踪能力。
 
 ## 项目简介
 
 MMS（Management System）是一个企业级管理系统，采用微服务架构设计，提供完整的用户权限管理体系。项目采用Spring Cloud微服务架构，使用Nacos作为服务注册中心和配置中心，通过Spring Cloud Gateway实现统一网关路由和JWT+RSA双重鉴权。
 
 项目包含完整的RBAC权限模型，支持用户管理、角色管理、权限控制、数据字典、系统配置等企业级功能。数据库设计包含13个核心表，支持逻辑删除和完整的审计功能。
+
+## 重要安全提示（务必阅读）
+
+仓库内各服务的 `application.yml` 主要用于**声明服务名/环境**并通过 `spring.config.import` 从 Nacos 拉取配置。但当前代码中也可能存在 **Nacos 地址/账号密码被硬编码**的情况（属于敏感信息）。
+
+- **强烈建议**：本地开发可临时写死，提交到仓库前请改为**环境变量 / JVM 参数覆盖**，不要把真实凭证提交到 Git。
+- **推荐做法**：只在 Nacos 中维护真实配置（数据库、Redis、JWT/RSA 密钥等），代码仓库只保留 `nacos/*-DEV.yaml` 这种示例模板与占位符。
 
 ## 技术栈
 
@@ -139,7 +146,20 @@ mysql -u root -p < mysql/init_mms_dev_core.sql
 
 ### 3. Nacos配置
 
-确保Nacos服务已启动，并在Nacos控制台配置以下配置文件：
+确保 Nacos 服务已启动，并在 Nacos 控制台创建配置（**dataId 与文件名保持一致**）。本项目通过 `spring.config.import` 按如下规则加载：
+
+- **namespace**：`${spring.profiles.active}`（例如 `DEV` / `TEST` / `PROD`）
+- **group**：`DEFAULT_GROUP`
+- **dataId**：`{name}-{profile}.yaml` 或公共的 `{xxx}-{profile}.yaml`
+
+以网关 `gateway` 为例，`mms-gateway-bc/src/main/resources/application.yml` 中的导入列表为：
+
+- `public-${profile}.yaml`
+- `redis-${profile}.yaml`
+- `jwt-${profile}.yaml`
+- `whitelist-${profile}.yaml`
+- `log-${profile}.yaml`
+- `${spring.application.name}-${profile}.yaml`（即 `gateway-DEV.yaml`）
 
 - `public-DEV.yaml`    - 公共配置（Spring 公共配置、Swagger 等）
 - `threadpool-DEV.yaml`- 线程池配置（各服务通用）
@@ -156,7 +176,17 @@ mysql -u root -p < mysql/init_mms_dev_core.sql
 
 > 说明：仓库中的上述 `*-DEV.yaml` 文件仅作为 **示例模板**，所有数据库账号、密码、JWT 密钥、RSA 密钥等敏感信息均已使用 `YOUR_***` 占位符处理，请在 **Nacos 控制台中创建同名配置并填入真实值**，不要将真实敏感信息写回到代码仓库。
 
-> 补充：部分服务的 `application.yml` 里可能存在示例的 `spring.cloud.nacos.server-addr/username/password`（用于本地开发演示）。实际使用时请替换为你自己的环境配置，或通过 JVM 参数/环境变量覆盖，避免把真实账号密码提交到仓库。
+> 补充：各服务 `application.yml` 中若存在 `spring.cloud.nacos.server-addr/username/password`，请务必使用 **环境变量/JVM 参数** 在运行时覆盖，避免提交真实账号密码到仓库。
+
+**覆盖示例（JVM 参数）**：
+
+```bash
+java -jar app.jar \
+  --spring.profiles.active=DEV \
+  --spring.cloud.nacos.server-addr=127.0.0.1:8848 \
+  --spring.cloud.nacos.username=nacos \
+  --spring.cloud.nacos.password=nacos
+```
 
 **Nacos连接信息**（请根据自己环境填写）示例：
 - 地址: `http://YOUR_NACOS_HOST:8848`
@@ -171,9 +201,13 @@ mvn clean install
 
 ### 5. 启动服务
 
-**启动顺序**：
-1. 先启动网关服务
-2. 再启动业务服务（usercenter、base、job）
+**启动顺序（推荐）**：
+
+1. **先启动依赖**：MySQL、Nacos（可选 Redis）
+2. **先启动业务服务**：`usercenter` / `base` / `job`
+3. **最后启动网关**：`gateway`
+
+> 说明：网关依赖服务发现与下游服务可用性；先拉起下游服务更利于排查问题（当然也可以全部启动后网关自动恢复路由）。
 
 **启动方式**：
 
@@ -276,6 +310,14 @@ public interface UserCenterFeignClient {
 - Nacos连接信息
 
 具体业务配置（数据库连接、JWT密钥等）需在Nacos配置中心配置。
+
+### 关键对接点（与前端/调用方）
+
+- **网关路由前缀**：
+  - `/usercenter/**` → `lb://usercenter`（StripPrefix=1）
+  - `/base/**` → `lb://base`（StripPrefix=1）
+  - `/job/**` → `lb://job`（StripPrefix=1）
+- **Swagger/Knife4j（通过网关）**：`http://localhost:5092/{service}/doc.html`
 
 ### 网关签名配置
 
