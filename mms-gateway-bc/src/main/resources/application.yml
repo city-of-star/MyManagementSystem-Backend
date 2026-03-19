@@ -19,9 +19,9 @@ spring:
       - optional:nacos:${spring.application.name}-${spring.profiles.active}.yaml?refreshEnabled=true
   cloud:
     nacos:
-      server-addr: 101.34.87.84:8848
-      username: nacos
-      password: zyntm123lhy
+      server-addr: ${NACOS_SERVER_ADDR}
+      username: ${NACOS_USERNAME}
+      password: ${NACOS_PASSWORD}
       config:
         namespace: ${spring.profiles.active}
         group: DEFAULT_GROUP
