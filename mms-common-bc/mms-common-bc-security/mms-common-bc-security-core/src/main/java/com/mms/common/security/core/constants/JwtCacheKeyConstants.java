@@ -29,6 +29,11 @@ public final class JwtCacheKeyConstants {
     public static final String REFRESH_TOKEN_PREFIX = SECURITY_JWT + "refresh:";
 
     /**
+     * 单会话 Session 存储的 key 前缀
+     */
+    public static final String SESSION_PREFIX = SECURITY_JWT + "session:";
+
+    /**
      * 私有构造函数，防止实例化
      */
     private JwtCacheKeyConstants() {

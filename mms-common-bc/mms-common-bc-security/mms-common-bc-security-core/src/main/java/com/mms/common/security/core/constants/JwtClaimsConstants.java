@@ -27,6 +27,11 @@ public final class JwtClaimsConstants {
     public static final String TOKEN_TYPE = "tokenType";
 
     /**
+     * JWT Claims 中的会话ID
+     */
+    public static final String SESSION_ID = "sid";
+
+    /**
      * 私有构造函数，防止实例化
      */
     private JwtClaimsConstants() {

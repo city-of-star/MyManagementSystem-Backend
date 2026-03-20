@@ -36,10 +36,11 @@ public class JwtUtils {
 	 *
 	 * @param userId   用户ID
 	 * @param username 用户名
+	 * @param sessionId 会话ID
 	 * @return Access Token
 	 */
-	public String generateAccessToken(Long userId, String username) {
-		return generateToken(userId, username, TokenType.ACCESS, jwtProperties.getAccessExpiration());
+	public String generateAccessToken(Long userId, String username, String sessionId) {
+		return generateToken(userId, username, sessionId, TokenType.ACCESS, jwtProperties.getAccessExpiration());
 	}
 
 	/**
@@ -47,13 +48,14 @@ public class JwtUtils {
 	 *
 	 * @param userId   用户ID
 	 * @param username 用户名
+	 * @param sessionId 会话ID
 	 * @return Refresh Token
 	 */
-	public String generateRefreshToken(Long userId, String username) {
-		return generateToken(userId, username, TokenType.REFRESH, jwtProperties.getRefreshExpiration());
+	public String generateRefreshToken(Long userId, String username, String sessionId) {
+		return generateToken(userId, username, sessionId, TokenType.REFRESH, jwtProperties.getRefreshExpiration());
 	}
 
-	private String generateToken(Long userId, String username, TokenType tokenType, long expirationMs) {
+	private String generateToken(Long userId, String username, String sessionId, TokenType tokenType, long expirationMs) {
 		Date now = new Date();
 		Date expiryDate = new Date(now.getTime() + expirationMs);
 		String jti = IdUtils.uuid32();
@@ -62,6 +64,7 @@ public class JwtUtils {
 				.id(jti)
 				.claim(JwtClaimsConstants.USER_ID, userId)
 				.claim(JwtClaimsConstants.USERNAME, username)
+				.claim(JwtClaimsConstants.SESSION_ID, sessionId)
 				.claim(JwtClaimsConstants.TOKEN_TYPE, tokenType.name())
 				.issuedAt(now)
 				.expiration(expiryDate)

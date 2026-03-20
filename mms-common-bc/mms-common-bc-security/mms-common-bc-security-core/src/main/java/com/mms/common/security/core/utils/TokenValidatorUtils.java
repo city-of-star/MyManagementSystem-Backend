@@ -3,12 +3,14 @@ package com.mms.common.security.core.utils;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.enums.jwt.TokenType;
+import com.mms.common.security.core.constants.JwtClaimsConstants;
 import com.mms.common.security.core.constants.JwtHeaderConstants;
 import io.jsonwebtoken.Claims;
 import lombok.AllArgsConstructor;
 import org.springframework.util.StringUtils;
 
 import java.util.Date;
+import java.util.Optional;
 
 /**
  * 实现功能【Token验证工具类】
@@ -25,6 +27,7 @@ public class TokenValidatorUtils {
 
     private final JwtUtils jwtUtils;
     private final TokenBlacklistUtils tokenBlacklistUtils;
+    private final SessionUtils sessionUtils;
 
     /**
      * 解析并验证Token
@@ -59,6 +62,21 @@ public class TokenValidatorUtils {
             // 检查Token是否在黑名单中
             String jti = claims.getId();
             if (StringUtils.hasText(jti) &&  tokenBlacklistUtils.isBlacklisted(jti)) {
+                throw new BusinessException(ErrorCode.LOGIN_EXPIRED);
+            }
+
+            // 严格单会话校验：token 中的 sid 必须与 Redis 当前 sid 一致
+            String username = Optional.ofNullable(claims.get(JwtClaimsConstants.USERNAME))
+                    .map(Object::toString)
+                    .orElse(null);
+            String sid = Optional.ofNullable(claims.get(JwtClaimsConstants.SESSION_ID))
+                    .map(Object::toString)
+                    .orElse(null);
+            if (!StringUtils.hasText(username) || !StringUtils.hasText(sid)) {
+                throw new BusinessException(ErrorCode.LOGIN_EXPIRED);
+            }
+            String currentSid = sessionUtils.getSessionId(username);
+            if (!StringUtils.hasText(currentSid) || !sid.equals(currentSid)) {
                 throw new BusinessException(ErrorCode.LOGIN_EXPIRED);
             }
 

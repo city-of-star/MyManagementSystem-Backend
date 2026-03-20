@@ -3,8 +3,10 @@ package com.mms.usercenter.service.auth.service.impl;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
+import com.mms.common.core.utils.IdUtils;
 import com.mms.common.security.core.constants.JwtClaimsConstants;
 import com.mms.common.security.core.utils.RefreshTokenUtils;
+import com.mms.common.security.core.utils.SessionUtils;
 import com.mms.common.security.core.utils.TokenBlacklistUtils;
 import com.mms.common.security.core.utils.JwtUtils;
 import com.mms.common.core.enums.jwt.TokenType;
@@ -56,6 +58,9 @@ public class AuthServiceImpl implements AuthService {
 
     @Resource
     private RefreshTokenUtils refreshTokenUtils;
+
+    @Resource
+    private SessionUtils sessionUtils;
 
     @Resource
     private LoginSecurityUtils loginSecurityUtils;
@@ -110,9 +115,12 @@ public class AuthServiceImpl implements AuthService {
             String clientIp = UserContextUtils.getClientIp();
             user.setLastLoginIp(StringUtils.hasText(clientIp) ? clientIp : "unknown");
             userMapper.updateById(user);
+            // 严格单会话：生成新的 sid，并写入 Redis
+            String sid = IdUtils.uuid32();
+            sessionUtils.storeSessionId(dto.getUsername(), sid);
             // 生成双 Token
-            String accessToken = jwtUtils.generateAccessToken(user.getId(), dto.getUsername());
-            String refreshToken = jwtUtils.generateRefreshToken(user.getId(), dto.getUsername());
+            String accessToken = jwtUtils.generateAccessToken(user.getId(), dto.getUsername(), sid);
+            String refreshToken = jwtUtils.generateRefreshToken(user.getId(), dto.getUsername(), sid);
             // 将 Refresh Token 存储到 Redis
             Claims refreshClaims = jwtUtils.parseToken(refreshToken);
             refreshTokenUtils.storeRefreshToken(dto.getUsername(), refreshClaims);
@@ -140,15 +148,20 @@ public class AuthServiceImpl implements AuthService {
                 .filter(StringUtils::hasText)
                 .map(Long::valueOf)
                 .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN));
+        // 提取 sid（严格单会话：refresh 续签沿用同一个 sid）
+        String sid = Optional.ofNullable(refreshClaims.get(JwtClaimsConstants.SESSION_ID))
+                .map(Object::toString)
+                .filter(StringUtils::hasText)
+                .orElseThrow(() -> new BusinessException(ErrorCode.LOGIN_EXPIRED));
         // 验证Refresh Token是否在Redis中存在且有效
         if (!refreshTokenUtils.isRefreshTokenValid(username, refreshClaims)) {
             throw new BusinessException(ErrorCode.LOGIN_EXPIRED);
         }
         // 将旧的Refresh Token加入黑名单
         tokenBlacklistUtils.addToBlacklist(refreshClaims);
-        // 生成新的双Token
-        String newAccessToken = jwtUtils.generateAccessToken(userId, username);
-        String newRefreshToken = jwtUtils.generateRefreshToken(userId, username);
+        // 生成新的双Token（沿用 sid，避免“刷新一次就挤掉自己正在并发使用的旧 access”）
+        String newAccessToken = jwtUtils.generateAccessToken(userId, username, sid);
+        String newRefreshToken = jwtUtils.generateRefreshToken(userId, username, sid);
         // 将新的Refresh Token存储到Redis（替换旧的）
         Claims newRefreshClaims = jwtUtils.parseToken(newRefreshToken);
         refreshTokenUtils.storeRefreshToken(username, newRefreshClaims);
@@ -173,7 +186,11 @@ public class AuthServiceImpl implements AuthService {
         Optional.ofNullable(refreshClaims.get(JwtClaimsConstants.USERNAME))
                 .map(Object::toString)
                 // 从Redis中删除对应的Refresh Token，确保旧Refresh Token立即失效，实现单点登录
-                .ifPresent(username -> refreshTokenUtils.removeRefreshToken(username));
+                .ifPresent(username -> {
+                    refreshTokenUtils.removeRefreshToken(username);
+                    // 严格单会话：登出时清理 sid（使 access 立即失效）
+                    sessionUtils.removeSessionId(username);
+                });
     }
 
     @Override

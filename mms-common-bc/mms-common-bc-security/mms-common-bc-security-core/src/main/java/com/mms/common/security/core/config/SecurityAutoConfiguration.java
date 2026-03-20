@@ -85,14 +85,26 @@ public class SecurityAutoConfiguration {
 	}
 
 	/**
+	 * 创建 SessionUtils Bean
+	 * 只有当存在 RedisTemplate 时创建
+	 */
+	@Bean
+	@ConditionalOnMissingBean
+	@ConditionalOnBean(RedisTemplate.class)
+	@ConditionalOnProperty(prefix = "jwt", name = "secret")
+	public SessionUtils sessionUtils(JwtProperties jwtProperties) {
+		return new SessionUtils(jwtProperties);
+	}
+
+	/**
 	 * 创建 TokenValidatorUtils Bean
 	 * 只有当 JwtUtils、TokenBlacklistUtils 存在时才创建
 	 */
 	@Bean
 	@ConditionalOnMissingBean
-	@ConditionalOnBean({JwtUtils.class, TokenBlacklistUtils.class})
-	public TokenValidatorUtils tokenValidatorUtils(JwtUtils jwtUtils, TokenBlacklistUtils tokenBlacklistUtils) {
-		return new TokenValidatorUtils(jwtUtils, tokenBlacklistUtils);
+	@ConditionalOnBean({JwtUtils.class, TokenBlacklistUtils.class, SessionUtils.class})
+	public TokenValidatorUtils tokenValidatorUtils(JwtUtils jwtUtils, TokenBlacklistUtils tokenBlacklistUtils, SessionUtils sessionUtils) {
+		return new TokenValidatorUtils(jwtUtils, tokenBlacklistUtils, sessionUtils);
 	}
 }
 

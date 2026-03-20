@@ -27,6 +27,11 @@ public class JwtProperties {
 	 * Refresh Token过期时间（毫秒），默认7天
 	 */
 	private Long refreshExpiration = 604800000L;
+
+	/**
+	 * Session 单会话过期时间（毫秒），默认7天
+	 */
+	private Long sessionExpiration = 604800000L;
 }
 
 

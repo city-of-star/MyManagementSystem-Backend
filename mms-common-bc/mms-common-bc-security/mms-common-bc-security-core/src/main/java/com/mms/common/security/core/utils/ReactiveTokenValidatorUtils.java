@@ -4,6 +4,7 @@ import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.enums.jwt.TokenType;
 import com.mms.common.security.core.constants.JwtCacheKeyConstants;
+import com.mms.common.security.core.constants.JwtClaimsConstants;
 import com.mms.common.security.core.constants.JwtHeaderConstants;
 import io.jsonwebtoken.Claims;
 import lombok.AllArgsConstructor;
@@ -12,6 +13,7 @@ import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 
 import java.util.Date;
+import java.util.Optional;
 
 /**
  * 实现功能【Token验证工具类（Reactive 版）】
@@ -70,18 +72,56 @@ public class ReactiveTokenValidatorUtils {
             return Mono.error(new BusinessException(ErrorCode.INVALID_TOKEN));
         }
         
-        // 构建黑名单Redis key，检查Token是否在黑名单中
-        String key = JwtCacheKeyConstants.TOKEN_BLACKLIST_PREFIX + jti;
-        return reactiveStringRedisTemplate.hasKey(key)
-                .defaultIfEmpty(false)
-                .flatMap(exists -> {
-                    // 如果Token在黑名单中，返回登录过期错误
-                    if (Boolean.TRUE.equals(exists)) {
-                        return Mono.error(new BusinessException(ErrorCode.LOGIN_EXPIRED));
-                    }
-                    // Token不在黑名单中，验证通过（黑名单检查通过，无需额外日志，由调用方记录）
-                    return Mono.just(claims);
-                });
+        // 严格单会话：token 中的 sid 必须与 Redis 当前 sid 一致
+        String username = Optional.ofNullable(claims.get(JwtClaimsConstants.USERNAME))
+                .map(Object::toString)
+                .orElse(null);
+        String sid = Optional.ofNullable(claims.get(JwtClaimsConstants.SESSION_ID))
+                .map(Object::toString)
+                .orElse(null);
+        if (!StringUtils.hasText(username) || !StringUtils.hasText(sid)) {
+            return Mono.error(new BusinessException(ErrorCode.LOGIN_EXPIRED));
+        }
+
+        // 先查黑名单，再查 session（都通过才放行）
+        String blacklistKey = JwtCacheKeyConstants.TOKEN_BLACKLIST_PREFIX + jti;
+        String sessionKey = JwtCacheKeyConstants.SESSION_PREFIX + username;
+
+        return reactiveStringRedisTemplate.hasKey(blacklistKey)
+            .defaultIfEmpty(false)
+            .flatMap(blacklisted -> {
+                if (Boolean.TRUE.equals(blacklisted)) {
+                    return Mono.error(new BusinessException(ErrorCode.LOGIN_EXPIRED));
+                }
+                return reactiveStringRedisTemplate.opsForValue().get(sessionKey)
+                    .defaultIfEmpty("")
+                    .flatMap(currentSid -> {
+                        String normalizedCurrentSid = normalizeRedisSid(currentSid);
+                        if (!StringUtils.hasText(normalizedCurrentSid) || !sid.equals(normalizedCurrentSid)) {
+                            return Mono.error(new BusinessException(ErrorCode.LOGIN_EXPIRED));
+                        }
+                        return Mono.just(claims);
+                    });
+            });
+    }
+
+    /**
+     * Redis 里 sid 可能会因为序列化方式不同而带引号（例如 JSON 序列化的字符串值："abc"）。
+     * 这里做简单归一化，避免网关侧校验误判。
+     */
+    private String normalizeRedisSid(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        String v = value.trim();
+        if (v.length() >= 2) {
+            char first = v.charAt(0);
+            char last = v.charAt(v.length() - 1);
+            if ((first == '"' && last == '"') || (first == '\'' && last == '\'')) {
+                return v.substring(1, v.length() - 1);
+            }
+        }
+        return v;
     }
 
     /**
