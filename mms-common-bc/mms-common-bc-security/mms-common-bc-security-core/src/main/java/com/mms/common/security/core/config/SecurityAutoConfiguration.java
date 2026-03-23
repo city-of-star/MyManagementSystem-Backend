@@ -103,8 +103,8 @@ public class SecurityAutoConfiguration {
 	@Bean
 	@ConditionalOnMissingBean
 	@ConditionalOnBean({JwtUtils.class, TokenBlacklistUtils.class, SessionUtils.class})
-	public TokenValidatorUtils tokenValidatorUtils(JwtUtils jwtUtils, TokenBlacklistUtils tokenBlacklistUtils, SessionUtils sessionUtils) {
-		return new TokenValidatorUtils(jwtUtils, tokenBlacklistUtils, sessionUtils);
+	public TokenValidatorUtils tokenValidatorUtils(JwtUtils jwtUtils, SessionUtils sessionUtils) {
+		return new TokenValidatorUtils(jwtUtils, sessionUtils);
 	}
 }
 

@@ -66,13 +66,7 @@ public class ReactiveTokenValidatorUtils {
             }
         }
 
-        // 黑名单检查（Reactive Redis）
-        String jti = claims.getId();
-        if (!StringUtils.hasText(jti)) {
-            return Mono.error(new BusinessException(ErrorCode.INVALID_TOKEN));
-        }
-        
-        // 严格单会话：token 中的 sid 必须与 Redis 当前 sid 一致
+        // 从 JWT Claims 中获取 username、sid
         String username = Optional.ofNullable(claims.get(JwtClaimsConstants.USERNAME))
                 .map(Object::toString)
                 .orElse(null);
@@ -83,26 +77,19 @@ public class ReactiveTokenValidatorUtils {
             return Mono.error(new BusinessException(ErrorCode.LOGIN_EXPIRED));
         }
 
-        // 先查黑名单，再查 session（都通过才放行）
-        String blacklistKey = JwtCacheKeyConstants.TOKEN_BLACKLIST_PREFIX + jti;
+        // 拼接 sid 缓存key
         String sessionKey = JwtCacheKeyConstants.SESSION_PREFIX + username;
 
-        return reactiveStringRedisTemplate.hasKey(blacklistKey)
-            .defaultIfEmpty(false)
-            .flatMap(blacklisted -> {
-                if (Boolean.TRUE.equals(blacklisted)) {
-                    return Mono.error(new BusinessException(ErrorCode.LOGIN_EXPIRED));
-                }
-                return reactiveStringRedisTemplate.opsForValue().get(sessionKey)
-                    .defaultIfEmpty("")
-                    .flatMap(currentSid -> {
-                        String normalizedCurrentSid = normalizeRedisSid(currentSid);
-                        if (!StringUtils.hasText(normalizedCurrentSid) || !sid.equals(normalizedCurrentSid)) {
-                            return Mono.error(new BusinessException(ErrorCode.LOGIN_EXPIRED));
-                        }
-                        return Mono.just(claims);
-                    });
-            });
+        // 校验 session
+        return reactiveStringRedisTemplate.opsForValue().get(sessionKey)
+                .defaultIfEmpty("")
+                .flatMap(currentSid -> {
+                    String normalizedCurrentSid = normalizeRedisSid(currentSid);
+                    if (!StringUtils.hasText(normalizedCurrentSid) || !sid.equals(normalizedCurrentSid)) {
+                        return Mono.error(new BusinessException(ErrorCode.LOGIN_EXPIRED));
+                    }
+                    return Mono.just(claims);
+                });
     }
 
     /**
@@ -125,10 +112,8 @@ public class ReactiveTokenValidatorUtils {
     }
 
     /**
-     * 从Authorization请求头中提取Bearer Token（与同步版保持一致）
-     * <p>
-     * 注意：此方法是纯字符串处理，无IO操作，执行时间极短，在响应式环境中调用是安全的。
-     * </p>
+     * 从Authorization请求头中提取Bearer Token
+     * 此方法是纯字符串处理，无IO操作，执行时间极短，在响应式环境中调用是安全的
      *
      * @param authHeader Authorization请求头的值
      * @return 提取的Token字符串
