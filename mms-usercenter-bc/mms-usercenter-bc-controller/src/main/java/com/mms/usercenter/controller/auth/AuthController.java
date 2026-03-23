@@ -13,6 +13,7 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -51,19 +52,29 @@ public class AuthController {
     @PostMapping("/refresh")
     public Response<LoginVo> refreshToken(HttpServletRequest request, HttpServletResponse response) {
         String refreshToken = CookieUtils.getCookieValue(request, cookieProperties.getRefreshToken().getName());
-        LoginVo loginVo = authService.refreshToken(refreshToken);
-        // 轮换 Refresh Token，同步更新 HttpOnly Cookie
-        CookieUtils.writeRefreshTokenCookie(response, cookieProperties.getRefreshToken(), loginVo.getRefreshToken(), loginVo.getRefreshTokenExpiresIn());
-        return Response.success(loginVo);
+        try {
+            LoginVo loginVo = authService.refreshToken(refreshToken);
+            // 更新 Refresh Token
+            CookieUtils.writeRefreshTokenCookie(response, cookieProperties.getRefreshToken(), loginVo.getRefreshToken(), loginVo.getRefreshTokenExpiresIn());
+            return Response.success(loginVo);
+        } catch (Exception e) {
+            // 刷新失败时清理 refresh cookie，避免前端后续无效重试
+            CookieUtils.clearRefreshTokenCookie(response, cookieProperties.getRefreshToken());
+            throw e;
+        }
     }
 
     @Operation(summary = "用户登出", description = "登出并让【Access Token】和【Refresh Token 失效】")
     @PostMapping("/logout")
     public Response<Void> logout(HttpServletRequest request, HttpServletResponse response) {
         String refreshToken = CookieUtils.getCookieValue(request, cookieProperties.getRefreshToken().getName());
-        authService.logout(refreshToken);
-        // 删除 Refresh Token Cookie
+        // 主动删除 Refresh Token Cookie（即使服务端校验失败也清理客户端态）
         CookieUtils.clearRefreshTokenCookie(response, cookieProperties.getRefreshToken());
+        // 无 refresh cookie 时视为幂等退出，避免前端主动退出场景出现无意义报错
+        if (!StringUtils.hasText(refreshToken)) {
+            return Response.success();
+        }
+        authService.logout(refreshToken);
         return Response.success();
     }
 

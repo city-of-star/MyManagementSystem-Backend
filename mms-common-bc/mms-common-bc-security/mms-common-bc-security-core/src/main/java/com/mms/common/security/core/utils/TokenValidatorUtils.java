@@ -4,7 +4,6 @@ import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.enums.jwt.TokenType;
 import com.mms.common.security.core.constants.JwtClaimsConstants;
-import com.mms.common.security.core.constants.JwtHeaderConstants;
 import io.jsonwebtoken.Claims;
 import lombok.AllArgsConstructor;
 import org.springframework.util.StringUtils;
@@ -26,7 +25,6 @@ import java.util.Optional;
 public class TokenValidatorUtils {
 
     private final JwtUtils jwtUtils;
-    private final TokenBlacklistUtils tokenBlacklistUtils;
     private final SessionUtils sessionUtils;
 
     /**
@@ -59,13 +57,7 @@ public class TokenValidatorUtils {
                 }
             }
 
-            // 检查Token是否在黑名单中
-            String jti = claims.getId();
-            if (StringUtils.hasText(jti) &&  tokenBlacklistUtils.isBlacklisted(jti)) {
-                throw new BusinessException(ErrorCode.LOGIN_EXPIRED);
-            }
-
-            // 严格单会话校验：token 中的 sid 必须与 Redis 当前 sid 一致
+            // 从 JWT Claims 中获取 username、sid
             String username = Optional.ofNullable(claims.get(JwtClaimsConstants.USERNAME))
                     .map(Object::toString)
                     .orElse(null);
@@ -75,6 +67,7 @@ public class TokenValidatorUtils {
             if (!StringUtils.hasText(username) || !StringUtils.hasText(sid)) {
                 throw new BusinessException(ErrorCode.LOGIN_EXPIRED);
             }
+            // 校验 session
             String currentSid = sessionUtils.getSessionId(username);
             if (!StringUtils.hasText(currentSid) || !sid.equals(currentSid)) {
                 throw new BusinessException(ErrorCode.LOGIN_EXPIRED);
@@ -86,29 +79,5 @@ public class TokenValidatorUtils {
         } catch (Exception e) {
             throw new BusinessException(ErrorCode.INVALID_TOKEN);
         }
-    }
-
-    /**
-     * 从Authorization请求头中提取Bearer Token
-     *
-     * @param authHeader Authorization请求头的值
-     * @return 提取的Token字符串
-     * @throws BusinessException 如果认证头为空、格式不正确或Token为空
-     */
-    public static String extractTokenFromHeader(String authHeader) {
-        if (!StringUtils.hasText(authHeader)) {
-            throw new BusinessException(ErrorCode.INVALID_AUTH_HEADER);
-        }
-
-        if (!authHeader.startsWith(JwtHeaderConstants.BEARER_PREFIX)) {
-            throw new BusinessException(ErrorCode.INVALID_AUTH_HEADER);
-        }
-
-        String token = authHeader.substring(JwtHeaderConstants.BEARER_PREFIX.length()).trim();
-        if (!StringUtils.hasText(token)) {
-            throw new BusinessException(ErrorCode.INVALID_AUTH_HEADER);
-        }
-        
-        return token;
     }
 }

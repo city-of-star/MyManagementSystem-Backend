@@ -7,7 +7,6 @@ import com.mms.common.core.utils.IdUtils;
 import com.mms.common.security.core.constants.JwtClaimsConstants;
 import com.mms.common.security.core.utils.RefreshTokenUtils;
 import com.mms.common.security.core.utils.SessionUtils;
-import com.mms.common.security.core.utils.TokenBlacklistUtils;
 import com.mms.common.security.core.utils.JwtUtils;
 import com.mms.common.core.enums.jwt.TokenType;
 import com.mms.common.security.core.utils.TokenValidatorUtils;
@@ -52,9 +51,6 @@ public class AuthServiceImpl implements AuthService {
 
     @Resource
     private TokenValidatorUtils tokenValidatorUtils;
-
-    @Resource
-    private TokenBlacklistUtils tokenBlacklistUtils;
 
     @Resource
     private RefreshTokenUtils refreshTokenUtils;
@@ -157,8 +153,6 @@ public class AuthServiceImpl implements AuthService {
         if (!refreshTokenUtils.isRefreshTokenValid(username, refreshClaims)) {
             throw new BusinessException(ErrorCode.LOGIN_EXPIRED);
         }
-        // 将旧的Refresh Token加入黑名单
-        tokenBlacklistUtils.addToBlacklist(refreshClaims);
         // 生成新的双Token（沿用 sid，避免“刷新一次就挤掉自己正在并发使用的旧 access”）
         String newAccessToken = jwtUtils.generateAccessToken(userId, username, sid);
         String newRefreshToken = jwtUtils.generateRefreshToken(userId, username, sid);
@@ -170,27 +164,20 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void logout(String refreshToken) {
-        // 从请求上下文获取 Access Token 信息（网关已验证并透传）
-        String accessTokenJti = UserContextUtils.getTokenJti();
-        String accessTokenExp = UserContextUtils.getTokenExp();
-        // 将Access Token加入黑名单
-        if (StringUtils.hasText(accessTokenJti) && StringUtils.hasText(accessTokenExp)) {
-            long expirationTime = Long.parseLong(accessTokenExp);
-            tokenBlacklistUtils.addToBlacklist(accessTokenJti, expirationTime, TokenType.ACCESS);
-        }
         // 解析并验证Refresh Token
         Claims refreshClaims = tokenValidatorUtils.parseAndValidate(refreshToken, TokenType.REFRESH);
-        // 将Refresh Token加入黑名单
-        tokenBlacklistUtils.addToBlacklist(refreshClaims);
-        // 从Token中获取用户名
-        Optional.ofNullable(refreshClaims.get(JwtClaimsConstants.USERNAME))
+        // 从 JWT Claims 中获取 username
+        String username = Optional.ofNullable(refreshClaims.get(JwtClaimsConstants.USERNAME))
                 .map(Object::toString)
-                // 从Redis中删除对应的Refresh Token，确保旧Refresh Token立即失效，实现单点登录
-                .ifPresent(username -> {
-                    refreshTokenUtils.removeRefreshToken(username);
-                    // 严格单会话：登出时清理 sid（使 access 立即失效）
-                    sessionUtils.removeSessionId(username);
-                });
+                .orElseThrow(() -> new BusinessException(ErrorCode.INVALID_TOKEN));
+        // 校验 Refresh Token 是否是当前会话的最新 token（防止旧 token / 伪造 token 触发退出）
+        if (!refreshTokenUtils.isRefreshTokenValid(username, refreshClaims)) {
+            throw new BusinessException(ErrorCode.LOGIN_EXPIRED);
+        }
+        // 从Redis中删除对应的Refresh Token
+        refreshTokenUtils.removeRefreshToken(username);
+        // 清理 sid
+        sessionUtils.removeSessionId(username);
     }
 
     @Override
