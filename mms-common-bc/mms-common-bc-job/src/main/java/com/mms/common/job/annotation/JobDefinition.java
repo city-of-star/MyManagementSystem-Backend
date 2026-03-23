@@ -1,6 +1,6 @@
-package com.mms.job.common.annotation;
+package com.mms.common.job.annotation;
 
-import com.mms.job.common.enums.JobTypeEnum;
+import com.mms.common.job.enums.JobTypeEnum;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;

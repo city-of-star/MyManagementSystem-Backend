@@ -1,4 +1,4 @@
-package com.mms.job.common.enums;
+package com.mms.common.job.enums;
 
 import lombok.Getter;
 

@@ -1,7 +1,7 @@
 package com.mms.common.job;
 
-import com.mms.job.common.annotation.JobDefinition;
-import com.mms.job.common.enums.JobTypeEnum;
+import com.mms.common.job.annotation.JobDefinition;
+import com.mms.common.job.enums.JobTypeEnum;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.core.annotation.AnnotationUtils;

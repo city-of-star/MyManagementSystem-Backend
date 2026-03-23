@@ -7,7 +7,7 @@ import com.mms.common.job.JobHandlerRegistry;
 import com.mms.common.job.dto.JobExecuteDto;
 import com.mms.common.job.dto.JobValidateDto;
 import com.mms.common.job.utils.JobParamUtils;
-import com.mms.job.common.enums.JobTypeEnum;
+import com.mms.common.job.enums.JobTypeEnum;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
