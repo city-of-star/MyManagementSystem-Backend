@@ -1,4 +1,4 @@
-package com.mms.usercenter.common.auth.entity;
+package com.mms.usercenter.common.audit.entity;
 
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.mms.common.datasource.entity.BaseIdEntity;
