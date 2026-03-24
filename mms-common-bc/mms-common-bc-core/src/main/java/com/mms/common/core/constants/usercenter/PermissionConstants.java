@@ -161,13 +161,6 @@ public final class PermissionConstants {
     public static final String AUDIT_EXCEPTION_LOG_RESOLVE = "AUDIT_EXCEPTION_LOG_RESOLVE";
 
     /**
-     * 在线用户（菜单+按钮）
-     */
-    public static final String AUDIT_ONLINE_USER = "AUDIT_ONLINE_USER";
-    public static final String AUDIT_ONLINE_USER_VIEW = "AUDIT_ONLINE_USER_VIEW";
-    public static final String AUDIT_ONLINE_USER_FORCE_LOGOUT = "AUDIT_ONLINE_USER_FORCE_LOGOUT";
-
-    /**
      * 接口访问日志（菜单+按钮）
      */
     public static final String AUDIT_API_ACCESS_LOG = "AUDIT_API_ACCESS_LOG";
@@ -175,6 +168,18 @@ public final class PermissionConstants {
     public static final String AUDIT_API_ACCESS_LOG_DELETE = "AUDIT_API_ACCESS_LOG_DELETE";
     public static final String AUDIT_API_ACCESS_LOG_EXPORT = "AUDIT_API_ACCESS_LOG_EXPORT";
     public static final String AUDIT_API_ACCESS_LOG_ANALYZE = "AUDIT_API_ACCESS_LOG_ANALYZE";
+
+    /**
+     * 安全中心（目录）
+     */
+    public static final String SECURITY = "SECURITY";
+
+    /**
+     * 在线用户（菜单+按钮）
+     */
+    public static final String SECURITY_ONLINE_USER = "SECURITY_ONLINE_USER";
+    public static final String SECURITY_ONLINE_USER_VIEW = "SECURITY_ONLINE_USER_VIEW";
+    public static final String SECURITY_ONLINE_USER_FORCE_LOGOUT = "SECURITY_ONLINE_USER_FORCE_LOGOUT";
 
     /**
      * 私有构造函数，防止实例化
