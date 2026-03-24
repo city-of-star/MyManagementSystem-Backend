@@ -761,7 +761,9 @@ VALUES
     (11, 'service_name', '服务名', 1, 17, '服务名', 0, NOW(), NOW()),
     (12, 'job_type', '定时任务类型', 1, 18, '定时任务类型', 0, NOW(), NOW()),
     (13, 'Job_run_mode', '定时任务运行模式', 1, 19, '定时任务运行模式', 0, NOW(), NOW()),
-    (14, 'job_status', '定时任务状态', 1, 20, '定时任务状态', 0, NOW(), NOW());
+    (14, 'job_status', '定时任务状态', 1, 20, '定时任务状态', 0, NOW(), NOW()),
+    (15, 'login_status', '登录状态', 1, 13, '用户登录操作的结果状态', 0, NOW(), NOW()),
+    (16, 'login_type', '登录类型', 1, 13, '用户登录的方式或类型', 0, NOW(), NOW());
 
 -- 初始化数据字典数据
 INSERT IGNORE INTO `system_dict_data` (`id`, `dict_type_id`, `dict_label`, `dict_value`, `dict_sort`, `is_default`, `status`, `remark`, `deleted`, `create_time`, `update_time`)
@@ -827,7 +829,12 @@ VALUES
     (45, 14, '成功', 'success', 2, 0, 1, '成功', 0, NOW(), NOW()),
     (46, 14, '失败', 'fail', 3, 0, 1, '失败', 0, NOW(), NOW()),
     (47, 14, '超时', 'timeout', 4, 0, 1, '超时''', 0, NOW(), NOW()),
-    (48, 14, '跳过', 'skip', 5, 0, 1, '跳过', 0, NOW(), NOW());
+    (48, 14, '跳过', 'skip', 5, 0, 1, '跳过', 0, NOW(), NOW()),
+    (49, 15, '失败', '0', 1, 0, 1, '登录失败', 0, NOW(), NOW()),
+    (50, 15, '成功', '1', 2, 1, 1, '登录成功', 0, NOW(), NOW()),
+    (51, 16, '密码登录', 'password', 1, 1, 1, '通过账号密码登录', 0, NOW(), NOW()),
+    (52, 16, '短信登录', 'sms', 2, 0, 1, '通过短信验证码登录', 0, NOW(), NOW()),
+    (53, 16, '邮箱登录', 'email', 3, 0, 1, '通过邮箱验证码登录', 0, NOW(), NOW());
 -- 初始化定时任务数据
 INSERT IGNORE INTO `job_def` (`id`,`service_name`,`job_code`,`job_name`,`job_type`,`cron_expr`,`run_mode`,`enabled`,`timeout_ms`,`remark`,`params_json`,`deleted`,`create_by`,`create_time`,`update_by`,`update_time`)
 VALUES
