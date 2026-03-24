@@ -39,7 +39,7 @@ public class GlobalExceptionAdvice {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(BusinessException.class)
     public Response<?> handleBusinessException(BusinessException e) {
-        log.warn("业务异常: 【{}】", e.getMessage());
+        log.warn("业务异常: 【{}】", e.getMessage(), e);
         return Response.fail(e.getCode(), e.getMessage());
     }
 
@@ -53,8 +53,7 @@ public class GlobalExceptionAdvice {
         // 获取第一个验证失败的错误信息
         FieldError fieldError = e.getBindingResult().getFieldError();
         String message = fieldError != null ? fieldError.getDefaultMessage() : "参数验证失败";
-        
-        log.warn("参数约束违反异常: 【{}】", message);
+        log.warn("参数约束违反异常: 【{}】", message, e);
         return Response.error(ErrorCode.PARAM_INVALID.getCode(), message);
     }
 
@@ -71,8 +70,7 @@ public class GlobalExceptionAdvice {
                 .map(ConstraintViolation::getMessage)
                 .findFirst()
                 .orElse("参数验证失败");
-        
-        log.warn("参数约束违反异常: 【{}】", message);
+        log.warn("参数约束违反异常: 【{}】", message, e);
         return Response.error(ErrorCode.PARAM_INVALID.getCode(), message);
     }
 
@@ -83,7 +81,7 @@ public class GlobalExceptionAdvice {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public Response<?> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
         String message = e.getMessage() != null ? e.getMessage() : "请求参数解析异常";
-        log.warn("请求参数解析异常: 【{}】", message);
+        log.warn("请求参数解析异常: 【{}】", message, e);
         return Response.error(ErrorCode.PARAM_INVALID.getCode(), ErrorCode.PARAM_INVALID.getMessage());
     }
 
@@ -97,8 +95,7 @@ public class GlobalExceptionAdvice {
         String method = e.getHttpMethod().name();
         String path = e.getResourcePath();
         String message = String.format("接口不存在: %s %s", method, path);
-        
-        log.warn("接口不存在: 【{} {}】", method, path);
+        log.warn("接口不存在: 【{} {}】", method, path, e);
         return Response.error(ErrorCode.NOT_FOUND.getCode(), message);
     }
 
@@ -113,8 +110,7 @@ public class GlobalExceptionAdvice {
         String[] supportedMethods = e.getSupportedMethods();
         String supportedMethodsStr = supportedMethods != null ? String.join(", ", supportedMethods) : "未知";
         String message = String.format("请求方法 %s 不被支持，支持的方法: %s", method, supportedMethodsStr);
-
-        log.warn("请求方法不匹配异常: 【请求方法: {}，支持的方法: {}】", method, supportedMethodsStr);
+        log.warn("请求方法不匹配异常: 【请求方法: {}，支持的方法: {}】", method, supportedMethodsStr, e);
         return Response.error(ErrorCode.METHOD_NOT_ALLOWED.getCode(), message);
     }
 
