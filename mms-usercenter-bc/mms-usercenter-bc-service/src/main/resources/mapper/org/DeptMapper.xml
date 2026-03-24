@@ -12,7 +12,7 @@
     <select id="getDeptPage" resultType="com.mms.usercenter.common.org.vo.DeptVo">
         SELECT
             <include refid="DeptVoColumns"/>
-        FROM dept
+        FROM system_dept
         <where>
             deleted = 0
             <if test="dto.deptName != null and dto.deptName != ''">
@@ -42,8 +42,8 @@
         SELECT
             d.id, d.parent_id, d.dept_name, d.dept_code, d.leader, d.phone, d.email, d.sort_order, d.status, d.remark,
             d.create_by, d.create_time, d.update_by, d.update_time
-        FROM dept d
-        INNER JOIN user_dept ud ON d.id = ud.dept_id
+        FROM system_dept d
+        INNER JOIN system_user_dept ud ON d.id = ud.dept_id
         WHERE ud.user_id = #{userId}
           AND ud.is_primary = 1
           AND d.deleted = 0

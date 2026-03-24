@@ -14,7 +14,7 @@
             create_time,
             update_by,
             update_time
-        FROM dict_type
+        FROM system_dict_type
         <where>
             deleted = 0
             <if test="dto.dictTypeCode != null and dto.dictTypeCode != ''">

@@ -18,8 +18,8 @@
             dd.create_time,
             dd.update_by,
             dd.update_time
-        FROM dict_data dd
-        LEFT JOIN dict_type dt ON dt.id = dd.dict_type_id AND dt.deleted = 0
+        FROM system_dict_data dd
+        LEFT JOIN system_dict_type dt ON dt.id = dd.dict_type_id AND dt.deleted = 0
         <where>
             dd.deleted = 0
             <if test="dto.dictTypeId != null">

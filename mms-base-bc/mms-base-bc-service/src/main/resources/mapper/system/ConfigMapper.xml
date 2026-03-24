@@ -16,7 +16,7 @@
             create_time,
             update_by,
             update_time
-        FROM config
+        FROM system_config
         <where>
             deleted = 0
             <if test="dto.configKey != null and dto.configKey != ''">

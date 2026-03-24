@@ -18,11 +18,11 @@
             u.remark,
             d.dept_name primaryDeptName,
             p.post_name primaryPostName
-        FROM user u
-        LEFT JOIN user_dept ud on u.id = ud.user_id AND ud.is_primary = 1
-        LEFT JOIN dept d on ud.dept_id = d.id
-        LEFT JOIN user_post up on u.id = up.user_id AND up.is_primary = 1
-        LEFT JOIN post p on up.post_id = p.id
+        FROM system_user u
+        LEFT JOIN system_user_dept ud on u.id = ud.user_id AND ud.is_primary = 1
+        LEFT JOIN system_dept d on ud.dept_id = d.id
+        LEFT JOIN system_user_post up on u.id = up.user_id AND up.is_primary = 1
+        LEFT JOIN system_post p on up.post_id = p.id
         <where>
             u.deleted = 0
             <if test="dto.username != null and dto.username != ''">
@@ -65,7 +65,7 @@
                 AND
                     EXISTS (
                         SELECT 1
-                        FROM user_dept ud
+                        FROM system_user_dept ud
                         WHERE ud.user_id = u.id
                             AND ud.dept_id = #{dto.deptId}
                     )
@@ -74,7 +74,7 @@
                 AND
                     EXISTS (
                         SELECT 1
-                        FROM user_post up
+                        FROM system_user_post up
                         WHERE up.user_id = u.id
                             AND up.post_id = #{dto.postId}
                     )
@@ -88,7 +88,7 @@
             id, username, password, nickname, real_name, avatar, email, phone, gender, birthday,
             status, locked, lock_time, lock_reason, last_login_time, last_login_ip,
             password_update_time, remark, create_by, create_time, update_by, update_time
-        FROM user
+        FROM system_user
         WHERE username = #{username}
           AND deleted = 0
     </select>
@@ -98,7 +98,7 @@
             id, username, password, nickname, real_name, avatar, email, phone, gender, birthday,
             status, locked, lock_time, lock_reason, last_login_time, last_login_ip,
             password_update_time, remark, create_by, create_time, update_by, update_time
-        FROM user
+        FROM system_user
         WHERE email = #{email}
           AND deleted = 0
     </select>
@@ -108,7 +108,7 @@
             id, username, password, nickname, real_name, avatar, email, phone, gender, birthday,
             status, locked, lock_time, lock_reason, last_login_time, last_login_ip,
             password_update_time, remark, create_by, create_time, update_by, update_time
-        FROM user
+        FROM system_user
         WHERE phone = #{phone}
           AND deleted = 0
     </select>

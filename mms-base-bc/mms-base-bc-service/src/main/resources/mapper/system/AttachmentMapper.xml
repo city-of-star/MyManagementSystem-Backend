@@ -21,7 +21,7 @@
             create_time,
             update_by,
             update_time
-        FROM attachment
+        FROM system_attachment
         <where>
             deleted = 0
             <if test="dto.originalName != null and dto.originalName != ''">
@@ -59,7 +59,7 @@
     </select>
 
     <delete id="hardDeleteById">
-        DELETE FROM attachment WHERE id = #{id}
+        DELETE FROM system_attachment WHERE id = #{id}
     </delete>
 
     <select id="selectDeletedForClean" resultType="com.mms.base.common.system.entity.AttachmentEntity">
@@ -82,7 +82,7 @@
             update_by,
             update_time,
             deleted
-        FROM attachment
+        FROM system_attachment
         <where>
             deleted = 1
             <if test="deleteBeforeTime != null">

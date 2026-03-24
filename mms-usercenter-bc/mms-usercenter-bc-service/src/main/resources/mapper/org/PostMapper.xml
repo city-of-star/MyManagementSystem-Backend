@@ -12,7 +12,7 @@
     <select id="getPostPage" resultType="com.mms.usercenter.common.org.vo.PostVo">
         SELECT
             <include refid="PostVoColumns"/>
-        FROM post
+        FROM system_post
         <where>
             deleted = 0
             <if test="dto.postName != null and dto.postName != ''">
@@ -42,8 +42,8 @@
         SELECT
             p.id, p.post_code, p.post_name, p.post_level, p.sort_order, p.status, p.remark,
             p.create_by, p.create_time, p.update_by, p.update_time
-        FROM post p
-        INNER JOIN user_post up ON p.id = up.post_id
+        FROM system_post p
+        INNER JOIN system_user_post up ON p.id = up.post_id
         WHERE up.user_id = #{userId}
           AND up.is_primary = 1
           AND p.deleted = 0
