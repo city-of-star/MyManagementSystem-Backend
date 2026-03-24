@@ -12,7 +12,7 @@
     <select id="getRolePage" resultType="com.mms.usercenter.common.auth.vo.RoleVo">
         SELECT
             <include refid="RoleVoColumns"/>
-        FROM role
+        FROM system_role
         <where>
             deleted = 0
             <if test="dto.roleCode != null and dto.roleCode != ''">

@@ -590,7 +590,7 @@ VALUES
     (58, 53, 'button', '定时任务执行记录-终止执行', 'JOB_RUN_LOG_TERMINATE', NULL, NULL, NULL, 105, 1, 1, 0, NOW(), NOW()),
 
     -- 审计中心（目录）
-    (59, 1, 'catalog', '审计中心', 'AUDIT', NULL, NULL, 'DataAnalysis', 110, 1, 1, 0, NOW(), NOW()),
+    (59, 0, 'catalog', '审计中心', 'AUDIT', NULL, NULL, 'DataAnalysis', 110, 1, 1, 0, NOW(), NOW()),
 
     -- 登录日志（菜单 + 按钮）
     (60, 59, 'menu', '登录日志', 'AUDIT_LOGIN_LOG', '/audit/loginLogPage', '/audit/loginLog/LoginLogPage.vue', 'Lock', 111, 1, 1, 0, NOW(), NOW()),
