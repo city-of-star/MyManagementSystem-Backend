@@ -17,7 +17,7 @@ import java.io.Serial;
  * @date 2025-12-09 14:42:17
  */
 @Data
-@TableName("permission")
+@TableName("system_permission")
 @Schema(description = "权限实体")
 public class PermissionEntity extends BaseEntity {
 

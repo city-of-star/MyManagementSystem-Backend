@@ -17,7 +17,7 @@ import java.io.Serial;
  * @date 2025-12-09 14:42:27
  */
 @Data
-@TableName("role_permission")
+@TableName("system_role_permission")
 @Schema(description = "角色权限关联实体")
 public class RolePermissionEntity extends BaseCreateEntity {
 

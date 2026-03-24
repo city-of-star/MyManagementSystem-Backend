@@ -17,7 +17,7 @@ import java.io.Serial;
  * @date 2025-12-09 14:41:56
  */
 @Data
-@TableName("dept")
+@TableName("system_dept")
 @Schema(description = "部门实体")
 public class DeptEntity extends BaseEntity {
 

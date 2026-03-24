@@ -17,7 +17,7 @@ import java.io.Serial;
  * @date 2025-12-09 14:42:17
  */
 @Data
-@TableName("post")
+@TableName("system_post")
 @Schema(description = "岗位实体")
 public class PostEntity extends BaseEntity {
 

@@ -18,7 +18,7 @@ import java.time.LocalDateTime;
  * @date 2025-12-09 14:41:47
  */
 @Data
-@TableName("user_login_log")
+@TableName("system_user_login_log")
 @Schema(description = "用户登录日志实体")
 public class UserLoginLogEntity extends BaseIdEntity {
 

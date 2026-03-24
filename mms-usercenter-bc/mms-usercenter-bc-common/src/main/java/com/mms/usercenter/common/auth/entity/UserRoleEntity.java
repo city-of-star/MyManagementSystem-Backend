@@ -17,7 +17,7 @@ import java.io.Serial;
  * @date 2025-12-09 14:42:22
  */
 @Data
-@TableName("user_role")
+@TableName("system_user_role")
 @Schema(description = "用户角色关联实体")
 public class UserRoleEntity extends BaseCreateEntity {
 

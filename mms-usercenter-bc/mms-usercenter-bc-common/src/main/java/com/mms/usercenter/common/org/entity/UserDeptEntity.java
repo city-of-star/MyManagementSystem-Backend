@@ -17,7 +17,7 @@ import java.io.Serial;
  * @date 2025-12-09 14:42:31
  */
 @Data
-@TableName("user_dept")
+@TableName("system_user_dept")
 @Schema(description = "用户部门关联实体")
 public class UserDeptEntity extends BaseCreateEntity {
 

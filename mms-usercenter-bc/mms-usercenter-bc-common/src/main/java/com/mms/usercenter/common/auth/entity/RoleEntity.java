@@ -17,7 +17,7 @@ import java.io.Serial;
  * @date 2025-12-09 14:42:11
  */
 @Data
-@TableName("role")
+@TableName("system_role")
 @Schema(description = "角色实体")
 public class RoleEntity extends BaseEntity {
 

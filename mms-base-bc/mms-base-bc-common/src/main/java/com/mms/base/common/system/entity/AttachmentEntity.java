@@ -18,7 +18,7 @@ import java.io.Serial;
  * @date 2026-02-06 14:36:38
  */
 @Data
-@TableName("attachment")
+@TableName("system_attachment")
 @Schema(description = "附件实体")
 public class AttachmentEntity extends BaseEntity {
 

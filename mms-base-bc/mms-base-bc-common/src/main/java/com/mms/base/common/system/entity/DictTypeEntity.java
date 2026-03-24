@@ -17,7 +17,7 @@ import java.io.Serial;
  * @date 2025-12-23 11:21:50
  */
 @Data
-@TableName("dict_type")
+@TableName("system_dict_type")
 @Schema(description = "数据字典类型实体")
 public class DictTypeEntity extends BaseEntity {
 

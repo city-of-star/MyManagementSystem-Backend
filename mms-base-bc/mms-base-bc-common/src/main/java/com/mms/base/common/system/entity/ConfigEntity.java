@@ -18,7 +18,7 @@ import java.io.Serial;
  * @date 2025-12-23 11:21:50
  */
 @Data
-@TableName("config")
+@TableName("system_config")
 @Schema(description = "系统配置实体")
 public class ConfigEntity extends BaseEntity {
 

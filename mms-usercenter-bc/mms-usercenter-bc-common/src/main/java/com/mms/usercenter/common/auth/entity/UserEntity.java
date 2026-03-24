@@ -20,7 +20,7 @@ import java.time.LocalDateTime;
  * @date 2025-11-07 09:41:03
  */
 @Data
-@TableName("user")
+@TableName("system_user")
 @Schema(description = "用户实体")
 public class UserEntity extends BaseEntity {
 
