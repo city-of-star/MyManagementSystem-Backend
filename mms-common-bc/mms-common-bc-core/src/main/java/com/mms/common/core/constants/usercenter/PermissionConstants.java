@@ -132,6 +132,51 @@ public final class PermissionConstants {
     public static final String JOB_RUN_LOG_TERMINATE = "JOB_RUN_LOG_TERMINATE";
 
     /**
+     * 审计中心（目录）
+     */
+    public static final String AUDIT = "AUDIT";
+
+    /**
+     * 登录日志（菜单+按钮）
+     */
+    public static final String AUDIT_LOGIN_LOG = "AUDIT_LOGIN_LOG";
+    public static final String AUDIT_LOGIN_LOG_VIEW = "AUDIT_LOGIN_LOG_VIEW";
+    public static final String AUDIT_LOGIN_LOG_DELETE = "AUDIT_LOGIN_LOG_DELETE";
+    public static final String AUDIT_LOGIN_LOG_EXPORT = "AUDIT_LOGIN_LOG_EXPORT";
+
+    /**
+     * 操作日志（菜单+按钮）
+     */
+    public static final String AUDIT_OPERATION_LOG = "AUDIT_OPERATION_LOG";
+    public static final String AUDIT_OPERATION_LOG_VIEW = "AUDIT_OPERATION_LOG_VIEW";
+    public static final String AUDIT_OPERATION_LOG_DELETE = "AUDIT_OPERATION_LOG_DELETE";
+    public static final String AUDIT_OPERATION_LOG_EXPORT = "AUDIT_OPERATION_LOG_EXPORT";
+
+    /**
+     * 异常日志（菜单+按钮）
+     */
+    public static final String AUDIT_EXCEPTION_LOG = "AUDIT_EXCEPTION_LOG";
+    public static final String AUDIT_EXCEPTION_LOG_VIEW = "AUDIT_EXCEPTION_LOG_VIEW";
+    public static final String AUDIT_EXCEPTION_LOG_DELETE = "AUDIT_EXCEPTION_LOG_DELETE";
+    public static final String AUDIT_EXCEPTION_LOG_RESOLVE = "AUDIT_EXCEPTION_LOG_RESOLVE";
+
+    /**
+     * 在线用户（菜单+按钮）
+     */
+    public static final String AUDIT_ONLINE_USER = "AUDIT_ONLINE_USER";
+    public static final String AUDIT_ONLINE_USER_VIEW = "AUDIT_ONLINE_USER_VIEW";
+    public static final String AUDIT_ONLINE_USER_FORCE_LOGOUT = "AUDIT_ONLINE_USER_FORCE_LOGOUT";
+
+    /**
+     * 接口访问日志（菜单+按钮）
+     */
+    public static final String AUDIT_API_ACCESS_LOG = "AUDIT_API_ACCESS_LOG";
+    public static final String AUDIT_API_ACCESS_LOG_VIEW = "AUDIT_API_ACCESS_LOG_VIEW";
+    public static final String AUDIT_API_ACCESS_LOG_DELETE = "AUDIT_API_ACCESS_LOG_DELETE";
+    public static final String AUDIT_API_ACCESS_LOG_EXPORT = "AUDIT_API_ACCESS_LOG_EXPORT";
+    public static final String AUDIT_API_ACCESS_LOG_ANALYZE = "AUDIT_API_ACCESS_LOG_ANALYZE";
+
+    /**
      * 私有构造函数，防止实例化
      */
     private PermissionConstants() {
