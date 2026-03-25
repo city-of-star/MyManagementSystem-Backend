@@ -2,5 +2,61 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.mms.usercenter.service.audit.mapper.UserLoginLogMapper">
 
+    <select id="getUserLoginLogPage" resultType="com.mms.usercenter.common.audit.vo.UserLoginLogVo">
+        SELECT
+            id,
+            user_id,
+            username,
+            login_type,
+            login_ip,
+            login_location,
+            user_agent,
+            login_status,
+            login_message,
+            login_time
+        FROM audit_user_login_log
+        <where>
+            <if test="dto.userId != null">
+                AND user_id = #{dto.userId}
+            </if>
+            <if test="dto.username != null and dto.username != ''">
+                AND username LIKE CONCAT('%', #{dto.username}, '%')
+            </if>
+            <if test="dto.loginType != null and dto.loginType != ''">
+                AND login_type = #{dto.loginType}
+            </if>
+            <if test="dto.loginIp != null and dto.loginIp != ''">
+                AND login_ip LIKE CONCAT('%', #{dto.loginIp}, '%')
+            </if>
+            <if test="dto.loginStatus != null">
+                AND login_status = #{dto.loginStatus}
+            </if>
+            <if test="dto.loginTimeStart != null">
+                AND login_time <![CDATA[ >= ]]> #{dto.loginTimeStart}
+            </if>
+            <if test="dto.loginTimeEnd != null">
+                AND login_time <![CDATA[ <= ]]> #{dto.loginTimeEnd}
+            </if>
+        </where>
+        ORDER BY login_time DESC
+    </select>
+
+    <select id="getUserLoginLogById" resultType="com.mms.usercenter.common.audit.vo.UserLoginLogVo">
+        SELECT
+            id,
+            user_id,
+            username,
+            login_type,
+            login_ip,
+            login_location,
+            user_agent,
+            login_status,
+            login_message,
+            login_time
+        FROM audit_user_login_log
+        WHERE id = #{logId}
+        LIMIT 1
+    </select>
+
 </mapper>
 
