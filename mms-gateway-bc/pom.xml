@@ -43,6 +43,12 @@
             <artifactId>spring-cloud-starter-gateway</artifactId>
         </dependency>
 
+        <!-- Resilience4j（网关熔断/降级） -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-circuitbreaker-reactor-resilience4j</artifactId>
+        </dependency>
+
         <!-- Spring Cloud LoadBalancer -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>

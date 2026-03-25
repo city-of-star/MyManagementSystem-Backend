@@ -7,15 +7,12 @@ spring:
   cloud:
     gateway:
       httpclient:
-        connect-timeout: 5000  # 连接超时（5秒）
-        response-timeout: 10s  # 响应超时（10秒）
-  # 网关路由转发配置
-  application:
-    gateway:
+        connect-timeout: 3000 # 连接超时(ms)
+        response-timeout: 5s # 响应超时
       discovery:
         locator:
           enabled: false
-      default-filters: []
+      default-filters: [] # 网关路由表
       routes:
         - id: usercenter-route
           uri: lb://usercenter
@@ -23,6 +20,18 @@ spring:
             - Path=/usercenter/**
           filters:
             - StripPrefix=1
+            # 限流（到达阈值返回 429）
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@ipOrUserKeyResolver}" # 限流 key 解析器
+                redis-rate-limiter.replenishRate: 60 # 桶的平均发放速度(每秒)
+                redis-rate-limiter.burstCapacity: 120 # 桶容量
+                redis-rate-limiter.requestedTokens: 1 # 每个请求消耗多少 token
+            # 熔断 + 降级
+            - name: CircuitBreaker
+              args:
+                name: usercenterCb # 熔断器实例名
+                fallbackUri: forward:/fallback/usercenter # 降级入口
 
         - id: base-route
           uri: lb://base
@@ -30,6 +39,16 @@ spring:
             - Path=/base/**
           filters:
             - StripPrefix=1
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@ipOrUserKeyResolver}"
+                redis-rate-limiter.replenishRate: 40
+                redis-rate-limiter.burstCapacity: 80
+                redis-rate-limiter.requestedTokens: 1
+            - name: CircuitBreaker
+              args:
+                name: baseCb
+                fallbackUri: forward:/fallback/base
 
         - id: job-route
           uri: lb://job
@@ -37,6 +56,58 @@ spring:
             - Path=/job/**
           filters:
             - StripPrefix=1
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@ipOrUserKeyResolver}"
+                redis-rate-limiter.replenishRate: 20
+                redis-rate-limiter.burstCapacity: 40
+                redis-rate-limiter.requestedTokens: 1
+            - name: CircuitBreaker
+              args:
+                name: jobCb
+                fallbackUri: forward:/fallback/job
+
+# Resilience4j 参数（熔断器的具体策略）
+resilience4j:
+  circuitbreaker:
+    instances:
+      usercenterCb:
+        slidingWindowType: COUNT_BASED # 基于最近 N 次调用来统计失败率
+        slidingWindowSize: 20 # 统计窗口大小为 20 次调用
+        minimumNumberOfCalls: 10 # 至少发生 10 次调用后，才开始计算熔断条件。避免初始流量小误触发
+        failureRateThreshold: 50 # 当窗口内失败率达到 50%，触发熔断
+        waitDurationInOpenState: 10s # 熔断（OPEN）后，10秒内所有请求快速失败，直接走降级逻辑。10秒后进入半开（HALF_OPEN）状态
+      baseCb:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+      jobCb:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+  timelimiter:
+    # 超时策略：当下游调用超过 timeoutDuration，会触发熔断/降级逻辑
+    instances:
+      usercenterCb:
+        timeoutDuration: 3s
+      baseCb:
+        timeoutDuration: 3s
+      jobCb:
+        timeoutDuration: 3s
+
+# 监控端点（Actuator）
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus,gateway # 暴露 endpoint
+  endpoint:
+    health:
+      show-details: always # 健康检查细节
 
 # 网关签名配置
 gateway:
