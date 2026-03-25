@@ -39,5 +39,5 @@ public interface UserLoginLogService {
     /**
      * 导出用户登录日志
      */
-    void exportUserLoginLog(UserLoginLogPageQueryDto dto);
+    byte[] exportUserLoginLog(UserLoginLogPageQueryDto dto);
 }

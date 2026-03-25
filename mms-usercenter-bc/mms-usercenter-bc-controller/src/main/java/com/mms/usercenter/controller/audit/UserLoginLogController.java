@@ -3,7 +3,9 @@ package com.mms.usercenter.controller.audit;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.common.core.constants.usercenter.PermissionConstants;
 import com.mms.common.core.response.Response;
+import com.mms.common.core.utils.DateUtils;
 import com.mms.common.security.servlet.annotations.RequiresPermission;
+import com.mms.common.webmvc.file.FileDownloadService;
 import com.mms.usercenter.common.audit.dto.UserLoginLogBatchDeleteDto;
 import com.mms.usercenter.common.audit.dto.UserLoginLogPageQueryDto;
 import com.mms.usercenter.common.audit.vo.UserLoginLogVo;
@@ -11,6 +13,7 @@ import com.mms.usercenter.service.audit.service.UserLoginLogService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -32,6 +35,9 @@ public class UserLoginLogController {
 
     @Resource
     private UserLoginLogService userLoginLogService;
+
+    @Resource
+    private FileDownloadService fileDownloadService;
 
     @Operation(summary = "分页查询用户登录日志", description = "根据条件分页查询用户登录日志")
     @RequiresPermission(PermissionConstants.AUDIT_LOGIN_LOG_VIEW)
@@ -63,11 +69,12 @@ public class UserLoginLogController {
         return Response.success();
     }
 
-    @Operation(summary = "导出用户登录日志", description = "导出用户登录日志（功能开发中）")
+    @Operation(summary = "导出用户登录日志", description = "导出用户登录日志")
     @RequiresPermission(PermissionConstants.AUDIT_LOGIN_LOG_EXPORT)
     @PostMapping("/export")
-    public Response<Void> exportUserLoginLog(@RequestBody @Valid UserLoginLogPageQueryDto dto) {
-        userLoginLogService.exportUserLoginLog(dto);
-        return Response.success();
+    public void exportUserLoginLog(@RequestBody @Valid UserLoginLogPageQueryDto dto, HttpServletResponse response) {
+        byte[] fileBytes = userLoginLogService.exportUserLoginLog(dto);
+        String fileName = "用户登录日志_" + DateUtils.formatDate(DateUtils.today()) + ".xlsx";
+        fileDownloadService.writeExcel(response, fileBytes, fileName);
     }
 }

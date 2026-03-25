@@ -58,6 +58,9 @@
         <jjwt.version>0.12.5</jjwt.version>
         <jbcrypt.version>0.4</jbcrypt.version>
         
+        <!-- EasyExcel -->
+        <easyexcel.version>3.3.2</easyexcel.version>
+        
         <!-- Knife4j文档 -->
         <knife4j.version>4.4.0</knife4j.version>
         
@@ -78,6 +81,13 @@
                 <version>${spring-boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            
+            <!-- EasyExcel -->
+            <dependency>
+                <groupId>com.alibaba</groupId>
+                <artifactId>easyexcel</artifactId>
+                <version>${easyexcel.version}</version>
             </dependency>
 
             <!-- Spring Cloud BOM -->
@@ -142,6 +152,11 @@
             <dependency>
                 <groupId>com.mms</groupId>
                 <artifactId>mms-common-bc-webmvc</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.mms</groupId>
+                <artifactId>mms-common-bc-document</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

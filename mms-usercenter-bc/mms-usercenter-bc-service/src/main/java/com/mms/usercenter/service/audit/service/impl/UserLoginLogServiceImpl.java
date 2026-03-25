@@ -1,6 +1,7 @@
 package com.mms.usercenter.service.audit.service.impl;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.mms.common.document.service.ExcelExportService;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
@@ -28,8 +29,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class UserLoginLogServiceImpl implements UserLoginLogService {
 
+    private static final long EXPORT_MAX_SIZE = 10000L;
+
     @Resource
     private UserLoginLogMapper userLoginLogMapper;
+
+    @Resource
+    private ExcelExportService excelExportService;
 
     @Override
     public Page<UserLoginLogVo> getUserLoginLogPage(UserLoginLogPageQueryDto dto) {
@@ -100,10 +106,17 @@ public class UserLoginLogServiceImpl implements UserLoginLogService {
     }
 
     @Override
-    public void exportUserLoginLog(UserLoginLogPageQueryDto dto) {
-        // TODO：后续集成 Excel 导出功能时实现
-        log.warn("导出用户登录日志功能暂未实现，参数：{}", dto);
-        throw new BusinessException(ErrorCode.INVALID_OPERATION, "用户登录日志导出功能暂未实现");
+    public byte[] exportUserLoginLog(UserLoginLogPageQueryDto dto) {
+        try {
+            Page<UserLoginLogVo> page = new Page<>(1, EXPORT_MAX_SIZE);
+            Page<UserLoginLogVo> resultPage = userLoginLogMapper.getUserLoginLogPage(page, dto);
+            return excelExportService.exportToBytes("用户登录日志", UserLoginLogVo.class, resultPage.getRecords());
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("导出用户登录日志失败：{}", e.getMessage(), e);
+            throw new ServerException("导出用户登录日志失败", e);
+        }
     }
 
 }

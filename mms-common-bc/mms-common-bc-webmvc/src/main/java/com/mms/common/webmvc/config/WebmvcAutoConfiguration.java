@@ -2,6 +2,8 @@ package com.mms.common.webmvc.config;
 
 import com.mms.common.webmvc.advice.GlobalExceptionAdvice;
 import com.mms.common.webmvc.filter.TraceIdMvcFilter;
+import com.mms.common.webmvc.file.FileDownloadService;
+import com.mms.common.webmvc.file.impl.FileDownloadServiceImpl;
 import com.mms.common.webmvc.swagger.SwaggerConfig;
 import io.swagger.v3.oas.models.OpenAPI;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -67,5 +69,14 @@ public class WebmvcAutoConfiguration {
     @ConditionalOnMissingBean(OpenAPI.class)
     public OpenAPI customOpenAPI(SwaggerConfig swaggerConfig) {
         return swaggerConfig.customOpenAPI();
+    }
+
+    /**
+     * 创建 文件下载服务 Bean
+     */
+    @Bean
+    @ConditionalOnMissingBean(FileDownloadService.class)
+    public FileDownloadService fileDownloadService() {
+        return new FileDownloadServiceImpl();
     }
 }
