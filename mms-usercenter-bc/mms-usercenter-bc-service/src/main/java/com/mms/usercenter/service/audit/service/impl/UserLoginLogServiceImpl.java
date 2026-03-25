@@ -29,8 +29,6 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class UserLoginLogServiceImpl implements UserLoginLogService {
 
-    private static final long EXPORT_MAX_SIZE = 10000L;
-
     @Resource
     private UserLoginLogMapper userLoginLogMapper;
 
@@ -108,7 +106,7 @@ public class UserLoginLogServiceImpl implements UserLoginLogService {
     @Override
     public byte[] exportUserLoginLog(UserLoginLogPageQueryDto dto) {
         try {
-            Page<UserLoginLogVo> page = new Page<>(1, EXPORT_MAX_SIZE);
+            Page<UserLoginLogVo> page = new Page<>(1, 10000);
             Page<UserLoginLogVo> resultPage = userLoginLogMapper.getUserLoginLogPage(page, dto);
             return excelExportService.exportToBytes("用户登录日志", UserLoginLogVo.class, resultPage.getRecords());
         } catch (BusinessException e) {

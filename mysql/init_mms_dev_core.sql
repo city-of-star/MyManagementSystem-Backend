@@ -493,7 +493,7 @@ VALUES
 INSERT IGNORE INTO `system_role` (`id`, `role_code`, `role_name`, `role_type`, `sort_order`, `status`, `remark`, `deleted`, `create_time`, `update_time`)
 VALUES
     (1, 'superAdmin', '超级管理员', 'system', 1, 1, '系统角色不可删除', 0, NOW(), NOW()),
-    (2, 'admin', '管理员', 'system', 2, 1, '', 0, NOW(), NOW());
+    (2, 'admin', '管理员', 'system', 2, 1, '系统角色不可删除', 0, NOW(), NOW());
 
 -- 给用户分配角色
 INSERT IGNORE INTO `system_user_role` (`id`, `user_id`, `role_id`, `create_time`)
