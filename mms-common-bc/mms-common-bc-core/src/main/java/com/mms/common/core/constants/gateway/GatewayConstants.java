@@ -123,6 +123,30 @@ public final class GatewayConstants {
     }
 
     /**
+     * WebSocket 握手相关常量
+     */
+    public static final class WebSocket {
+        /**
+         * Upgrade 请求头期望值
+         */
+        public static final String UPGRADE_HEADER_VALUE = "websocket";
+
+        /**
+         * 子协议请求头名称
+         */
+        public static final String PROTOCOL_HEADER = "Sec-WebSocket-Protocol";
+
+        /**
+         * 约定的 Bearer 子协议前缀（严格格式：bearer, <token>）
+         */
+        public static final String BEARER_PROTOCOL_PREFIX = "bearer, ";
+
+        private WebSocket() {
+            throw new UnsupportedOperationException("常量类不允许实例化");
+        }
+    }
+
+    /**
      * 私有构造函数，防止实例化
      */
     private GatewayConstants() {

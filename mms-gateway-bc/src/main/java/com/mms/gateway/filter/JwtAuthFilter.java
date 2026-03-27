@@ -16,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.stereotype.Component;
@@ -60,15 +61,12 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
         String path = request.getURI().getPath();
         String method = request.getMethod().name();
         String traceId = GatewayMdcUtils.getTraceIdFromMdc();
-
         // 白名单直接放行
         if (gatewayWhitelistService.isWhitelisted(path)) {
             return chain.filter(exchange);
         }
-
-        // 读取 Authorization 头部
-        String authHeader = request.getHeaders().getFirst(JwtHeaderConstants.AUTHORIZATION);
-        
+        // 解析 Authorization 头部
+        String authHeader = resolveAuthHeader(request);
         // 提取 JWT Token
         String token;
         try {
@@ -78,7 +76,6 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             log.warn("JWT认证失败: traceId={}, path={}, method={}, reason={}", traceId, path, method, e.getMessage());
             return GatewayResponseUtils.writeError(exchange, HttpStatus.UNAUTHORIZED, e.getMessage());
         }
-        
         // 解析并验证Token（验证类型必须是ACCESS，并检查黑名单）
         return reactiveTokenValidatorUtils.parseAndValidate(token, TokenType.ACCESS)
             .flatMap(claims -> {
@@ -94,18 +91,18 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
                 String jti = claims.getId();
                 // 从 Token 中获取 expiration（Token 过期时间）
                 Date expiration = claims.getExpiration();
-
                 // 生成网关签名（使用RSA私钥）
                 String[] signatureResult = gatewaySignatureService.generateSignature(userId, username, jti);
                 String signature = signatureResult[0];
                 String timestamp = signatureResult[1];
-
                 // 将用户信息和签名透传到下游服务
                 ServerHttpRequest mutatedRequest = request.mutate()
                     .headers(httpHeaders -> {
                         if (StringUtils.hasText(userId)) {
                             // 将 userId 添加到请求头，供下游服务使用
                             httpHeaders.set(GatewayConstants.Headers.USER_ID, userId);
+                            // 兼容 websocket 模块默认从 X-User-Id 读取握手用户
+                            httpHeaders.set("X-User-Id", userId);
                         }
                         if (StringUtils.hasText(username)) {
                             // 将 username 添加到请求头，供下游服务使用
@@ -124,10 +121,8 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
                         httpHeaders.set(GatewayConstants.Headers.GATEWAY_TIMESTAMP, timestamp);
                     })
                     .build();
-
                 // 记录认证成功日志
                 log.info("JWT认证成功: traceId={}, path={}, method={}, username={}", traceId, path, method, username);
-
                 // 继续过滤器链
                 return chain.filter(exchange.mutate().request(mutatedRequest).build());
             })
@@ -146,6 +141,42 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     public int getOrder() {
         // 在 TraceFilter 之后执行，保证 traceId 已经生成并透传到请求头
         return GatewayConstants.FilterOrder.JWT_AUTH_FILTER;
+    }
+
+    /**
+     * 解析请求中的认证头信息。
+     */
+    private String resolveAuthHeader(ServerHttpRequest request) {
+        // 读取标准 Authorization 头
+        String authHeader = request.getHeaders().getFirst(JwtHeaderConstants.AUTHORIZATION);
+        if (StringUtils.hasText(authHeader)) {
+            // 一般请求直接返回
+            return authHeader;
+        }
+        // 非 WS 握手请求保持原有 HTTP 认证语义
+        if (!isWebSocketHandshake(request)) {
+            return authHeader;
+        }
+        // WebSocket 握手
+        String protocolHeader = request.getHeaders().getFirst(GatewayConstants.WebSocket.PROTOCOL_HEADER);
+        if (!StringUtils.hasText(protocolHeader)) {
+            return authHeader;
+        }
+        if (protocolHeader.regionMatches(true, 0, GatewayConstants.WebSocket.BEARER_PROTOCOL_PREFIX, 0, GatewayConstants.WebSocket.BEARER_PROTOCOL_PREFIX.length())) {
+            String token = protocolHeader.substring(GatewayConstants.WebSocket.BEARER_PROTOCOL_PREFIX.length());
+            if (StringUtils.hasText(token)) {
+                return JwtHeaderConstants.BEARER_PREFIX + token;
+            }
+        }
+        return authHeader;
+    }
+
+    /**
+     * 判断当前请求是否为 WebSocket 握手请求
+     */
+    private boolean isWebSocketHandshake(ServerHttpRequest request) {
+        String upgrade = request.getHeaders().getFirst(HttpHeaders.UPGRADE);
+        return GatewayConstants.WebSocket.UPGRADE_HEADER_VALUE.equalsIgnoreCase(upgrade);
     }
 }
 

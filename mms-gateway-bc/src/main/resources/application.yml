@@ -35,17 +35,38 @@ spring:
           enabled: false
       default-filters: []
       routes:
+        - id: usercenter-ws-route
+          uri: lb:ws://usercenter
+          predicates:
+            - Path=/usercenter/ws/**
+          filters:
+            - StripPrefix=1
+
         - id: usercenter-route
           uri: lb://usercenter
           predicates:
             - Path=/usercenter/**
           filters:
             - StripPrefix=1
-        
+
+        - id: base-ws-route
+          uri: lb:ws://base
+          predicates:
+            - Path=/base/ws/**
+          filters:
+            - StripPrefix=1
+
         - id: base-route
           uri: lb://base
           predicates:
             - Path=/base/**
+          filters:
+            - StripPrefix=1
+
+        - id: job-ws-route
+          uri: lb:ws://job
+          predicates:
+            - Path=/job/ws/**
           filters:
             - StripPrefix=1
 
