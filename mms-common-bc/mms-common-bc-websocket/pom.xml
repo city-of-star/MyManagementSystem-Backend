@@ -11,7 +11,7 @@
 
     <artifactId>mms-common-bc-websocket</artifactId>
     <name>MMS Common BC WebSocket</name>
-    <description>WebSocket通用封装模块</description>
+    <description>WebSocket模块</description>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>

@@ -13,6 +13,10 @@ spring:
       - optional:nacos:mysql-${spring.profiles.active}.yaml?refreshEnabled=true
       # Redis配置
       - optional:nacos:redis-${spring.profiles.active}.yaml?refreshEnabled=true
+      # WebSocket配置
+      - optional:nacos:websocket-${spring.profiles.active}.yaml?refreshEnabled=true
+      # MQ配置
+      - optional:nacos:mq-${spring.profiles.active}.yaml?refreshEnabled=true
       # JWT配置
       - optional:nacos:jwt-${spring.profiles.active}.yaml?refreshEnabled=true
       # 密钥配置

@@ -68,6 +68,12 @@
             <artifactId>mms-common-bc-mq</artifactId>
         </dependency>
 
+        <!-- 依赖 mms-common-bc-websocket 模块 -->
+        <dependency>
+            <groupId>com.mms</groupId>
+            <artifactId>mms-common-bc-websocket</artifactId>
+        </dependency>
+
         <!-- 依赖 mms-common-bc-security Servlet 模块 -->
         <dependency>
             <groupId>com.mms</groupId>
