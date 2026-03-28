@@ -32,6 +32,11 @@ public final class PackageScanConstants {
     public static final String JOB_PACKAGE_SCAN = "com.mms.job";
 
     /**
+     * 实习服务包扫描路径
+     */
+    public static final String INTERNSHIP_PACKAGE_SCAN = "com.mms.intern";
+
+    /**
      * 私有构造函数，防止实例化
      */
     private PackageScanConstants() {

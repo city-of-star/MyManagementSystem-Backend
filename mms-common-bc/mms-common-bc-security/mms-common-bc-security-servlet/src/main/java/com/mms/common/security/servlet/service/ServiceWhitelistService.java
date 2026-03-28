@@ -47,8 +47,12 @@ public class ServiceWhitelistService extends AbstractWhitelistService {
             patterns.addAll(whitelistProperties.getUsercenter());
         } else if ("base".equals(applicationName)) {
             patterns.addAll(whitelistProperties.getBase());
+        } else if ("job".equals(applicationName)) {
+            patterns.addAll(whitelistProperties.getJob());
+        } else if ("internship".equals(applicationName)) {
+            patterns.addAll(whitelistProperties.getInternship());
         }
-        
+
         return patterns;
     }
 }

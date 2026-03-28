@@ -42,6 +42,7 @@ public class GatewayWhitelistService extends AbstractWhitelistService {
             paths.add("/usercenter" + normalizedPattern);
             paths.add("/base" + normalizedPattern);
             paths.add("/job" + normalizedPattern);
+            paths.add("/internship" + normalizedPattern);
         }
 
         // usercenter 专属白名单
@@ -60,6 +61,12 @@ public class GatewayWhitelistService extends AbstractWhitelistService {
         for (String pattern : whitelistProperties.getJob()) {
             String normalizedPattern = normalizePath(pattern);
             paths.add("/job" + normalizedPattern);
+        }
+
+        // internship 专属白名单
+        for (String pattern : whitelistProperties.getInternship()) {
+            String normalizedPattern = normalizePath(pattern);
+            paths.add("/internship" + normalizedPattern);
         }
         
         return paths;

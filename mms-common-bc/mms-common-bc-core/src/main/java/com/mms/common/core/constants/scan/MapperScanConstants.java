@@ -25,4 +25,9 @@ public class MapperScanConstants {
      * Job 服务的 Mapper 扫描路径
      */
     public static final String JOB_MAPPER_SCAN = "com.mms.job.core.**.mapper";
+
+    /**
+     * 实习服务 Mapper 扫描路径
+     */
+    public static final String INTERNSHIP_MAPPER_SCAN = "com.mms.intern.core.mapper";
 }

@@ -67,6 +67,23 @@ spring:
                 name: jobCb
                 fallbackUri: forward:/fallback/job
 
+        - id: internship-route
+          uri: lb://internship
+          predicates:
+            - Path=/internship/**
+          filters:
+            - StripPrefix=1
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@ipOrUserKeyResolver}"
+                redis-rate-limiter.replenishRate: 40
+                redis-rate-limiter.burstCapacity: 80
+                redis-rate-limiter.requestedTokens: 1
+            - name: CircuitBreaker
+              args:
+                name: internshipCb
+                fallbackUri: forward:/fallback/internship
+
 # Resilience4j 参数（熔断器的具体策略）
 resilience4j:
   circuitbreaker:
@@ -89,6 +106,12 @@ resilience4j:
         minimumNumberOfCalls: 10
         failureRateThreshold: 50
         waitDurationInOpenState: 10s
+      internshipCb:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 20
+        minimumNumberOfCalls: 10
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
   timelimiter:
     # 超时策略：当下游调用超过 timeoutDuration，会触发熔断/降级逻辑
     instances:
@@ -97,6 +120,8 @@ resilience4j:
       baseCb:
         timeoutDuration: 3s
       jobCb:
+        timeoutDuration: 3s
+      internshipCb:
         timeoutDuration: 3s
 
 # 监控端点（Actuator）

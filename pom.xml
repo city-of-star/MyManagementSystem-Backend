@@ -25,6 +25,7 @@
         <module>mms-usercenter-bc</module>
         <module>mms-gateway-bc</module>
         <module>mms-job-bc</module>
+        <module>mms-internship-bc</module>
     </modules>
 
     <!-- 属性配置 -->

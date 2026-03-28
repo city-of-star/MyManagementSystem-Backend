@@ -1,0 +1,30 @@
+spring:
+  application:
+    name: internship
+  profiles:
+    active: DEV
+  config:
+    import:
+      - optional:nacos:public-${spring.profiles.active}.yaml?refreshEnabled=true
+      - optional:nacos:threadpool-${spring.profiles.active}.yaml?refreshEnabled=true
+      - optional:nacos:mysql-${spring.profiles.active}.yaml?refreshEnabled=true
+      - optional:nacos:redis-${spring.profiles.active}.yaml?refreshEnabled=true
+      - optional:nacos:websocket-${spring.profiles.active}.yaml?refreshEnabled=true
+      - optional:nacos:mq-${spring.profiles.active}.yaml?refreshEnabled=true
+      - optional:nacos:jwt-${spring.profiles.active}.yaml?refreshEnabled=true
+      - optional:nacos:secret-${spring.profiles.active}.yaml?refreshEnabled=true
+      - optional:nacos:whitelist-${spring.profiles.active}.yaml?refreshEnabled=true
+      - optional:nacos:log-${spring.profiles.active}.yaml?refreshEnabled=true
+      - optional:nacos:${spring.application.name}-${spring.profiles.active}.yaml?refreshEnabled=true
+  cloud:
+    nacos:
+      server-addr: 101.34.87.84:8848
+      username: nacos
+      password: zyntm123lhy
+      config:
+        namespace: internship_management
+        group: DEFAULT_GROUP
+        file-extension: yaml
+      discovery:
+        namespace: internship_management
+        group: DEFAULT_GROUP

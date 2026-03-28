@@ -1,8 +1,8 @@
 -- 创建 mms_dev_core 数据库
-CREATE DATABASE IF NOT EXISTS `mms_dev_core` CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+CREATE DATABASE IF NOT EXISTS `internship_management` CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
 -- 使用该数据库
-USE `mms_dev_core`;
+USE `internship_management`;
 
 -- 用户表
 CREATE TABLE IF NOT EXISTS `system_user` (
