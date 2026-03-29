@@ -65,5 +65,11 @@ public class UserPageQueryDto {
 
     @Schema(description = "所属岗位ID（根据岗位筛选）", example = "1")
     private Long postId;
+
+    @Schema(description = "角色ID（仅返回拥有该角色的用户）", example = "5")
+    private Long roleId;
+
+    @Schema(description = "角色编码（仅返回拥有该角色的用户，与 roleId 二选一或同时生效）", example = "internTeacher")
+    private String roleCode;
 }
 

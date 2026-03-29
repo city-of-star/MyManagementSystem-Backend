@@ -79,6 +79,23 @@
                             AND up.post_id = #{dto.postId}
                     )
             </if>
+            <if test="dto.roleId != null">
+                AND EXISTS (
+                    SELECT 1
+                    FROM system_user_role ur
+                    WHERE ur.user_id = u.id
+                      AND ur.role_id = #{dto.roleId}
+                )
+            </if>
+            <if test="dto.roleCode != null and dto.roleCode != ''">
+                AND EXISTS (
+                    SELECT 1
+                    FROM system_user_role ur
+                    INNER JOIN system_role r ON r.id = ur.role_id AND r.deleted = 0
+                    WHERE ur.user_id = u.id
+                      AND r.role_code = #{dto.roleCode}
+                )
+            </if>
         </where>
         ORDER BY u.create_time DESC
     </select>
