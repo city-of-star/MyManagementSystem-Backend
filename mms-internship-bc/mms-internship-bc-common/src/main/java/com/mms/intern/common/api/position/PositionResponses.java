@@ -27,6 +27,10 @@ public class PositionResponses {
     @Data
     public static class OpenItem {
         private Long id;
+        private Long batchId;
+        private String batchName;
+        /** 岗位状态：DRAFT / PUBLISHED / CLOSED，开放列表中恒为 PUBLISHED */
+        private String status;
         private String enterpriseName;
         private String title;
         private Integer quota;

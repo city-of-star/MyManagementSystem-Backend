@@ -14,6 +14,9 @@ import com.mms.intern.core.service.InternApplicationService;
 import com.mms.intern.core.service.impl.support.InternPositionQuotaSupport;
 import com.mms.intern.core.util.InternPageSupport;
 import com.mms.intern.core.util.InternUserHelper;
+import com.mms.common.core.response.Response;
+import com.mms.usercenter.feign.UserInfoFeign;
+import com.mms.usercenter.feign.vo.UserInfoVo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -21,7 +24,13 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -33,6 +42,7 @@ public class InternApplicationServiceImpl implements InternApplicationService {
     private final InternBatchMapper batchMapper;
     private final InternEnterpriseMapper enterpriseMapper;
     private final InternPositionQuotaSupport quotaSupport;
+    private final UserInfoFeign userInfoFeign;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -76,7 +86,7 @@ public class InternApplicationServiceImpl implements InternApplicationService {
         a.setPositionId(dto.getPositionId());
         a.setStudentUserId(dto.getStudentUserId());
         a.setSchoolMentorUserId(dto.getSchoolMentorUserId());
-        a.setStatus(InternConstants.APP_APPROVED);
+        a.setStatus(InternConstants.APP_IN_PROGRESS);
         a.setAuditBy(InternUserHelper.requireUserId());
         a.setAuditTime(LocalDateTime.now());
         a.setRemark(dto.getRemark());
@@ -112,7 +122,9 @@ public class InternApplicationServiceImpl implements InternApplicationService {
         w.orderByDesc(InternApplicationEntity::getCreateTime);
         Page<InternApplicationEntity> page = applicationMapper.selectPage(new Page<>(q.getPageNum(), q.getPageSize()), w);
         Page<ApplicationResponses.ListItem> vo = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
-        vo.setRecords(page.getRecords().stream().map(this::toListItem).collect(Collectors.toList()));
+        List<ApplicationResponses.ListItem> rows = page.getRecords().stream().map(this::toListItem).collect(Collectors.toList());
+        fillUserDisplayNames(rows);
+        vo.setRecords(rows);
         return InternPageSupport.wrap(vo);
     }
 
@@ -143,7 +155,9 @@ public class InternApplicationServiceImpl implements InternApplicationService {
         w.orderByDesc(InternApplicationEntity::getCreateTime);
         Page<InternApplicationEntity> page = applicationMapper.selectPage(new Page<>(q.getPageNum(), q.getPageSize()), w);
         Page<ApplicationResponses.ListItem> vo = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
-        vo.setRecords(page.getRecords().stream().map(this::toListItem).collect(Collectors.toList()));
+        List<ApplicationResponses.ListItem> rows = page.getRecords().stream().map(this::toListItem).collect(Collectors.toList());
+        fillUserDisplayNames(rows);
+        vo.setRecords(rows);
         return InternPageSupport.wrap(vo);
     }
 
@@ -152,6 +166,7 @@ public class InternApplicationServiceImpl implements InternApplicationService {
         InternApplicationEntity a = getEntity(id);
         ApplicationResponses.Detail d = new ApplicationResponses.Detail();
         BeanUtils.copyProperties(toListItem(a), d);
+        fillUserDisplayNames(d);
         d.setAuditRemark(a.getAuditRemark());
         d.setAuditBy(a.getAuditBy());
         d.setRemark(a.getRemark());
@@ -176,7 +191,12 @@ public class InternApplicationServiceImpl implements InternApplicationService {
         if (InternConstants.APP_APPROVED.equals(dto.getStatus()) && !quotaSupport.hasQuota(a.getPositionId())) {
             throw new BusinessException(ErrorCode.QUOTA_EXCEEDED, "岗位名额已满");
         }
-        a.setStatus(dto.getStatus());
+        // 管理员点「通过」后直接进入「实习中」，与业务上「审批通过即可实习」一致
+        if (InternConstants.APP_APPROVED.equals(dto.getStatus())) {
+            a.setStatus(InternConstants.APP_IN_PROGRESS);
+        } else {
+            a.setStatus(dto.getStatus());
+        }
         a.setAuditRemark(dto.getAuditRemark());
         a.setAuditBy(InternUserHelper.requireUserId());
         a.setAuditTime(LocalDateTime.now());
@@ -287,5 +307,75 @@ public class InternApplicationServiceImpl implements InternApplicationService {
             }
         }
         return x;
+    }
+
+    /**
+     * 列表/详情展示学生、校内导师姓名（用户中心），避免前端只能展示用户 ID。
+     */
+    private void fillUserDisplayNames(ApplicationResponses.ListItem x) {
+        if (x == null) {
+            return;
+        }
+        fillUserDisplayNames(Collections.singletonList(x));
+    }
+
+    private void fillUserDisplayNames(List<ApplicationResponses.ListItem> items) {
+        if (items == null || items.isEmpty()) {
+            return;
+        }
+        Set<Long> ids = new HashSet<>();
+        for (ApplicationResponses.ListItem x : items) {
+            if (x.getStudentUserId() != null) {
+                ids.add(x.getStudentUserId());
+            }
+            if (x.getSchoolMentorUserId() != null) {
+                ids.add(x.getSchoolMentorUserId());
+            }
+        }
+        Map<Long, UserInfoVo> cache = new HashMap<>();
+        for (Long id : ids) {
+            UserInfoVo u = safeGetUser(id);
+            if (u != null) {
+                cache.put(id, u);
+            }
+        }
+        for (ApplicationResponses.ListItem x : items) {
+            UserInfoVo s = cache.get(x.getStudentUserId());
+            if (s != null) {
+                x.setStudentName(displayName(s));
+            }
+            UserInfoVo m = cache.get(x.getSchoolMentorUserId());
+            if (m != null) {
+                x.setSchoolMentorName(displayName(m));
+            }
+        }
+    }
+
+    private static String displayName(UserInfoVo u) {
+        if (u == null) {
+            return null;
+        }
+        if (StringUtils.hasText(u.getRealName())) {
+            return u.getRealName();
+        }
+        if (StringUtils.hasText(u.getNickname())) {
+            return u.getNickname();
+        }
+        return u.getUsername();
+    }
+
+    private UserInfoVo safeGetUser(Long id) {
+        if (id == null) {
+            return null;
+        }
+        try {
+            Response<UserInfoVo> r = userInfoFeign.getUserById(id);
+            if (r != null && Response.SUCCESS_CODE.equals(r.getCode()) && r.getData() != null) {
+                return r.getData();
+            }
+        } catch (Exception ignored) {
+            // 用户中心不可用时列表仍返回，仅缺少姓名
+        }
+        return null;
     }
 }

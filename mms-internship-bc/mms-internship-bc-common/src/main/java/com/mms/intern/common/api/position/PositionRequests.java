@@ -23,7 +23,7 @@ public class PositionRequests {
     public static class OpenQuery {
         private int pageNum = 1;
         private int pageSize = 10;
-        @NotNull
+        /** 为空时查询全部批次下已发布岗位 */
         private Long batchId;
         private String keyword;
     }

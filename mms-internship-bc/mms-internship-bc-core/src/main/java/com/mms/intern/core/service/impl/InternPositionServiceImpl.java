@@ -56,8 +56,10 @@ public class InternPositionServiceImpl implements InternPositionService {
     @Override
     public PageResultVo<PositionResponses.OpenItem> openPage(PositionRequests.OpenQuery q) {
         LambdaQueryWrapper<InternPositionEntity> w = new LambdaQueryWrapper<>();
-        w.eq(InternPositionEntity::getBatchId, q.getBatchId())
-                .eq(InternPositionEntity::getStatus, InternConstants.POSITION_PUBLISHED);
+        w.eq(InternPositionEntity::getStatus, InternConstants.POSITION_PUBLISHED);
+        if (q.getBatchId() != null) {
+            w.eq(InternPositionEntity::getBatchId, q.getBatchId());
+        }
         if (StringUtils.hasText(q.getKeyword())) {
             w.like(InternPositionEntity::getTitle, q.getKeyword().trim());
         }
@@ -200,12 +202,18 @@ public class InternPositionServiceImpl implements InternPositionService {
     private PositionResponses.OpenItem toOpenItem(InternPositionEntity p) {
         PositionResponses.OpenItem x = new PositionResponses.OpenItem();
         x.setId(p.getId());
+        x.setBatchId(p.getBatchId());
+        x.setStatus(p.getStatus());
         x.setTitle(p.getTitle());
         x.setQuota(p.getQuota());
         x.setAppliedCount(countOccupied(p.getId()));
         x.setRequirement(p.getRequirement());
         x.setStartDate(p.getStartDate());
         x.setEndDate(p.getEndDate());
+        InternBatchEntity b = batchMapper.selectById(p.getBatchId());
+        if (b != null) {
+            x.setBatchName(b.getBatchName());
+        }
         InternEnterpriseEntity e = enterpriseMapper.selectById(p.getEnterpriseId());
         if (e != null) {
             x.setEnterpriseName(e.getEnterpriseName());

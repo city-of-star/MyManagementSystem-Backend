@@ -11,8 +11,9 @@ VALUES
     (9004, 9001, 'menu', '岗位管理', 'INTERNSHIP_POSITION', '/internship/positionPage', '/internship/position/PositionPage.vue', 'Briefcase', 203, 1, 1, 0, NOW(), NOW()),
     (9005, 9001, 'menu', '申请与流程', 'INTERNSHIP_APPLICATION', '/internship/applicationPage', '/internship/application/ApplicationPage.vue', 'Document', 204, 1, 1, 0, NOW(), NOW()),
     (9006, 9001, 'menu', '周志批阅', 'INTERNSHIP_WEEKLY_LOG', '/internship/weeklyLogPage', '/internship/weekly/WeeklyLogAdminPage.vue', 'EditPen', 205, 1, 1, 0, NOW(), NOW()),
-    (9007, 9001, 'menu', '实习材料', 'INTERNSHIP_MATERIAL', '/internship/materialPage', '/internship/material/MaterialPage.vue', 'FolderOpened', 206, 1, 1, 0, NOW(), NOW()),
-    (9008, 9001, 'menu', '数据统计', 'INTERNSHIP_STATS', '/internship/statsPage', '/internship/stats/StatsPage.vue', 'DataAnalysis', 207, 1, 1, 0, NOW(), NOW());
+    (9008, 9001, 'menu', '数据统计', 'INTERNSHIP_STATS', '/internship/statsPage', '/internship/stats/StatsPage.vue', 'DataAnalysis', 207, 1, 1, 0, NOW(), NOW()),
+    (9009, 9001, 'menu', '我的实习', 'INTERNSHIP_STUDENT', '/internship/studentInternshipPage', '/internship/student/StudentInternshipPage.vue', 'User', 208, 1, 1, 0, NOW(), NOW()),
+    (9010, 9001, 'menu', '待批周志', 'INTERNSHIP_MENTOR_WEEKLY', '/internship/mentorWeeklyLogPage', '/internship/weekly/WeeklyLogMentorPage.vue', 'Edit', 209, 1, 1, 0, NOW(), NOW());
 
 -- 将上述权限授予超级管理员(role_id=1)与管理员(role_id=2)；若角色 id 不同请自行修改
 INSERT IGNORE INTO `system_role_permission` (`id`, `role_id`, `permission_id`, `create_time`)
@@ -29,7 +30,9 @@ VALUES
     (200010, 2, 9005, NOW()),
     (200011, 1, 9006, NOW()),
     (200012, 2, 9006, NOW()),
-    (200013, 1, 9007, NOW()),
-    (200014, 2, 9007, NOW()),
     (200015, 1, 9008, NOW()),
-    (200016, 2, 9008, NOW());
+    (200016, 2, 9008, NOW()),
+    (200017, 1, 9009, NOW()),
+    (200018, 2, 9009, NOW()),
+    (200019, 1, 9010, NOW()),
+    (200020, 2, 9010, NOW());
