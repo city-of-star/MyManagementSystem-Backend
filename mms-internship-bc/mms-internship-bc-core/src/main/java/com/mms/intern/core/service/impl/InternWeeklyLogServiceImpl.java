@@ -103,6 +103,13 @@ public class InternWeeklyLogServiceImpl implements InternWeeklyLogService {
     }
 
     @Override
+    public WeeklyLogResponses.Detail getAdminDetail(Long id) {
+        InternUserHelper.requireUserId();
+        InternWeeklyLogEntity e = getEntity(id);
+        return toDetail(e);
+    }
+
+    @Override
     public PageResultVo<WeeklyLogResponses.ListItem> myPage(WeeklyLogRequests.MyPageQuery q) {
         Long uid = InternUserHelper.requireUserId();
         InternApplicationEntity app = loadApplication(q.getApplicationId());

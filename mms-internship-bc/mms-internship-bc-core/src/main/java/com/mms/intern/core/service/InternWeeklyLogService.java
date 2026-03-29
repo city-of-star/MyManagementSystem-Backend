@@ -16,6 +16,11 @@ public interface InternWeeklyLogService {
 
     WeeklyLogResponses.Detail get(Long id);
 
+    /**
+     * 管理端查看详情（与 {@link #adminPage} 同属教务/管理员能力，不要求当前用户是本人或校内导师）
+     */
+    WeeklyLogResponses.Detail getAdminDetail(Long id);
+
     PageResultVo<WeeklyLogResponses.ListItem> myPage(WeeklyLogRequests.MyPageQuery q);
 
     PageResultVo<WeeklyLogResponses.ListItem> pendingPage(WeeklyLogRequests.PendingPageQuery q);

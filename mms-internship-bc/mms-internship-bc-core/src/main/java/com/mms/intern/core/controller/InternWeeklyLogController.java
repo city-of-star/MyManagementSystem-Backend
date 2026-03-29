@@ -36,6 +36,14 @@ public class InternWeeklyLogController {
         return Response.success();
     }
 
+    /**
+     * 管理端查看周志全文（不与申请上的学生/校内导师身份绑定，权限由网关与菜单控制，与 POST /page 一致）
+     */
+    @GetMapping("/admin/{id}")
+    public Response<WeeklyLogResponses.Detail> getAdminDetail(@PathVariable Long id) {
+        return Response.success(weeklyLogService.getAdminDetail(id));
+    }
+
     @GetMapping("/{id}")
     public Response<WeeklyLogResponses.Detail> get(@PathVariable Long id) {
         return Response.success(weeklyLogService.get(id));
