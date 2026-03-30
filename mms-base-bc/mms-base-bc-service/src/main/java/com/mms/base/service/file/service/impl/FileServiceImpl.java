@@ -46,7 +46,6 @@ public class FileServiceImpl implements FileService {
         if (!StringUtils.hasText(storagePath) || !StringUtils.hasText(urlPrefix)) {
             throw new ServerException("文件存储配置异常，请检查 file.upload.storagePath / file.upload.urlPrefix");
         }
-
         // 将相对存储路径转换为绝对路径并缓存
         this.baseDir = Paths.get(storagePath).toAbsolutePath().normalize();
         try {
@@ -63,7 +62,6 @@ public class FileServiceImpl implements FileService {
             if (file == null || file.isEmpty()) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "上传文件不能为空");
             }
-
             // 获取原始文件名
             String originalFileName = file.getOriginalFilename() == null ? "" : file.getOriginalFilename();
             // 做路径穿越防护

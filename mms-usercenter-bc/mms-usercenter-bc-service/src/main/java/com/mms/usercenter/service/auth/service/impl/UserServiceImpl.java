@@ -239,6 +239,8 @@ public class UserServiceImpl implements UserService {
                 user.setRealName(dto.getRealName());
             }
             if (StringUtils.hasText(dto.getAvatar())) {
+                //  删除用户头像
+                deleteUserAvatar(user.getId());
                 user.setAvatar(dto.getAvatar());
             }
             if (StringUtils.hasText(dto.getEmail())) {
@@ -590,6 +592,15 @@ public class UserServiceImpl implements UserService {
         }
         // 清除该用户的权限缓存，确保角色变更立即生效
         userAuthorityService.clearUserAuthorityCacheByUserId(userId);
+    }
+
+    /**
+     * 删除用户头像
+     *
+     * @param userId 用户ID
+     */
+    void deleteUserAvatar(Long userId) {
+
     }
 
     // ==================== 实体转换方法 ====================
