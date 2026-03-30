@@ -3,7 +3,6 @@ server:
   port: 5092
 
 spring:
-  # 网关连接超时配置
   cloud:
     gateway:
       httpclient:
@@ -33,6 +32,13 @@ spring:
                 name: usercenterCb # 熔断器实例名
                 fallbackUri: forward:/fallback/usercenter # 降级入口
 
+        - id: usercenter-ws-route
+          uri: lb:ws://usercenter
+          predicates:
+            - Path=/usercenter/ws/**
+          filters:
+            - StripPrefix=1
+
         - id: base-route
           uri: lb://base
           predicates:
@@ -50,6 +56,13 @@ spring:
                 name: baseCb
                 fallbackUri: forward:/fallback/base
 
+        - id: base-ws-route
+          uri: lb:ws://base
+          predicates:
+            - Path=/base/ws/**
+          filters:
+            - StripPrefix=1
+
         - id: job-route
           uri: lb://job
           predicates:
@@ -66,6 +79,13 @@ spring:
               args:
                 name: jobCb
                 fallbackUri: forward:/fallback/job
+
+        - id: job-ws-route
+          uri: lb:ws://job
+          predicates:
+            - Path=/job/ws/**
+          filters:
+            - StripPrefix=1
 
 # Resilience4j 参数（熔断器的具体策略）
 resilience4j:

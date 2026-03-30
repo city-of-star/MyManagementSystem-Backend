@@ -3,6 +3,7 @@ package com.mms.common.websocket.interceptor;
 import com.mms.common.websocket.constants.WebSocketConstants;
 import com.mms.common.websocket.properties.WebSocketProperties;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.AllArgsConstructor;
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;
 import org.springframework.http.server.ServletServerHttpRequest;
@@ -20,13 +21,10 @@ import java.util.Map;
  * @author li.hongyu
  * @date 2026-03-26 16:28:47
  */
+@AllArgsConstructor
 public class AuthHandshakeInterceptor implements HandshakeInterceptor {
 
     private final WebSocketProperties properties;
-
-    public AuthHandshakeInterceptor(WebSocketProperties properties) {
-        this.properties = properties;
-    }
 
     @Override
     public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Map<String, Object> attributes) {
