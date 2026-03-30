@@ -44,7 +44,7 @@ public class CookieUtils {
             return;
         }
         ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(props.getName(), refreshToken)
-                .path(props.getPath())
+                .path("/api" + props.getPath())
                 .httpOnly(props.isHttpOnly())
                 .secure(props.isSecure())
                 .maxAge(Duration.ofSeconds(expiresInSeconds));

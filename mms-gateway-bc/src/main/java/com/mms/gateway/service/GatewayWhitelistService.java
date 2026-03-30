@@ -35,33 +35,28 @@ public class GatewayWhitelistService extends AbstractWhitelistService {
     @Override
     protected List<String> buildRawPatterns() {
         List<String> paths = new ArrayList<>();
-        
         // 公共白名单：为每个下游服务加前缀
         for (String pattern : whitelistProperties.getCommon()) {
             String normalizedPattern = normalizePath(pattern);
-            paths.add("/usercenter" + normalizedPattern);
-            paths.add("/base" + normalizedPattern);
-            paths.add("/job" + normalizedPattern);
+            paths.add("/api/usercenter" + normalizedPattern);
+            paths.add("/api/base" + normalizedPattern);
+            paths.add("/api/job" + normalizedPattern);
         }
-
         // usercenter 专属白名单
         for (String pattern : whitelistProperties.getUsercenter()) {
             String normalizedPattern = normalizePath(pattern);
-            paths.add("/usercenter" + normalizedPattern);
+            paths.add("/api/usercenter" + normalizedPattern);
         }
-
         // base 专属白名单
         for (String pattern : whitelistProperties.getBase()) {
             String normalizedPattern = normalizePath(pattern);
-            paths.add("/base" + normalizedPattern);
+            paths.add("/api/base" + normalizedPattern);
         }
-
         // job 专属白名单
         for (String pattern : whitelistProperties.getJob()) {
             String normalizedPattern = normalizePath(pattern);
-            paths.add("/job" + normalizedPattern);
+            paths.add("/api/job" + normalizedPattern);
         }
-        
         return paths;
     }
 

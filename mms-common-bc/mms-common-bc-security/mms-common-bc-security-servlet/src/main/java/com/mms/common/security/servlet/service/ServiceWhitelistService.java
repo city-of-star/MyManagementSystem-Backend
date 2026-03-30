@@ -38,17 +38,16 @@ public class ServiceWhitelistService extends AbstractWhitelistService {
      */
     @Override
     protected List<String> buildRawPatterns() {
-
         // 公共白名单
         List<String> patterns = new ArrayList<>(whitelistProperties.getCommon());
-        
         // 服务专属白名单
         if ("usercenter".equals(applicationName)) {
             patterns.addAll(whitelistProperties.getUsercenter());
         } else if ("base".equals(applicationName)) {
             patterns.addAll(whitelistProperties.getBase());
+        } else if ("job".equals(applicationName)) {
+            patterns.addAll(whitelistProperties.getJob());
         }
-        
         return patterns;
     }
 }

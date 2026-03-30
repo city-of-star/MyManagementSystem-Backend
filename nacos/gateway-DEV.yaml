@@ -16,9 +16,9 @@ spring:
         - id: usercenter-route
           uri: lb://usercenter
           predicates:
-            - Path=/usercenter/**
+            - Path=/api/usercenter/**
           filters:
-            - StripPrefix=1
+            - StripPrefix=2
             # 限流（到达阈值返回 429）
             - name: RequestRateLimiter
               args:
@@ -42,9 +42,9 @@ spring:
         - id: base-route
           uri: lb://base
           predicates:
-            - Path=/base/**
+            - Path=/api/base/**
           filters:
-            - StripPrefix=1
+            - StripPrefix=2
             - name: RequestRateLimiter
               args:
                 key-resolver: "#{@ipOrUserKeyResolver}"
@@ -66,9 +66,9 @@ spring:
         - id: job-route
           uri: lb://job
           predicates:
-            - Path=/job/**
+            - Path=/api/job/**
           filters:
-            - StripPrefix=1
+            - StripPrefix=2
             - name: RequestRateLimiter
               args:
                 key-resolver: "#{@ipOrUserKeyResolver}"
