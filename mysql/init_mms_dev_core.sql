@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS `system_user` (
     `password` varchar(255) NOT NULL COMMENT '密码（加密后）',
     `nickname` varchar(64) DEFAULT NULL COMMENT '昵称',
     `real_name` varchar(64) DEFAULT NULL COMMENT '真实姓名',
-    `avatar` varchar(1024) DEFAULT NULL COMMENT '头像URL',
+    `avatar_id` bigint DEFAULT NULL COMMENT '头像附件ID',
     `email` varchar(128) DEFAULT NULL COMMENT '邮箱（可为空，但填写后必须唯一）',
     `phone` varchar(32) DEFAULT NULL COMMENT '手机号（可为空，但填写后必须唯一）',
     `gender` tinyint DEFAULT 0 COMMENT '性别：0-未知，1-男，2-女',
@@ -838,4 +838,4 @@ VALUES
 -- 初始化定时任务数据
 INSERT IGNORE INTO `job_def` (`id`,`service_name`,`job_code`,`job_name`,`job_type`,`cron_expr`,`run_mode`,`enabled`,`timeout_ms`,`remark`,`params_json`,`deleted`,`create_by`,`create_time`,`update_by`,`update_time`)
 VALUES
-    (1, 'base', 'ATTACHMENT_CLEAN', '附件清理任务', 'ATTACHMENT_CLEAN', '0 0 2 * * ?', 'single', 1, 0, '定期清理已逻辑删除的附件，物理删除文件和记录', '{"batchSize": 100, "deletedDays": 30, "deletePhysicalFile": true, "storageType": "local", "businessType": null, "fileType": null, "maxFileSize": 10485760, "minFileSize": 1024, "pathPattern": null, "retryCount": 2, "continueOnError": true, "orderBy": "id"}', 0, 1, NOW(), 1, NOW());
+    (1, 'base', 'ATTACHMENT_CLEAN', '附件清理任务', 'ATTACHMENT_CLEAN', '0 0 2 * * ?', 'single', 1, 0, '定期清理已逻辑删除的附件，物理删除文件和记录', '{"batchSize": 100, "deletePhysicalFile": true, "storageType": "local", "businessType": null, "fileType": null, "maxFileSize": 10485760, "minFileSize": 1024, "pathPattern": null, "retryCount": 2, "continueOnError": true, "orderBy": "id"}', 0, 1, NOW(), 1, NOW());

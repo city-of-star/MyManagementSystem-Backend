@@ -3,6 +3,7 @@ package com.mms.base.feign;
 import com.mms.base.common.system.vo.AttachmentVo;
 import com.mms.common.core.response.Response;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
@@ -23,5 +24,11 @@ public interface AttachmentFeign {
      */
     @GetMapping("/{attachmentId}")
     Response<AttachmentVo> getAttachmentById(@PathVariable Long attachmentId);
+
+    /**
+     * 根据附件ID逻辑删除附件（软删除）
+     */
+    @DeleteMapping("/{attachmentId}")
+    Response<Void> deleteAttachment(@PathVariable Long attachmentId);
 
 }

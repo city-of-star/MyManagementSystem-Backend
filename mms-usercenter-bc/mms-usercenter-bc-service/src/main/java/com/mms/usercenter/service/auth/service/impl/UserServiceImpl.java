@@ -2,9 +2,12 @@ package com.mms.usercenter.service.auth.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.mms.base.common.system.vo.AttachmentVo;
+import com.mms.base.feign.AttachmentFeign;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
+import com.mms.common.core.response.Response;
 import com.mms.usercenter.common.auth.dto.*;
 import com.mms.usercenter.common.auth.entity.RoleEntity;
 import com.mms.usercenter.common.auth.entity.UserEntity;
@@ -75,6 +78,9 @@ public class UserServiceImpl implements UserService {
     @Resource
     private UserAuthorityService userAuthorityService;
 
+    @Resource
+    private AttachmentFeign attachmentFeign;
+
     @Override
     public Page<UserPageVo> getUserPage(UserPageQueryDto dto) {
         try {
@@ -104,6 +110,18 @@ public class UserServiceImpl implements UserService {
             vo.setPrimaryPost(postService.getPrimaryPostByUserId(userId));
             vo.setDepts(deptService.getDeptListByUserId(userId));
             vo.setPosts(postService.getPostListByUserId(userId));
+            // 查询用户头像URL（如果用户头像附件ID不为空）
+            if (user.getAvatarId() != null) {
+                try {
+                    Response<AttachmentVo> resp = attachmentFeign.getAttachmentById(user.getAvatarId());
+                    if (resp != null && Objects.equals(resp.getCode(), Response.SUCCESS_CODE)) {
+                        String avatarUrl = resp.getData().getFileUrl();
+                        vo.setAvatarUrl(avatarUrl);
+                    }
+                } catch (Exception e) {
+                    log.error("查询用户头像URL失败：{}", e.getMessage(), e);
+                }
+            }
             return vo;
         } catch (BusinessException e) {
             throw e;
@@ -131,6 +149,18 @@ public class UserServiceImpl implements UserService {
             vo.setPrimaryPost(postService.getPrimaryPostByUserId(userId));
             vo.setDepts(deptService.getDeptListByUserId(userId));
             vo.setPosts(postService.getPostListByUserId(userId));
+            // 查询用户头像URL（如果用户头像附件ID不为空）
+            if (user.getAvatarId() != null) {
+                try {
+                    Response<AttachmentVo> resp = attachmentFeign.getAttachmentById(user.getAvatarId());
+                    if (resp != null && Objects.equals(resp.getCode(), Response.SUCCESS_CODE)) {
+                        String avatarUrl = resp.getData().getFileUrl();
+                        vo.setAvatarUrl(avatarUrl);
+                    }
+                } catch (Exception e) {
+                    log.error("查询用户头像URL失败：{}", e.getMessage(), e);
+                }
+            }
             return vo;
         } catch (BusinessException e) {
             throw e;
@@ -238,10 +268,10 @@ public class UserServiceImpl implements UserService {
             if (StringUtils.hasText(dto.getRealName())) {
                 user.setRealName(dto.getRealName());
             }
-            if (StringUtils.hasText(dto.getAvatar())) {
-                //  删除用户头像
-                deleteUserAvatar(user.getId());
-                user.setAvatar(dto.getAvatar());
+            if (dto.getAvatarId() != null) {
+                //  删除用户头像附件
+                attachmentFeign.deleteAttachment(user.getAvatarId());
+                user.setAvatarId(dto.getAvatarId());
             }
             if (StringUtils.hasText(dto.getEmail())) {
                 user.setEmail(dto.getEmail());
@@ -592,15 +622,6 @@ public class UserServiceImpl implements UserService {
         }
         // 清除该用户的权限缓存，确保角色变更立即生效
         userAuthorityService.clearUserAuthorityCacheByUserId(userId);
-    }
-
-    /**
-     * 删除用户头像
-     *
-     * @param userId 用户ID
-     */
-    void deleteUserAvatar(Long userId) {
-
     }
 
     // ==================== 实体转换方法 ====================

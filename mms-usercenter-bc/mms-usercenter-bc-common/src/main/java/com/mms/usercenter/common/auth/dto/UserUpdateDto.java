@@ -3,7 +3,6 @@ package com.mms.usercenter.common.auth.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.time.LocalDate;
@@ -32,8 +31,8 @@ public class UserUpdateDto {
     @Schema(description = "真实姓名", example = "张三")
     private String realName;
 
-    @Schema(description = "头像URL", example = "https://example.com/avatar.jpg")
-    private String avatar;
+    @Schema(description = "头像附件ID", example = "1")
+    private Long avatarId;
 
     @Pattern(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "邮箱格式不正确")
     @Schema(description = "邮箱", example = "test@example.com")

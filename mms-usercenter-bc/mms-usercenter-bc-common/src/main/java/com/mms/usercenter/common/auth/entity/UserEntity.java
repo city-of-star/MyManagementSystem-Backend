@@ -40,8 +40,9 @@ public class UserEntity extends BaseEntity {
     @Schema(description = "真实姓名")
     private String realName;
 
-    @Schema(description = "头像URL")
-    private String avatar;
+    @TableField("avatar_id")
+    @Schema(description = "头像附件ID")
+    private Long avatarId;
 
     @Schema(description = "邮箱（可为空但唯一）")
     private String email;

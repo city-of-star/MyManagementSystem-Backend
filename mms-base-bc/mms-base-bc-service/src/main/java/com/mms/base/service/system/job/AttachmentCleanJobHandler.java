@@ -16,7 +16,6 @@ import org.springframework.util.StringUtils;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -46,17 +45,11 @@ public class AttachmentCleanJobHandler implements JobHandler {
         // 解析参数
         AttachmentCleanJobDto dto = JobParamUtils.parseParams(dtoJson, AttachmentCleanJobDto.class);
         
-        log.info("开始执行附件清理任务，参数：batchSize={}, deletedDays={}, deletePhysicalFile={}, storageType={}, businessType={}, fileType={}, maxFileSize={}, minFileSize={}, pathPattern={}, retryCount={}, continueOnError={}, orderBy={}",
-                dto.getBatchSize(), dto.getDeletedDays(), dto.getDeletePhysicalFile(),
+        log.info("开始执行附件清理任务，参数：batchSize={}, deletePhysicalFile={}, storageType={}, businessType={}, fileType={}, maxFileSize={}, minFileSize={}, pathPattern={}, retryCount={}, continueOnError={}, orderBy={}",
+                dto.getBatchSize(), dto.getDeletePhysicalFile(),
                 dto.getStorageType(), dto.getBusinessType(), dto.getFileType(),
                 dto.getMaxFileSize(), dto.getMinFileSize(), dto.getPathPattern(),
                 dto.getRetryCount(), dto.getContinueOnError(), dto.getOrderBy());
-
-        // 计算删除时间阈值（逻辑删除时间必须早于此时间才清理）
-        LocalDateTime deleteBeforeTime = null;
-        if (dto.getDeletedDays() != null && dto.getDeletedDays() > 0) {
-            deleteBeforeTime = LocalDateTime.now().minusDays(dto.getDeletedDays());
-        }
 
         // 批次大小（为null时使用默认100）
         int batchSize = dto.getBatchSize() != null && dto.getBatchSize() > 0 ? dto.getBatchSize() : 100;
@@ -64,7 +57,6 @@ public class AttachmentCleanJobHandler implements JobHandler {
         // 查询一批已逻辑删除的附件记录
         List<AttachmentEntity> records = attachmentMapper.selectDeletedForClean(
                 batchSize,
-                deleteBeforeTime,
                 dto.getStorageType(),
                 dto.getBusinessType(),
                 dto.getOrderBy()

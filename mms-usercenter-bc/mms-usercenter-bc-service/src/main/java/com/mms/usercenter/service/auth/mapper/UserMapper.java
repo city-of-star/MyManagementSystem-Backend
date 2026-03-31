@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.usercenter.common.auth.dto.UserPageQueryDto;
 import com.mms.usercenter.common.auth.entity.UserEntity;
-import com.mms.usercenter.common.auth.vo.UserDetailVo;
 import com.mms.usercenter.common.auth.vo.UserPageVo;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;

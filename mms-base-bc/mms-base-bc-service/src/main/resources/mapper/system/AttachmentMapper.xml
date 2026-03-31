@@ -85,9 +85,6 @@
         FROM system_attachment
         <where>
             deleted = 1
-            <if test="deleteBeforeTime != null">
-                AND update_time <![CDATA[ <= ]]> #{deleteBeforeTime}
-            </if>
             <if test="storageType != null and storageType != ''">
                 AND storage_type = #{storageType}
             </if>

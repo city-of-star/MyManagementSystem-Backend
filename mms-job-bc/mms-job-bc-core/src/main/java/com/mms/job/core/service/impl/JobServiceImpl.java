@@ -327,7 +327,7 @@ public class JobServiceImpl implements JobService {
         dto.setJobType(jobType);
         dto.setParamsJson(paramsJson);
         // 拼接url
-        String url = "http://gateway/" + serviceName + "/internal/job/validate";
+        String url = "http://gateway/api/" + serviceName + "/internal/job/validate";
         try {
             Response<?> response = restTemplate.postForObject(url, dto, Response.class);
             if (response != null && !Objects.equals(response.getCode(), Response.SUCCESS_CODE)) {

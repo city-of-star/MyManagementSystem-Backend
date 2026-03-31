@@ -85,7 +85,7 @@
 
     <select id="selectByUsername" resultType="com.mms.usercenter.common.auth.entity.UserEntity">
         SELECT
-            id, username, password, nickname, real_name, avatar, email, phone, gender, birthday,
+            id, username, password, nickname, real_name, avatar_id, email, phone, gender, birthday,
             status, locked, lock_time, lock_reason, last_login_time, last_login_ip,
             password_update_time, remark, create_by, create_time, update_by, update_time
         FROM system_user
@@ -95,7 +95,7 @@
 
     <select id="selectByEmail" resultType="com.mms.usercenter.common.auth.entity.UserEntity">
         SELECT
-            id, username, password, nickname, real_name, avatar, email, phone, gender, birthday,
+            id, username, password, nickname, real_name, avatar_id, email, phone, gender, birthday,
             status, locked, lock_time, lock_reason, last_login_time, last_login_ip,
             password_update_time, remark, create_by, create_time, update_by, update_time
         FROM system_user
@@ -105,7 +105,7 @@
 
     <select id="selectByPhone" resultType="com.mms.usercenter.common.auth.entity.UserEntity">
         SELECT
-            id, username, password, nickname, real_name, avatar, email, phone, gender, birthday,
+            id, username, password, nickname, real_name, avatar_id, email, phone, gender, birthday,
             status, locked, lock_time, lock_reason, last_login_time, last_login_ip,
             password_update_time, remark, create_by, create_time, update_by, update_time
         FROM system_user

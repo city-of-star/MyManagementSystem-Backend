@@ -8,7 +8,6 @@ import com.mms.base.common.system.vo.AttachmentVo;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 /**
@@ -33,7 +32,6 @@ public interface AttachmentMapper extends BaseMapper<AttachmentEntity> {
      * 查询一批【已逻辑删除】的附件记录，用于清理任务（物理删除）
      *
      * @param limit           本次最多查询多少条
-     * @param deleteBeforeTime 逻辑删除时间必须早于此时间（用于延迟删除，null表示不限制）
      * @param storageType      存储类型过滤（null表示不限制）
      * @param businessType    业务类型过滤（null表示不限制）
      * @param orderBy         排序方式（id、updateTime、createTime、fileSize，默认id）
@@ -41,7 +39,6 @@ public interface AttachmentMapper extends BaseMapper<AttachmentEntity> {
      */
     List<AttachmentEntity> selectDeletedForClean(
             @Param("limit") int limit,
-            @Param("deleteBeforeTime") LocalDateTime deleteBeforeTime,
             @Param("storageType") String storageType,
             @Param("businessType") String businessType,
             @Param("orderBy") String orderBy

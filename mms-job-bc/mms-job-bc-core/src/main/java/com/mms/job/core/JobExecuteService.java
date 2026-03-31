@@ -78,7 +78,7 @@ public class JobExecuteService {
         String runId = IdUtils.timestampId();
         dto.setRequestId(runId);
         // 拼接url
-        String url = "http://gateway/" + serviceName + "/internal/job/execute";
+        String url = "http://gateway/api/" + serviceName + "/internal/job/execute";
 
         long start = System.currentTimeMillis();
         // 记录执行开始日志

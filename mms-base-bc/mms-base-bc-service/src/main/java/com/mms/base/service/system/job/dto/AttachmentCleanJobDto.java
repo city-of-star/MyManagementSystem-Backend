@@ -22,11 +22,6 @@ public class AttachmentCleanJobDto {
     private Integer batchSize = 100;
 
     /**
-     * 延迟删除天数（逻辑删除后多少天才物理删除）
-     */
-    private Integer deletedDays = 30;
-
-    /**
      * 是否删除物理文件，false时仅删除数据库记录
      */
     private Boolean deletePhysicalFile = true;

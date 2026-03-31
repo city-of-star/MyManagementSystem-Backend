@@ -31,8 +31,11 @@ public class UserDetailVo {
     @Schema(description = "昵称", example = "超级管理员")
     private String nickname;
 
+    @Schema(description = "头像附件ID", example = "1")
+    private Long avatarId;
+
     @Schema(description = "头像URL", example = "https://example.com/avatar.jpg")
-    private String avatar;
+    private String avatarUrl;
 
     @Schema(description = "真实姓名", example = "张三")
     private String realName;
@@ -49,16 +52,16 @@ public class UserDetailVo {
     @Schema(description = "生日", example = "1990-01-01")
     private LocalDate birthday;
 
-    @Schema(description = "主部门信息", example = "")
+    @Schema(description = "主部门信息")
     private DeptVo primaryDept;
 
-    @Schema(description = "主岗位信息", example = "")
+    @Schema(description = "主岗位信息")
     private PostVo primaryPost;
 
-    @Schema(description = "所属部门列表", example = "")
+    @Schema(description = "所属部门列表")
     private List<DeptVo> depts;
 
-    @Schema(description = "所属岗位列表", example = "")
+    @Schema(description = "所属岗位列表")
     private List<PostVo> posts;
 
     @Schema(description = "备注", example = "管理员备注")
