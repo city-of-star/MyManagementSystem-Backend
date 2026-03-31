@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 实现功能【业务服务白名单工具】
@@ -38,15 +39,20 @@ public class ServiceWhitelistService extends AbstractWhitelistService {
      */
     @Override
     protected List<String> buildRawPatterns() {
+        List<String> patterns = new ArrayList<>();
         // 公共白名单
-        List<String> patterns = new ArrayList<>(whitelistProperties.getCommon());
+        if (whitelistProperties.getCommon() != null && !whitelistProperties.getCommon().isEmpty()) {
+            patterns.addAll(whitelistProperties.getCommon());
+        }
+        // 判空
+        Map<String, List<String>> services = whitelistProperties.getServices();
+        if (services == null || services.isEmpty() || applicationName == null) {
+            return patterns;
+        }
         // 服务专属白名单
-        if ("usercenter".equals(applicationName)) {
-            patterns.addAll(whitelistProperties.getUsercenter());
-        } else if ("base".equals(applicationName)) {
-            patterns.addAll(whitelistProperties.getBase());
-        } else if ("job".equals(applicationName)) {
-            patterns.addAll(whitelistProperties.getJob());
+        List<String> servicePatterns = services.get(applicationName);
+        if (servicePatterns != null && !servicePatterns.isEmpty()) {
+            patterns.addAll(servicePatterns);
         }
         return patterns;
     }

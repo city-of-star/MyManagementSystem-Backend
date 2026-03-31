@@ -4,7 +4,9 @@ import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 实现功能【统一白名单配置属性】
@@ -20,22 +22,12 @@ import java.util.List;
 public class WhitelistProperties {
 
     /**
-     * 通用白名单（Swagger、actuator 等）
+     * 通用白名单
      */
     private List<String> common = new ArrayList<>();
 
     /**
-     * 用户中心专属白名单
+     * 各服务白名单
      */
-    private List<String> usercenter = new ArrayList<>();
-
-    /**
-     * Base 服务专属白名单
-     */
-    private List<String> base = new ArrayList<>();
-
-    /**
-     * Job 服务专属白名单
-     */
-    private List<String> job = new ArrayList<>();
+    private Map<String, List<String>> services = new HashMap<>();
 }

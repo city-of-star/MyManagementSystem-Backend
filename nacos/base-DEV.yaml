@@ -42,6 +42,6 @@ file:
     # 存储路径（相对路径）
     storage-path: ./attachments
     # 访问URL前缀
-    url-prefix:  /base/attachment/stream
+    url-prefix:  /api/base/attachment/stream
     # 批量上传最大文件数量
     max-batch-count: 10

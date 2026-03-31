@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Configuration;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 实现功能【网关白名单配置类】
@@ -24,6 +25,11 @@ import java.util.List;
 @EnableConfigurationProperties(WhitelistProperties.class)
 public class GatewayWhitelistService extends AbstractWhitelistService {
 
+    /**
+     * 接口路由统一前缀
+     */
+    private final static String API_PREFIX = "/api/";
+
     private final WhitelistProperties whitelistProperties;
 
     /**
@@ -35,27 +41,31 @@ public class GatewayWhitelistService extends AbstractWhitelistService {
     @Override
     protected List<String> buildRawPatterns() {
         List<String> paths = new ArrayList<>();
-        // 公共白名单：为每个下游服务加前缀
-        for (String pattern : whitelistProperties.getCommon()) {
-            String normalizedPattern = normalizePath(pattern);
-            paths.add("/api/usercenter" + normalizedPattern);
-            paths.add("/api/base" + normalizedPattern);
-            paths.add("/api/job" + normalizedPattern);
+        Map<String, List<String>> services = whitelistProperties.getServices();
+        if (services == null || services.isEmpty()) {
+            return paths;
         }
-        // usercenter 专属白名单
-        for (String pattern : whitelistProperties.getUsercenter()) {
-            String normalizedPattern = normalizePath(pattern);
-            paths.add("/api/usercenter" + normalizedPattern);
-        }
-        // base 专属白名单
-        for (String pattern : whitelistProperties.getBase()) {
-            String normalizedPattern = normalizePath(pattern);
-            paths.add("/api/base" + normalizedPattern);
-        }
-        // job 专属白名单
-        for (String pattern : whitelistProperties.getJob()) {
-            String normalizedPattern = normalizePath(pattern);
-            paths.add("/api/job" + normalizedPattern);
+        // 网关白名单
+        for (Map.Entry<String, List<String>> entry : services.entrySet()) {
+            // 服务名
+            String serviceName = entry.getKey();
+            if (serviceName == null || serviceName.isBlank()) {
+                continue;
+            }
+            // 公共白名单（拼接 /api/{serviceName} 前缀）
+            for (String commonPattern : whitelistProperties.getCommon()) {
+                String normalizedPattern = normalizePath(commonPattern);
+                paths.add(API_PREFIX + serviceName + normalizedPattern);
+            }
+            // 服务专属白名单（拼接 /api/{serviceName} 前缀）
+            List<String> servicePatterns = entry.getValue();
+            if (servicePatterns == null || servicePatterns.isEmpty()) {
+                continue;
+            }
+            for (String pattern : servicePatterns) {
+                String normalizedPattern = normalizePath(pattern);
+                paths.add(API_PREFIX + serviceName + normalizedPattern);
+            }
         }
         return paths;
     }
