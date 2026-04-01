@@ -101,28 +101,7 @@ public class UserServiceImpl implements UserService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "用户ID不能为空");
             }
             UserEntity user = userMapper.selectById(userId);
-            if (user == null) {
-                throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-            }
-            UserDetailVo vo = convertToVo(user);
-            // 查询部门、岗位信息
-            vo.setPrimaryDept(deptService.getPrimaryDeptByUserId(userId));
-            vo.setPrimaryPost(postService.getPrimaryPostByUserId(userId));
-            vo.setDepts(deptService.getDeptListByUserId(userId));
-            vo.setPosts(postService.getPostListByUserId(userId));
-            // 查询用户头像URL（如果用户头像附件ID不为空）
-            if (user.getAvatarId() != null) {
-                try {
-                    Response<AttachmentVo> resp = attachmentFeign.getAttachmentById(user.getAvatarId());
-                    if (resp != null && Objects.equals(resp.getCode(), Response.SUCCESS_CODE)) {
-                        String avatarUrl = resp.getData().getFileUrl();
-                        vo.setAvatarUrl(avatarUrl);
-                    }
-                } catch (Exception e) {
-                    log.error("查询用户头像URL失败：{}", e.getMessage(), e);
-                }
-            }
-            return vo;
+            return getUserDetail(user);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -139,29 +118,7 @@ public class UserServiceImpl implements UserService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "用户名不能为空");
             }
             UserEntity user = userMapper.selectByUsername(username);
-            if (user == null) {
-                throw new BusinessException(ErrorCode.USER_NOT_FOUND);
-            }
-            UserDetailVo vo = convertToVo(user);
-            Long userId = user.getId();
-            // 查询部门、岗位信息
-            vo.setPrimaryDept(deptService.getPrimaryDeptByUserId(userId));
-            vo.setPrimaryPost(postService.getPrimaryPostByUserId(userId));
-            vo.setDepts(deptService.getDeptListByUserId(userId));
-            vo.setPosts(postService.getPostListByUserId(userId));
-            // 查询用户头像URL（如果用户头像附件ID不为空）
-            if (user.getAvatarId() != null) {
-                try {
-                    Response<AttachmentVo> resp = attachmentFeign.getAttachmentById(user.getAvatarId());
-                    if (resp != null && Objects.equals(resp.getCode(), Response.SUCCESS_CODE)) {
-                        String avatarUrl = resp.getData().getFileUrl();
-                        vo.setAvatarUrl(avatarUrl);
-                    }
-                } catch (Exception e) {
-                    log.error("查询用户头像URL失败：{}", e.getMessage(), e);
-                }
-            }
-            return vo;
+            return getUserDetail(user);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -622,6 +579,36 @@ public class UserServiceImpl implements UserService {
         }
         // 清除该用户的权限缓存，确保角色变更立即生效
         userAuthorityService.clearUserAuthorityCacheByUserId(userId);
+    }
+
+    /**
+     * 统一 getUserById 和 getUserByUsername 接口的逻辑
+     * @param user 用户实体
+     * @return 用户详情vo
+     */
+    UserDetailVo getUserDetail(UserEntity user) {
+        if (user == null) {
+            throw new BusinessException(ErrorCode.USER_NOT_FOUND);
+        }
+        UserDetailVo vo = convertToVo(user);
+        // 查询部门、岗位信息
+        vo.setPrimaryDept(deptService.getPrimaryDeptByUserId(user.getId()));
+        vo.setPrimaryPost(postService.getPrimaryPostByUserId(user.getId()));
+        vo.setDepts(deptService.getDeptListByUserId(user.getId()));
+        vo.setPosts(postService.getPostListByUserId(user.getId()));
+        // 查询用户头像URL（如果用户头像附件ID不为空）
+        if (user.getAvatarId() != null) {
+            try {
+                Response<AttachmentVo> resp = attachmentFeign.getAttachmentById(user.getAvatarId());
+                if (resp != null && Objects.equals(resp.getCode(), Response.SUCCESS_CODE)) {
+                    String avatarUrl = resp.getData().getFileUrl();
+                    vo.setAvatarUrl(avatarUrl);
+                }
+            } catch (Exception e) {
+                log.error("查询用户头像URL失败：{}", e.getMessage(), e);
+            }
+        }
+        return vo;
     }
 
     // ==================== 实体转换方法 ====================
