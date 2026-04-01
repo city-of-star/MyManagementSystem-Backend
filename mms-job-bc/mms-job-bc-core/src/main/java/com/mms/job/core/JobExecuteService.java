@@ -99,7 +99,7 @@ public class JobExecuteService {
                 return;
             }
             log.info("定时任务远程调用成功，jobId={}，jobCode={}，耗时={}ms", job.getId(), job.getJobCode(), cost);
-            markSuccess(runLog.getId(), cost);
+            markSuccess(runLog.getId(), response.getData().toString(), cost);
         } catch (Exception e) {
             long cost = System.currentTimeMillis() - start;
             log.error("定时任务远程调用异常，jobId={}，jobCode={}，耗时={}ms，错误：{}", job.getId(), job.getJobCode(), cost, e.getMessage(), e);
@@ -137,7 +137,7 @@ public class JobExecuteService {
     /**
      * 标记执行成功（仅当当前状态仍为 running 时才更新，避免覆盖人工终止等状态）
      */
-    private void markSuccess(Long logId, long durationMs) {
+    private void markSuccess(Long logId, String resultJson, long durationMs) {
         JobRunLogEntity current = jobRunLogMapper.selectById(logId);
         if (current == null) {
             log.warn("标记执行成功时未找到执行记录，logId={}", logId);
@@ -149,6 +149,7 @@ public class JobExecuteService {
         }
         JobRunLogEntity entity = new JobRunLogEntity();
         entity.setId(logId);
+        entity.setResultJson(resultJson);
         entity.setStatus("success");
         entity.setEndTime(LocalDateTime.now());
         entity.setDurationMs(durationMs);

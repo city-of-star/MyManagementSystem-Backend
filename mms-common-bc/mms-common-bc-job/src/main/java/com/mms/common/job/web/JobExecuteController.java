@@ -57,9 +57,9 @@ public class JobExecuteController {
         long start = System.currentTimeMillis();
         try {
             log.info("开始执行任务，jobType={}，jobId={}，requestId={}", jobType, dto.getJobId(), dto.getRequestId());
-            handler.execute(dto.getParamsJson());
+            String resp = handler.execute(dto.getParamsJson());
             log.info("任务执行完成，jobType={}，耗时={}ms，requestId={}", jobType, System.currentTimeMillis() - start, dto.getRequestId());
-            return Response.success();
+            return Response.success(resp);
         } catch (Exception e) {
             log.error("任务执行失败，jobType={}，耗时={}ms，requestId={}，错误：{}", jobType, System.currentTimeMillis() - start, dto.getRequestId(), e.getMessage(), e);
             return Response.error(ErrorCode.SYSTEM_ERROR.getCode(), e.getMessage());

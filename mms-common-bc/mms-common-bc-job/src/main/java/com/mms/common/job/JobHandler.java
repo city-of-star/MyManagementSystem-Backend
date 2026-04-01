@@ -16,6 +16,6 @@ public interface JobHandler {
      *
      * @param paramsJson 任务参数 JSON 字符串（允许为空）
      */
-    void execute(String paramsJson);
+    String execute(String paramsJson);
 
 }

@@ -41,7 +41,7 @@ public class AttachmentCleanJobHandler implements JobHandler {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void execute(String dtoJson) {
+    public String execute(String dtoJson) {
         // 解析参数
         AttachmentCleanJobDto dto = JobParamUtils.parseParams(dtoJson, AttachmentCleanJobDto.class);
         
@@ -64,7 +64,7 @@ public class AttachmentCleanJobHandler implements JobHandler {
 
         if (records == null || records.isEmpty()) {
             log.info("本次附件清理任务无待清理记录");
-            return;
+            return "本次附件清理任务无待清理记录";
         }
 
         log.info("本次附件清理任务共需处理记录数：{}", records.size());
@@ -125,6 +125,7 @@ public class AttachmentCleanJobHandler implements JobHandler {
         }
         
         log.info("附件清理任务执行完成，成功：{}，失败：{}", successCount, failCount);
+        return String.format("附件清理任务执行完成，成功：%d，失败：%d", successCount, failCount);
     }
 
     /**
