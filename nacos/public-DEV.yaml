@@ -20,7 +20,7 @@ spring:
 
 # Swagger 配置
 swagger:
-  gateway-url: http://YOUR_GATEWAY_IP:5092  # 网关地址
+  gateway-url: http://YOUR_GATEWAY_IP:5092/api  # 网关地址
 
 # Mybatis Plus配置
 mybatis-plus:

@@ -26,7 +26,7 @@ public class SwaggerConfig {
     /**
      * 网关地址
      */
-    @Value("${swagger.gateway-url:http://localhost:5092}")
+    @Value("${swagger.gateway-url:http://localhost:5092/api}")
     private String gatewayUrl;
 
     /**
