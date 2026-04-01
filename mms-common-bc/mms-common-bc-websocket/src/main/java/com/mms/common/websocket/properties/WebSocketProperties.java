@@ -28,12 +28,12 @@ public class WebSocketProperties {
     private String userIdHeader = WebSocketConstants.DEFAULT_USER_ID_HEADER;
 
     /**
-     * 是否开启简单鉴权（要求请求头必须带 userIdHeader）
+     * 是否开启鉴权
      */
     private boolean authEnabled = true;
 
     /**
-     * 单条文本消息最大大小（字节）
+     * 单条文本消息最大大小（字节），默认 64KB
      */
     private int textMessageSizeLimit = 64 * 1024;
 }

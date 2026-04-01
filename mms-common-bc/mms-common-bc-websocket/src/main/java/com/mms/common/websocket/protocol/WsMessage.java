@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 /**
  * 实现功能【WebSocket 消息协议对象】
  * <p>
- * 统一前后端消息结构：type/requestId/data/timestamp。
+ *
  * </p>
  *
  * @author li.hongyu
@@ -22,9 +22,21 @@ import lombok.NoArgsConstructor;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class WsMessage<T> {
 
+    /**
+     * 消息类型
+     */
     private String type;
-    private String requestId;
+    /**
+     * 业务负载
+     */
     private T data;
+    /**
+     * 请求-响应关联
+     */
+    private String requestId;
+    /**
+     * 毫秒时间戳
+     */
     private Long timestamp;
 }
 

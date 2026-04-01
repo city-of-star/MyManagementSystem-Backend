@@ -15,18 +15,39 @@ import java.util.Set;
  */
 public interface WsSessionRegistry {
 
+    /**
+     * 连接建立后登记：写入 sessionId 映射，并在有 userId 时加入「用户 → 多连接」索引
+     */
     void register(WebSocketSession session, WsSessionPrincipal principal);
 
+    /**
+     * 连接关闭或异常时移除：从全局、用户、房间索引中清理该会话
+     */
     void unregister(WebSocketSession session);
 
+    /**
+     * 按用户 ID 查询当前所有活跃连接
+     */
     Set<WebSocketSession> getByUserId(String userId);
 
+    /**
+     * 按房间 ID 查询该房间内所有连接
+     */
     Set<WebSocketSession> getByRoomId(String roomId);
 
+    /**
+     * 返回当前已注册的全部会话
+     */
     Set<WebSocketSession> getAllSessions();
 
+    /**
+     * 将会话加入指定房间
+     */
     void joinRoom(String roomId, WebSocketSession session);
 
+    /**
+     * 将会话从指定房间移除
+     */
     void leaveRoom(String roomId, WebSocketSession session);
 }
 

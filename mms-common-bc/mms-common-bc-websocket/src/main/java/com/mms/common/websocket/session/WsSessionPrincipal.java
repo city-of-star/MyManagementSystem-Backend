@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 /**
  * 实现功能【WebSocket 会话主体信息】
  * <p>
- * 保存连接与业务用户之间的映射关系。
+ * 保存连接与业务用户之间的映射关系
  * </p>
  *
  * @author li.hongyu
@@ -20,7 +20,14 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class WsSessionPrincipal {
 
+    /**
+     * 会话ID
+     */
     private String sessionId;
+
+    /**
+     * 用户ID
+     */
     private String userId;
 }
 

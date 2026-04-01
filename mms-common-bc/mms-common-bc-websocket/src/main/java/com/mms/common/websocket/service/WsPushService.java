@@ -13,10 +13,19 @@ import com.mms.common.websocket.protocol.WsMessage;
  */
 public interface WsPushService {
 
+    /**
+     * 推送给指定用户的所有连接
+     */
     void pushToUser(String userId, WsMessage<?> message);
 
+    /**
+     * 推送给指定房间内所有已 join 的连接
+     */
     void pushToRoom(String roomId, WsMessage<?> message);
 
+    /**
+     * 广播给当前注册表中的全部会话
+     */
     void broadcast(WsMessage<?> message);
 }
 
