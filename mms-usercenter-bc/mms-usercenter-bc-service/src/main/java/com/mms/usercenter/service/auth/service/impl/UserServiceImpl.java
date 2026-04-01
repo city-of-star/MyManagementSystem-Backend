@@ -226,8 +226,12 @@ public class UserServiceImpl implements UserService {
                 user.setRealName(dto.getRealName());
             }
             if (dto.getAvatarId() != null) {
-                //  删除用户头像附件
-                attachmentFeign.deleteAttachment(user.getAvatarId());
+                try {
+                    // 删除旧的用户头像附件
+                    attachmentFeign.deleteAttachment(user.getAvatarId());
+                } catch (Exception e) {
+                    log.error("删除旧的用户头像附件失败：{}", e.getMessage(), e);
+                }
                 user.setAvatarId(dto.getAvatarId());
             }
             if (StringUtils.hasText(dto.getEmail())) {
