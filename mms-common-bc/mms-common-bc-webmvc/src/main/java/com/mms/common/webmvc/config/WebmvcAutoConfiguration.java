@@ -6,6 +6,7 @@ import com.mms.common.webmvc.file.FileDownloadService;
 import com.mms.common.webmvc.file.impl.FileDownloadServiceImpl;
 import com.mms.common.webmvc.swagger.SwaggerConfig;
 import io.swagger.v3.oas.models.OpenAPI;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -23,6 +24,7 @@ import org.springframework.context.annotation.Configuration;
  * @author li.hongyu
  * @date 2026-03-03 15:34:12
  */
+@Slf4j
 @Configuration
 public class WebmvcAutoConfiguration {
 
@@ -39,7 +41,6 @@ public class WebmvcAutoConfiguration {
      * 创建 Jackson配置 Bean
      */
     @Bean
-    @ConditionalOnMissingBean
     public Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer() {
         return new JacksonConfig().jackson2ObjectMapperBuilderCustomizer();
     }
@@ -50,6 +51,7 @@ public class WebmvcAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public TraceIdMvcFilter traceIdMvcFilter() {
+        log.info("【TraceId过滤器】加载成功");
         return new TraceIdMvcFilter();
     }
 

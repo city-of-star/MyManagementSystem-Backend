@@ -3,6 +3,7 @@ package com.mms.common.cache.config;
 import com.mms.common.cache.builder.KeyGeneratorBuilder;
 import com.mms.common.cache.builder.RedisManagerBuilder;
 import com.mms.common.cache.builder.RedisTemplateBuilder;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.EnableCaching;
@@ -24,6 +25,7 @@ import org.springframework.data.redis.core.RedisTemplate;
  * @author li.hongyu
  * @date 2026-03-03 10:25:14
  */
+@Slf4j
 @EnableCaching
 @Configuration
 public class CacheAutoConfiguration {
@@ -36,6 +38,7 @@ public class CacheAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(name = "redisTemplate")
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
+        log.info("【Redis模板配置】加载成功");
         return new RedisTemplateBuilder().buildRedisTemplate(connectionFactory);
     }
 
@@ -72,6 +75,7 @@ public class CacheAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        log.info("【Redis缓存管理器】加载成功");
         return new RedisManagerBuilder().cacheManager(connectionFactory);
     }
 }

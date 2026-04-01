@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import com.mms.common.core.utils.DateUtils;
 import com.mms.common.core.utils.JacksonObjectMapperUtils;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,6 +21,7 @@ import org.springframework.context.annotation.Configuration;
  * @author li.hongyu
  * @date 2026-01-20 14:11:28
  */
+@Slf4j
 @Configuration
 public class JacksonConfig {
 
@@ -42,6 +44,7 @@ public class JacksonConfig {
             builder.serializerByType(Page.class, new MybatisPlusPageSerializer());
             // 忽略未知属性（提高兼容性）
             builder.featuresToDisable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+            log.info("【Jackson序列化配置】加载成功");
         };
     }
 }

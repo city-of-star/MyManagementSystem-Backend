@@ -5,6 +5,7 @@ import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.servers.Server;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.info.BuildProperties;
@@ -21,6 +22,7 @@ import java.util.List;
  * @author li.hongyu
  * @date 2025-11-10 15:36:17
  */
+@Slf4j
 public class SwaggerConfig {
 
     /**
@@ -51,7 +53,6 @@ public class SwaggerConfig {
         String displayName = (applicationName == null || applicationName.isEmpty())
                 ? "API"
                 : applicationName + " API";
-
         OpenAPI openAPI = new OpenAPI()
                 .info(new Info()
                         .title(displayName + " 文档")
@@ -63,22 +64,19 @@ public class SwaggerConfig {
                         .license(new License()
                                 .name("MIT License")
                                 .url("https://opensource.org/licenses/MIT")));
-
         // 去掉网关地址末尾的 /
         String baseUrl = gatewayUrl.endsWith("/")
                 ? gatewayUrl.substring(0, gatewayUrl.length() - 1)
                 : gatewayUrl;
-
         // 拼接服务前缀（允许 applicationName 为空）
         String servicePrefix = (applicationName == null || applicationName.isEmpty())
                 ? ""
                 : "/" + applicationName;
-
         Server gatewayServer = new Server()
                 .url(baseUrl + servicePrefix)
                 .description("网关地址（推荐：所有请求经过网关 JWT 验证）");
-
         openAPI.setServers(List.of(gatewayServer));
+        log.info("【Swagger配置】加载成功");
         return openAPI;
     }
 

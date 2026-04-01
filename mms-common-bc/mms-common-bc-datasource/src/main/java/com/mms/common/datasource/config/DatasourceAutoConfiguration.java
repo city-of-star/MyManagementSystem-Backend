@@ -1,6 +1,7 @@
 package com.mms.common.datasource.config;
 
 import com.baomidou.mybatisplus.extension.plugins.MybatisPlusInterceptor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.ibatis.plugin.Interceptor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -18,6 +19,7 @@ import org.springframework.context.annotation.Configuration;
  * @author li.hongyu
  * @date 2026-03-03 14:53:11
  */
+@Slf4j
 @Configuration
 public class DatasourceAutoConfiguration {
 
@@ -38,6 +40,7 @@ public class DatasourceAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(SqlOneLineLogInterceptor.class)
     public Interceptor sqlLogInterceptor() {
+        log.info("【SQL日志拦截器】加载成功");
         return mybatisPlusConfig.sqlLogInterceptor();
     }
 

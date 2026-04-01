@@ -13,6 +13,7 @@ import com.mms.common.security.servlet.service.ServiceWhitelistService;
 import feign.Logger;
 import feign.RequestInterceptor;
 import jakarta.servlet.http.HttpServletRequest;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -38,6 +39,7 @@ import org.springframework.security.web.SecurityFilterChain;
  * @author li.hongyu
  * @date 2026-03-13 17:00:34
  */
+@Slf4j
 @Configuration
 @ConditionalOnClass(HttpServletRequest.class)
 @EnableConfigurationProperties({CookieProperties .class})  // 在此类当中注入配置属性Bean
@@ -71,6 +73,7 @@ public class ServletSecurityAutoConfiguration {
     @ConditionalOnMissingBean
     @ConditionalOnBean({UserAuthorityProvider.class, GatewaySignatureVerificationService.class, ServiceWhitelistService.class})
     public JwtAuthenticationFilter jwtAuthenticationFilter(UserAuthorityProvider userAuthorityProvider, GatewaySignatureVerificationService gatewaySignatureVerificationService, ServiceWhitelistService serviceWhitelistService) {
+        log.info("【JWT过滤器】加载成功");
         return new JwtAuthenticationFilter(userAuthorityProvider, gatewaySignatureVerificationService, serviceWhitelistService);
     }
 
@@ -82,6 +85,7 @@ public class ServletSecurityAutoConfiguration {
     @ConditionalOnMissingBean(SecurityFilterChain.class)
     @ConditionalOnBean({JwtAuthenticationFilter.class, ServiceWhitelistService.class})
     public SecurityFilterChain defaultSecurityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter, ServiceWhitelistService serviceWhitelistService) throws Exception {
+        log.info("【Spring Security配置类】加载成功");
         return SecurityConfig.buildDefaultSecurityFilterChain(http, jwtAuthenticationFilter, serviceWhitelistService);
     }
 

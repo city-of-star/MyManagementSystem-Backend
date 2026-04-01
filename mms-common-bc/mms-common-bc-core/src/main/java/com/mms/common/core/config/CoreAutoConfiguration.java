@@ -1,6 +1,7 @@
 package com.mms.common.core.config;
 
 import com.mms.common.core.listeners.ApplicationStartupLogger;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -14,6 +15,7 @@ import org.springframework.context.annotation.Configuration;
  * @author li.hongyu
  * @date 2026-03-03 14:45:04
  */
+@Slf4j
 @Configuration
 public class CoreAutoConfiguration {
 
@@ -23,6 +25,7 @@ public class CoreAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public ApplicationStartupLogger applicationStartupLogger() {
+        log.info("【应用启动日志记录器】加载成功");
         return new ApplicationStartupLogger();
     }
 }
