@@ -6,7 +6,7 @@
     <parent>
         <groupId>com.mms</groupId>
         <artifactId>mms-common-bc</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>${revision}</version>
     </parent>
 
     <artifactId>mms-common-bc-document</artifactId>

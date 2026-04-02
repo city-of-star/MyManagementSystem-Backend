@@ -13,7 +13,7 @@
     <!-- 父项目信息 -->
     <groupId>com.mms</groupId>
     <artifactId>mms-parent</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>${revision}</version>
     <packaging>pom</packaging>
     <name>MMS Management System Parent</name>
     <description>管理系统父项目，统一管理所有子模块</description>
@@ -29,6 +29,8 @@
 
     <!-- 属性配置 -->
     <properties>
+        <!-- 发布版本 -->
+        <revision>1.0.0-RELEASE</revision>
         <!-- Java版本 -->
         <java.version>17</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
