@@ -28,7 +28,7 @@ public class ThreadPoolBuilder {
         ExecutorProperties cfg = properties.getScheduler();
         String prefix = cfg.getThreadNamePrefix() != null ? cfg.getThreadNamePrefix() : "scheduler-";
         ThreadPoolTaskExecutor executor = buildExecutor(cfg, prefix);
-        log.info("初始化【定时任务】线程池成功：core={}, max={}, queue={}, prefix={}", cfg.getCorePoolSize(), cfg.getMaxPoolSize(), cfg.getQueueCapacity(), prefix);
+        log.info("【定时任务线程池】加载成功：core={}, max={}, queue={}, prefix={}", cfg.getCorePoolSize(), cfg.getMaxPoolSize(), cfg.getQueueCapacity(), prefix);
         return executor;
     }
 
@@ -39,7 +39,7 @@ public class ThreadPoolBuilder {
         ExecutorProperties cfg = properties.getFile();
         String prefix = cfg.getThreadNamePrefix() != null ? cfg.getThreadNamePrefix() : "file-";
         ThreadPoolTaskExecutor executor = buildExecutor(cfg, prefix);
-        log.info("初始化【文件】线程池成功：core={}, max={}, queue={}, prefix={}", cfg.getCorePoolSize(), cfg.getMaxPoolSize(), cfg.getQueueCapacity(), prefix);
+        log.info("【文件线程池】加载成功：core={}, max={}, queue={}, prefix={}", cfg.getCorePoolSize(), cfg.getMaxPoolSize(), cfg.getQueueCapacity(), prefix);
         return executor;
     }
 

@@ -7,7 +7,6 @@ import com.mms.common.webmvc.file.impl.FileDownloadServiceImpl;
 import com.mms.common.webmvc.swagger.SwaggerConfig;
 import io.swagger.v3.oas.models.OpenAPI;
 import com.fasterxml.jackson.databind.Module;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -24,7 +23,7 @@ import java.util.List;
  * @author li.hongyu
  * @date 2026-03-03 15:34:12
  */
-@Slf4j
+
 @Configuration
 public class WebmvcAutoConfiguration {
 
@@ -34,9 +33,7 @@ public class WebmvcAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(GlobalExceptionAdvice.class)
     public GlobalExceptionAdvice globalExceptionAdvice() {
-        GlobalExceptionAdvice advice = new GlobalExceptionAdvice();
-        log.info("【全局异常捕获处理器】加载成功");
-        return advice;
+        return new GlobalExceptionAdvice();
     }
 
     /**
@@ -44,9 +41,7 @@ public class WebmvcAutoConfiguration {
      */
     @Bean
     public WebMvcConfigurer jacksonWebMvcConfigurer(List<Module> jacksonModules) {
-        WebMvcConfigurer webMvcConfigurer = new JacksonConfig().jacksonWebMvcConfigurer(jacksonModules);
-        log.info("【Jackson序列化配置】加载成功");
-        return webMvcConfigurer;
+        return new JacksonConfig().jacksonWebMvcConfigurer(jacksonModules);
     }
 
     /**
@@ -55,9 +50,7 @@ public class WebmvcAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public TraceIdMvcFilter traceIdMvcFilter() {
-        TraceIdMvcFilter traceIdMvcFilter = new TraceIdMvcFilter();
-        log.info("【TraceId过滤器】加载成功");
-        return traceIdMvcFilter;
+        return new TraceIdMvcFilter();
     }
 
     /**
@@ -66,9 +59,7 @@ public class WebmvcAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(SwaggerConfig.class)
     public SwaggerConfig swaggerConfig() {
-        SwaggerConfig swaggerConfig = new SwaggerConfig();
-        log.info("【Swagger基础配置】加载成功");
-        return swaggerConfig;
+        return new SwaggerConfig();
     }
 
     /**
@@ -77,9 +68,7 @@ public class WebmvcAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(OpenAPI.class)
     public OpenAPI customOpenAPI(SwaggerConfig swaggerConfig) {
-        OpenAPI openAPI = swaggerConfig.customOpenAPI();
-        log.info("【Swagger OpenAPI配置】加载成功");
-        return openAPI;
+        return swaggerConfig.customOpenAPI();
     }
 
     /**
