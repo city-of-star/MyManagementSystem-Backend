@@ -10,8 +10,8 @@ import java.io.IOException;
 /**
  * 实现功能【MyBatis-Plus Page 序列化器】
  * <p>
- * - 项目全局开启 Long -> String（解决雪花 ID 前端精度问题）
- * - 但分页参数 total/current/size 明确是“小数字”，希望保持为 number（int），避免前端到处 Number() 转换
+ * - 项目全局开启 Long -> String（解决前端精度问题）
+ * - 但分页参数 total/current/size 明确是小数字，希望保持为 number（int），避免前端到处 Number() 转换
  * <p>
  *
  * @author li.hongyu

@@ -22,7 +22,6 @@ import java.util.List;
  * @author li.hongyu
  * @date 2025-11-10 15:36:17
  */
-@Slf4j
 public class SwaggerConfig {
 
     /**
@@ -76,7 +75,6 @@ public class SwaggerConfig {
                 .url(baseUrl + servicePrefix)
                 .description("网关地址（推荐：所有请求经过网关 JWT 验证）");
         openAPI.setServers(List.of(gatewayServer));
-        log.info("【Swagger配置】加载成功");
         return openAPI;
     }
 

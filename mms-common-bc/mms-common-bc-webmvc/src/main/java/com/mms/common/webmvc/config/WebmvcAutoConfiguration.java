@@ -6,19 +6,19 @@ import com.mms.common.webmvc.file.FileDownloadService;
 import com.mms.common.webmvc.file.impl.FileDownloadServiceImpl;
 import com.mms.common.webmvc.swagger.SwaggerConfig;
 import io.swagger.v3.oas.models.OpenAPI;
+import com.fasterxml.jackson.databind.Module;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.util.List;
 
 /**
  * 实现功能【Web MVC组件自动装配配置】
  * <p>
- * 提供以下功能
- * - Jackson配置
- * - TraceId过滤器
- * - Swagger配置
+ *
  * <p>
  *
  * @author li.hongyu
@@ -34,15 +34,19 @@ public class WebmvcAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(GlobalExceptionAdvice.class)
     public GlobalExceptionAdvice globalExceptionAdvice() {
-        return new GlobalExceptionAdvice();
+        GlobalExceptionAdvice advice = new GlobalExceptionAdvice();
+        log.info("【全局异常捕获处理器】加载成功");
+        return advice;
     }
 
     /**
-     * 创建 Jackson配置 Bean
+     * 创建 Jackson HttpMessageConverter Bean
      */
     @Bean
-    public Jackson2ObjectMapperBuilderCustomizer jackson2ObjectMapperBuilderCustomizer() {
-        return new JacksonConfig().jackson2ObjectMapperBuilderCustomizer();
+    public WebMvcConfigurer jacksonWebMvcConfigurer(List<Module> jacksonModules) {
+        WebMvcConfigurer webMvcConfigurer = new JacksonConfig().jacksonWebMvcConfigurer(jacksonModules);
+        log.info("【Jackson序列化配置】加载成功");
+        return webMvcConfigurer;
     }
 
     /**
@@ -51,8 +55,9 @@ public class WebmvcAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean
     public TraceIdMvcFilter traceIdMvcFilter() {
+        TraceIdMvcFilter traceIdMvcFilter = new TraceIdMvcFilter();
         log.info("【TraceId过滤器】加载成功");
-        return new TraceIdMvcFilter();
+        return traceIdMvcFilter;
     }
 
     /**
@@ -61,7 +66,9 @@ public class WebmvcAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(SwaggerConfig.class)
     public SwaggerConfig swaggerConfig() {
-        return new SwaggerConfig();
+        SwaggerConfig swaggerConfig = new SwaggerConfig();
+        log.info("【Swagger基础配置】加载成功");
+        return swaggerConfig;
     }
 
     /**
@@ -70,7 +77,9 @@ public class WebmvcAutoConfiguration {
     @Bean
     @ConditionalOnMissingBean(OpenAPI.class)
     public OpenAPI customOpenAPI(SwaggerConfig swaggerConfig) {
-        return swaggerConfig.customOpenAPI();
+        OpenAPI openAPI = swaggerConfig.customOpenAPI();
+        log.info("【Swagger OpenAPI配置】加载成功");
+        return openAPI;
     }
 
     /**
