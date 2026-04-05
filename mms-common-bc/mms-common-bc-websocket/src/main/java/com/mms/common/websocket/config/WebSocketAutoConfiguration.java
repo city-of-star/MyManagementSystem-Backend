@@ -7,9 +7,9 @@ import com.mms.common.websocket.interceptor.AuthHandshakeInterceptor;
 import com.mms.common.websocket.properties.WebSocketProperties;
 import com.mms.common.websocket.service.WsPushService;
 import com.mms.common.websocket.service.impl.WsPushServiceImpl;
-import com.mms.common.websocket.session.InMemoryWsSessionRegistry;
+import com.mms.common.websocket.service.impl.InMemoryWsRegistryServiceImpl;
 import com.mms.common.websocket.protocol.WsMessage;
-import com.mms.common.websocket.session.WsSessionRegistry;
+import com.mms.common.websocket.service.WsRegistryService;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -45,8 +45,8 @@ public class WebSocketAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public WsSessionRegistry wsSessionRegistry() {
-        return new InMemoryWsSessionRegistry();
+    public WsRegistryService wsSessionRegistry() {
+        return new InMemoryWsRegistryServiceImpl();
     }
 
     /**
@@ -72,8 +72,8 @@ public class WebSocketAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(WebSocketHandler.class)
-    public WebSocketHandler defaultTextWebSocketHandler(WsSessionRegistry wsSessionRegistry, @Qualifier(WEBSOCKET_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper) {
-        return new DefaultTextWebSocketHandler(wsSessionRegistry, objectMapper);
+    public WebSocketHandler defaultTextWebSocketHandler(WsRegistryService wsRegistryService, @Qualifier(WEBSOCKET_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper) {
+        return new DefaultTextWebSocketHandler(wsRegistryService, objectMapper);
     }
 
     /**
@@ -81,8 +81,8 @@ public class WebSocketAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public WsPushService wsPushService(WsSessionRegistry wsSessionRegistry, @Qualifier(WEBSOCKET_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper) {
-        return new WsPushServiceImpl(wsSessionRegistry, objectMapper);
+    public WsPushService wsPushService(WsRegistryService wsRegistryService, @Qualifier(WEBSOCKET_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper) {
+        return new WsPushServiceImpl(wsRegistryService, objectMapper);
     }
 
     /**

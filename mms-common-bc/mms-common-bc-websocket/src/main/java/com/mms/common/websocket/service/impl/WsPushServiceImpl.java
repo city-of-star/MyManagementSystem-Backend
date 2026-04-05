@@ -3,7 +3,7 @@ package com.mms.common.websocket.service.impl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mms.common.websocket.protocol.WsMessage;
 import com.mms.common.websocket.service.WsPushService;
-import com.mms.common.websocket.session.WsSessionRegistry;
+import com.mms.common.websocket.service.WsRegistryService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.socket.TextMessage;
@@ -28,7 +28,7 @@ public class WsPushServiceImpl implements WsPushService {
     /**
      * WebSocket 会话注册表接口
      */
-    private final WsSessionRegistry sessionRegistry;
+    private final WsRegistryService sessionRegistry;
 
     /**
      * JSON 序列化器

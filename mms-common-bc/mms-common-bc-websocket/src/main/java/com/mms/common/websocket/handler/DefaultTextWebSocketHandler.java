@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mms.common.websocket.constants.WebSocketConstants;
 import com.mms.common.websocket.protocol.WsMessage;
 import com.mms.common.websocket.session.WsSessionPrincipal;
-import com.mms.common.websocket.session.WsSessionRegistry;
+import com.mms.common.websocket.service.WsRegistryService;
 import io.micrometer.common.lang.NonNullApi;
 import io.micrometer.common.lang.Nullable;
 import lombok.AllArgsConstructor;
@@ -36,7 +36,7 @@ public class DefaultTextWebSocketHandler extends TextWebSocketHandler {
     /**
      * WebSocket 会话注册表接口
      */
-    private final WsSessionRegistry sessionRegistry;
+    private final WsRegistryService sessionRegistry;
 
     /**
      * JSON 序列化器

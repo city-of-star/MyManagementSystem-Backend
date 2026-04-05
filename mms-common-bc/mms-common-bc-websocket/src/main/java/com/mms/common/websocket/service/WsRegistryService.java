@@ -1,5 +1,6 @@
-package com.mms.common.websocket.session;
+package com.mms.common.websocket.service;
 
+import com.mms.common.websocket.session.WsSessionPrincipal;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.util.Set;
@@ -13,7 +14,7 @@ import java.util.Set;
  * @author li.hongyu
  * @date 2026-03-26 16:28:47
  */
-public interface WsSessionRegistry {
+public interface WsRegistryService {
 
     /**
      * 连接建立后登记：写入 sessionId 映射，并在有 userId 时加入「用户 → 多连接」索引

@@ -1,5 +1,7 @@
-package com.mms.common.websocket.session;
+package com.mms.common.websocket.service.impl;
 
+import com.mms.common.websocket.service.WsRegistryService;
+import com.mms.common.websocket.session.WsSessionPrincipal;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.util.Collections;
@@ -15,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author li.hongyu
  * @date 2026-03-26 16:28:47
  */
-public class InMemoryWsSessionRegistry implements WsSessionRegistry {
+public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
 
     /**
      * sessionId → 连接
