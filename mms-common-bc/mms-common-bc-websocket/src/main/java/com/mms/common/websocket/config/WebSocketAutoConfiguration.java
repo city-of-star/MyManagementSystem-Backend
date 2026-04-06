@@ -3,6 +3,7 @@ package com.mms.common.websocket.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mms.common.core.utils.JacksonObjectMapperUtils;
 import com.mms.common.websocket.handler.DefaultTextWebSocketHandler;
+import com.mms.common.websocket.handler.GatewayCompatibleHandshakeHandler;
 import com.mms.common.websocket.interceptor.AuthHandshakeInterceptor;
 import com.mms.common.websocket.properties.WebSocketProperties;
 import com.mms.common.websocket.service.WsPushService;
@@ -19,6 +20,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.socket.WebSocketHandler;
 import org.springframework.web.socket.config.annotation.EnableWebSocket;
 import org.springframework.web.socket.config.annotation.WebSocketConfigurer;
+import org.springframework.web.socket.server.HandshakeHandler;
 
 /**
  * 实现功能【WebSocket 模块自动装配】
@@ -68,6 +70,15 @@ public class WebSocketAutoConfiguration {
     }
 
     /**
+     * 握手处理器：回显 {@code Sec-WebSocket-Protocol}，避免经网关转发时 Netty 客户端子协议校验失败。
+     */
+    @Bean
+    @ConditionalOnMissingBean(HandshakeHandler.class)
+    public HandshakeHandler gatewayCompatibleHandshakeHandler() {
+        return new GatewayCompatibleHandshakeHandler();
+    }
+
+    /**
      * 默认文本处理器：连接建立时注册、处理 ping/进房/退房、断开时清理。
      */
     @Bean
@@ -90,9 +101,10 @@ public class WebSocketAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public WebSocketConfigurer webSocketConfigurer(WebSocketProperties properties, WebSocketHandler webSocketHandler, AuthHandshakeInterceptor authHandshakeInterceptor) {
+    public WebSocketConfigurer webSocketConfigurer(WebSocketProperties properties, WebSocketHandler webSocketHandler, AuthHandshakeInterceptor authHandshakeInterceptor, HandshakeHandler handshakeHandler) {
         return registry -> registry.addHandler(webSocketHandler, properties.getEndpoint())
                 .addInterceptors(authHandshakeInterceptor)
+                .setHandshakeHandler(handshakeHandler)
                 .setAllowedOrigins("*");
     }
 }
