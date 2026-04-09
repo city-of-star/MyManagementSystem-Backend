@@ -32,10 +32,10 @@ spring:
                 name: usercenterCb # 熔断器实例名
                 fallbackUri: forward:/fallback/usercenter # 降级入口
 
-        - id: usercenter-ws-route
-          uri: lb:ws://usercenter
+        - id: usercenter-websocket-route
+          uri: lb:websocket://usercenter
           predicates:
-            - Path=/usercenter/ws/**
+            - Path=/usercenter/websocket/**
           filters:
             - StripPrefix=1
 
@@ -56,10 +56,10 @@ spring:
                 name: baseCb
                 fallbackUri: forward:/fallback/base
 
-        - id: base-ws-route
-          uri: lb:ws://base
+        - id: base-websocket-route
+          uri: lb:websocket://base
           predicates:
-            - Path=/base/ws/**
+            - Path=/base/websocket/**
           filters:
             - StripPrefix=1
 
@@ -80,10 +80,10 @@ spring:
                 name: jobCb
                 fallbackUri: forward:/fallback/job
 
-        - id: job-ws-route
-          uri: lb:ws://job
+        - id: job-websocket-route
+          uri: lb:websocket://job
           predicates:
-            - Path=/job/ws/**
+            - Path=/job/websocket/**
           filters:
             - StripPrefix=1
 

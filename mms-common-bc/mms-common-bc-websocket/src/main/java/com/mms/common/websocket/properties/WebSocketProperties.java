@@ -7,7 +7,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 /**
  * 实现功能【WebSocket 模块配置属性】
  * <p>
- * 对外暴露 ws 模块常见配置，便于业务服务按需覆盖。
+ * 对外暴露 websocket 模块常见配置，便于业务服务按需覆盖。
  * </p>
  *
  * @author li.hongyu

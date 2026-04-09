@@ -44,6 +44,20 @@ public class JwtUtils {
 	}
 
 	/**
+	 * 生成 WebSocket 握手专用 Token
+	 *
+	 * @param userId      用户ID
+	 * @param username    用户名
+	 * @param sessionId   会话ID（严格单会话绑定）
+	 * @param ttlSeconds  有效期（秒）
+	 * @return WebSocket 握手 Token
+	 */
+	public String generateWebSocketHandshakeToken(Long userId, String username, String sessionId, long ttlSeconds) {
+		long ttlMs = Math.max(1, ttlSeconds) * 1000;
+		return generateToken(userId, username, sessionId, TokenType.ACCESS, ttlMs);
+	}
+
+	/**
 	 * 生成Refresh Token
 	 *
 	 * @param userId   用户ID

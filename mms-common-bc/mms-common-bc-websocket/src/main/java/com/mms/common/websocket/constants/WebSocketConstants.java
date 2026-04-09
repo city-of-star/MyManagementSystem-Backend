@@ -16,7 +16,7 @@ public final class WebSocketConstants {
     /**
      *  WebSocket 路径
      */
-    public static final String DEFAULT_ENDPOINT = "/ws";
+    public static final String DEFAULT_ENDPOINT = "/websocket";
     /**
      * 用户ID请求头（网关透传）
      */

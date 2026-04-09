@@ -1,5 +1,5 @@
 mms:
   websocket:
-    endpoint: /ws
+    endpoint: /websocket
     auth-enabled: true
     user-id-header: X-User-Id
