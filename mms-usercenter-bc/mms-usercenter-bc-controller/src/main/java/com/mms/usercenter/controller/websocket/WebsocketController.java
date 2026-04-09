@@ -20,14 +20,14 @@ import org.springframework.web.bind.annotation.RestController;
  * @date 2026-04-09 14:25:39
  */
 @RestController
-@RequestMapping("/ws")
+@RequestMapping("/websocket")
 @RequiredArgsConstructor
 @Tag(name = "Websocket 服务", description = "Websocket 服务")
 public class WebsocketController {
 
     private final WebsocketService websocketService;
 
-    @Operation(summary = "根据用户名获取角色与权限")
+    @Operation(summary = "获取 Websocket Token")
     @GetMapping("/handshake-token")
     public Response<WebsocketTokenVo> getWsHandshakeToken() {
         return Response.success(websocketService.getWsHandshakeToken());
