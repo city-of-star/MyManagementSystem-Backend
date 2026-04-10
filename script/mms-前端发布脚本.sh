@@ -4,11 +4,11 @@
 set -euo pipefail
 
 # ========== 配置区 ==========
-APP_NAME="$(basename "$(pwd)")"                # 当前目录名（也是上传的构建产物的名称，例如：portalweb）
-UPLOAD_DIR="./${APP_NAME}"                     # 用户上传的新构建产物相对路径（例如：./portalweb）
+APP_NAME="$(basename "$(pwd)")"                # 当前目录名（也是上传的构建产物的名称）
+UPLOAD_DIR="./${APP_NAME}"                     # 用户上传的新构建产物相对路径
 ZIP_FILE="./${APP_NAME}.zip"                   # 用户上传的压缩包路径
-HISTORY_DIR="./history"                        # 历史版本目录（例如：./history）
-CURRENT_LINK="./current"                       # Nginx root 指向这里（例如：./current）
+HISTORY_DIR="./history"                        # 历史版本目录
+CURRENT_LINK="./current"                       # Nginx root 指向这里
 TMP_EXTRACT_DIR="./.__extract_${APP_NAME}_$$"  # 解压临时目录
 MAX_KEEP_HISTORY=5                             # 保留的历史版本数量（含当前）
 # ===========================

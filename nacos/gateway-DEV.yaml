@@ -13,6 +13,7 @@ spring:
           enabled: false
       default-filters: [] # 网关路由表
       routes:
+        # /api 配置
         - id: usercenter-route
           uri: lb://usercenter
           predicates:
@@ -32,13 +33,6 @@ spring:
                 name: usercenterCb # 熔断器实例名
                 fallbackUri: forward:/fallback/usercenter # 降级入口
 
-        - id: usercenter-websocket-route
-          uri: lb:websocket://usercenter
-          predicates:
-            - Path=/usercenter/websocket/**
-          filters:
-            - StripPrefix=1
-
         - id: base-route
           uri: lb://base
           predicates:
@@ -55,13 +49,6 @@ spring:
               args:
                 name: baseCb
                 fallbackUri: forward:/fallback/base
-
-        - id: base-websocket-route
-          uri: lb:websocket://base
-          predicates:
-            - Path=/base/websocket/**
-          filters:
-            - StripPrefix=1
 
         - id: job-route
           uri: lb://job
@@ -80,12 +67,27 @@ spring:
                 name: jobCb
                 fallbackUri: forward:/fallback/job
 
-        - id: job-websocket-route
-          uri: lb:websocket://job
+        # /ws 配置
+        - id: usercenter-ws-route
+          uri: lb:ws://usercenter
           predicates:
-            - Path=/job/websocket/**
+            - Path=/ws/usercenter/**
           filters:
-            - StripPrefix=1
+            - StripPrefix=2
+
+        - id: base-ws-route
+          uri: lb:ws://base
+          predicates:
+            - Path=/ws/base/**
+          filters:
+            - StripPrefix=2
+
+        - id: job-ws-route
+          uri: lb:ws://job
+          predicates:
+            - Path=/ws/job/**
+          filters:
+            - StripPrefix=2
 
 # Resilience4j 参数（熔断器的具体策略）
 resilience4j:
