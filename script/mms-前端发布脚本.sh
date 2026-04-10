@@ -4,7 +4,8 @@
 set -euo pipefail
 
 # ========== 配置区 ==========
-APP_NAME="$(basename "$(pwd)")"                # 当前目录名（也是上传的构建产物的名称）
+#APP_NAME="$(basename "$(pwd)")"                # 当前目录名（也是上传的构建产物的名称）
+APP_NAME="current"                             # 当前目录名（也是上传的构建产物的名称）
 UPLOAD_DIR="./${APP_NAME}"                     # 用户上传的新构建产物相对路径
 ZIP_FILE="./${APP_NAME}.zip"                   # 用户上传的压缩包路径
 HISTORY_DIR="./history"                        # 历史版本目录
