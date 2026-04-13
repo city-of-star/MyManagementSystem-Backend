@@ -2,6 +2,7 @@ package com.mms.common.websocket.interceptor;
 
 import com.mms.common.websocket.constants.WebSocketConstants;
 import com.mms.common.websocket.properties.WebSocketProperties;
+import com.mms.common.security.servlet.service.GatewaySignatureVerificationService;
 import io.micrometer.common.lang.NonNullApi;
 import io.micrometer.common.lang.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,6 +29,7 @@ import java.util.Map;
 public class AuthHandshakeInterceptor implements HandshakeInterceptor {
 
     private final WebSocketProperties properties;
+    private final GatewaySignatureVerificationService gatewaySignatureVerificationService;
 
     /**
      * 握手前处理
@@ -38,6 +40,10 @@ public class AuthHandshakeInterceptor implements HandshakeInterceptor {
             return !properties.isAuthEnabled();
         }
         HttpServletRequest rawRequest = servletRequest.getServletRequest();
+        // 验证网关签名
+        if (properties.isAuthEnabled()) {
+            gatewaySignatureVerificationService.validate(rawRequest);
+        }
         // 从请求头中获取 userId 请求头
         String userId = rawRequest.getHeader(properties.getUserIdHeader());
         // userId 为空则拒绝握手
