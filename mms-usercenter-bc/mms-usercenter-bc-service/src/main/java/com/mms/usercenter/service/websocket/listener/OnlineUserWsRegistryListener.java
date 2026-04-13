@@ -2,7 +2,7 @@ package com.mms.usercenter.service.websocket.listener;
 
 import com.mms.common.websocket.service.WsRegistryListener;
 import com.mms.usercenter.service.security.service.OnlineUserService;
-import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.core.annotation.Order;
 
 /**
@@ -13,21 +13,30 @@ import org.springframework.core.annotation.Order;
  * </p>
  */
 @Order
-@AllArgsConstructor
 public class OnlineUserWsRegistryListener implements WsRegistryListener {
 
     private static final String ROOM_ONLINE_USER = "security_online_user";
 
-    private final OnlineUserService onlineUserService;
+    private final ObjectProvider<OnlineUserService> onlineUserServiceProvider;
+
+    public OnlineUserWsRegistryListener(ObjectProvider<OnlineUserService> onlineUserServiceProvider) {
+        this.onlineUserServiceProvider = onlineUserServiceProvider;
+    }
 
     @Override
     public void onRegistered(org.springframework.web.socket.WebSocketSession session, com.mms.common.websocket.session.WsSessionPrincipal principal) {
-        onlineUserService.onSessionRegistered();
+        OnlineUserService svc = onlineUserServiceProvider.getIfAvailable();
+        if (svc != null) {
+            svc.onSessionRegistered();
+        }
     }
 
     @Override
     public void onUnregistered(String sessionId, String userId) {
-        onlineUserService.onSessionUnregistered();
+        OnlineUserService svc = onlineUserServiceProvider.getIfAvailable();
+        if (svc != null) {
+            svc.onSessionUnregistered();
+        }
     }
 
     @Override
@@ -35,7 +44,10 @@ public class OnlineUserWsRegistryListener implements WsRegistryListener {
         if (!ROOM_ONLINE_USER.equals(roomId)) {
             return;
         }
-        onlineUserService.onOnlineUserRoomJoined();
+        OnlineUserService svc = onlineUserServiceProvider.getIfAvailable();
+        if (svc != null) {
+            svc.onOnlineUserRoomJoined();
+        }
     }
 }
 
