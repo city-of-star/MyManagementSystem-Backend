@@ -2,8 +2,10 @@ package com.mms.common.websocket.service.impl;
 
 import com.mms.common.websocket.service.WsRegistryService;
 import com.mms.common.websocket.session.WsSessionPrincipal;
+import org.springframework.web.socket.handler.ConcurrentWebSocketSessionDecorator;
 import org.springframework.web.socket.WebSocketSession;
 
+import java.util.HashSet;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -24,23 +26,47 @@ public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
      */
     private final ConcurrentHashMap<String, WebSocketSession> sessionMap = new ConcurrentHashMap<>();
     /**
-     * userId → 该用户下所有连接
+     * userId → 该用户下所有连接 sessionId
      */
-    private final ConcurrentHashMap<String, Set<WebSocketSession>> userSessions = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Set<String>> userSessionIds = new ConcurrentHashMap<>();
     /**
-     * roomId → 房间内所有连接
+     * roomId → 房间内所有连接 sessionId
      */
-    private final ConcurrentHashMap<String, Set<WebSocketSession>> roomSessions = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<String, Set<String>> roomSessionIds = new ConcurrentHashMap<>();
+    /**
+     * sessionId → userId（反向索引，便于 unregister 快速清理）
+     */
+    private final ConcurrentHashMap<String, String> sessionUserId = new ConcurrentHashMap<>();
+    /**
+     * sessionId → rooms（反向索引，便于 unregister 快速清理）
+     */
+    private final ConcurrentHashMap<String, Set<String>> sessionRooms = new ConcurrentHashMap<>();
+
+    /**
+     * 单个会话的发送超时时间（毫秒）
+     */
+    private static final int SEND_TIME_LIMIT_MS = 10_000;
+    /**
+     * 单个会话的发送缓冲区大小（字节）
+     */
+    private static final int SEND_BUFFER_SIZE_BYTES = 512 * 1024;
 
     /**
      * 注册会话
      */
     @Override
     public void register(WebSocketSession session, WsSessionPrincipal principal) {
-        sessionMap.put(session.getId(), session);
+        String sessionId = session.getId();
+        WebSocketSession safeSession = decorate(session);
+        sessionMap.put(sessionId, safeSession);
+
+        // 初始化反向索引容器
+        sessionRooms.computeIfAbsent(sessionId, key -> ConcurrentHashMap.newKeySet());
+
         if (principal != null && principal.getUserId() != null && !principal.getUserId().isBlank()) {
-            // 将 WebSocket 会话关联到指定用户
-            userSessions.computeIfAbsent(principal.getUserId(), key -> ConcurrentHashMap.newKeySet()).add(session);
+            String userId = principal.getUserId();
+            sessionUserId.put(sessionId, userId);
+            userSessionIds.computeIfAbsent(userId, key -> ConcurrentHashMap.newKeySet()).add(sessionId);
         }
     }
 
@@ -49,9 +75,33 @@ public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
      */
     @Override
     public void unregister(WebSocketSession session) {
-        sessionMap.remove(session.getId());
-        userSessions.values().forEach(set -> set.remove(session));
-        roomSessions.values().forEach(set -> set.remove(session));
+        String sessionId = session.getId();
+
+        // 先移除主表
+        sessionMap.remove(sessionId);
+
+        // 清理 user 索引
+        String userId = sessionUserId.remove(sessionId);
+        if (userId != null && !userId.isBlank()) {
+            userSessionIds.computeIfPresent(userId, (key, set) -> {
+                set.remove(sessionId);
+                return set.isEmpty() ? null : set;
+            });
+        }
+
+        // 清理 room 索引
+        Set<String> rooms = sessionRooms.remove(sessionId);
+        if (rooms != null && !rooms.isEmpty()) {
+            for (String roomId : rooms) {
+                if (roomId == null || roomId.isBlank()) {
+                    continue;
+                }
+                roomSessionIds.computeIfPresent(roomId, (key, set) -> {
+                    set.remove(sessionId);
+                    return set.isEmpty() ? null : set;
+                });
+            }
+        }
     }
 
     /**
@@ -59,7 +109,18 @@ public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
      */
     @Override
     public Set<WebSocketSession> getByUserId(String userId) {
-        return userSessions.getOrDefault(userId, Collections.emptySet());
+        Set<String> ids = userSessionIds.get(userId);
+        if (ids == null || ids.isEmpty()) {
+            return Collections.emptySet();
+        }
+        Set<WebSocketSession> result = new HashSet<>();
+        for (String sessionId : ids) {
+            WebSocketSession session = sessionMap.get(sessionId);
+            if (session != null) {
+                result.add(session);
+            }
+        }
+        return result;
     }
 
     /**
@@ -67,7 +128,18 @@ public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
      */
     @Override
     public Set<WebSocketSession> getByRoomId(String roomId) {
-        return roomSessions.getOrDefault(roomId, Collections.emptySet());
+        Set<String> ids = roomSessionIds.get(roomId);
+        if (ids == null || ids.isEmpty()) {
+            return Collections.emptySet();
+        }
+        Set<WebSocketSession> result = new HashSet<>();
+        for (String sessionId : ids) {
+            WebSocketSession session = sessionMap.get(sessionId);
+            if (session != null) {
+                result.add(session);
+            }
+        }
+        return result;
     }
 
     /**
@@ -86,7 +158,10 @@ public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
         if (roomId == null || roomId.isBlank()) {
             return;
         }
-        roomSessions.computeIfAbsent(roomId, key -> ConcurrentHashMap.newKeySet()).add(session);
+        String sessionId = session.getId();
+        // 先记录反向索引，保证 unregister 能快速清理
+        sessionRooms.computeIfAbsent(sessionId, key -> ConcurrentHashMap.newKeySet()).add(roomId);
+        roomSessionIds.computeIfAbsent(roomId, key -> ConcurrentHashMap.newKeySet()).add(sessionId);
     }
 
     /**
@@ -94,11 +169,29 @@ public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
      */
     @Override
     public void leaveRoom(String roomId, WebSocketSession session) {
-        Set<WebSocketSession> sessions = roomSessions.get(roomId);
-        if (sessions == null) {
+        if (roomId == null || roomId.isBlank()) {
             return;
         }
-        sessions.remove(session);
+        String sessionId = session.getId();
+
+        // room → sessionIds
+        roomSessionIds.computeIfPresent(roomId, (key, set) -> {
+            set.remove(sessionId);
+            return set.isEmpty() ? null : set;
+        });
+
+        // sessionId → rooms
+        sessionRooms.computeIfPresent(sessionId, (key, set) -> {
+            set.remove(roomId);
+            return set;
+        });
+    }
+
+    private WebSocketSession decorate(WebSocketSession session) {
+        if (session instanceof ConcurrentWebSocketSessionDecorator) {
+            return session;
+        }
+        return new ConcurrentWebSocketSessionDecorator(session, SEND_TIME_LIMIT_MS, SEND_BUFFER_SIZE_BYTES);
     }
 }
 

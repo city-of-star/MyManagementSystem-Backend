@@ -72,6 +72,11 @@ public class DefaultTextWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) {
         log.warn("WebSocket 传输异常, sessionId={}", session.getId(), exception);
+        try {
+            sessionRegistry.unregister(session);
+        } catch (Exception e) {
+            log.debug("WebSocket 传输异常清理注册表失败, sessionId={}", session.getId(), e);
+        }
     }
 
     /**
