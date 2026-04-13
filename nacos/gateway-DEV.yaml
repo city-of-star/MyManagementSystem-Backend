@@ -7,7 +7,7 @@ spring:
     gateway:
       httpclient:
         connect-timeout: 3000 # 连接超时(ms)
-        response-timeout: 5s # 响应超时
+        response-timeout: 15s # 响应超时
       discovery:
         locator:
           enabled: false
@@ -115,11 +115,11 @@ resilience4j:
     # 超时策略：当下游调用超过 timeoutDuration，会触发熔断/降级逻辑
     instances:
       usercenterCb:
-        timeoutDuration: 3s
+        timeoutDuration: 10s
       baseCb:
-        timeoutDuration: 3s
+        timeoutDuration: 10s
       jobCb:
-        timeoutDuration: 3s
+        timeoutDuration: 10s
 
 # 监控端点（Actuator）
 management:
