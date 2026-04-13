@@ -1,13 +1,16 @@
 package com.mms.common.websocket.service.impl;
 
 import com.mms.common.websocket.service.WsRegistryService;
+import com.mms.common.websocket.service.WsRegistryListener;
 import com.mms.common.websocket.session.WsSessionPrincipal;
 import org.springframework.web.socket.handler.ConcurrentWebSocketSessionDecorator;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.util.HashSet;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -20,6 +23,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * @date 2026-03-26 16:28:47
  */
 public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
+
+    private final List<WsRegistryListener> listeners;
 
     /**
      * sessionId → 连接
@@ -51,6 +56,10 @@ public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
      */
     private static final int SEND_BUFFER_SIZE_BYTES = 512 * 1024;
 
+    public InMemoryWsRegistryServiceImpl(List<WsRegistryListener> listeners) {
+        this.listeners = listeners == null ? List.of() : listeners.stream().filter(Objects::nonNull).toList();
+    }
+
     /**
      * 注册会话
      */
@@ -68,6 +77,16 @@ public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
             sessionUserId.put(sessionId, userId);
             userSessionIds.computeIfAbsent(userId, key -> ConcurrentHashMap.newKeySet()).add(sessionId);
         }
+
+        if (!listeners.isEmpty()) {
+            for (WsRegistryListener listener : listeners) {
+                try {
+                    listener.onRegistered(safeSession, principal);
+                } catch (Exception ignored) {
+                    // avoid breaking websocket core flow by listener exception
+                }
+            }
+        }
     }
 
     /**
@@ -76,6 +95,8 @@ public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
     @Override
     public void unregister(WebSocketSession session) {
         String sessionId = session.getId();
+
+        String userIdForCallback = sessionUserId.get(sessionId);
 
         // 先移除主表
         sessionMap.remove(sessionId);
@@ -100,6 +121,16 @@ public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
                     set.remove(sessionId);
                     return set.isEmpty() ? null : set;
                 });
+            }
+        }
+
+        if (!listeners.isEmpty()) {
+            for (WsRegistryListener listener : listeners) {
+                try {
+                    listener.onUnregistered(sessionId, userIdForCallback);
+                } catch (Exception ignored) {
+                    // avoid breaking websocket core flow by listener exception
+                }
             }
         }
     }
@@ -162,6 +193,17 @@ public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
         // 先记录反向索引，保证 unregister 能快速清理
         sessionRooms.computeIfAbsent(sessionId, key -> ConcurrentHashMap.newKeySet()).add(roomId);
         roomSessionIds.computeIfAbsent(roomId, key -> ConcurrentHashMap.newKeySet()).add(sessionId);
+
+        if (!listeners.isEmpty()) {
+            String userId = sessionUserId.get(sessionId);
+            for (WsRegistryListener listener : listeners) {
+                try {
+                    listener.onRoomJoined(roomId, sessionId, userId);
+                } catch (Exception ignored) {
+                    // avoid breaking websocket core flow by listener exception
+                }
+            }
+        }
     }
 
     /**
@@ -185,6 +227,17 @@ public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
             set.remove(roomId);
             return set;
         });
+
+        if (!listeners.isEmpty()) {
+            String userId = sessionUserId.get(sessionId);
+            for (WsRegistryListener listener : listeners) {
+                try {
+                    listener.onRoomLeft(roomId, sessionId, userId);
+                } catch (Exception ignored) {
+                    // avoid breaking websocket core flow by listener exception
+                }
+            }
+        }
     }
 
     private WebSocketSession decorate(WebSocketSession session) {

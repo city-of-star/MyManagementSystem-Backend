@@ -1,8 +1,8 @@
 package com.mms.usercenter.service.websocket.config;
 
-import com.mms.common.websocket.service.WsRegistryService;
 import com.mms.usercenter.service.security.service.OnlineUserService;
-import com.mms.usercenter.service.websocket.registry.UsercenterWsRegistryService;
+import com.mms.common.websocket.service.WsRegistryListener;
+import com.mms.usercenter.service.websocket.listener.OnlineUserWsRegistryListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -13,8 +13,8 @@ import org.springframework.context.annotation.Configuration;
 public class UsercenterWebSocketConfiguration {
 
     @Bean
-    public WsRegistryService usercenterWsRegistryService(OnlineUserService onlineUserService) {
-        return new UsercenterWsRegistryService(onlineUserService);
+    public WsRegistryListener onlineUserWsRegistryListener(OnlineUserService onlineUserService) {
+        return new OnlineUserWsRegistryListener(onlineUserService);
     }
 }
 

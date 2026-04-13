@@ -1,12 +1,13 @@
 package com.mms.usercenter.service.security.service.impl;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
+import com.mms.common.core.utils.DateUtils;
 import com.mms.common.security.core.utils.RefreshTokenUtils;
 import com.mms.common.security.core.utils.SessionUtils;
 import com.mms.common.websocket.constants.WebSocketConstants;
 import com.mms.common.websocket.protocol.WsMessage;
+import com.mms.common.websocket.service.WsPushService;
 import com.mms.common.websocket.service.WsRegistryService;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.security.vo.OnlineUserVo;
@@ -17,12 +18,10 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.socket.CloseStatus;
-import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -50,25 +49,24 @@ public class OnlineUserServiceImpl implements OnlineUserService {
     private static final String TYPE_ONLINE_USER_FULL = "online_user_full";
     private static final String TYPE_ONLINE_USER_UPSERT = "online_user_upsert";
     private static final String TYPE_ONLINE_USER_REMOVE = "online_user_remove";
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
     private final UserMapper userMapper;
-    private final ObjectMapper objectMapper;
     private final SessionUtils sessionUtils;
     private final RefreshTokenUtils refreshTokenUtils;
     private final WsRegistryService wsRegistryService;
+    private final WsPushService wsPushService;
     private Map<String, Integer> lastOnlineCountMap = Collections.emptyMap();
 
     public OnlineUserServiceImpl(UserMapper userMapper,
-                                 ObjectMapper objectMapper,
                                  SessionUtils sessionUtils,
                                  RefreshTokenUtils refreshTokenUtils,
-                                 @Lazy WsRegistryService wsRegistryService) {
+                                 @Lazy WsRegistryService wsRegistryService,
+                                 WsPushService wsPushService) {
         this.userMapper = userMapper;
-        this.objectMapper = objectMapper;
         this.sessionUtils = sessionUtils;
         this.refreshTokenUtils = refreshTokenUtils;
         this.wsRegistryService = wsRegistryService;
+        this.wsPushService = wsPushService;
     }
 
     @Override
@@ -225,8 +223,8 @@ public class OnlineUserServiceImpl implements OnlineUserService {
         data.put("loginIp", user.getLastLoginIp());
         LocalDateTime loginTime = user.getLastLoginTime();
         if (loginTime != null) {
-            data.put("loginTime", DATE_TIME_FORMATTER.format(loginTime));
-            data.put("lastActiveTime", DATE_TIME_FORMATTER.format(loginTime));
+            data.put("loginTime", DateUtils.formatDateTime(loginTime));
+            data.put("lastActiveTime", DateUtils.formatDateTime(loginTime));
         }
         return data;
     }
@@ -248,7 +246,7 @@ public class OnlineUserServiceImpl implements OnlineUserService {
         vo.setLoginIp(user.getLastLoginIp());
         LocalDateTime loginTime = user.getLastLoginTime();
         if (loginTime != null) {
-            String text = DATE_TIME_FORMATTER.format(loginTime);
+            String text = DateUtils.formatDateTime(loginTime);
             vo.setLoginTime(text);
             vo.setLastActiveTime(text);
         }
@@ -256,26 +254,6 @@ public class OnlineUserServiceImpl implements OnlineUserService {
     }
 
     private void pushToOnlineRoom(WsMessage<?> message) {
-        Set<WebSocketSession> sessions = wsRegistryService.getByRoomId(ROOM_ONLINE_USER);
-        if (sessions == null || sessions.isEmpty()) {
-            return;
-        }
-        final String payload;
-        try {
-            payload = objectMapper.writeValueAsString(message);
-        } catch (Exception e) {
-            log.warn("在线用户消息序列化失败", e);
-            return;
-        }
-        for (WebSocketSession session : sessions) {
-            if (session == null || !session.isOpen()) {
-                continue;
-            }
-            try {
-                session.sendMessage(new TextMessage(payload));
-            } catch (IOException e) {
-                log.warn("在线用户消息推送失败, sessionId={}", session.getId(), e);
-            }
-        }
+        wsPushService.pushToRoom(ROOM_ONLINE_USER, message);
     }
 }

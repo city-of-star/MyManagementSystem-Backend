@@ -11,6 +11,7 @@ import com.mms.common.websocket.service.WsPushService;
 import com.mms.common.websocket.service.impl.WsPushServiceImpl;
 import com.mms.common.websocket.service.impl.InMemoryWsRegistryServiceImpl;
 import com.mms.common.websocket.protocol.WsMessage;
+import com.mms.common.websocket.service.WsRegistryListener;
 import com.mms.common.websocket.service.WsRegistryService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -49,8 +50,8 @@ public class WebSocketAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public WsRegistryService wsSessionRegistry() {
-        return new InMemoryWsRegistryServiceImpl();
+    public WsRegistryService wsSessionRegistry(ObjectProvider<WsRegistryListener> listenersProvider) {
+        return new InMemoryWsRegistryServiceImpl(listenersProvider.orderedStream().toList());
     }
 
     /**
