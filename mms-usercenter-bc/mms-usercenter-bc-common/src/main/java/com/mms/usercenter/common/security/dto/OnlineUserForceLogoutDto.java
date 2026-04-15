@@ -6,6 +6,12 @@ import lombok.Data;
 
 /**
  * 实现功能【强制下线请求 DTO】
+ * <p>
+ *
+ * <p>
+ *
+ * @author li.hongyu
+ * @date 2026-04-15 10:58:12
  */
 @Data
 @Schema(description = "在线用户强制下线请求参数")

@@ -4,7 +4,13 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
 
 /**
- * 实现功能【在线用户信息】
+ * 实现功能【在线用户信息 VO】
+ * <p>
+ *
+ * <p>
+ *
+ * @author li.hongyu
+ * @date 2026-04-15 10:58:12
  */
 @Data
 @Schema(description = "在线用户信息")
