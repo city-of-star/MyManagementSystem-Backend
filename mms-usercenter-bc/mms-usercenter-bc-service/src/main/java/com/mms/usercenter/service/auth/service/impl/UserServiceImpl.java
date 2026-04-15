@@ -411,7 +411,7 @@ public class UserServiceImpl implements UserService {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
             }
             // 加密新密码
-            String hashedPassword = BCrypt.hashpw("123456", BCrypt.gensalt());
+            String hashedPassword = BCrypt.hashpw("MMS2025_" + user.getUsername(), BCrypt.gensalt());
             user.setPassword(hashedPassword);
             user.setPasswordUpdateTime(LocalDateTime.now());
             userMapper.updateById(user);
