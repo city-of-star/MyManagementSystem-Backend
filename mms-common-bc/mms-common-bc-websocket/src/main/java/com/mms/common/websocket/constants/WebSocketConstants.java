@@ -1,7 +1,5 @@
 package com.mms.common.websocket.constants;
 
-import com.mms.common.core.constants.gateway.GatewayConstants;
-
 /**
  * 实现功能【WebSocket 常量定义】
  * <p>
@@ -12,15 +10,6 @@ import com.mms.common.core.constants.gateway.GatewayConstants;
  * @date 2026-03-26 16:28:47
  */
 public final class WebSocketConstants {
-
-    /**
-     *  WebSocket 路径
-     */
-    public static final String DEFAULT_ENDPOINT = "/ws";
-    /**
-     * 用户ID请求头（网关透传）
-     */
-    public static final String DEFAULT_USER_ID_HEADER = GatewayConstants.Headers.USER_ID;
     /**
      * 用户 ID
      */

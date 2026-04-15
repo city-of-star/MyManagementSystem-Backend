@@ -1,5 +1,6 @@
 package com.mms.common.websocket.properties;
 
+import com.mms.common.core.constants.gateway.GatewayConstants;
 import com.mms.common.websocket.constants.WebSocketConstants;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
@@ -20,12 +21,12 @@ public class WebSocketProperties {
     /**
      * WebSocket 端点路径
      */
-    private String endpoint = WebSocketConstants.DEFAULT_ENDPOINT;
+    private String endpoint = "/ws";
 
     /**
      * 握手阶段读取用户ID的请求头
      */
-    private String userIdHeader = WebSocketConstants.DEFAULT_USER_ID_HEADER;
+    private String userIdHeader = GatewayConstants.Headers.USER_ID;
 
     /**
      * 是否开启鉴权
