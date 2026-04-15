@@ -261,36 +261,13 @@ public class PermissionServiceImpl implements PermissionService {
     public List<PermissionVo> listPermissionTree(PermissionTreeQueryDto dto) {
         try {
             log.info("查询权限树，入参：{}", dto);
-
             // 查询权限列表
-            LambdaQueryWrapper<PermissionEntity> wrapper = new LambdaQueryWrapper<>();
-            wrapper.orderByAsc(PermissionEntity::getParentId)
-                    .orderByAsc(PermissionEntity::getSortOrder)
-                    .orderByDesc(PermissionEntity::getCreateTime);
-            if (dto != null && StringUtils.hasText(dto.getPermissionType())) {
-                wrapper.eq(PermissionEntity::getPermissionType, dto.getPermissionType());
-            }
-            if (dto != null && dto.getStatus() != null) {
-                wrapper.eq(PermissionEntity::getStatus, dto.getStatus());
-            }
-            if (dto != null && dto.getVisible() != null) {
-                wrapper.eq(PermissionEntity::getVisible, dto.getVisible());
-            }
-            if (dto != null && StringUtils.hasText(dto.getPermissionName())) {
-                wrapper.like(PermissionEntity::getPermissionName, dto.getPermissionName());
-            }
-            if (dto != null && StringUtils.hasText(dto.getPermissionCode())) {
-                wrapper.like(PermissionEntity::getPermissionCode, dto.getPermissionCode());
-            }
-            List<PermissionEntity> allPermissions = permissionMapper.selectList(wrapper);
-
+            List<PermissionEntity> allPermissions = permissionMapper.listPermissionTree(dto);
             if (CollectionUtils.isEmpty(allPermissions)) {
                 return new ArrayList<>();
             }
-
             // 转换成 PermissionVo
             List<PermissionVo> voList = allPermissions.stream().map(this::convertToVo).toList();
-
             // 构建权限树
             return buildPermissionTree(voList);
         } catch (Exception e) {

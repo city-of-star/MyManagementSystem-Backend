@@ -35,7 +35,7 @@ public interface UserService {
     UserDetailVo getUserById(Long userId);
 
     /**
-     * 根据用户名查询用户信息
+     * 根据用户名查询用户详情
      *
      * @param username 用户名
      * @return 用户信息

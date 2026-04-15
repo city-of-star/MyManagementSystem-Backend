@@ -3,6 +3,7 @@ package com.mms.usercenter.service.auth.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.usercenter.common.auth.dto.PermissionPageQueryDto;
+import com.mms.usercenter.common.auth.dto.PermissionTreeQueryDto;
 import com.mms.usercenter.common.auth.entity.PermissionEntity;
 import com.mms.usercenter.common.auth.vo.PermissionVo;
 import org.apache.ibatis.annotations.Mapper;
@@ -25,4 +26,9 @@ public interface PermissionMapper extends BaseMapper<PermissionEntity> {
      * 根据用户名查询该用户拥有的权限编码集合
      */
     List<String> selectPermissionCodesByUsername(String username);
+
+    /**
+     * 查询权限树列表
+     */
+    List<PermissionEntity> listPermissionTree(@Param("dto") PermissionTreeQueryDto dto);
 }
