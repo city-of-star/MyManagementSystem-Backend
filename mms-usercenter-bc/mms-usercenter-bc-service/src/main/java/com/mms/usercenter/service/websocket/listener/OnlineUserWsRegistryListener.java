@@ -1,9 +1,11 @@
 package com.mms.usercenter.service.websocket.listener;
 
 import com.mms.common.websocket.service.WsRegistryListener;
+import com.mms.common.websocket.session.WsSessionPrincipal;
 import com.mms.usercenter.service.security.service.OnlineUserService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.core.annotation.Order;
+import org.springframework.web.socket.WebSocketSession;
 
 /**
  * 在线用户 WebSocket 订阅监听器。
@@ -24,7 +26,7 @@ public class OnlineUserWsRegistryListener implements WsRegistryListener {
     }
 
     @Override
-    public void onRegistered(org.springframework.web.socket.WebSocketSession session, com.mms.common.websocket.session.WsSessionPrincipal principal) {
+    public void onRegistered(WebSocketSession session, WsSessionPrincipal principal) {
         OnlineUserService svc = onlineUserServiceProvider.getIfAvailable();
         if (svc != null) {
             svc.onSessionRegistered();

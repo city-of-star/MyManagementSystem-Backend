@@ -4,11 +4,13 @@ import com.mms.common.websocket.session.WsSessionPrincipal;
 import org.springframework.web.socket.WebSocketSession;
 
 /**
- * WebSocket 会话注册表生命周期监听器。
+ * 实现功能【WebSocket 会话注册表生命周期监听器】
  * <p>
- * 业务模块可通过实现该接口订阅连接注册/注销、房间加入/退出等事件，
- * 以避免通过继承默认 Registry 实现来插入业务逻辑。
- * </p>
+ *
+ * <p>
+ *
+ * @author li.hongyu
+ * @date 2026-04-14 11:09:25
  */
 public interface WsRegistryListener {
 

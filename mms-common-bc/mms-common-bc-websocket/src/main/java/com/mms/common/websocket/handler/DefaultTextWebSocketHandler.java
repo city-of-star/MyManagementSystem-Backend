@@ -49,7 +49,7 @@ public class DefaultTextWebSocketHandler extends TextWebSocketHandler {
     @Override
     public void afterConnectionEstablished(WebSocketSession session) {
         // 从 attributes 取出 userId
-        Object userIdAttr = session.getAttributes().get(WebSocketConstants.ATTR_USER_ID);
+        Object userIdAttr = session.getAttributes().get(WebSocketConstants.WS_USER_ID);
         String userId = userIdAttr == null ? null : String.valueOf(userIdAttr);
         // 登记到注册表
         sessionRegistry.register(session, WsSessionPrincipal.builder()

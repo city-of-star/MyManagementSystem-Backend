@@ -1,8 +1,10 @@
 package com.mms.common.websocket.service.impl;
 
+import com.mms.common.websocket.properties.WebSocketProperties;
 import com.mms.common.websocket.service.WsRegistryService;
 import com.mms.common.websocket.service.WsRegistryListener;
 import com.mms.common.websocket.session.WsSessionPrincipal;
+import lombok.AllArgsConstructor;
 import org.springframework.web.socket.handler.ConcurrentWebSocketSessionDecorator;
 import org.springframework.web.socket.WebSocketSession;
 
@@ -10,7 +12,6 @@ import java.util.HashSet;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -22,68 +23,60 @@ import java.util.concurrent.ConcurrentHashMap;
  * @author li.hongyu
  * @date 2026-03-26 16:28:47
  */
+@AllArgsConstructor
 public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
 
+    private final WebSocketProperties properties;
     private final List<WsRegistryListener> listeners;
 
     /**
-     * sessionId → 连接
+     * 全局会话注册表（sessionId → 会话）
      */
     private final ConcurrentHashMap<String, WebSocketSession> sessionMap = new ConcurrentHashMap<>();
     /**
-     * userId → 该用户下所有连接 sessionId
+     * 用户会话注册表（userId → 该用户下所有连接 sessionId）
      */
     private final ConcurrentHashMap<String, Set<String>> userSessionIds = new ConcurrentHashMap<>();
     /**
-     * roomId → 房间内所有连接 sessionId
+     * 房间会话注册表（roomId → 房间内所有连接 sessionId）
      */
     private final ConcurrentHashMap<String, Set<String>> roomSessionIds = new ConcurrentHashMap<>();
     /**
-     * sessionId → userId（反向索引，便于 unregister 快速清理）
+     * 反向索引（sessionId → userId）
      */
     private final ConcurrentHashMap<String, String> sessionUserId = new ConcurrentHashMap<>();
     /**
-     * sessionId → rooms（反向索引，便于 unregister 快速清理）
+     * 反向索引（sessionId → rooms）
      */
     private final ConcurrentHashMap<String, Set<String>> sessionRooms = new ConcurrentHashMap<>();
-
-    /**
-     * 单个会话的发送超时时间（毫秒）
-     */
-    private static final int SEND_TIME_LIMIT_MS = 10_000;
-    /**
-     * 单个会话的发送缓冲区大小（字节）
-     */
-    private static final int SEND_BUFFER_SIZE_BYTES = 512 * 1024;
-
-    public InMemoryWsRegistryServiceImpl(List<WsRegistryListener> listeners) {
-        this.listeners = listeners == null ? List.of() : listeners.stream().filter(Objects::nonNull).toList();
-    }
 
     /**
      * 注册会话
      */
     @Override
     public void register(WebSocketSession session, WsSessionPrincipal principal) {
+        // 获取 sessionId
         String sessionId = session.getId();
-        WebSocketSession safeSession = decorate(session);
+        // 将原始 WebSocketSession 装饰成安全的会话
+        WebSocketSession safeSession = decorateSafeSession(session);
+        // 注册会话
         sessionMap.put(sessionId, safeSession);
-
-        // 初始化反向索引容器
-        sessionRooms.computeIfAbsent(sessionId, key -> ConcurrentHashMap.newKeySet());
-
         if (principal != null && principal.getUserId() != null && !principal.getUserId().isBlank()) {
+            // 获取用户ID
             String userId = principal.getUserId();
-            sessionUserId.put(sessionId, userId);
+            // 将会话注册到用户
             userSessionIds.computeIfAbsent(userId, key -> ConcurrentHashMap.newKeySet()).add(sessionId);
+            // 添加反向索引
+            sessionUserId.put(sessionId, userId);
+            sessionRooms.computeIfAbsent(sessionId, key -> ConcurrentHashMap.newKeySet());
         }
-
-        if (!listeners.isEmpty()) {
+        // 执行监听器的注册会话后动作（业务逻辑）
+        if (listeners != null && !listeners.isEmpty()) {
             for (WsRegistryListener listener : listeners) {
                 try {
                     listener.onRegistered(safeSession, principal);
                 } catch (Exception ignored) {
-                    // avoid breaking websocket core flow by listener exception
+                    // 忽略监听器异常避免破坏 WebSocket 核心流程
                 }
             }
         }
@@ -94,24 +87,24 @@ public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
      */
     @Override
     public void unregister(WebSocketSession session) {
+        // 获取 sessionId
         String sessionId = session.getId();
-
+        // 获取 user 反向索引
         String userIdForCallback = sessionUserId.get(sessionId);
-
-        // 先移除主表
+        // 移除会话
         sessionMap.remove(sessionId);
-
-        // 清理 user 索引
+        // 清理 user 反向索引
         String userId = sessionUserId.remove(sessionId);
+        // 清理用户会话注册表
         if (userId != null && !userId.isBlank()) {
             userSessionIds.computeIfPresent(userId, (key, set) -> {
                 set.remove(sessionId);
                 return set.isEmpty() ? null : set;
             });
         }
-
-        // 清理 room 索引
+        // 清理 room 反向索引
         Set<String> rooms = sessionRooms.remove(sessionId);
+        // 清理房间会话注册表
         if (rooms != null && !rooms.isEmpty()) {
             for (String roomId : rooms) {
                 if (roomId == null || roomId.isBlank()) {
@@ -123,13 +116,13 @@ public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
                 });
             }
         }
-
-        if (!listeners.isEmpty()) {
+        // 执行监听器的移除会话后动作（业务逻辑）
+        if (listeners != null && !listeners.isEmpty()) {
             for (WsRegistryListener listener : listeners) {
                 try {
                     listener.onUnregistered(sessionId, userIdForCallback);
                 } catch (Exception ignored) {
-                    // avoid breaking websocket core flow by listener exception
+                    // 忽略监听器异常避免破坏 WebSocket 核心流程
                 }
             }
         }
@@ -190,17 +183,18 @@ public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
             return;
         }
         String sessionId = session.getId();
-        // 先记录反向索引，保证 unregister 能快速清理
+        // 添加反向索引
         sessionRooms.computeIfAbsent(sessionId, key -> ConcurrentHashMap.newKeySet()).add(roomId);
+        // 将会话注册到房间
         roomSessionIds.computeIfAbsent(roomId, key -> ConcurrentHashMap.newKeySet()).add(sessionId);
-
-        if (!listeners.isEmpty()) {
+        // 执行监听器的加入房间后动作（业务逻辑）
+        if (listeners != null && !listeners.isEmpty()) {
             String userId = sessionUserId.get(sessionId);
             for (WsRegistryListener listener : listeners) {
                 try {
                     listener.onRoomJoined(roomId, sessionId, userId);
                 } catch (Exception ignored) {
-                    // avoid breaking websocket core flow by listener exception
+                    // 忽略监听器异常避免破坏 WebSocket 核心流程
                 }
             }
         }
@@ -215,36 +209,37 @@ public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
             return;
         }
         String sessionId = session.getId();
-
-        // room → sessionIds
+        // 从该房间移除这个会话
         roomSessionIds.computeIfPresent(roomId, (key, set) -> {
             set.remove(sessionId);
             return set.isEmpty() ? null : set;
         });
-
-        // sessionId → rooms
+        // 清理 room 反向索引
         sessionRooms.computeIfPresent(sessionId, (key, set) -> {
             set.remove(roomId);
-            return set;
+            return set.isEmpty() ? null : set;
         });
-
-        if (!listeners.isEmpty()) {
+        // 执行监听器的移除房间后动作（业务逻辑）
+        if (listeners != null && !listeners.isEmpty()) {
             String userId = sessionUserId.get(sessionId);
             for (WsRegistryListener listener : listeners) {
                 try {
                     listener.onRoomLeft(roomId, sessionId, userId);
                 } catch (Exception ignored) {
-                    // avoid breaking websocket core flow by listener exception
+                    // 忽略监听器异常避免破坏 WebSocket 核心流程
                 }
             }
         }
     }
 
-    private WebSocketSession decorate(WebSocketSession session) {
+    /**
+     * 装饰原始 WebSocketSession 类型，变成安全的 ConcurrentWebSocketSessionDecorator
+     */
+    private WebSocketSession decorateSafeSession(WebSocketSession session) {
         if (session instanceof ConcurrentWebSocketSessionDecorator) {
             return session;
         }
-        return new ConcurrentWebSocketSessionDecorator(session, SEND_TIME_LIMIT_MS, SEND_BUFFER_SIZE_BYTES);
+        return new ConcurrentWebSocketSessionDecorator(session, properties.getSendTimeLimitMs(), properties.getSendBufferSizeBytes());
     }
 }
 

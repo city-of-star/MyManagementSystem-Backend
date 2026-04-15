@@ -17,12 +17,12 @@ import java.util.Set;
 public interface WsRegistryService {
 
     /**
-     * 连接建立后登记：写入 sessionId 映射，并在有 userId 时加入「用户 → 多连接」索引
+     * 连接建立后注册会话
      */
     void register(WebSocketSession session, WsSessionPrincipal principal);
 
     /**
-     * 连接关闭或异常时移除：从全局、用户、房间索引中清理该会话
+     * 连接关闭或异常时移除会话
      */
     void unregister(WebSocketSession session);
 

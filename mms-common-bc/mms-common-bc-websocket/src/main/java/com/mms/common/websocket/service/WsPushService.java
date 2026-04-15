@@ -5,7 +5,7 @@ import com.mms.common.websocket.protocol.WsMessage;
 /**
  * 实现功能【WebSocket 推送服务】
  * <p>
- * 提供按用户、按房间和全量广播能力。
+ *
  * </p>
  *
  * @author li.hongyu

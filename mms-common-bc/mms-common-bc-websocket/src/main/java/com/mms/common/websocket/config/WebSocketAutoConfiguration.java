@@ -46,12 +46,12 @@ public class WebSocketAutoConfiguration {
     public static final String WEBSOCKET_OBJECT_MAPPER_BEAN_NAME = "websocketObjectMapper";
 
     /**
-     * 会话注册表：默认使用内存实现；业务可自定义 Bean 覆盖为 Redis 等分布式实现
+     * 会话注册表：默认使用内存实现
      */
     @Bean
     @ConditionalOnMissingBean
-    public WsRegistryService wsSessionRegistry(ObjectProvider<WsRegistryListener> listenersProvider) {
-        return new InMemoryWsRegistryServiceImpl(listenersProvider.orderedStream().toList());
+    public WsRegistryService wsSessionRegistry(WebSocketProperties properties, ObjectProvider<WsRegistryListener> listenersProvider) {
+        return new InMemoryWsRegistryServiceImpl(properties, listenersProvider.orderedStream().toList());
     }
 
     /**

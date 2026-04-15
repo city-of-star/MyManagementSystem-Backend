@@ -52,7 +52,7 @@ public class AuthHandshakeInterceptor implements HandshakeInterceptor {
         }
         // 将 userId 写入 attributes
         if (userId != null && !userId.isBlank()) {
-            attributes.put(WebSocketConstants.ATTR_USER_ID, userId);
+            attributes.put(WebSocketConstants.WS_USER_ID, userId);
         }
         return true;
     }

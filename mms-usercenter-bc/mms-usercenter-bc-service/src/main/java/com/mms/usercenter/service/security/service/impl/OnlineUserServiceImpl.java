@@ -184,7 +184,7 @@ public class OnlineUserServiceImpl implements OnlineUserService {
             if (session == null || !session.isOpen()) {
                 continue;
             }
-            Object userIdAttr = session.getAttributes().get(WebSocketConstants.ATTR_USER_ID);
+            Object userIdAttr = session.getAttributes().get(WebSocketConstants.WS_USER_ID);
             String userId = userIdAttr == null ? "" : String.valueOf(userIdAttr).trim();
             if (userId.isEmpty()) {
                 continue;

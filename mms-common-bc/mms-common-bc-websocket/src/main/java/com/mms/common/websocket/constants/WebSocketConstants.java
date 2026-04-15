@@ -24,11 +24,11 @@ public final class WebSocketConstants {
     /**
      * 用户 ID
      */
-    public static final String ATTR_USER_ID = "ws_user_id";
+    public static final String WS_USER_ID = "ws_user_id";
     /**
      * 会话 ID
      */
-    public static final String ATTR_SESSION_ID = "ws_session_id";
+    public static final String WS_SESSION_ID = "ws_session_id";
     /**
      * 消息类型-ping
      */
