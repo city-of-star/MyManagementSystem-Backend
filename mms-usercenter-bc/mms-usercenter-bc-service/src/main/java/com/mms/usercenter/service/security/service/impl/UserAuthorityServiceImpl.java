@@ -198,6 +198,7 @@ public class UserAuthorityServiceImpl implements UserAuthorityService {
         // 过滤并转换成Set集合
         return roleCodeList.stream()
                 .filter(StringUtils::hasText)
+                .map(roleCode -> "ROLE_" + roleCode)
                 .collect(Collectors.toSet());
     }
 
