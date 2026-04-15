@@ -1,6 +1,5 @@
 package com.mms.base.server.security;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.mms.common.cache.utils.RedisUtils;
 import com.mms.common.cache.constants.CacheNameConstants;
 import com.mms.common.security.servlet.filter.UserAuthorityProvider;
@@ -27,7 +26,7 @@ public class UserAuthorityProviderImpl implements UserAuthorityProvider {
     @Override
     public UserAuthorityVo getUserAuthoritiesFromSource(String username) {
         // 先从缓存查
-        UserAuthorityVo userAuthorityVo = RedisUtils.get(CacheNameConstants.UserCenter.USER_AUTHORITY + username, new TypeReference<UserAuthorityVo>() {});
+        UserAuthorityVo userAuthorityVo = RedisUtils.get(CacheNameConstants.UserCenter.USER_AUTHORITY + username, UserAuthorityVo.class);
         if (userAuthorityVo == null) {
             // 缓存没命中，从用户中心查
             userAuthorityVo = userAuthorityFeign.getUserAuthorities(username).getData();
