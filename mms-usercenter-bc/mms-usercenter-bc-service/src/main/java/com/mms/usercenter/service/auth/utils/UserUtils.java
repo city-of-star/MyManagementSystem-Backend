@@ -67,11 +67,7 @@ public class UserUtils {
      * 获取当前用户名
      */
     public String getUsername() {
-        Authentication authentication = getAuthentication();
-        if (authentication == null || authentication.isAuthenticated() || authentication.getAuthorities() == null) {
-            return null;
-        }
-        return authentication.getName();
+        return UserContextUtils.getUsername();
     }
 
     /**
@@ -79,7 +75,7 @@ public class UserUtils {
      */
     public Set<String> getRoles() {
         Authentication authentication = getAuthentication();
-        if (authentication == null || authentication.isAuthenticated() || authentication.getAuthorities() == null) {
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getAuthorities() == null) {
             return Collections.emptySet();
         }
         return authentication.getAuthorities().stream()
@@ -94,7 +90,7 @@ public class UserUtils {
      */
     public Set<String> getPermissions() {
         Authentication authentication = getAuthentication();
-        if (authentication == null || authentication.isAuthenticated() || authentication.getAuthorities() == null) {
+        if (authentication == null || !authentication.isAuthenticated() || authentication.getAuthorities() == null) {
             return Collections.emptySet();
         }
         return authentication.getAuthorities().stream()
