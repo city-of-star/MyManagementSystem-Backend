@@ -1,7 +1,6 @@
-package com.mms.common.websocket.properties;
+package com.mms.common.websocket.common.properties;
 
 import com.mms.common.core.constants.gateway.GatewayConstants;
-import com.mms.common.websocket.constants.WebSocketConstants;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 

@@ -1,4 +1,4 @@
-package com.mms.common.websocket.session;
+package com.mms.common.websocket.common.session;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

@@ -5,10 +5,10 @@ import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.utils.DateUtils;
 import com.mms.common.security.core.utils.RefreshTokenUtils;
 import com.mms.common.security.core.utils.SessionUtils;
-import com.mms.common.websocket.constants.WebSocketConstants;
-import com.mms.common.websocket.protocol.WsMessage;
-import com.mms.common.websocket.service.WsPushService;
-import com.mms.common.websocket.service.WsRegistryService;
+import com.mms.common.websocket.common.constants.WebSocketConstants;
+import com.mms.common.websocket.common.protocol.WsMessage;
+import com.mms.common.websocket.push.service.WsPushService;
+import com.mms.common.websocket.registry.service.WsRegistryService;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.security.vo.OnlineUserVo;
 import com.mms.usercenter.service.auth.mapper.UserMapper;
@@ -71,7 +71,7 @@ public class OnlineUserServiceImpl implements OnlineUserService {
     private WsRegistryService wsRegistryService;
 
     @Resource
-    private WsPushService wsPushService;
+    private WsPushService wsOutboundPushService;
 
     /**
      * WebSocket 会话注册完成后触发
@@ -327,6 +327,6 @@ public class OnlineUserServiceImpl implements OnlineUserService {
      * </p>
      */
     private void pushToOnlineRoom(WsMessage<?> message) {
-        wsPushService.pushToRoom(ROOM_ONLINE_USER, message);
+        wsOutboundPushService.pushToRoom(ROOM_ONLINE_USER, message);
     }
 }

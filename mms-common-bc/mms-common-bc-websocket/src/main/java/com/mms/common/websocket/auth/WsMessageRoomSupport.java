@@ -1,4 +1,4 @@
-package com.mms.common.websocket.handler;
+package com.mms.common.websocket.auth;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import org.springframework.lang.Nullable;

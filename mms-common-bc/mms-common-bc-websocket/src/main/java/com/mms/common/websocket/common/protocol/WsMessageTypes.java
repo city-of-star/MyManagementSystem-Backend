@@ -1,23 +1,15 @@
-package com.mms.common.websocket.constants;
+package com.mms.common.websocket.common.protocol;
 
 /**
- * 实现功能【WebSocket 常量定义】
+ * 实现功能【WebSocket 消息类型】
  * <p>
- * 统一维护模块内部常量，避免魔法值散落在各个类中。
- * </p>
+ *
+ * <p>
  *
  * @author li.hongyu
- * @date 2026-03-26 16:28:47
+ * @date 2026-04-16 14:22:43
  */
-public final class WebSocketConstants {
-    /**
-     * 用户 ID
-     */
-    public static final String WS_USER_ID = "ws_user_id";
-    /**
-     * 会话 ID
-     */
-    public static final String WS_SESSION_ID = "ws_session_id";
+public class WsMessageTypes {
     /**
      * 消息类型-ping
      */
@@ -34,12 +26,10 @@ public final class WebSocketConstants {
      * 消息类型-离开房间
      */
     public static final String TYPE_LEAVE_ROOM = "leave_room";
-
     /**
      * 私有构造函数，防止实例化
      */
-    private WebSocketConstants() {
+    private WsMessageTypes() {
         throw new UnsupportedOperationException("常量类不允许实例化");
     }
 }
-

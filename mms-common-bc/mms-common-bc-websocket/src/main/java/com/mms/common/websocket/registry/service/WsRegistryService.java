@@ -1,6 +1,6 @@
-package com.mms.common.websocket.service;
+package com.mms.common.websocket.registry.service;
 
-import com.mms.common.websocket.session.WsSessionPrincipal;
+import com.mms.common.websocket.common.session.WsSessionPrincipal;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.util.Set;

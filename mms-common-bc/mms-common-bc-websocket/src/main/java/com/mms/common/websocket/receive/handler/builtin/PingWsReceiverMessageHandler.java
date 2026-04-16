@@ -1,10 +1,10 @@
-package com.mms.common.websocket.handler.builtin;
+package com.mms.common.websocket.receive.handler.builtin;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mms.common.websocket.constants.WebSocketConstants;
-import com.mms.common.websocket.handler.WsMessageHandler;
-import com.mms.common.websocket.protocol.WsMessage;
+import com.mms.common.websocket.receive.handler.WsReceiverMessageHandler;
+import com.mms.common.websocket.common.protocol.WsMessage;
+import com.mms.common.websocket.common.protocol.WsMessageTypes;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.socket.TextMessage;
@@ -24,19 +24,19 @@ import java.util.Map;
  */
 @Slf4j
 @AllArgsConstructor
-public class PingWsMessageHandler implements WsMessageHandler {
+public class PingWsReceiverMessageHandler implements WsReceiverMessageHandler {
 
     private final ObjectMapper objectMapper;
 
     @Override
     public String supportType() {
-        return WebSocketConstants.TYPE_PING;
+        return WsMessageTypes.TYPE_PING;
     }
 
     @Override
     public void handle(WebSocketSession session, WsMessage<JsonNode> message) {
         WsMessage<Map<String, Object>> pongMessage = WsMessage.<Map<String, Object>>builder()
-                .type(WebSocketConstants.TYPE_PONG)
+                .type(WsMessageTypes.TYPE_PONG)
                 .data(Map.of())
                 .requestId(message != null ? message.getRequestId() : null)
                 .timestamp(System.currentTimeMillis())

@@ -1,12 +1,13 @@
-package com.mms.common.websocket.handler;
+package com.mms.common.websocket.receive.dispatcher;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mms.common.websocket.constants.WebSocketConstants;
-import com.mms.common.websocket.protocol.WsMessage;
-import com.mms.common.websocket.session.WsSessionPrincipal;
-import com.mms.common.websocket.service.WsRegistryService;
+import com.mms.common.websocket.common.constants.WebSocketConstants;
+import com.mms.common.websocket.common.protocol.WsMessage;
+import com.mms.common.websocket.receive.handler.WsReceiverMessageHandler;
+import com.mms.common.websocket.common.session.WsSessionPrincipal;
+import com.mms.common.websocket.registry.service.WsRegistryService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -27,13 +28,13 @@ import java.util.Map;
  * @date 2026-03-27 10:00:00
  */
 @Slf4j
-public class MmsTextWebSocketHandler extends TextWebSocketHandler {
+public class WsReceiveTextDispatcher extends TextWebSocketHandler {
 
     private final WsRegistryService sessionRegistry;
     private final ObjectMapper objectMapper;
-    private final Map<String, WsMessageHandler> handlersByType;
+    private final Map<String, WsReceiverMessageHandler> handlersByType;
 
-    public MmsTextWebSocketHandler(WsRegistryService sessionRegistry, ObjectMapper objectMapper, List<WsMessageHandler> messageHandlers) {
+    public WsReceiveTextDispatcher(WsRegistryService sessionRegistry, ObjectMapper objectMapper, List<WsReceiverMessageHandler> messageHandlers) {
         this.sessionRegistry = sessionRegistry;
         this.objectMapper = objectMapper;
         this.handlersByType = buildHandlerMap(messageHandlers);
@@ -42,23 +43,23 @@ public class MmsTextWebSocketHandler extends TextWebSocketHandler {
     /**
      * 构建消息处理器映射表（type → handler）
      */
-    private static Map<String, WsMessageHandler> buildHandlerMap(List<WsMessageHandler> messageHandlers) {
+    private static Map<String, WsReceiverMessageHandler> buildHandlerMap(List<WsReceiverMessageHandler> messageHandlers) {
         if (messageHandlers == null || messageHandlers.isEmpty()) {
             return Map.of();
         }
-        Map<String, WsMessageHandler> map = new LinkedHashMap<>();
-        for (WsMessageHandler h : messageHandlers) {
+        Map<String, WsReceiverMessageHandler> map = new LinkedHashMap<>();
+        for (WsReceiverMessageHandler h : messageHandlers) {
             if (h == null) {
                 continue;
             }
             String type = h.supportType();
             if (type == null || type.isBlank()) {
-                log.warn("跳过 supportType 为空的 WsMessageHandler: {}", h.getClass().getName());
+                log.warn("跳过 supportType 为空的 WsReceiveTextDispatcher: {}", h.getClass().getName());
                 continue;
             }
-            WsMessageHandler existing = map.putIfAbsent(type, h);
+            WsReceiverMessageHandler existing = map.putIfAbsent(type, h);
             if (existing != null) {
-                log.warn("重复的 WsMessageHandler: type={}, 保留 {}, 忽略 {}", type, existing.getClass().getName(), h.getClass().getName());
+                log.warn("重复的 WsReceiveTextDispatcher: type={}, 保留 {}, 忽略 {}", type, existing.getClass().getName(), h.getClass().getName());
             }
         }
         return Map.copyOf(map);
@@ -105,7 +106,7 @@ public class MmsTextWebSocketHandler extends TextWebSocketHandler {
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         WsMessage<JsonNode> wsMessage = objectMapper.readValue(message.getPayload(), new TypeReference<WsMessage<JsonNode>>() {});
         String type = wsMessage != null && wsMessage.getType() != null ? wsMessage.getType() : "";
-        WsMessageHandler handler = handlersByType.get(type);
+        WsReceiverMessageHandler handler = handlersByType.get(type);
         if (handler != null) {
             handler.handle(session, wsMessage);
         } else {

@@ -1,11 +1,11 @@
-package com.mms.common.websocket.handler.builtin;
+package com.mms.common.websocket.receive.handler.builtin;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.mms.common.websocket.constants.WebSocketConstants;
-import com.mms.common.websocket.handler.WsMessageHandler;
-import com.mms.common.websocket.handler.WsMessageRoomSupport;
-import com.mms.common.websocket.protocol.WsMessage;
-import com.mms.common.websocket.service.WsRegistryService;
+import com.mms.common.websocket.receive.handler.WsReceiverMessageHandler;
+import com.mms.common.websocket.auth.WsMessageRoomSupport;
+import com.mms.common.websocket.common.protocol.WsMessage;
+import com.mms.common.websocket.common.protocol.WsMessageTypes;
+import com.mms.common.websocket.registry.service.WsRegistryService;
 import lombok.AllArgsConstructor;
 import org.springframework.web.socket.WebSocketSession;
 
@@ -19,13 +19,13 @@ import org.springframework.web.socket.WebSocketSession;
  * @date 2026-04-15 10:15:26
  */
 @AllArgsConstructor
-public class JoinRoomWsMessageHandler implements WsMessageHandler {
+public class JoinRoomWsReceiverMessageHandler implements WsReceiverMessageHandler {
 
     private final WsRegistryService sessionRegistry;
 
     @Override
     public String supportType() {
-        return WebSocketConstants.TYPE_JOIN_ROOM;
+        return WsMessageTypes.TYPE_JOIN_ROOM;
     }
 
     @Override

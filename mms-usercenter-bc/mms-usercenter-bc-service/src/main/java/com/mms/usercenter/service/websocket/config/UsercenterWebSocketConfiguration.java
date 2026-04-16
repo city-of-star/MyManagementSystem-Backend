@@ -1,7 +1,7 @@
 package com.mms.usercenter.service.websocket.config;
 
 import com.mms.usercenter.service.security.service.OnlineUserService;
-import com.mms.common.websocket.service.WsRegistryListener;
+import com.mms.common.websocket.registry.listener.WsRegistryListener;
 import com.mms.usercenter.service.websocket.listener.OnlineUserWsRegistryListener;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;

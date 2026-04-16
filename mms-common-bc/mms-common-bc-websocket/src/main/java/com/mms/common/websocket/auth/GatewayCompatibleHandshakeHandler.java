@@ -1,4 +1,4 @@
-package com.mms.common.websocket.handler;
+package com.mms.common.websocket.auth;
 
 import org.springframework.lang.Nullable;
 import org.springframework.web.socket.WebSocketHandler;

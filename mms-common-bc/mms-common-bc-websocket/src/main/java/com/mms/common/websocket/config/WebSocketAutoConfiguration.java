@@ -3,19 +3,19 @@ package com.mms.common.websocket.config;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mms.common.core.utils.JacksonObjectMapperUtils;
 import com.mms.common.security.servlet.service.GatewaySignatureVerificationService;
-import com.mms.common.websocket.handler.GatewayCompatibleHandshakeHandler;
-import com.mms.common.websocket.handler.MmsTextWebSocketHandler;
-import com.mms.common.websocket.handler.WsMessageHandler;
-import com.mms.common.websocket.handler.builtin.JoinRoomWsMessageHandler;
-import com.mms.common.websocket.handler.builtin.LeaveRoomWsMessageHandler;
-import com.mms.common.websocket.handler.builtin.PingWsMessageHandler;
-import com.mms.common.websocket.interceptor.AuthHandshakeInterceptor;
-import com.mms.common.websocket.properties.WebSocketProperties;
-import com.mms.common.websocket.service.WsPushService;
-import com.mms.common.websocket.service.impl.WsPushServiceImpl;
-import com.mms.common.websocket.service.impl.InMemoryWsRegistryServiceImpl;
-import com.mms.common.websocket.service.WsRegistryListener;
-import com.mms.common.websocket.service.WsRegistryService;
+import com.mms.common.websocket.auth.GatewayCompatibleHandshakeHandler;
+import com.mms.common.websocket.receive.dispatcher.WsReceiveTextDispatcher;
+import com.mms.common.websocket.receive.handler.WsReceiverMessageHandler;
+import com.mms.common.websocket.receive.handler.builtin.JoinRoomWsReceiverMessageHandler;
+import com.mms.common.websocket.receive.handler.builtin.LeaveRoomWsReceiverMessageHandler;
+import com.mms.common.websocket.receive.handler.builtin.PingWsReceiverMessageHandler;
+import com.mms.common.websocket.auth.AuthHandshakeInterceptor;
+import com.mms.common.websocket.common.properties.WebSocketProperties;
+import com.mms.common.websocket.push.service.WsPushService;
+import com.mms.common.websocket.push.service.impl.WsPushServiceImpl;
+import com.mms.common.websocket.registry.service.impl.InMemoryWsRegistryServiceImpl;
+import com.mms.common.websocket.registry.listener.WsRegistryListener;
+import com.mms.common.websocket.registry.service.WsRegistryService;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -54,7 +54,7 @@ public class WebSocketAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public WsRegistryService WsRegistryService(WebSocketProperties properties, ObjectProvider<WsRegistryListener> listenersProvider) {
+    public WsRegistryService wsRegistryService(WebSocketProperties properties, ObjectProvider<WsRegistryListener> listenersProvider) {
         return new InMemoryWsRegistryServiceImpl(properties, listenersProvider.orderedStream().toList());
     }
 
@@ -91,20 +91,20 @@ public class WebSocketAutoConfiguration {
 
     @Bean
     @Order(1_000)
-    public WsMessageHandler pingWsMessageHandler(@Qualifier(WEBSOCKET_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper) {
-        return new PingWsMessageHandler(objectMapper);
+    public WsReceiverMessageHandler pingWsMessageHandler(@Qualifier(WEBSOCKET_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper) {
+        return new PingWsReceiverMessageHandler(objectMapper);
     }
 
     @Bean
     @Order(1_000)
-    public WsMessageHandler joinRoomWsMessageHandler(WsRegistryService wsRegistryService) {
-        return new JoinRoomWsMessageHandler(wsRegistryService);
+    public WsReceiverMessageHandler joinRoomWsMessageHandler(WsRegistryService wsRegistryService) {
+        return new JoinRoomWsReceiverMessageHandler(wsRegistryService);
     }
 
     @Bean
     @Order(1_000)
-    public WsMessageHandler leaveRoomWsMessageHandler(WsRegistryService wsRegistryService) {
-        return new LeaveRoomWsMessageHandler(wsRegistryService);
+    public WsReceiverMessageHandler leaveRoomWsMessageHandler(WsRegistryService wsRegistryService) {
+        return new LeaveRoomWsReceiverMessageHandler(wsRegistryService);
     }
 
     /**
@@ -112,8 +112,8 @@ public class WebSocketAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(WebSocketHandler.class)
-    public WebSocketHandler mmsTextWebSocketHandler(WsRegistryService wsRegistryService, @Qualifier(WEBSOCKET_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper, ObjectProvider<WsMessageHandler> messageHandlers) {
-        return new MmsTextWebSocketHandler(wsRegistryService, objectMapper, messageHandlers.orderedStream().toList());
+    public WebSocketHandler mmsTextWebSocketHandler(WsRegistryService wsRegistryService, @Qualifier(WEBSOCKET_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper, ObjectProvider<WsReceiverMessageHandler> messageHandlers) {
+        return new WsReceiveTextDispatcher(wsRegistryService, objectMapper, messageHandlers.orderedStream().toList());
     }
 
     /**

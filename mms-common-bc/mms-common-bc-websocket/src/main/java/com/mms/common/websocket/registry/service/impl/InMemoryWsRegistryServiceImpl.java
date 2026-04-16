@@ -1,9 +1,9 @@
-package com.mms.common.websocket.service.impl;
+package com.mms.common.websocket.registry.service.impl;
 
-import com.mms.common.websocket.properties.WebSocketProperties;
-import com.mms.common.websocket.service.WsRegistryService;
-import com.mms.common.websocket.service.WsRegistryListener;
-import com.mms.common.websocket.session.WsSessionPrincipal;
+import com.mms.common.websocket.common.properties.WebSocketProperties;
+import com.mms.common.websocket.registry.service.WsRegistryService;
+import com.mms.common.websocket.registry.listener.WsRegistryListener;
+import com.mms.common.websocket.common.session.WsSessionPrincipal;
 import lombok.AllArgsConstructor;
 import org.springframework.web.socket.handler.ConcurrentWebSocketSessionDecorator;
 import org.springframework.web.socket.WebSocketSession;

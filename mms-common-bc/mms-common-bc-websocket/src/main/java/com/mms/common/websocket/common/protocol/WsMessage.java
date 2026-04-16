@@ -1,4 +1,4 @@
-package com.mms.common.websocket.protocol;
+package com.mms.common.websocket.common.protocol;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.AllArgsConstructor;

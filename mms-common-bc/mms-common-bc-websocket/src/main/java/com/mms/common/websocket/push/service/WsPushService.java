@@ -1,6 +1,6 @@
-package com.mms.common.websocket.service;
+package com.mms.common.websocket.push.service;
 
-import com.mms.common.websocket.protocol.WsMessage;
+import com.mms.common.websocket.common.protocol.WsMessage;
 
 /**
  * 实现功能【WebSocket 推送服务】

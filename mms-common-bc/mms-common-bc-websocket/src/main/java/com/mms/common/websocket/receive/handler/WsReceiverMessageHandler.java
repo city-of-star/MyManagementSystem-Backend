@@ -1,7 +1,7 @@
-package com.mms.common.websocket.handler;
+package com.mms.common.websocket.receive.handler;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.mms.common.websocket.protocol.WsMessage;
+import com.mms.common.websocket.common.protocol.WsMessage;
 import org.springframework.web.socket.WebSocketSession;
 
 /**
@@ -13,7 +13,7 @@ import org.springframework.web.socket.WebSocketSession;
  * @author li.hongyu
  * @date 2026-04-15 10:15:26
  */
-public interface WsMessageHandler {
+public interface WsReceiverMessageHandler {
 
     /**
      * 自定义消息类型

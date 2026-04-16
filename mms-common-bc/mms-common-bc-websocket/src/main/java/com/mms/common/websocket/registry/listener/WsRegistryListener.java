@@ -1,6 +1,6 @@
-package com.mms.common.websocket.service;
+package com.mms.common.websocket.registry.listener;
 
-import com.mms.common.websocket.session.WsSessionPrincipal;
+import com.mms.common.websocket.common.session.WsSessionPrincipal;
 import org.springframework.web.socket.WebSocketSession;
 
 /**

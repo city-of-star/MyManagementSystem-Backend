@@ -1,7 +1,7 @@
-package com.mms.common.websocket.interceptor;
+package com.mms.common.websocket.auth;
 
-import com.mms.common.websocket.constants.WebSocketConstants;
-import com.mms.common.websocket.properties.WebSocketProperties;
+import com.mms.common.websocket.common.constants.WebSocketConstants;
+import com.mms.common.websocket.common.properties.WebSocketProperties;
 import com.mms.common.security.servlet.service.GatewaySignatureVerificationService;
 import io.micrometer.common.lang.NonNullApi;
 import io.micrometer.common.lang.Nullable;
