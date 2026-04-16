@@ -10,6 +10,7 @@ import com.mms.common.websocket.common.protocol.WsMessage;
 import com.mms.common.websocket.push.service.WsPushService;
 import com.mms.common.websocket.registry.service.WsRegistryService;
 import com.mms.usercenter.common.auth.entity.UserEntity;
+import com.mms.usercenter.common.security.constants.OnlineUserConstants;
 import com.mms.usercenter.common.security.vo.OnlineUserVo;
 import com.mms.usercenter.service.auth.mapper.UserMapper;
 import com.mms.usercenter.service.security.service.OnlineUserService;
@@ -46,17 +47,6 @@ import java.util.Comparator;
 @Service
 public class OnlineUserServiceImpl implements OnlineUserService {
 
-    private static final String ROOM_ONLINE_USER = "security_online_user";
-    private static final String TYPE_ONLINE_USER_FULL = "online_user_full";
-    private static final String TYPE_ONLINE_USER_UPSERT = "online_user_upsert";
-    private static final String TYPE_ONLINE_USER_REMOVE = "online_user_remove";
-
-    /**
-     * 上一次在线用户会话数快照（userId -> sessionCount）
-     * 用于在会话注册/注销时做增量对比，只推送变化用户，避免每次全量广播
-     */
-    private Map<String, Integer> lastOnlineCountMap = Collections.emptyMap();
-
     @Resource
     private UserMapper userMapper;
 
@@ -72,6 +62,12 @@ public class OnlineUserServiceImpl implements OnlineUserService {
 
     @Resource
     private WsPushService wsOutboundPushService;
+
+    /**
+     * 上一次在线用户会话数快照（userId -> sessionCount）
+     * 用于在会话注册/注销时做增量对比，只推送变化用户，避免每次全量广播
+     */
+    private Map<String, Integer> lastOnlineCountMap = Collections.emptyMap();
 
     /**
      * WebSocket 会话注册完成后触发
@@ -101,7 +97,7 @@ public class OnlineUserServiceImpl implements OnlineUserService {
             users.add(toOnlineUserData(entry.getKey(), entry.getValue(), userMap.get(entry.getKey())));
         }
         pushToOnlineRoom(WsMessage.builder()
-                .type(TYPE_ONLINE_USER_FULL)
+                .type(OnlineUserConstants.TYPE_ONLINE_USER_FULL)
                 .data(users)
                 .timestamp(System.currentTimeMillis())
                 .build());
@@ -188,7 +184,7 @@ public class OnlineUserServiceImpl implements OnlineUserService {
             if (newCount == null || newCount <= 0) {
                 if (oldCount != null && oldCount > 0) {
                     pushToOnlineRoom(WsMessage.builder()
-                            .type(TYPE_ONLINE_USER_REMOVE)
+                            .type(OnlineUserConstants.TYPE_ONLINE_USER_REMOVE)
                             .data(Map.of("userId", userId))
                             .timestamp(System.currentTimeMillis())
                             .build());
@@ -198,7 +194,7 @@ public class OnlineUserServiceImpl implements OnlineUserService {
             // 新上线或会话数变化时，推送最新用户在线信息
             if (oldCount == null || !oldCount.equals(newCount)) {
                 pushToOnlineRoom(WsMessage.builder()
-                        .type(TYPE_ONLINE_USER_UPSERT)
+                        .type(OnlineUserConstants.TYPE_ONLINE_USER_UPSERT)
                         .data(toOnlineUserData(userId, newCount, userMap.get(userId)))
                         .timestamp(System.currentTimeMillis())
                         .build());
@@ -327,6 +323,6 @@ public class OnlineUserServiceImpl implements OnlineUserService {
      * </p>
      */
     private void pushToOnlineRoom(WsMessage<?> message) {
-        wsOutboundPushService.pushToRoom(ROOM_ONLINE_USER, message);
+        wsOutboundPushService.pushToRoom(OnlineUserConstants.ROOM_ONLINE_USER, message);
     }
 }
