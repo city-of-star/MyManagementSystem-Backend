@@ -1,15 +1,9 @@
 package com.mms.usercenter.service.auth.utils;
 
 import com.mms.common.webmvc.utils.UserContextUtils;
-import com.mms.usercenter.common.auth.entity.UserEntity;
-import com.mms.usercenter.common.auth.vo.UserDetailVo;
-import com.mms.usercenter.service.auth.mapper.UserMapper;
-import com.mms.usercenter.service.auth.service.UserService;
-import jakarta.annotation.Resource;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.util.Collections;
@@ -25,55 +19,29 @@ import java.util.stream.Collectors;
  * @author li.hongyu
  * @date 2025-12-09 11:40:24
  */
-@Component
-public class UserUtils {
+public final class UserUtils {
 
-    @Resource
-    private UserMapper userMapper;
-
-    @Resource
-    private UserService userService;
-
-    /**
-     * 获取当前用户实体信息
-     */
-    public UserEntity getCurrentUserEntity() {
-        Long userId = UserContextUtils.getUserId();
-        if (userId == null) {
-            return null;
-        }
-        return userMapper.selectById(userId);
-    }
-
-    /**
-     * 获取当前用户详细信息（包含部门、岗位）
-     */
-    public UserDetailVo getCurrentUserDetail() {
-        Long userId = UserContextUtils.getUserId();
-        if (userId == null) {
-            return null;
-        }
-        return userService.getUserById(userId);
+    private UserUtils() {
     }
 
     /**
      * 获取当前用户ID
      */
-    public Long getUserId() {
+    public static Long getUserId() {
         return UserContextUtils.getUserId();
     }
 
     /**
      * 获取当前用户名
      */
-    public String getUsername() {
+    public static String getUsername() {
         return UserContextUtils.getUsername();
     }
 
     /**
      * 获取当前用户拥有的角色
      */
-    public Set<String> getRoles() {
+    public static Set<String> getRoles() {
         Authentication authentication = getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || authentication.getAuthorities() == null) {
             return Collections.emptySet();
@@ -88,7 +56,7 @@ public class UserUtils {
     /**
      * 获取当前用户拥有的权限
      */
-    public Set<String> getPermissions() {
+    public static Set<String> getPermissions() {
         Authentication authentication = getAuthentication();
         if (authentication == null || !authentication.isAuthenticated() || authentication.getAuthorities() == null) {
             return Collections.emptySet();
@@ -102,7 +70,7 @@ public class UserUtils {
     /**
      * 判断当前用户是否拥有某角色
      */
-    public boolean hasRole(String roleCode) {
+    public static boolean hasRole(String roleCode) {
         return StringUtils.hasText(roleCode) && getRoles().contains(roleCode);
     }
 
@@ -110,14 +78,14 @@ public class UserUtils {
     /**
      * 判断当前用户是否拥有某权限
      */
-    public boolean hasPermission(String permissionCode) {
+    public static boolean hasPermission(String permissionCode) {
         return StringUtils.hasText(permissionCode) && getPermissions().contains(permissionCode);
     }
 
     /**
      * 获取当前用户认证信息
      */
-    public Authentication getAuthentication() {
+    public static Authentication getAuthentication() {
         return SecurityContextHolder.getContext().getAuthentication();
     }
 }
