@@ -13,7 +13,7 @@
     <select id="getPermissionPage" resultType="com.mms.usercenter.common.auth.vo.PermissionVo">
         SELECT
             <include refid="PermissionVoColumns"/>
-        FROM permission
+        FROM system_permission
         <where>
             deleted = 0
             <if test="dto.parentId != null">
@@ -66,7 +66,7 @@
             id, parent_id, permission_type, permission_name, permission_code,
             path, component, icon, api_url, api_method, sort_order, visible,
             status, remark, create_by, create_time, update_by, update_time, deleted
-        FROM permission
+        FROM system_permission
         <where>
             deleted = 0
             <if test="dto != null and dto.permissionType != null and dto.permissionType != ''">
