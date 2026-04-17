@@ -60,6 +60,13 @@ public final class DateUtils {
     }
 
     /**
+     * 获取当前时间戳（毫秒）
+     */
+    public static long nowMillis() {
+        return System.currentTimeMillis();
+    }
+
+    /**
      * 获取今天的日期（使用默认时区）
      */
     public static LocalDate today() {

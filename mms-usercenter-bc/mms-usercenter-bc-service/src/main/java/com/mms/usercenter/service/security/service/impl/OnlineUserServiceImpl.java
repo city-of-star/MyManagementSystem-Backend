@@ -61,7 +61,7 @@ public class OnlineUserServiceImpl implements OnlineUserService {
     private WsRegistryService wsRegistryService;
 
     @Resource
-    private WsPushService wsOutboundPushService;
+    private WsPushService wsPushService;
 
     /**
      * 上一次在线用户会话数快照（userId -> sessionCount）
@@ -90,17 +90,22 @@ public class OnlineUserServiceImpl implements OnlineUserService {
      */
     @Override
     public synchronized void onOnlineUserRoomJoined() {
+        // 统计当前在线会话数（userId -> 该userId的会话数）
         Map<String, Integer> countMap = buildOnlineCountMap();
+        // 加载用户的信息（userId -> 用户实体信息）
         Map<String, UserEntity> userMap = loadUsers(countMap.keySet());
+        // 拼接成在线用户列表（ws推送使用）
         List<Map<String, Object>> users = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : countMap.entrySet()) {
             users.add(toOnlineUserData(entry.getKey(), entry.getValue(), userMap.get(entry.getKey())));
         }
+        // 全量推送消息
         pushToOnlineRoom(WsMessage.builder()
                 .type(OnlineUserConstants.TYPE_ONLINE_USER_FULL)
                 .data(users)
-                .timestamp(System.currentTimeMillis())
+                .timestamp(DateUtils.nowMillis())
                 .build());
+        // 保存最新在线用户会话数快照
         lastOnlineCountMap = countMap;
     }
 
@@ -109,16 +114,20 @@ public class OnlineUserServiceImpl implements OnlineUserService {
      */
     @Override
     public synchronized List<OnlineUserVo> getOnlineUsers() {
+        // 统计当前在线会话数（userId -> 该userId的会话数）
         Map<String, Integer> countMap = buildOnlineCountMap();
+        // 加载用户的信息（userId -> 用户实体信息）
         Map<String, UserEntity> userMap = loadUsers(countMap.keySet());
+        // 拼接成在线用户列表（http响应使用）
         List<OnlineUserVo> list = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : countMap.entrySet()) {
             String userId = entry.getKey();
             list.add(toOnlineUserVo(userId, entry.getValue(), userMap.get(userId)));
         }
+        // 排序
         list.sort(
-                Comparator.comparing(OnlineUserVo::getSessionCount, Comparator.nullsLast(Integer::compareTo)).reversed()
-                        .thenComparing(OnlineUserVo::getUserId, Comparator.nullsLast(Long::compareTo))
+            Comparator.comparing(OnlineUserVo::getSessionCount, Comparator.nullsLast(Integer::compareTo)).reversed()
+                    .thenComparing(OnlineUserVo::getUserId, Comparator.nullsLast(Long::compareTo))
         );
         return list;
     }
@@ -133,19 +142,22 @@ public class OnlineUserServiceImpl implements OnlineUserService {
             throw new BusinessException(ErrorCode.USER_NOT_FOUND);
         }
         String userIdKey = String.valueOf(userId);
+        // 查询该用户的会话集合
         Set<WebSocketSession> sessions = wsRegistryService.getByUserId(userIdKey);
+        // 强制下线关闭会话
         if (sessions != null && !sessions.isEmpty()) {
             for (WebSocketSession session : sessions) {
                 if (session == null || !session.isOpen()) {
                     continue;
                 }
                 try {
-                    session.close(new CloseStatus(4001, "force-logout"));
+                    session.close(new CloseStatus(4001, "管理员强制下线关闭会话"));
                 } catch (IOException e) {
                     log.warn("强制下线关闭会话失败, sessionId={}", session.getId(), e);
                 }
             }
         }
+        // 移除 Redis 中的 sessionId 和 refreshToken
         if (StringUtils.hasText(user.getUsername())) {
             sessionUtils.removeSessionId(user.getUsername());
             refreshTokenUtils.removeRefreshToken(user.getUsername());
@@ -153,32 +165,24 @@ public class OnlineUserServiceImpl implements OnlineUserService {
     }
 
     /**
-     * 对比前后在线会话数快照并进行增量推送：
-     * <ul>
-     *     <li>新用户上线/会话数变化：推送 UPSERT</li>
-     *     <li>用户全部离线：推送 REMOVE</li>
-     * </ul>
-     * 说明：
-     * <ol>
-     *     <li>before 是上一次快照，after 是当前快照；两者结构均为 userId -> sessionCount。</li>
-     *     <li>先取并集，确保“新增用户”和“离线用户”都能被遍历到。</li>
-     *     <li>只发送变化，避免每次连接变化都全量广播。</li>
-     * </ol>
+     * 对比前后在线会话数快照并进行增量推送
      */
     private void pushDiff(Map<String, Integer> before, Map<String, Integer> after) {
-        // 取并集：任何在 before/after 出现过的用户，都可能需要推送变更。
+        // 取并集：任何在 before/after 出现过的用户，都可能需要推送变更
         Set<String> userIds = new HashSet<>();
         userIds.addAll(before.keySet());
         userIds.addAll(after.keySet());
-        // 无在线用户时仅更新基线，不发消息。
+        // 无在线用户时仅更新基线，不发消息
         if (userIds.isEmpty()) {
             lastOnlineCountMap = after;
             return;
         }
-        // 预先加载用户信息，避免循环内重复查询。
+        // 预先加载用户信息，避免循环内重复查询
         Map<String, UserEntity> userMap = loadUsers(userIds);
         for (String userId : userIds) {
+            // 该用户旧的会话数量
             Integer oldCount = before.get(userId);
+            // 该用户新的会话数量
             Integer newCount = after.get(userId);
             // 新快照无该用户（或会话数<=0）且旧快照有在线记录：视为离线
             if (newCount == null || newCount <= 0) {
@@ -186,7 +190,7 @@ public class OnlineUserServiceImpl implements OnlineUserService {
                     pushToOnlineRoom(WsMessage.builder()
                             .type(OnlineUserConstants.TYPE_ONLINE_USER_REMOVE)
                             .data(Map.of("userId", userId))
-                            .timestamp(System.currentTimeMillis())
+                            .timestamp(DateUtils.nowMillis())
                             .build());
                 }
                 continue;
@@ -196,24 +200,16 @@ public class OnlineUserServiceImpl implements OnlineUserService {
                 pushToOnlineRoom(WsMessage.builder()
                         .type(OnlineUserConstants.TYPE_ONLINE_USER_UPSERT)
                         .data(toOnlineUserData(userId, newCount, userMap.get(userId)))
-                        .timestamp(System.currentTimeMillis())
+                        .timestamp(DateUtils.nowMillis())
                         .build());
             }
         }
-        // 更新基线：下一次 diff 会基于这次结果继续比较。
+        // 保存最新在线用户会话数快照
         lastOnlineCountMap = after;
     }
 
     /**
-     * 从注册表中统计当前在线会话数（userId -> sessionCount）。
-     * <p>
-     * 统计口径：
-     * <ul>
-     *     <li>仅统计仍处于 open 状态的 WebSocketSession。</li>
-     *     <li>仅统计 attributes 中存在合法 WS_USER_ID 的会话。</li>
-     *     <li>同一 userId 多连接会累计（多端登录场景）。</li>
-     * </ul>
-     * </p>
+     * 从注册表中统计当前在线会话数
      */
     private Map<String, Integer> buildOnlineCountMap() {
         Set<WebSocketSession> sessions = wsRegistryService.getAllSessions();
@@ -222,33 +218,29 @@ public class OnlineUserServiceImpl implements OnlineUserService {
         }
         Map<String, Integer> countMap = new HashMap<>();
         for (WebSocketSession session : sessions) {
-            // 跳过空会话或已关闭会话，防止脏数据影响统计。
+            // 跳过空会话或已关闭会话，防止脏数据影响统计
             if (session == null || !session.isOpen()) {
                 continue;
             }
             Object userIdAttr = session.getAttributes().get(WebSocketConstants.WS_USER_ID);
             String userId = userIdAttr == null ? "" : String.valueOf(userIdAttr).trim();
-            // 未鉴权/无 userId 的连接不计入在线用户。
+            // 未鉴权/无 userId 的连接不计入在线用户
             if (userId.isEmpty()) {
                 continue;
             }
-            // 同一用户多个连接累计计数。
+            // 同一用户多个连接累计计数
             countMap.merge(userId, 1, Integer::sum);
         }
         return countMap;
     }
 
     /**
-     * 批量加载用户基础信息。
-     * <p>
-     * 这里按 userId 循环查询，优先保证逻辑稳定；非法 userId 会被跳过。
-     * </p>
+     * 批量加载用户基础信息
      */
     private Map<String, UserEntity> loadUsers(Collection<String> userIds) {
         Map<String, UserEntity> result = new HashMap<>();
         for (String userId : userIds) {
             try {
-                // userId 源于 WebSocket attributes，先做安全转换。
                 Long id = Long.valueOf(userId);
                 UserEntity entity = userMapper.selectById(id);
                 if (entity != null) {
@@ -262,10 +254,7 @@ public class OnlineUserServiceImpl implements OnlineUserService {
     }
 
     /**
-     * 组装 WebSocket 推送使用的在线用户数据结构。
-     * <p>
-     * 即使用户基础信息缺失，也会至少返回 userId + sessionCount，保证前端可落盘/删改。
-     * </p>
+     * 组装 WebSocket 推送使用的在线用户数据结构
      */
     private Map<String, Object> toOnlineUserData(String userId, Integer sessionCount, UserEntity user) {
         Map<String, Object> data = new HashMap<>();
@@ -287,10 +276,7 @@ public class OnlineUserServiceImpl implements OnlineUserService {
     }
 
     /**
-     * 组装接口返回的在线用户视图对象。
-     * <p>
-     * 与推送结构不同，这里返回的是强类型 VO，便于后端接口文档和前端类型约束。
-     * </p>
+     * 组装接口返回的在线用户视图对象
      */
     private OnlineUserVo toOnlineUserVo(String userId, Integer sessionCount, UserEntity user) {
         OnlineUserVo vo = new OnlineUserVo();
@@ -317,12 +303,9 @@ public class OnlineUserServiceImpl implements OnlineUserService {
     }
 
     /**
-     * 推送消息到在线用户房间。
-     * <p>
-     * 统一封装房间常量，避免业务代码散落硬编码。
-     * </p>
+     * 推送消息到在线用户房间
      */
     private void pushToOnlineRoom(WsMessage<?> message) {
-        wsOutboundPushService.pushToRoom(OnlineUserConstants.ROOM_ONLINE_USER, message);
+        wsPushService.pushToRoom(OnlineUserConstants.ROOM_ONLINE_USER, message);
     }
 }

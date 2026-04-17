@@ -9,6 +9,12 @@ import org.springframework.context.annotation.Configuration;
 
 /**
  * 实现功能【UserCenter WebSocket 配置】
+ * <p>
+ *
+ * <p>
+ *
+ * @author li.hongyu
+ * @date 2026-04-03 14:45:41
  */
 @Configuration
 public class UsercenterWebSocketConfiguration {

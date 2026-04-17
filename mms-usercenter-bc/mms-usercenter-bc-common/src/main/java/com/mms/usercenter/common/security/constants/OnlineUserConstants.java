@@ -1,7 +1,7 @@
 package com.mms.usercenter.common.security.constants;
 
 /**
- * 实现功能【】
+ * 实现功能【在线用户功能相关常量】
  * <p>
  *
  * <p>
