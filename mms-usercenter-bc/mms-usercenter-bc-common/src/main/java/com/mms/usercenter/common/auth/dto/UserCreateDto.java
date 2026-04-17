@@ -28,10 +28,6 @@ public class UserCreateDto {
     @Schema(description = "用户名（登录账号）", requiredMode = Schema.RequiredMode.REQUIRED, example = "testuser")
     private String username;
 
-    @NotBlank(message = "密码不能为空")
-    @Schema(description = "密码", requiredMode = Schema.RequiredMode.REQUIRED, example = "MMS2025_superAdmin")
-    private String password;
-
     @Schema(description = "昵称", example = "测试用户")
     private String nickname;
 

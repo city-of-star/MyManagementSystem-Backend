@@ -132,8 +132,6 @@ public class UserServiceImpl implements UserService {
     public UserDetailVo createUser(UserCreateDto dto) {
         try {
             log.info("创建用户，参数：{}", dto);
-            // 校验密码复杂度
-            PasswordValidatorUtils.validate(dto.getPassword());
             // 检查用户名是否存在
             if (existsByUsername(dto.getUsername())) {
                 throw new BusinessException(ErrorCode.USERNAME_EXISTS);
@@ -150,7 +148,7 @@ public class UserServiceImpl implements UserService {
             UserEntity user = new UserEntity();
             BeanUtils.copyProperties(dto, user);
             // 加密密码
-            user.setPassword(BCrypt.hashpw(dto.getPassword(), BCrypt.gensalt(12)));
+            user.setPassword(BCrypt.hashpw("MMS2025_" + dto.getUsername(), BCrypt.gensalt(12)));
             // 设置默认值
             if (user.getStatus() == null) {
                 user.setStatus(1);
