@@ -30,7 +30,7 @@
     <!-- 属性配置 -->
     <properties>
         <!-- 发布版本 -->
-        <revision>1.0.0-RELEASE</revision>
+        <revision>1.0.1-RELEASE</revision>
         <!-- Java版本 -->
         <java.version>17</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
