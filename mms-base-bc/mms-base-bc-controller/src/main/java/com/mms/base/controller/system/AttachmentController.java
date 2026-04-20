@@ -111,7 +111,7 @@ public class AttachmentController {
     }
 
     @Operation(summary = "上传附件", description = "上传文件并创建附件记录（本地存储）")
-    @RequiresPermission(PermissionConstants.SYSTEM_ATTACHMENT_UPLOAD)
+//    @RequiresPermission(PermissionConstants.SYSTEM_ATTACHMENT_UPLOAD)
     @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public Response<AttachmentVo> uploadAttachment(@RequestPart("file") MultipartFile file,
                                                    @RequestParam(value = "businessType", required = false) String businessType,

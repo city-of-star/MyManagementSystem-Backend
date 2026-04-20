@@ -67,7 +67,6 @@ public class UserController {
     }
 
     @Operation(summary = "更新用户信息（用户自己）", description = "用户更新自己的基本信息")
-    @RequiresPermission(PermissionConstants.SYSTEM_USER_UPDATE_ME)
     @PutMapping("/update/me")
     public Response<UserDetailVo> updateMe(@RequestBody @Valid UserUpdateMeDto dto) {
         return Response.success(userService.updateMe(dto));
