@@ -297,6 +297,25 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
+    public UserDetailVo updateMe(UserUpdateMeDto dto) {
+        if (dto == null) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "更新参数不能为空");
+        }
+        UserUpdateDto updateDto = new UserUpdateDto();
+        updateDto.setId(UserContextUtils.getUserId());
+        updateDto.setNickname(dto.getNickname());
+        updateDto.setRealName(dto.getRealName());
+        updateDto.setAvatarId(dto.getAvatarId());
+        updateDto.setEmail(dto.getEmail());
+        updateDto.setPhone(dto.getPhone());
+        updateDto.setGender(dto.getGender());
+        updateDto.setBirthday(dto.getBirthday());
+        updateDto.setRemark(dto.getRemark());
+        return updateUser(updateDto);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
     public void deleteUser(Long userId) {
         try {
             log.info("删除用户，userId：{}", userId);

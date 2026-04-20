@@ -37,6 +37,7 @@ public final class PermissionConstants {
     public static final String SYSTEM_USER_VIEW = "SYSTEM_USER_VIEW";
     public static final String SYSTEM_USER_CREATE = "SYSTEM_USER_CREATE";
     public static final String SYSTEM_USER_UPDATE = "SYSTEM_USER_UPDATE";
+    public static final String SYSTEM_USER_UPDATE_ME = "SYSTEM_USER_UPDATE_ME";
     public static final String SYSTEM_USER_DELETE = "SYSTEM_USER_DELETE";
     public static final String SYSTEM_USER_RESET_PASSWORD = "SYSTEM_USER_RESET_PASSWORD";
     public static final String SYSTEM_USER_UNLOCK = "SYSTEM_USER_UNLOCK";

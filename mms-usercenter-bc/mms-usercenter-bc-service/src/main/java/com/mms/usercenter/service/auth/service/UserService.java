@@ -51,12 +51,20 @@ public interface UserService {
     UserDetailVo createUser(UserCreateDto dto);
 
     /**
-     * 更新用户信息
+     * 更新用户信息（管理员更新他人的基本信息）
      *
      * @param dto 用户更新参数
      * @return 更新后的用户信息
      */
     UserDetailVo updateUser(UserUpdateDto dto);
+
+    /**
+     * 更新用户信息（用户更新自己的基本信息）
+     *
+     * @param dto 用户更新参数
+     * @return 更新后的用户信息
+     */
+    UserDetailVo updateMe(UserUpdateMeDto dto);
 
     /**
      * 删除用户（逻辑删除）

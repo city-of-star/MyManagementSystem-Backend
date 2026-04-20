@@ -11,5 +11,6 @@ whitelist:
     # 基础数据服务
     base:
       - /attachment/stream/**
+      - /attachment/upload
     # 定时任务调度服务
     job: []

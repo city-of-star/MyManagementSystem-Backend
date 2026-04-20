@@ -59,11 +59,18 @@ public class UserController {
         return Response.success(userService.createUser(dto));
     }
 
-    @Operation(summary = "更新用户信息", description = "更新用户的基本信息")
+    @Operation(summary = "更新用户信息（管理员）", description = "管理员更新他人的基本信息")
     @RequiresPermission(PermissionConstants.SYSTEM_USER_UPDATE)
     @PutMapping("/update")
     public Response<UserDetailVo> updateUser(@RequestBody @Valid UserUpdateDto dto) {
         return Response.success(userService.updateUser(dto));
+    }
+
+    @Operation(summary = "更新用户信息（用户自己）", description = "用户更新自己的基本信息")
+    @RequiresPermission(PermissionConstants.SYSTEM_USER_UPDATE_ME)
+    @PutMapping("/update/me")
+    public Response<UserDetailVo> updateMe(@RequestBody @Valid UserUpdateMeDto dto) {
+        return Response.success(userService.updateMe(dto));
     }
 
     @Operation(summary = "删除用户", description = "逻辑删除用户（软删除）")

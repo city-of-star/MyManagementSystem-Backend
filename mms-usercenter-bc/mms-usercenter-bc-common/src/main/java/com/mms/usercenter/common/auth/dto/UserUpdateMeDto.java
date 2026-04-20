@@ -1,12 +1,10 @@
 package com.mms.usercenter.common.auth.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 import java.time.LocalDate;
-import java.util.List;
 
 /**
  * 实现功能【更新用户请求 DTO】
@@ -18,12 +16,8 @@ import java.util.List;
  * @date 2025-12-19 10:00:00
  */
 @Data
-@Schema(description = "更新用户请求参数（管理员更新他人的基本信息）")
-public class UserUpdateDto {
-
-    @NotNull(message = "用户ID不能为空")
-    @Schema(description = "用户ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
-    private Long id;
+@Schema(description = "更新用户请求参数（用户更新自己的基本信息）")
+public class UserUpdateMeDto {
 
     @Schema(description = "昵称", example = "测试用户")
     private String nickname;
@@ -48,20 +42,8 @@ public class UserUpdateDto {
     @Schema(description = "生日", example = "1990-01-01")
     private LocalDate birthday;
 
-    @Schema(description = "备注", example = "测试用户备注")
+    @Schema(description = "备注", example = "个人备注")
     private String remark;
-
-    @Schema(description = "主部门ID，必须包含在部门ID列表中（为空表示不变）", example = "1")
-    private Long primaryDeptId;
-
-    @Schema(description = "主岗位ID，必须包含在岗位ID列表中（为空表示不变）", example = "1")
-    private Long primaryPostId;
-
-    @Schema(description = "所属部门ID列表（为空表示不变）", example = "[1, 2, 3]")
-    private List<Long> deptIds;
-
-    @Schema(description = "所属岗位ID列表（为空表示不变）", example = "[1, 2, 3]")
-    private List<Long> postIds;
 
 }
 

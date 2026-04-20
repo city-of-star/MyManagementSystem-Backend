@@ -127,8 +127,8 @@ public class AttachmentController {
             // 通过 Spring 提供的属性解析出匹配模式中的相对路径部分
             // 示例：
             //   - 请求路径：/attachment/stream/2026/02/09/a.png
-            //   - bestMatchingPattern：/attachment/stream/**
             //   - pathWithinHandler：/attachment/stream/2026/02/09/a.png
+            //   - bestMatchingPattern：/attachment/stream/**
             //   - relativePath（提取结果）：2026/02/09/a.png
             String pathWithinHandler = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
             String bestMatchingPattern = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
