@@ -32,5 +32,10 @@ public class LoginSecurityProperties {
      * 锁定时间（分钟）
      */
     private Integer lockTime = 30;
+
+    /**
+     * 默认密码前缀
+     */
+    private String defaultPasswordPrefix = "MMS2025_";
 }
 

@@ -16,11 +16,13 @@ import com.mms.usercenter.common.auth.vo.UserDetailVo;
 import com.mms.usercenter.common.auth.vo.UserPageVo;
 import com.mms.usercenter.common.org.entity.UserDeptEntity;
 import com.mms.usercenter.common.org.entity.UserPostEntity;
+import com.mms.usercenter.common.security.properties.LoginSecurityProperties;
 import com.mms.usercenter.service.auth.mapper.RoleMapper;
 import com.mms.usercenter.service.auth.mapper.UserMapper;
 import com.mms.usercenter.service.auth.mapper.UserRoleMapper;
 import com.mms.usercenter.service.auth.service.UserService;
 import com.mms.usercenter.service.auth.utils.PasswordValidatorUtils;
+import com.mms.usercenter.service.auth.utils.UserUtils;
 import com.mms.usercenter.service.org.mapper.UserDeptMapper;
 import com.mms.usercenter.service.org.mapper.UserPostMapper;
 import com.mms.usercenter.service.org.service.DeptService;
@@ -80,6 +82,9 @@ public class UserServiceImpl implements UserService {
 
     @Resource
     private AttachmentFeign attachmentFeign;
+
+    @Resource
+    private LoginSecurityProperties loginSecurityProperties;
 
     @Override
     public Page<UserPageVo> getUserPage(UserPageQueryDto dto) {
@@ -148,7 +153,7 @@ public class UserServiceImpl implements UserService {
             UserEntity user = new UserEntity();
             BeanUtils.copyProperties(dto, user);
             // 加密密码
-            user.setPassword(BCrypt.hashpw("MMS2025_" + dto.getUsername(), BCrypt.gensalt(12)));
+            user.setPassword(BCrypt.hashpw(loginSecurityProperties.getDefaultPasswordPrefix() + dto.getUsername(), BCrypt.gensalt(12)));
             // 设置默认值
             if (user.getStatus() == null) {
                 user.setStatus(1);
@@ -193,7 +198,7 @@ public class UserServiceImpl implements UserService {
     @Transactional(rollbackFor = Exception.class)
     public UserDetailVo updateUser(UserUpdateDto dto) {
         try {
-            log.info("更新用户信息，参数：{}", dto);
+            log.info("更新用户信息（管理员更新他人的基本信息），参数：{}", dto);
             // 查询用户
             UserEntity user = userMapper.selectById(dto.getId());
             if (user == null) {
@@ -285,12 +290,12 @@ public class UserServiceImpl implements UserService {
             vo.setPrimaryPost(postService.getPrimaryPostByUserId(dto.getId()));
             vo.setDepts(deptService.getDeptListByUserId(dto.getId()));
             vo.setPosts(postService.getPostListByUserId(dto.getId()));
-            log.info("更新用户信息成功，userId：{}", user.getId());
+            log.info("更新用户信息成功（管理员更新他人的基本信息），userId：{}", user.getId());
             return vo;
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
-            log.error("更新用户信息失败：{}", e.getMessage(), e);
+            log.error("更新用户信息失败（管理员更新他人的基本信息）：{}", e.getMessage(), e);
             throw new ServerException("更新用户信息失败", e);
         }
     }
@@ -298,20 +303,25 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public UserDetailVo updateMe(UserUpdateMeDto dto) {
-        if (dto == null) {
-            throw new BusinessException(ErrorCode.PARAM_INVALID, "更新参数不能为空");
+        try {
+            log.info("更新用户信息（用户更新自己的基本信息），参数：{}", dto);
+            UserUpdateDto updateDto = new UserUpdateDto();
+            updateDto.setId(UserUtils.getUserId());
+            updateDto.setNickname(dto.getNickname());
+            updateDto.setRealName(dto.getRealName());
+            updateDto.setAvatarId(dto.getAvatarId());
+            updateDto.setEmail(dto.getEmail());
+            updateDto.setPhone(dto.getPhone());
+            updateDto.setGender(dto.getGender());
+            updateDto.setBirthday(dto.getBirthday());
+            updateDto.setRemark(dto.getRemark());
+            return updateUser(updateDto);
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("更新用户信息失败（用户更新自己的基本信息）：{}", e.getMessage(), e);
+            throw new ServerException("更新用户信息失败（用户更新自己的基本信息）", e);
         }
-        UserUpdateDto updateDto = new UserUpdateDto();
-        updateDto.setId(UserContextUtils.getUserId());
-        updateDto.setNickname(dto.getNickname());
-        updateDto.setRealName(dto.getRealName());
-        updateDto.setAvatarId(dto.getAvatarId());
-        updateDto.setEmail(dto.getEmail());
-        updateDto.setPhone(dto.getPhone());
-        updateDto.setGender(dto.getGender());
-        updateDto.setBirthday(dto.getBirthday());
-        updateDto.setRemark(dto.getRemark());
-        return updateUser(updateDto);
     }
 
     @Override
@@ -428,7 +438,7 @@ public class UserServiceImpl implements UserService {
                 throw new BusinessException(ErrorCode.USER_NOT_FOUND);
             }
             // 加密新密码
-            String hashedPassword = BCrypt.hashpw("MMS2025_" + user.getUsername(), BCrypt.gensalt());
+            String hashedPassword = BCrypt.hashpw(loginSecurityProperties.getDefaultPasswordPrefix() + user.getUsername(), BCrypt.gensalt());
             user.setPassword(hashedPassword);
             user.setPasswordUpdateTime(LocalDateTime.now());
             userMapper.updateById(user);

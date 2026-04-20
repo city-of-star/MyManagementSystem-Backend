@@ -21,9 +21,6 @@ import java.util.stream.Collectors;
  */
 public final class UserUtils {
 
-    private UserUtils() {
-    }
-
     /**
      * 获取当前用户ID
      */
@@ -87,5 +84,12 @@ public final class UserUtils {
      */
     public static Authentication getAuthentication() {
         return SecurityContextHolder.getContext().getAuthentication();
+    }
+
+    /**
+     * 私有构造函数，防止实例化
+     */
+    private UserUtils() {
+        throw new UnsupportedOperationException("工具类不允许实例化");
     }
 }
