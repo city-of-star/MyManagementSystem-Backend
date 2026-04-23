@@ -1,6 +1,5 @@
 package com.mms.common.websocket.receive.handler;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.mms.common.websocket.common.protocol.WsMessage;
 import org.springframework.web.socket.WebSocketSession;
 
@@ -13,16 +12,21 @@ import org.springframework.web.socket.WebSocketSession;
  * @author li.hongyu
  * @date 2026-04-15 10:15:26
  */
-public interface WsReceiverMessageHandler {
+public interface WsReceiverMessageHandler<T> {
 
     /**
      * 自定义消息类型
      */
-    String supportType();
+    String getMessageType();
+
+    /**
+     * 当前消息类型对应的业务负载 DTO 类型
+     */
+    Class<T> getDtoClass();
 
     /**
      * 处理一条已反序列化的消息
      */
-    void handle(WebSocketSession session, WsMessage<JsonNode> message) throws Exception;
+    void handle(WebSocketSession session, WsMessage<T> message) throws Exception;
 }
 

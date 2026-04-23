@@ -1,10 +1,9 @@
-package com.mms.common.websocket.receive.handler.builtin;
+package com.mms.common.websocket.receive.handler.system;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.mms.common.websocket.receive.handler.WsReceiverMessageHandler;
-import com.mms.common.websocket.auth.WsMessageRoomSupport;
 import com.mms.common.websocket.common.protocol.WsMessage;
 import com.mms.common.websocket.common.protocol.WsMessageTypes;
+import com.mms.common.websocket.receive.handler.dto.RoomActionDto;
 import com.mms.common.websocket.registry.service.WsRegistryService;
 import lombok.AllArgsConstructor;
 import org.springframework.web.socket.WebSocketSession;
@@ -19,20 +18,25 @@ import org.springframework.web.socket.WebSocketSession;
  * @date 2026-04-15 10:15:26
  */
 @AllArgsConstructor
-public class LeaveRoomWsReceiverMessageHandler implements WsReceiverMessageHandler {
+public class LeaveRoomWsReceiverMessageHandler implements WsReceiverMessageHandler<RoomActionDto> {
 
     private final WsRegistryService sessionRegistry;
 
     @Override
-    public String supportType() {
+    public String getMessageType() {
         return WsMessageTypes.TYPE_LEAVE_ROOM;
     }
 
     @Override
-    public void handle(WebSocketSession session, WsMessage<JsonNode> message) {
-        JsonNode data = message != null ? message.getData() : null;
-        String roomId = WsMessageRoomSupport.extractRoomId(data);
-        if (roomId != null) {
+    public Class<RoomActionDto> getDtoClass() {
+        return RoomActionDto.class;
+    }
+
+    @Override
+    public void handle(WebSocketSession session, WsMessage<RoomActionDto> message) {
+        RoomActionDto data = message != null ? message.getData() : null;
+        String roomId = data != null ? data.getRoomId() : null;
+        if (roomId != null && !roomId.isBlank()) {
             sessionRegistry.leaveRoom(roomId, session);
         }
     }

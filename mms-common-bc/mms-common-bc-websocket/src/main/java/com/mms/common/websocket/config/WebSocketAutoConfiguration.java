@@ -6,9 +6,9 @@ import com.mms.common.security.servlet.service.GatewaySignatureVerificationServi
 import com.mms.common.websocket.auth.GatewayCompatibleHandshakeHandler;
 import com.mms.common.websocket.receive.dispatcher.WsReceiveTextDispatcher;
 import com.mms.common.websocket.receive.handler.WsReceiverMessageHandler;
-import com.mms.common.websocket.receive.handler.builtin.JoinRoomWsReceiverMessageHandler;
-import com.mms.common.websocket.receive.handler.builtin.LeaveRoomWsReceiverMessageHandler;
-import com.mms.common.websocket.receive.handler.builtin.PingWsReceiverMessageHandler;
+import com.mms.common.websocket.receive.handler.system.JoinRoomWsReceiverMessageHandler;
+import com.mms.common.websocket.receive.handler.system.LeaveRoomWsReceiverMessageHandler;
+import com.mms.common.websocket.receive.handler.system.PingWsReceiverMessageHandler;
 import com.mms.common.websocket.auth.AuthHandshakeInterceptor;
 import com.mms.common.websocket.common.properties.WebSocketProperties;
 import com.mms.common.websocket.push.service.WsPushService;
@@ -91,19 +91,19 @@ public class WebSocketAutoConfiguration {
 
     @Bean
     @Order(1_000)
-    public WsReceiverMessageHandler pingWsMessageHandler(@Qualifier(WEBSOCKET_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper) {
+    public WsReceiverMessageHandler<?> pingWsMessageHandler(@Qualifier(WEBSOCKET_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper) {
         return new PingWsReceiverMessageHandler(objectMapper);
     }
 
     @Bean
     @Order(1_000)
-    public WsReceiverMessageHandler joinRoomWsMessageHandler(WsRegistryService wsRegistryService) {
+    public WsReceiverMessageHandler<?> joinRoomWsMessageHandler(WsRegistryService wsRegistryService) {
         return new JoinRoomWsReceiverMessageHandler(wsRegistryService);
     }
 
     @Bean
     @Order(1_000)
-    public WsReceiverMessageHandler leaveRoomWsMessageHandler(WsRegistryService wsRegistryService) {
+    public WsReceiverMessageHandler<?> leaveRoomWsMessageHandler(WsRegistryService wsRegistryService) {
         return new LeaveRoomWsReceiverMessageHandler(wsRegistryService);
     }
 
@@ -112,7 +112,7 @@ public class WebSocketAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(WebSocketHandler.class)
-    public WebSocketHandler mmsTextWebSocketHandler(WsRegistryService wsRegistryService, @Qualifier(WEBSOCKET_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper, ObjectProvider<WsReceiverMessageHandler> messageHandlers) {
+    public WebSocketHandler mmsTextWebSocketHandler(WsRegistryService wsRegistryService, @Qualifier(WEBSOCKET_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper, ObjectProvider<WsReceiverMessageHandler<?>> messageHandlers) {
         return new WsReceiveTextDispatcher(wsRegistryService, objectMapper, messageHandlers.orderedStream().toList());
     }
 
