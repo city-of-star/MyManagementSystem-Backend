@@ -3,6 +3,7 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>com.mms</groupId>
         <artifactId>mms-common-bc-security</artifactId>
@@ -10,7 +11,6 @@
     </parent>
 
     <artifactId>mms-common-bc-security-core</artifactId>
-
     <name>MMS Common BC Security Core</name>
     <description>安全组件内核：JWT/签名/黑名单/配置属性等（不依赖 Servlet）</description>
 
