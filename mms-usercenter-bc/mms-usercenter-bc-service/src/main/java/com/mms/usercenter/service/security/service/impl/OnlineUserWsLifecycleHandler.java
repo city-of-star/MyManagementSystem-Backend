@@ -3,9 +3,10 @@ package com.mms.usercenter.service.security.service.impl;
 import com.mms.common.core.utils.DateUtils;
 import com.mms.common.websocket.common.constants.WebSocketConstants;
 import com.mms.common.websocket.common.protocol.WsMessage;
-import com.mms.common.websocket.common.session.WsSessionPrincipal;
 import com.mms.common.websocket.push.service.WsPushService;
-import com.mms.common.websocket.registry.listener.WsRegistryListener;
+import com.mms.common.websocket.registry.event.WsRoomJoinedEvent;
+import com.mms.common.websocket.registry.event.WsSessionRegisteredEvent;
+import com.mms.common.websocket.registry.event.WsSessionUnregisteredEvent;
 import com.mms.common.websocket.registry.service.WsRegistryService;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.security.constants.OnlineUserConstants;
@@ -15,11 +16,11 @@ import com.mms.usercenter.common.security.event.OnlineUserUpsertEvent;
 import com.mms.usercenter.common.security.vo.OnlineUserVo;
 import com.mms.usercenter.service.auth.mapper.UserMapper;
 import jakarta.annotation.Resource;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.core.annotation.Order;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.WebSocketSession;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,29 +30,21 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.time.LocalDateTime;
 
 /**
- * 实现功能【在线用户 WebSocket 注册表监听器】
- * <p>
- *
- * <p>
- *
- * @author li.hongyu
- * @date 2026-04-24 14:50:06
+ * 在线用户 WS 生命周期业务处理器（消费事件并执行业务逻辑）。
  */
-@Order
 @Component
-public class OnlineUserWsRegistryListener implements WsRegistryListener {
+public class OnlineUserWsLifecycleHandler {
 
     @Resource
     private UserMapper userMapper;
 
     @Resource
-    private ObjectProvider<WsRegistryService> wsRegistryServiceProvider;
+    private WsRegistryService wsRegistryService;
 
     @Resource
-    private ObjectProvider<WsPushService> wsPushServiceProvider;
+    private WsPushService wsPushService;
 
     /**
      * 上一次在线用户会话数快照（userId -> sessionCount）
@@ -60,27 +53,27 @@ public class OnlineUserWsRegistryListener implements WsRegistryListener {
     private Map<String, Integer> lastOnlineCountMap = Collections.emptyMap();
 
     /**
-     * WebSocket 会话注册完成后触发
+     * WebSocket 会话注册完成后触发。
      */
-    @Override
-    public synchronized void onRegistered(WebSocketSession session, WsSessionPrincipal principal) {
+    @EventListener
+    public synchronized void onSessionRegistered(WsSessionRegisteredEvent event) {
         pushDiff(lastOnlineCountMap, buildOnlineCountMap());
     }
 
     /**
-     * WebSocket 会话注销完成后触发
+     * WebSocket 会话注销完成后触发。
      */
-    @Override
-    public synchronized void onUnregistered(String sessionId, String userId) {
+    @EventListener
+    public synchronized void onSessionUnregistered(WsSessionUnregisteredEvent event) {
         pushDiff(lastOnlineCountMap, buildOnlineCountMap());
     }
 
     /**
-     * 用户订阅在线用户房间后触发
+     * 用户订阅在线用户房间后触发。
      */
-    @Override
-    public synchronized void onRoomJoined(String roomId, String sessionId, String userId) {
-        if (!OnlineUserConstants.ROOM_ONLINE_USER.equals(roomId)) {
+    @EventListener
+    public synchronized void onRoomJoined(WsRoomJoinedEvent event) {
+        if (!OnlineUserConstants.ROOM_ONLINE_USER.equals(event.getRoomId())) {
             return;
         }
         // 统计当前在线会话数（userId -> 该userId的会话数）
@@ -103,9 +96,9 @@ public class OnlineUserWsRegistryListener implements WsRegistryListener {
     }
 
     /**
-     * 查询在线用户列表
+     * 查询在线用户列表。
      */
-    public synchronized List<OnlineUserVo> getOnlineUsersInternal() {
+    public synchronized List<OnlineUserVo> getOnlineUsers() {
         // 统计当前在线会话数（userId -> 该userId的会话数）
         Map<String, Integer> countMap = buildOnlineCountMap();
         // 加载用户的信息（userId -> 用户实体信息）
@@ -118,14 +111,14 @@ public class OnlineUserWsRegistryListener implements WsRegistryListener {
         }
         // 排序
         list.sort(
-            Comparator.comparing(OnlineUserVo::getSessionCount, Comparator.nullsLast(Integer::compareTo)).reversed()
-                .thenComparing(OnlineUserVo::getUserId, Comparator.nullsLast(Long::compareTo))
+                Comparator.comparing(OnlineUserVo::getSessionCount, Comparator.nullsLast(Integer::compareTo)).reversed()
+                        .thenComparing(OnlineUserVo::getUserId, Comparator.nullsLast(Long::compareTo))
         );
         return list;
     }
 
     /**
-     * 对比前后在线会话数快照并进行增量推送
+     * 对比前后在线会话数快照并进行增量推送。
      */
     private void pushDiff(Map<String, Integer> before, Map<String, Integer> after) {
         // 取并集：任何在 before/after 出现过的用户，都可能需要推送变更
@@ -169,13 +162,9 @@ public class OnlineUserWsRegistryListener implements WsRegistryListener {
     }
 
     /**
-     * 从注册表中统计当前在线会话数
+     * 从注册表中统计当前在线会话数。
      */
     private Map<String, Integer> buildOnlineCountMap() {
-        WsRegistryService wsRegistryService = wsRegistryServiceProvider.getIfAvailable();
-        if (wsRegistryService == null) {
-            return Collections.emptyMap();
-        }
         Set<WebSocketSession> sessions = wsRegistryService.getAllSessions();
         if (sessions.isEmpty()) {
             return Collections.emptyMap();
@@ -199,7 +188,7 @@ public class OnlineUserWsRegistryListener implements WsRegistryListener {
     }
 
     /**
-     * 批量加载用户基础信息
+     * 批量加载用户基础信息。
      */
     private Map<String, UserEntity> loadUsers(Collection<String> userIds) {
         Map<String, UserEntity> result = new HashMap<>();
@@ -218,7 +207,7 @@ public class OnlineUserWsRegistryListener implements WsRegistryListener {
     }
 
     /**
-     * 组装 WebSocket 推送使用的在线用户新增/更新事件
+     * 组装 WebSocket 推送使用的在线用户新增/更新事件。
      */
     private OnlineUserUpsertEvent toOnlineUserUpsertEvent(String userId, Integer sessionCount, UserEntity user) {
         OnlineUserUpsertEvent event = new OnlineUserUpsertEvent();
@@ -241,7 +230,7 @@ public class OnlineUserWsRegistryListener implements WsRegistryListener {
     }
 
     /**
-     * 组装接口返回的在线用户视图对象
+     * 组装接口返回的在线用户视图对象。
      */
     private OnlineUserVo toOnlineUserVo(String userId, Integer sessionCount, UserEntity user) {
         OnlineUserVo vo = new OnlineUserVo();
@@ -268,13 +257,9 @@ public class OnlineUserWsRegistryListener implements WsRegistryListener {
     }
 
     /**
-     * 推送消息到在线用户房间
+     * 推送消息到在线用户房间。
      */
     private void pushToOnlineRoom(WsMessage<?> message) {
-        WsPushService wsPushService = wsPushServiceProvider.getIfAvailable();
-        if (wsPushService == null) {
-            return;
-        }
         wsPushService.pushToRoom(OnlineUserConstants.ROOM_ONLINE_USER, message);
     }
 }

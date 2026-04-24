@@ -2,15 +2,18 @@ package com.mms.common.websocket.registry.service.impl;
 
 import com.mms.common.websocket.common.properties.WebSocketProperties;
 import com.mms.common.websocket.registry.service.WsRegistryService;
-import com.mms.common.websocket.registry.listener.WsRegistryListener;
+import com.mms.common.websocket.registry.event.WsRoomJoinedEvent;
+import com.mms.common.websocket.registry.event.WsRoomLeftEvent;
+import com.mms.common.websocket.registry.event.WsSessionRegisteredEvent;
+import com.mms.common.websocket.registry.event.WsSessionUnregisteredEvent;
 import com.mms.common.websocket.common.session.WsSessionPrincipal;
 import lombok.AllArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.socket.handler.ConcurrentWebSocketSessionDecorator;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.util.HashSet;
 import java.util.Collections;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,7 +30,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
 
     private final WebSocketProperties properties;
-    private final List<WsRegistryListener> listeners;
+    private final ApplicationEventPublisher eventPublisher;
 
     /**
      * 全局会话注册表（sessionId → 会话）
@@ -70,15 +73,11 @@ public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
             sessionUserId.put(sessionId, userId);
             sessionRooms.computeIfAbsent(sessionId, key -> ConcurrentHashMap.newKeySet());
         }
-        // 执行监听器的注册会话后动作（业务逻辑）
-        if (listeners != null && !listeners.isEmpty()) {
-            for (WsRegistryListener listener : listeners) {
-                try {
-                    listener.onRegistered(safeSession, principal);
-                } catch (Exception ignored) {
-                    // 忽略监听器异常避免破坏 WebSocket 核心流程
-                }
-            }
+        // 发布会话注册完成事件（异常不影响 WebSocket 核心流程）
+        try {
+            eventPublisher.publishEvent(new WsSessionRegisteredEvent(safeSession, principal));
+        } catch (Exception ignored) {
+            // 忽略事件处理异常避免破坏 WebSocket 核心流程
         }
     }
 
@@ -116,15 +115,11 @@ public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
                 });
             }
         }
-        // 执行监听器的移除会话后动作（业务逻辑）
-        if (listeners != null && !listeners.isEmpty()) {
-            for (WsRegistryListener listener : listeners) {
-                try {
-                    listener.onUnregistered(sessionId, userIdForCallback);
-                } catch (Exception ignored) {
-                    // 忽略监听器异常避免破坏 WebSocket 核心流程
-                }
-            }
+        // 发布会话注销完成事件（异常不影响 WebSocket 核心流程）
+        try {
+            eventPublisher.publishEvent(new WsSessionUnregisteredEvent(sessionId, userIdForCallback));
+        } catch (Exception ignored) {
+            // 忽略事件处理异常避免破坏 WebSocket 核心流程
         }
     }
 
@@ -187,16 +182,12 @@ public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
         sessionRooms.computeIfAbsent(sessionId, key -> ConcurrentHashMap.newKeySet()).add(roomId);
         // 将会话注册到房间
         roomSessionIds.computeIfAbsent(roomId, key -> ConcurrentHashMap.newKeySet()).add(sessionId);
-        // 执行监听器的加入房间后动作（业务逻辑）
-        if (listeners != null && !listeners.isEmpty()) {
-            String userId = sessionUserId.get(sessionId);
-            for (WsRegistryListener listener : listeners) {
-                try {
-                    listener.onRoomJoined(roomId, sessionId, userId);
-                } catch (Exception ignored) {
-                    // 忽略监听器异常避免破坏 WebSocket 核心流程
-                }
-            }
+        // 发布加入房间完成事件（异常不影响 WebSocket 核心流程）
+        String userId = sessionUserId.get(sessionId);
+        try {
+            eventPublisher.publishEvent(new WsRoomJoinedEvent(roomId, sessionId, userId));
+        } catch (Exception ignored) {
+            // 忽略事件处理异常避免破坏 WebSocket 核心流程
         }
     }
 
@@ -219,16 +210,12 @@ public class InMemoryWsRegistryServiceImpl implements WsRegistryService {
             set.remove(roomId);
             return set.isEmpty() ? null : set;
         });
-        // 执行监听器的移除房间后动作（业务逻辑）
-        if (listeners != null && !listeners.isEmpty()) {
-            String userId = sessionUserId.get(sessionId);
-            for (WsRegistryListener listener : listeners) {
-                try {
-                    listener.onRoomLeft(roomId, sessionId, userId);
-                } catch (Exception ignored) {
-                    // 忽略监听器异常避免破坏 WebSocket 核心流程
-                }
-            }
+        // 发布离开房间完成事件（异常不影响 WebSocket 核心流程）
+        String userId = sessionUserId.get(sessionId);
+        try {
+            eventPublisher.publishEvent(new WsRoomLeftEvent(roomId, sessionId, userId));
+        } catch (Exception ignored) {
+            // 忽略事件处理异常避免破坏 WebSocket 核心流程
         }
     }
 

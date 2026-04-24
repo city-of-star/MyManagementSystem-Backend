@@ -46,14 +46,14 @@ public class OnlineUserServiceImpl implements OnlineUserService {
     private WsRegistryService wsRegistryService;
 
     @Resource
-    private OnlineUserWsRegistryListener onlineUserWsRegistryListener;
+    private OnlineUserWsLifecycleHandler onlineUserWsLifecycleHandler;
 
     /**
      * 查询在线用户列表
      */
     @Override
     public synchronized List<OnlineUserVo> getOnlineUsers() {
-        return onlineUserWsRegistryListener.getOnlineUsersInternal();
+        return onlineUserWsLifecycleHandler.getOnlineUsers();
     }
 
     /**

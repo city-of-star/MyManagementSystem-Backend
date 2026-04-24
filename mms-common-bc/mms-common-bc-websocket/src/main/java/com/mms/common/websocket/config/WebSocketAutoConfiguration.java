@@ -14,7 +14,6 @@ import com.mms.common.websocket.common.properties.WebSocketProperties;
 import com.mms.common.websocket.push.service.WsPushService;
 import com.mms.common.websocket.push.service.impl.WsPushServiceImpl;
 import com.mms.common.websocket.registry.service.impl.InMemoryWsRegistryServiceImpl;
-import com.mms.common.websocket.registry.listener.WsRegistryListener;
 import com.mms.common.websocket.registry.service.WsRegistryService;
 import jakarta.validation.Validator;
 import org.springframework.beans.factory.ObjectProvider;
@@ -22,6 +21,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -55,8 +55,8 @@ public class WebSocketAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public WsRegistryService wsRegistryService(WebSocketProperties properties, ObjectProvider<WsRegistryListener> listenersProvider) {
-        return new InMemoryWsRegistryServiceImpl(properties, listenersProvider.orderedStream().toList());
+    public WsRegistryService wsRegistryService(WebSocketProperties properties, ApplicationEventPublisher eventPublisher) {
+        return new InMemoryWsRegistryServiceImpl(properties, eventPublisher);
     }
 
     /**
