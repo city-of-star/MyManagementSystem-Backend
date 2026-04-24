@@ -53,7 +53,7 @@ public class OnlineUserWsLifecycleHandler {
     private Map<String, Integer> lastOnlineCountMap = Collections.emptyMap();
 
     /**
-     * WebSocket 会话注册完成后触发。
+     * WebSocket 会话注册完成后触发
      */
     @EventListener
     public synchronized void onSessionRegistered(WsSessionRegisteredEvent event) {
@@ -61,7 +61,7 @@ public class OnlineUserWsLifecycleHandler {
     }
 
     /**
-     * WebSocket 会话注销完成后触发。
+     * WebSocket 会话注销完成后触发
      */
     @EventListener
     public synchronized void onSessionUnregistered(WsSessionUnregisteredEvent event) {
@@ -69,7 +69,7 @@ public class OnlineUserWsLifecycleHandler {
     }
 
     /**
-     * 用户订阅在线用户房间后触发。
+     * 用户订阅在线用户房间后触发
      */
     @EventListener
     public synchronized void onRoomJoined(WsRoomJoinedEvent event) {
@@ -96,7 +96,7 @@ public class OnlineUserWsLifecycleHandler {
     }
 
     /**
-     * 查询在线用户列表。
+     * 查询在线用户列表
      */
     public synchronized List<OnlineUserVo> getOnlineUsers() {
         // 统计当前在线会话数（userId -> 该userId的会话数）
@@ -118,7 +118,7 @@ public class OnlineUserWsLifecycleHandler {
     }
 
     /**
-     * 对比前后在线会话数快照并进行增量推送。
+     * 对比前后在线会话数快照并进行增量推送
      */
     private void pushDiff(Map<String, Integer> before, Map<String, Integer> after) {
         // 取并集：任何在 before/after 出现过的用户，都可能需要推送变更
@@ -162,7 +162,7 @@ public class OnlineUserWsLifecycleHandler {
     }
 
     /**
-     * 从注册表中统计当前在线会话数。
+     * 从注册表中统计当前在线会话数
      */
     private Map<String, Integer> buildOnlineCountMap() {
         Set<WebSocketSession> sessions = wsRegistryService.getAllSessions();
@@ -188,7 +188,7 @@ public class OnlineUserWsLifecycleHandler {
     }
 
     /**
-     * 批量加载用户基础信息。
+     * 批量加载用户基础信息
      */
     private Map<String, UserEntity> loadUsers(Collection<String> userIds) {
         Map<String, UserEntity> result = new HashMap<>();
@@ -207,7 +207,7 @@ public class OnlineUserWsLifecycleHandler {
     }
 
     /**
-     * 组装 WebSocket 推送使用的在线用户新增/更新事件。
+     * 组装 WebSocket 推送使用的在线用户新增/更新事件
      */
     private OnlineUserUpsertEvent toOnlineUserUpsertEvent(String userId, Integer sessionCount, UserEntity user) {
         OnlineUserUpsertEvent event = new OnlineUserUpsertEvent();
@@ -230,7 +230,7 @@ public class OnlineUserWsLifecycleHandler {
     }
 
     /**
-     * 组装接口返回的在线用户视图对象。
+     * 组装接口返回的在线用户视图对象
      */
     private OnlineUserVo toOnlineUserVo(String userId, Integer sessionCount, UserEntity user) {
         OnlineUserVo vo = new OnlineUserVo();
@@ -257,7 +257,7 @@ public class OnlineUserWsLifecycleHandler {
     }
 
     /**
-     * 推送消息到在线用户房间。
+     * 推送消息到在线用户房间
      */
     private void pushToOnlineRoom(WsMessage<?> message) {
         wsPushService.pushToRoom(OnlineUserConstants.ROOM_ONLINE_USER, message);
