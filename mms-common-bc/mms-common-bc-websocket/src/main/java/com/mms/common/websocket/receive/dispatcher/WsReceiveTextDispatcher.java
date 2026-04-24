@@ -82,7 +82,7 @@ public class WsReceiveTextDispatcher extends TextWebSocketHandler {
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         // 从原始 ws 消息中获取 WsMessage
-        WsMessage<JsonNode> wsMessage = objectMapper.readValue(message.getPayload(), new TypeReference<WsMessage<JsonNode>>() {});
+        WsMessage<JsonNode> wsMessage = objectMapper.readValue(message.getPayload(), new TypeReference<>() {});
         router.dispatch(session, wsMessage);
     }
 }

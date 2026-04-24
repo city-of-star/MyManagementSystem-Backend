@@ -11,6 +11,9 @@ import com.mms.common.websocket.push.service.WsPushService;
 import com.mms.common.websocket.registry.service.WsRegistryService;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.security.constants.OnlineUserConstants;
+import com.mms.usercenter.common.security.event.OnlineUserFullEvent;
+import com.mms.usercenter.common.security.event.OnlineUserRemoveEvent;
+import com.mms.usercenter.common.security.event.OnlineUserUpsertEvent;
 import com.mms.usercenter.common.security.vo.OnlineUserVo;
 import com.mms.usercenter.service.auth.mapper.UserMapper;
 import com.mms.usercenter.service.security.service.OnlineUserService;
@@ -95,14 +98,14 @@ public class OnlineUserServiceImpl implements OnlineUserService {
         // 加载用户的信息（userId -> 用户实体信息）
         Map<String, UserEntity> userMap = loadUsers(countMap.keySet());
         // 拼接成在线用户列表（ws推送使用）
-        List<Map<String, Object>> users = new ArrayList<>();
+        List<OnlineUserUpsertEvent> users = new ArrayList<>();
         for (Map.Entry<String, Integer> entry : countMap.entrySet()) {
-            users.add(toOnlineUserData(entry.getKey(), entry.getValue(), userMap.get(entry.getKey())));
+            users.add(toOnlineUserUpsertEvent(entry.getKey(), entry.getValue(), userMap.get(entry.getKey())));
         }
         // 全量推送消息
         pushToOnlineRoom(WsMessage.builder()
                 .type(OnlineUserConstants.TYPE_ONLINE_USER_FULL)
-                .data(users)
+                .data(new OnlineUserFullEvent(users))
                 .timestamp(DateUtils.nowMillis())
                 .build());
         // 保存最新在线用户会话数快照
@@ -189,7 +192,7 @@ public class OnlineUserServiceImpl implements OnlineUserService {
                 if (oldCount != null && oldCount > 0) {
                     pushToOnlineRoom(WsMessage.builder()
                             .type(OnlineUserConstants.TYPE_ONLINE_USER_REMOVE)
-                            .data(Map.of("userId", userId))
+                            .data(new OnlineUserRemoveEvent(userId))
                             .timestamp(DateUtils.nowMillis())
                             .build());
                 }
@@ -199,7 +202,7 @@ public class OnlineUserServiceImpl implements OnlineUserService {
             if (oldCount == null || !oldCount.equals(newCount)) {
                 pushToOnlineRoom(WsMessage.builder()
                         .type(OnlineUserConstants.TYPE_ONLINE_USER_UPSERT)
-                        .data(toOnlineUserData(userId, newCount, userMap.get(userId)))
+                        .data(toOnlineUserUpsertEvent(userId, newCount, userMap.get(userId)))
                         .timestamp(DateUtils.nowMillis())
                         .build());
             }
@@ -254,25 +257,26 @@ public class OnlineUserServiceImpl implements OnlineUserService {
     }
 
     /**
-     * 组装 WebSocket 推送使用的在线用户数据结构
+     * 组装 WebSocket 推送使用的在线用户新增/更新事件
      */
-    private Map<String, Object> toOnlineUserData(String userId, Integer sessionCount, UserEntity user) {
-        Map<String, Object> data = new HashMap<>();
-        data.put("userId", userId);
-        data.put("sessionCount", sessionCount);
+    private OnlineUserUpsertEvent toOnlineUserUpsertEvent(String userId, Integer sessionCount, UserEntity user) {
+        OnlineUserUpsertEvent event = new OnlineUserUpsertEvent();
+        event.setUserId(userId);
+        event.setSessionCount(sessionCount);
         if (user == null) {
-            return data;
+            return event;
         }
-        data.put("username", user.getUsername());
-        data.put("nickname", user.getNickname());
-        data.put("realName", user.getRealName());
-        data.put("loginIp", user.getLastLoginIp());
+        event.setUsername(user.getUsername());
+        event.setNickname(user.getNickname());
+        event.setRealName(user.getRealName());
+        event.setLoginIp(user.getLastLoginIp());
         LocalDateTime loginTime = user.getLastLoginTime();
         if (loginTime != null) {
-            data.put("loginTime", DateUtils.formatDateTime(loginTime));
-            data.put("lastActiveTime", DateUtils.formatDateTime(loginTime));
+            String text = DateUtils.formatDateTime(loginTime);
+            event.setLoginTime(text);
+            event.setLastActiveTime(text);
         }
-        return data;
+        return event;
     }
 
     /**
