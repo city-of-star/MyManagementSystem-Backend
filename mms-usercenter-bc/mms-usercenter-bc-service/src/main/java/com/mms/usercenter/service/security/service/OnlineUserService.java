@@ -16,21 +16,6 @@ import java.util.List;
 public interface OnlineUserService {
 
     /**
-     * WebSocket 会话注册完成后触发
-     */
-    void onSessionRegistered();
-
-    /**
-     * WebSocket 会话注销完成后触发
-     */
-    void onSessionUnregistered();
-
-    /**
-     * 用户订阅在线用户房间后触发
-     */
-    void onOnlineUserRoomJoined();
-
-    /**
      * 查询在线用户列表
      */
     List<OnlineUserVo> getOnlineUsers();
