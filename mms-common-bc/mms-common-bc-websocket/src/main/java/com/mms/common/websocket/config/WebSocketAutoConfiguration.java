@@ -112,7 +112,7 @@ public class WebSocketAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(WebSocketHandler.class)
-    public WebSocketHandler mmsTextWebSocketHandler(WsRegistryService wsRegistryService, @Qualifier(WEBSOCKET_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper, ObjectProvider<WsReceiverMessageHandler<?>> messageHandlers) {
+    public WebSocketHandler wsReceiveTextDispatcher(WsRegistryService wsRegistryService, @Qualifier(WEBSOCKET_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper, ObjectProvider<WsReceiverMessageHandler<?>> messageHandlers) {
         return new WsReceiveTextDispatcher(wsRegistryService, objectMapper, messageHandlers.orderedStream().toList());
     }
 
