@@ -1,5 +1,6 @@
 package com.mms.common.websocket.receive.handler.dto;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
@@ -17,6 +18,7 @@ public class RoomActionDto {
     /**
      * 房间 ID
      */
+    @NotBlank(message = "roomId不能为空")
     private String roomId;
 }
 

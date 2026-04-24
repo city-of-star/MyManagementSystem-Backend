@@ -34,11 +34,8 @@ public class JoinRoomWsReceiverMessageHandler implements WsReceiverMessageHandle
 
     @Override
     public void handle(WebSocketSession session, WsMessage<RoomActionDto> message) {
-        RoomActionDto data = message != null ? message.getData() : null;
-        String roomId = data != null ? data.getRoomId() : null;
-        if (roomId != null && !roomId.isBlank()) {
-            sessionRegistry.joinRoom(roomId, session);
-        }
+        RoomActionDto roomActionDto = message.getData();
+        sessionRegistry.joinRoom(roomActionDto.getRoomId(), session);
     }
 }
 

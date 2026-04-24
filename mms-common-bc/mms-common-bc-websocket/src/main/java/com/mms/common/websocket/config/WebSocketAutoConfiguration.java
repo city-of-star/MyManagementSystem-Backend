@@ -16,6 +16,7 @@ import com.mms.common.websocket.push.service.impl.WsPushServiceImpl;
 import com.mms.common.websocket.registry.service.impl.InMemoryWsRegistryServiceImpl;
 import com.mms.common.websocket.registry.listener.WsRegistryListener;
 import com.mms.common.websocket.registry.service.WsRegistryService;
+import jakarta.validation.Validator;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
@@ -112,8 +113,8 @@ public class WebSocketAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(WebSocketHandler.class)
-    public WebSocketHandler wsReceiveTextDispatcher(WsRegistryService wsRegistryService, @Qualifier(WEBSOCKET_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper, ObjectProvider<WsReceiverMessageHandler<?>> messageHandlers) {
-        return new WsReceiveTextDispatcher(wsRegistryService, objectMapper, messageHandlers.orderedStream().toList());
+    public WebSocketHandler wsReceiveTextDispatcher(WsRegistryService wsRegistryService, @Qualifier(WEBSOCKET_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper, Validator validator, ObjectProvider<WsReceiverMessageHandler<?>> messageHandlers) {
+        return new WsReceiveTextDispatcher(wsRegistryService, objectMapper, validator, messageHandlers.orderedStream().toList());
     }
 
     /**

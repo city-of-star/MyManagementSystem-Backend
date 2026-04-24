@@ -9,6 +9,7 @@ import com.mms.common.websocket.receive.handler.WsReceiverMessageHandler;
 import com.mms.common.websocket.receive.router.WsReceiveRouter;
 import com.mms.common.websocket.common.session.WsSessionPrincipal;
 import com.mms.common.websocket.registry.service.WsRegistryService;
+import jakarta.validation.Validator;
 import io.micrometer.common.lang.NonNullApi;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.socket.CloseStatus;
@@ -35,10 +36,10 @@ public class WsReceiveTextDispatcher extends TextWebSocketHandler {
     private final ObjectMapper objectMapper;
     private final WsReceiveRouter router;
 
-    public WsReceiveTextDispatcher(WsRegistryService sessionRegistry, ObjectMapper objectMapper, List<WsReceiverMessageHandler<?>> messageHandlers) {
+    public WsReceiveTextDispatcher(WsRegistryService sessionRegistry, ObjectMapper objectMapper, Validator validator, List<WsReceiverMessageHandler<?>> messageHandlers) {
         this.sessionRegistry = sessionRegistry;
         this.objectMapper = objectMapper;
-        this.router = new WsReceiveRouter(objectMapper, messageHandlers);
+        this.router = new WsReceiveRouter(objectMapper, validator, messageHandlers);
     }
 
     /**

@@ -2,14 +2,20 @@ package com.mms.common.websocket.receive.router;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mms.common.core.enums.error.ErrorCode;
+import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.websocket.common.protocol.WsMessage;
 import com.mms.common.websocket.receive.handler.WsReceiverMessageHandler;
+import jakarta.validation.ConstraintViolation;
+import jakarta.validation.Validator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.socket.WebSocketSession;
 
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 实现功能【WebSocket 接收消息路由器】
@@ -24,13 +30,15 @@ import java.util.Map;
 public class WsReceiveRouter {
 
     private final ObjectMapper objectMapper;
+    private final Validator validator;
     /**
      * 消息类型与处理器映射表（type → handler）
      */
     private final Map<String, WsReceiverMessageHandler<?>> handlersByType;
 
-    public WsReceiveRouter(ObjectMapper objectMapper, List<WsReceiverMessageHandler<?>> handlers) {
+    public WsReceiveRouter(ObjectMapper objectMapper, Validator validator, List<WsReceiverMessageHandler<?>> handlers) {
         this.objectMapper = objectMapper;
+        this.validator = validator;
         this.handlersByType = buildHandlerMap(handlers);
     }
 
@@ -62,9 +70,9 @@ public class WsReceiveRouter {
     /**
      * 分发消息
      */
-    public void dispatch(WebSocketSession session, WsMessage<JsonNode> rawMessage) throws Exception {
+    public void dispatch(WebSocketSession session, WsMessage<JsonNode> wsMessage) throws Exception {
         // 获取消息类型
-        String type = rawMessage != null && rawMessage.getType() != null ? rawMessage.getType() : "";
+        String type = wsMessage != null && wsMessage.getType() != null ? wsMessage.getType() : "";
         // 根据消息类型获取消息处理器
         WsReceiverMessageHandler<?> handler = handlersByType.get(type);
         // 如果处理器为空，则记录日志
@@ -72,35 +80,55 @@ public class WsReceiveRouter {
             log.debug("未定义的消息类型，type={}, sessionId={}", type, session != null ? session.getId() : null);
             return;
         }
-        dispatch0(session, rawMessage, handler);
+        dispatch0(session, wsMessage, handler);
     }
 
     /**
      * 分发消息（内部实现）
      */
     @SuppressWarnings("unchecked")
-    private <T> void dispatch0(WebSocketSession session, WsMessage<JsonNode> rawMessage, WsReceiverMessageHandler<?> handler0) throws Exception {
+    private <T> void dispatch0(WebSocketSession session, WsMessage<JsonNode> wsMessage, WsReceiverMessageHandler<?> handler0) throws Exception {
         // 转换为泛型处理器
         WsReceiverMessageHandler<T> handler = (WsReceiverMessageHandler<T>) handler0;
-        // 获取DTO类型
+        // 获取消息负载类型
         Class<T> dtoClass = handler.getDtoClass();
-        // 如果消息负载不为空，则转换为DTO对象
-        T dto = null;
-        if (rawMessage != null && rawMessage.getData() != null) {
-            if (dtoClass == null) {
-                throw new IllegalStateException("消息负载类型不能为空, handler=" + handler.getClass().getName());
-            }
-            dto = objectMapper.treeToValue(rawMessage.getData(), dtoClass);
+        // 消息负载类型不能为空
+        if (dtoClass == null) {
+            throw new IllegalStateException("消息负载类型不能为空, handler=" + handler.getClass().getName());
         }
-        // 构建消息对象
+        // 获取消息负载
+        JsonNode data = wsMessage == null ? null : wsMessage.getData();
+        // 消息负载必须为JSON对象且不能为空
+        if (data == null || data.isNull() || !data.isObject()) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "消息负载必须为JSON对象且不能为空");
+        }
+        // 转换为DTO对象
+        T dto = objectMapper.treeToValue(data, dtoClass);
+        // 验证DTO对象
+        validateDto(dto);
+        // 构建消息体
         WsMessage<T> typedMessage = WsMessage.<T>builder()
-                .type(rawMessage != null ? rawMessage.getType() : null)
+                .type(wsMessage.getType())
                 .data(dto)
-                .requestId(rawMessage != null ? rawMessage.getRequestId() : null)
-                .timestamp(rawMessage != null ? rawMessage.getTimestamp() : null)
+                .requestId(wsMessage.getRequestId())
+                .timestamp(wsMessage.getTimestamp())
                 .build();
         // 处理消息
         handler.handle(session, typedMessage);
+    }
+
+    /**
+     * 验证DTO对象
+     */
+    private <T> void validateDto(T dto) {
+        Set<ConstraintViolation<T>> violations = validator.validate(dto);
+        if (violations == null || violations.isEmpty()) {
+            return;
+        }
+        String errorMsg = violations.stream()
+                .map(ConstraintViolation::getMessage)
+                .collect(Collectors.joining("; "));
+        throw new BusinessException(ErrorCode.PARAM_INVALID, errorMsg);
     }
 }
 
