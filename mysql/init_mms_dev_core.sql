@@ -187,6 +187,27 @@ CREATE TABLE IF NOT EXISTS `system_user_post` (
     KEY `idx_is_primary` (`is_primary`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='用户岗位关联表';
 
+-- 用户偏好配置表
+CREATE TABLE IF NOT EXISTS `system_user_preference` (
+    `id` bigint NOT NULL COMMENT '主键ID',
+    `user_id` bigint NOT NULL COMMENT '用户ID',
+    `pref_key` varchar(128) NOT NULL COMMENT '偏好键',
+    `pref_value` text COMMENT '偏好值',
+    `value_type` varchar(16) NOT NULL DEFAULT 'string' COMMENT '值类型：string/number/boolean/json',
+    `remark` varchar(512) DEFAULT NULL COMMENT '备注',
+    `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除',
+    `create_by` bigint DEFAULT NULL COMMENT '创建人ID',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by` bigint DEFAULT NULL COMMENT '更新人ID',
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_user_pref_key` (`user_id`, `pref_key`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_pref_key` (`pref_key`),
+    KEY `idx_deleted` (`deleted`),
+    KEY `idx_user_deleted` (`user_id`, `deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='用户偏好配置表';
+
 -- 系统配置表
 CREATE TABLE IF NOT EXISTS `system_config` (
     `id` bigint NOT NULL COMMENT '配置ID',
@@ -763,7 +784,8 @@ VALUES
     (13, 'Job_run_mode', '定时任务运行模式', 1, 19, '定时任务运行模式', 0, NOW(), NOW()),
     (14, 'job_status', '定时任务状态', 1, 20, '定时任务状态', 0, NOW(), NOW()),
     (15, 'login_status', '登录状态', 1, 13, '用户登录操作的结果状态', 0, NOW(), NOW()),
-    (16, 'login_type', '登录类型', 1, 13, '用户登录的方式或类型', 0, NOW(), NOW());
+    (16, 'login_type', '登录类型', 1, 13, '用户登录的方式或类型', 0, NOW(), NOW()),
+    (17, 'preference_value_type', '偏好值类型', 1, 21, '用户偏好配置值类型', 0, NOW(), NOW());
 
 -- 初始化数据字典数据
 INSERT IGNORE INTO `system_dict_data` (`id`, `dict_type_id`, `dict_label`, `dict_value`, `dict_sort`, `is_default`, `status`, `remark`, `deleted`, `create_time`, `update_time`)
@@ -834,7 +856,11 @@ VALUES
     (50, 15, '成功', '1', 2, 1, 1, '登录成功', 0, NOW(), NOW()),
     (51, 16, '密码登录', 'password', 1, 1, 1, '通过账号密码登录', 0, NOW(), NOW()),
     (52, 16, '短信登录', 'sms', 2, 0, 1, '通过短信验证码登录', 0, NOW(), NOW()),
-    (53, 16, '邮箱登录', 'email', 3, 0, 1, '通过邮箱验证码登录', 0, NOW(), NOW());
+    (53, 16, '邮箱登录', 'email', 3, 0, 1, '通过邮箱验证码登录', 0, NOW(), NOW()),
+    (54, 17, '字符串', 'string', 1, 1, 1, '偏好值为字符串', 0, NOW(), NOW()),
+    (55, 17, '数字', 'number', 2, 0, 1, '偏好值为数字', 0, NOW(), NOW()),
+    (56, 17, '布尔', 'boolean', 3, 0, 1, '偏好值为布尔值', 0, NOW(), NOW()),
+    (57, 17, 'JSON', 'json', 4, 0, 1, '偏好值为JSON字符串', 0, NOW(), NOW());
 -- 初始化定时任务数据
 INSERT IGNORE INTO `job_def` (`id`,`service_name`,`job_code`,`job_name`,`job_type`,`cron_expr`,`run_mode`,`enabled`,`timeout_ms`,`remark`,`params_json`,`deleted`,`create_by`,`create_time`,`update_by`,`update_time`)
 VALUES
