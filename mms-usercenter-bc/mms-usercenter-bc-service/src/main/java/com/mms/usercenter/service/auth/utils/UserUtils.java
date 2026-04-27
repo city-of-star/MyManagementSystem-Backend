@@ -1,5 +1,7 @@
 package com.mms.usercenter.service.auth.utils;
 
+import com.mms.common.core.enums.error.ErrorCode;
+import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.webmvc.utils.UserContextUtils;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -25,14 +27,22 @@ public final class UserUtils {
      * 获取当前用户ID
      */
     public static Long getUserId() {
-        return UserContextUtils.getUserId();
+        Long userId = UserContextUtils.getUserId();
+        if (userId == null) {
+            throw new BusinessException(ErrorCode.LOGIN_EXPIRED, "登录信息已过期，请重新登录");
+        }
+        return userId;
     }
 
     /**
      * 获取当前用户名
      */
     public static String getUsername() {
-        return UserContextUtils.getUsername();
+        String username = UserContextUtils.getUsername();
+        if (username == null) {
+            throw new BusinessException(ErrorCode.LOGIN_EXPIRED, "登录信息已过期，请重新登录");
+        }
+        return username;
     }
 
     /**
