@@ -12,10 +12,13 @@ import com.mms.usercenter.service.auth.service.UserPreferenceService;
 import com.mms.usercenter.service.auth.utils.UserUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 实现功能【用户偏好配置服务实现类】
@@ -53,33 +56,27 @@ public class UserPreferenceServiceImpl implements UserPreferenceService {
             Long userId = UserUtils.getUserId();
             String prefKey = dto.getPrefKey().trim();
             String valueType = dto.getValueType().trim().toLowerCase();
-
             LambdaQueryWrapper<UserPreferenceEntity> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(UserPreferenceEntity::getUserId, userId)
                     .eq(UserPreferenceEntity::getPrefKey, prefKey);
             UserPreferenceEntity entity = userPreferenceMapper.selectOne(wrapper);
-
             if (entity == null) {
                 entity = new UserPreferenceEntity();
                 entity.setUserId(userId);
                 entity.setPrefKey(prefKey);
-                entity.setPrefValue(dto.getPrefValue());
-                entity.setValueType(valueType);
-                entity.setRemark(dto.getRemark());
-                entity.setDeleted(0);
+            }
+            entity.setPrefValue(dto.getPrefValue());
+            entity.setValueType(valueType);
+            entity.setRemark(dto.getRemark());
+            entity.setDeleted(0);
+            if (entity.getId() == null) {
                 userPreferenceMapper.insert(entity);
             } else {
-                entity.setPrefValue(dto.getPrefValue());
-                entity.setValueType(valueType);
-                entity.setRemark(dto.getRemark());
-                entity.setDeleted(0);
                 userPreferenceMapper.updateById(entity);
             }
-
-            return userPreferenceMapper.selectByUserId(userId).stream()
-                    .filter(item -> prefKey.equals(item.getPrefKey()))
-                    .findFirst()
-                    .orElseThrow(() -> new ServerException("保存用户偏好配置失败"));
+            UserPreferenceVo vo = new UserPreferenceVo();
+            BeanUtils.copyProperties(entity, vo);
+            return vo;
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -92,10 +89,39 @@ public class UserPreferenceServiceImpl implements UserPreferenceService {
     @Transactional(rollbackFor = Exception.class)
     public List<UserPreferenceVo> batchSaveMyPreferences(UserPreferenceBatchSaveDto dto) {
         try {
-            for (UserPreferenceSaveDto item : dto.getPreferences()) {
-                saveMyPreference(item);
+            Long userId = UserUtils.getUserId();
+            List<UserPreferenceEntity> existingEntities = userPreferenceMapper.selectList(
+                    new LambdaQueryWrapper<UserPreferenceEntity>()
+                            .eq(UserPreferenceEntity::getUserId, userId)
+            );
+            Map<String, UserPreferenceEntity> existingByPrefKey = new HashMap<>();
+            for (UserPreferenceEntity entity : existingEntities) {
+                existingByPrefKey.put(entity.getPrefKey(), entity);
             }
-            return getMyPreferences();
+
+            for (UserPreferenceSaveDto item : dto.getPreferences()) {
+                String prefKey = item.getPrefKey().trim();
+                String valueType = item.getValueType().trim().toLowerCase();
+                UserPreferenceEntity entity = existingByPrefKey.get(prefKey);
+                if (entity == null) {
+                    entity = new UserPreferenceEntity();
+                    entity.setUserId(userId);
+                    entity.setPrefKey(prefKey);
+                    entity.setPrefValue(item.getPrefValue());
+                    entity.setValueType(valueType);
+                    entity.setRemark(item.getRemark());
+                    entity.setDeleted(0);
+                    userPreferenceMapper.insert(entity);
+                    existingByPrefKey.put(prefKey, entity);
+                } else {
+                    entity.setPrefValue(item.getPrefValue());
+                    entity.setValueType(valueType);
+                    entity.setRemark(item.getRemark());
+                    entity.setDeleted(0);
+                    userPreferenceMapper.updateById(entity);
+                }
+            }
+            return userPreferenceMapper.selectByUserId(userId);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -103,4 +129,5 @@ public class UserPreferenceServiceImpl implements UserPreferenceService {
             throw new ServerException("批量保存用户偏好配置失败", e);
         }
     }
+
 }
