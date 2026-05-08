@@ -1,7 +1,6 @@
 package com.mms.common.webmvc.config;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
@@ -29,38 +28,28 @@ public class JacksonConfig {
     /**
      * 提供 WebMvcConfigurer：置顶自定义的 Jackson 转换器，确保统一 ObjectMapper 生效
      */
-    public WebMvcConfigurer jacksonWebMvcConfigurer(List<Module> jacksonModules) {
+    public WebMvcConfigurer jacksonWebMvcConfigurer() {
         return new WebMvcConfigurer() {
             @Override
             public void extendMessageConverters(List<HttpMessageConverter<?>> converters) {
-                // 移除已有 Jackson 转换器，避免顺序不确定
-                converters.removeIf(c -> c instanceof MappingJackson2HttpMessageConverter);
-                // 统一的 ObjectMapper
                 ObjectMapper objectMapper = JacksonObjectMapperUtils.createCommonObjectMapper();
-                // Long/long/BigInteger -> String
+                // Long 转 String
                 SimpleModule numberAsString = new SimpleModule();
                 numberAsString.addSerializer(Long.class, ToStringSerializer.instance);
                 numberAsString.addSerializer(Long.TYPE, ToStringSerializer.instance);
                 numberAsString.addSerializer(BigInteger.class, ToStringSerializer.instance);
-                objectMapper.registerModule(numberAsString);
                 // MyBatis-Plus Page：total/size/current 输出为 int，records 走 ObjectMapper 默认属性序列化链
                 SimpleModule pageModule = new SimpleModule();
                 @SuppressWarnings("unchecked")
                 Class<Page<?>> pageClass = (Class<Page<?>>) (Class<?>) Page.class;
                 pageModule.addSerializer(pageClass, new MybatisPlusPageSerializer());
-                objectMapper.registerModule(pageModule);
-                // 注册容器内的其它模块（Page、自定义属性级 Long 模块等）
-                if (jacksonModules != null) {
-                    for (Module module : jacksonModules) {
-                        try {
-                            objectMapper.registerModule(module);
-                        } catch (Exception ignore) {
-                            // 跳过重复或不兼容模块
-                        }
+                objectMapper.registerModule(numberAsString);
+                // 替换默认 Jackson Converter 的 ObjectMapper
+                for (HttpMessageConverter<?> converter : converters) {
+                    if (converter instanceof MappingJackson2HttpMessageConverter jacksonConverter) {
+                        jacksonConverter.setObjectMapper(objectMapper);
                     }
                 }
-                // 置顶自定义 Jackson 转换器
-                converters.add(0, new MappingJackson2HttpMessageConverter(objectMapper));
             }
         };
     }

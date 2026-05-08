@@ -6,13 +6,10 @@ import com.mms.common.webmvc.file.FileDownloadService;
 import com.mms.common.webmvc.file.impl.FileDownloadServiceImpl;
 import com.mms.common.webmvc.swagger.SwaggerConfig;
 import io.swagger.v3.oas.models.OpenAPI;
-import com.fasterxml.jackson.databind.Module;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
-
-import java.util.List;
 
 /**
  * 实现功能【Web MVC组件自动装配配置】
@@ -40,8 +37,8 @@ public class WebmvcAutoConfiguration {
      * 创建 Jackson HttpMessageConverter Bean
      */
     @Bean
-    public WebMvcConfigurer jacksonWebMvcConfigurer(List<Module> jacksonModules) {
-        return new JacksonConfig().jacksonWebMvcConfigurer(jacksonModules);
+    public WebMvcConfigurer jacksonWebMvcConfigurer() {
+        return new JacksonConfig().jacksonWebMvcConfigurer();
     }
 
     /**
