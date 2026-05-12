@@ -71,6 +71,9 @@
 
         <!-- JSR-305 (javax.annotation.meta.When etc.) -->
         <jsr305.version>3.0.2</jsr305.version>
+
+        <!-- RocketMQ Spring -->
+        <rocketmq-spring.version>2.3.1</rocketmq-spring.version>
     </properties>
 
     <!-- 依赖管理 -->
@@ -143,7 +146,17 @@
             </dependency>
             <dependency>
                 <groupId>com.mms</groupId>
-                <artifactId>mms-common-bc-mq</artifactId>
+                <artifactId>mms-common-bc-mq-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.mms</groupId>
+                <artifactId>mms-common-bc-mq-rocket</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.mms</groupId>
+                <artifactId>mms-common-bc-mq-kafka</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
@@ -197,6 +210,13 @@
                 <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql.version}</version>
                 <scope>runtime</scope>
+            </dependency>
+
+            <!-- RocketMQ -->
+            <dependency>
+                <groupId>org.apache.rocketmq</groupId>
+                <artifactId>rocketmq-spring-boot-starter</artifactId>
+                <version>${rocketmq-spring.version}</version>
             </dependency>
 
             <!-- Lombok -->

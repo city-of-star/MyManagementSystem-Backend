@@ -3,6 +3,7 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>com.mms</groupId>
         <artifactId>mms-common-bc</artifactId>
@@ -10,13 +11,14 @@
     </parent>
 
     <artifactId>mms-common-bc-mq</artifactId>
-    <name>MMS Common BC Mq</name>
-    <description>消息队列模块</description>
+    <packaging>pom</packaging>
+    <name>MMS Common BC MQ</name>
+    <description>消息队列通用能力（聚合：api / rocket / kafka）</description>
 
-    <properties>
-        <maven.compiler.source>17</maven.compiler.source>
-        <maven.compiler.target>17</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    </properties>
+    <modules>
+        <module>mms-common-bc-mq-api</module>
+        <module>mms-common-bc-mq-rocket</module>
+        <module>mms-common-bc-mq-kafka</module>
+    </modules>
 
 </project>
