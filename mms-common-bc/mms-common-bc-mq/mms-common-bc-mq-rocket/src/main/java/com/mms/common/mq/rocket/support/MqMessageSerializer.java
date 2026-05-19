@@ -3,6 +3,7 @@ package com.mms.common.mq.rocket.support;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mms.common.core.utils.JacksonObjectMapperUtils;
+import com.mms.common.mq.api.exception.MqConsumeException;
 import com.mms.common.mq.api.exception.MqSendException;
 import com.mms.common.mq.api.message.MqMessage;
 
@@ -40,7 +41,7 @@ public class MqMessageSerializer {
                     objectMapper.getTypeFactory().constructParametricType(MqMessage.class, payloadType)
             );
         } catch (JsonProcessingException ex) {
-            throw new MqSendException("MQ 消息反序列化失败", ex);
+            throw new MqConsumeException("MQ 消息反序列化失败", ex);
         }
     }
 }

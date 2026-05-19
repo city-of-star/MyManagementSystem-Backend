@@ -1,7 +1,7 @@
 # 消息队列配置
 mms:
   mq:
-    # 是否启用
+    # 是否启用（启用后注册 RocketMQ 生产者与消费者）
     enabled: false
 
 # rocketmq配置
@@ -12,3 +12,4 @@ rocketmq:
     send-message-timeout: 3000
     retry-times-when-send-failed: 2
     retry-times-when-send-async-failed: 2
+  # 消费者由 @MmsRocketListener 声明，consumerGroup 示例：${spring.application.name}_job_run_consumer
