@@ -1,122 +1,189 @@
 # MMS 管理系统后端（MyManagementSystem-Backend）
 
-一个基于 **Spring Boot 3.2.4**、**Spring Cloud 2023.0.1**、**Spring Cloud Alibaba 2023.0.1.0** 的微服务管理系统后端，包含网关鉴权、用户中心、基础数据、作业服务等模块，并提供完整的 RBAC 权限体系与统一的响应/异常/链路追踪能力。
+基于 **Spring Boot 3.2.4**、**Spring Cloud 2023.0.1**、**Spring Cloud Alibaba 2023.0.1.0** 的微服务管理系统后端。提供网关统一入口、JWT + RSA 签名的多层鉴权、用户中心 RBAC、基础数据、定时作业、附件与本地文件存储、WebSocket、审计日志等能力，并预留消息队列（RocketMQ）等扩展模块。
 
 ## 项目简介
 
-MMS（Management System）是一个企业级管理系统，采用微服务架构设计，提供完整的用户权限管理体系。项目采用Spring Cloud微服务架构，使用Nacos作为服务注册中心和配置中心，通过Spring Cloud Gateway实现统一网关路由和JWT+RSA双重鉴权。
+MMS（Management System）采用 **Maven 多模块 + 微服务** 架构：
 
-项目包含完整的RBAC权限模型，支持用户管理、角色管理、权限控制、数据字典、系统配置等企业级功能。数据库设计包含13个核心表，支持逻辑删除和完整的审计功能。
+- **Nacos**：服务注册发现与配置中心（多环境 `DEV` / `TEST` / `PROD`）
+- **Spring Cloud Gateway**：统一 API 入口、限流、熔断降级、链路 TraceId
+- **OpenFeign**：服务间调用
+- **MyBatis Plus + MySQL**：持久化，逻辑删除与审计字段
+- **Redis**：缓存、Token 黑名单、网关限流等
+
+业务侧覆盖用户与权限、组织（部门/岗位）、数据字典与系统配置、附件上传与流式访问、定时任务与执行记录、登录/操作/异常/API 访问审计、在线用户、用户偏好、WebSocket 推送等。
 
 ## 技术栈
 
 ### 核心框架
-- **Java**: 17
-- **Spring Boot**: 3.2.4
-- **Spring Cloud**: 2023.0.1
-- **Spring Cloud Alibaba**: 2023.0.1.0
+
+| 技术 | 版本 |
+|------|------|
+| Java | 17 |
+| Spring Boot | 3.2.4 |
+| Spring Cloud | 2023.0.1 |
+| Spring Cloud Alibaba | 2023.0.1.0 |
 
 ### 服务治理
-- **Nacos**: 服务注册与发现、配置中心
-- **Spring Cloud Gateway**: API网关
-- **OpenFeign**: 服务间调用
-- **Spring Cloud LoadBalancer**: 负载均衡
 
-### 数据持久化
-- **MyBatis Plus**: 3.5.7
-- **MySQL**: 8.0.33
-- **Redis**: 6.2.14
+- **Nacos**：注册中心、配置中心
+- **Spring Cloud Gateway**：路由、JWT 鉴权、RSA 签名透传、Redis 限流、Resilience4j 熔断
+- **OpenFeign** + **Spring Cloud LoadBalancer**
+
+### 数据与中间件
+
+- **MyBatis Plus** 3.5.7
+- **MySQL** 8.0.33
+- **Redis** 6.x（缓存、黑名单、网关限流）
+- **RocketMQ Spring** 2.3.5（`mms-common-bc-mq-rocket`，封装进行中；Broker 建议自建 **5.3.x**）
 
 ### 安全认证
-- **JWT**: 0.12.5（基于JJWT）
-- **BCrypt**: 0.4
 
-### 工具类库
-- **Lombok**: 1.18.30
-- **Hutool**: 5.3.1
+- **JWT**（JJWT 0.12.5）：访问令牌 + 刷新令牌（Cookie）
+- **BCrypt** 0.4：密码加密
+- **RSA**：网关私钥签名、下游公钥验签
 
-### 文档工具
-- **Knife4j**: 4.4.0（API文档）
+### 工具与文档
 
-### 构建工具
-- **Maven**: 3.x
+- **Lombok** 1.18.30、**Hutool** 5.3.1
+- **EasyExcel** 3.3.2（`mms-common-bc-document` 导出）
+- **Knife4j** 4.4.0（OpenAPI 3 / SpringDoc）
+
+### 构建
+
+- **Maven** 3.6+
 
 ## 项目结构
 
 ```
 MyManagementSystem-Backend/
-├── mms-common-bc/                  # 公共模块
-│   ├── mms-common-bc-core/         # 核心工具类（异常、响应、上下文等）
-│   ├── mms-common-bc-webmvc/       # Web MVC模块（全局异常处理器、Swagger/Knife4j配置等）
-│   ├── mms-common-bc-datasource/   # 数据源配置（MyBatis Plus等）
-│   ├── mms-common-bc-cache/        # 缓存组件（Redis等）
-│   ├── mms-common-bc-security/     # 安全组件（JWT工具类）
-│   ├── mms-common-bc-threadpool/   # 线程池组件（统一线程池配置）
-│   ├── mms-common-bc-websocket/    # WebSocket组件
-│   └── mms-common-bc-job/          # Job公共能力组件
-├── mms-gateway-bc/                 # API网关服务
-│   └── src/main/java/              # 网关路由、鉴权、过滤器等
-├── mms-base-bc/                    # 基础数据服务
-│   ├── mms-base-bc-common/         # 公共组件（实体、DTO、VO等）
-│   ├── mms-base-bc-controller/     # 控制器层
-│   ├── mms-base-bc-feign-api/      # Feign接口
-│   ├── mms-base-bc-server/         # 服务启动类
-│   └── mms-base-bc-service/        # 业务逻辑层
-├── mms-job-bc/                     # 作业/定时任务服务
+├── mms-common-bc/                      # 公共能力（多子模块）
+│   ├── mms-common-bc-core/            # 响应、异常、上下文、工具类
+│   ├── mms-common-bc-webmvc/          # Web 通用能力、UserContextUtils、文件下载
+│   ├── mms-common-bc-datasource/       # 数据源、MyBatis Plus
+│   ├── mms-common-bc-cache/           # Redis 缓存封装（单模块）
+│   ├── mms-common-bc-security/        # 安全（聚合）
+│   │   ├── mms-common-bc-security-core/    # JWT、RSA、权限注解与切面
+│   │   └── mms-common-bc-security-servlet/ # Servlet 过滤器、网关验签
+│   ├── mms-common-bc-threadpool/      # 统一线程池
+│   ├── mms-common-bc-job/             # 任务执行通用约定、JobExecuteController
+│   ├── mms-common-bc-websocket/       # WebSocket 鉴权、会话、推送
+│   ├── mms-common-bc-document/        # EasyExcel 导出
+│   ├── mms-common-bc-es/              # Elasticsearch（预留，待实现）
+│   └── mms-common-bc-mq/              # 消息队列（聚合）
+│       ├── mms-common-bc-mq-api/      # 契约层（预留）
+│       ├── mms-common-bc-mq-rocket/   # RocketMQ 实现（当前开发）
+│       └── mms-common-bc-mq-kafka/    # Kafka（预留）
+├── mms-gateway-bc/                     # API 网关
+├── mms-usercenter-bc/                  # 用户中心
+│   ├── mms-usercenter-bc-common/
+│   ├── mms-usercenter-bc-controller/
+│   ├── mms-usercenter-bc-feign-api/
+│   ├── mms-usercenter-bc-server/
+│   └── mms-usercenter-bc-service/
+├── mms-base-bc/                        # 基础数据
+│   ├── mms-base-bc-common/
+│   ├── mms-base-bc-controller/
+│   ├── mms-base-bc-feign-api/
+│   ├── mms-base-bc-server/
+│   └── mms-base-bc-service/
+├── mms-job-bc/                         # 定时作业
 │   ├── mms-job-bc-common/
-│   ├── mms-job-bc-core/
+│   ├── mms-job-bc-core/                # 任务定义、调度、执行记录 API
 │   └── mms-job-bc-server/
-└── mms-usercenter-bc/              # 用户中心服务
-    ├── mms-usercenter-bc-common/   # 公共组件（实体、DTO、VO等）
-    ├── mms-usercenter-bc-controller/ # 控制器层
-    ├── mms-usercenter-bc-feign-api/  # Feign接口
-    ├── mms-usercenter-bc-server/     # 服务启动类
-    └── mms-usercenter-bc-service/    # 业务逻辑层
+├── mysql/                              # 库表初始化与增量脚本
+├── nacos/                              # Nacos 配置示例（DEV）
+├── script/                             # 发布、重启、日志查看脚本
+├── prompt/                             # 项目 AI/开发知识库（索引与架构约定）
+└── pom.xml                             # 父 POM、依赖版本管理
 ```
 
 ## 服务说明
 
-### 网关服务 (mms-gateway-bc)
-- **端口**: 5092
-- **服务名**: gateway
-- **功能**:
-  - 统一API入口
-  - 路由转发
-  - JWT鉴权 + RSA签名验证
-  - 链路追踪（TraceId）
-  - 请求头透传用户信息
+| 服务 | 模块 | 默认端口 | 说明 |
+|------|------|----------|------|
+| gateway | `mms-gateway-bc` | 5092 | 统一入口、鉴权、限流、熔断、WS 代理 |
+| usercenter | `mms-usercenter-bc` | 5090 | 认证、用户、角色权限、组织、审计、在线用户、WS |
+| base | `mms-base-bc` | 5091 | 字典、系统配置、附件与本地文件存储 |
+| job | `mms-job-bc` | 5093 | 定时任务定义、调度、执行记录 |
 
-### 用户中心服务 (mms-usercenter-bc)
-- **端口**: 5090
-- **服务名**: usercenter
-- **功能**:
-  - 用户注册/登录/登出
-  - JWT Token管理（访问令牌+刷新令牌）
-  - 用户信息管理（CRUD操作）
-  - 角色权限管理（RBAC模型）
-  - 用户登录日志记录
+### 网关（mms-gateway-bc）
 
-### 基础数据服务 (mms-base-bc)
-- **端口**: 5091
-- **服务名**: base
-- **功能**:
-  - 数据字典管理
-  - 系统配置管理
-  - 基础业务数据维护
+- HTTP 路由：`/api/{service}/**` → 对应微服务（`StripPrefix=2`）
+- WebSocket：`/ws/{service}/**` → `lb:ws://{service}`
+- JWT 校验、Token 黑名单、RSA 签名与请求头透传（`userId`、`username`、`tokenJti` 等）
+- Redis **RequestRateLimiter**、**Resilience4j** 熔断与 `GatewayFallbackController` 降级
+- Actuator：`health`、`metrics`、`prometheus`、`gateway` 等
 
-### 作业服务 (mms-job-bc)
-- **端口**: 5093
-- **服务名**: job
-- **功能**:
-  - 定时任务/作业调度相关能力
+### 用户中心（mms-usercenter-bc）
+
+| 能力 | 控制器（包路径摘要） |
+|------|----------------------|
+| 登录注册、Token 刷新 | `auth.AuthController` |
+| 用户 CRUD、资料 | `auth.UserController` |
+| 用户偏好 | `auth.UserPreferenceController` |
+| 角色、权限 | `auth.RoleController`、`auth.PermissionController` |
+| 部门、岗位 | `org.DeptController`、`org.PostController` |
+| 用户权限查询 | `security.UserAuthorityController` |
+| 在线用户 | `security.OnlineUserController` |
+| 登录日志 | `audit.UserLoginLogController` |
+| WebSocket 示例/推送 | `websocket.WebsocketController` |
+
+登录安全（Nacos）：失败次数限制、锁定时长、默认密码前缀等。
+
+### 基础数据（mms-base-bc）
+
+| 能力 | 说明 |
+|------|------|
+| 数据字典 | 字典类型、字典数据 CRUD、按类型编码查询启用项 |
+| 系统配置 | 配置项 CRUD、按 key 查询、唯一性校验 |
+| 附件管理 | 元数据 CRUD、上传、软删/硬删、批量操作 |
+| 文件存储 | `FileServiceImpl` 本地磁盘存储；流式访问 `/attachment/stream/**` |
+
+文件相关配置见 `nacos/base-DEV.yaml`（`file.upload.*`、Multipart 大小限制）。
+
+### 作业服务（mms-job-bc）
+
+| 能力 | 说明 |
+|------|------|
+| 任务定义 | `JobController`：CRUD、启停、立即执行 |
+| 执行记录 | `JobRunLogController`：分页、删除（导出/重试/终止接口预留） |
+| 调度 | `JobScheduler`：`@Scheduled` 扫描 + `CronExpression` 计算下次触发 |
+
+## 数据库
+
+### 初始化
+
+```bash
+mysql -u root -p < mysql/init_mms_dev_core.sql
+```
+
+开发库名示例：`mms_dev_core`（以 Nacos 中 `spring.datasource.url` 为准）。
+
+### 核心表（约 21 张）
+
+| 分类 | 表名 |
+|------|------|
+| 权限与用户 | `system_user`、`system_role`、`system_permission`、`system_user_role`、`system_role_permission`、`system_user_preference` |
+| 组织 | `system_dept`、`system_post`、`system_user_dept`、`system_user_post` |
+| 基础数据 | `system_config`、`system_dict_type`、`system_dict_data`、`system_attachment` |
+| 作业 | `job_def`、`job_run_log`、`job_lock` |
+| 审计 | `audit_user_login_log`、`audit_operation_log`、`audit_exception_log`、`audit_api_access_log` |
+| 安全 | `security_online_user` |
+
+### 增量脚本
+
+`mysql/prod/` 下为结构变更脚本（如用户头像字段、用户偏好表等），按版本在目标环境执行；全量初始化仍以 `init_mms_dev_core.sql` / `init_mms_prod_core.sql` 为主。
 
 ## 环境要求
 
-- **JDK**: 17+
-- **Maven**: 3.6+
-- **MySQL**: 8.0+
-- **Nacos**: 2.x（服务注册与配置中心）
-- **Redis**: 6.0+（可选，用于缓存和Token黑名单）
+- **JDK** 17+
+- **Maven** 3.6+
+- **MySQL** 8.0+
+- **Nacos** 2.x
+- **Redis** 6.0+（缓存、黑名单、网关限流）
+- **RocketMQ** 5.3.x（可选；使用 MQ 能力时需自建 NameServer + Broker）
 
 ## 快速开始
 
@@ -129,49 +196,34 @@ cd MyManagementSystem-Backend
 
 ### 2. 数据库初始化
 
-执行数据库初始化脚本：
+执行 `mysql/init_mms_dev_core.sql`，并按需执行 `mysql/prod/` 下增量脚本。
 
-```bash
-mysql -u root -p < mysql/init_mms_dev_core.sql
-```
+### 3. Nacos 配置
 
-或使用MySQL客户端工具执行 `mysql/init_mms_dev_core.sql` 文件。
+在 Nacos 控制台创建配置（**namespace** = `spring.profiles.active`，如 `DEV`；**group** = `DEFAULT_GROUP`；**dataId** = `{name}-{profile}.yaml`）。
 
-### 3. Nacos配置
+仓库 `nacos/` 目录为 **DEV 示例模板**，敏感信息使用 `YOUR_***` 占位，**勿将真实密码、密钥提交到 Git**。
 
-确保 Nacos 服务已启动，并在 Nacos 控制台创建配置（**dataId 与文件名保持一致**）。本项目通过 `spring.config.import` 按如下规则加载：
+| 配置文件 | 用途 |
+|----------|------|
+| `public-DEV.yaml` | Jackson、MyBatis Plus、Swagger 网关地址等 |
+| `mysql-DEV.yaml` | 数据源账号（占位） |
+| `redis-DEV.yaml` | Redis |
+| `jwt-DEV.yaml` | JWT 密钥（占位） |
+| `secret-DEV.yaml` | 网关 RSA 公钥等 |
+| `threadpool-DEV.yaml` | 线程池 |
+| `websocket-DEV.yaml` | WebSocket |
+| `whitelist-DEV.yaml` | 网关/服务白名单 |
+| `log-DEV.yaml` | 日志 |
+| `gateway-DEV.yaml` | 网关端口、路由、限流、熔断 |
+| `usercenter-DEV.yaml` | 用户中心端口、库 URL、登录策略 |
+| `base-DEV.yaml` | 基础服务、文件上传 |
+| `job-DEV.yaml` | 作业服务 |
+| `mq-DEV.yaml` | RocketMQ（使用 MQ 时在 Nacos 新建，仓库暂无示例） |
 
-- **namespace**：`${spring.profiles.active}`（例如 `DEV` / `TEST` / `PROD`）
-- **group**：`DEFAULT_GROUP`
-- **dataId**：`{name}-{profile}.yaml` 或公共的 `{xxx}-{profile}.yaml`
+各服务 `application.yml` 通过 `spring.config.import` 按环境加载上述配置（网关与用户中心/基础/作业的 import 列表略有差异，以各模块 `application.yml` 为准）。
 
-以网关 `gateway` 为例，`mms-gateway-bc/src/main/resources/application.yml` 中的导入列表为：
-
-- `public-${profile}.yaml`
-- `redis-${profile}.yaml`
-- `jwt-${profile}.yaml`
-- `whitelist-${profile}.yaml`
-- `log-${profile}.yaml`
-- `${spring.application.name}-${profile}.yaml`（即 `gateway-DEV.yaml`）
-
-- `public-DEV.yaml`    - 公共配置（Spring 公共配置、Swagger 等）
-- `threadpool-DEV.yaml`- 线程池配置（各服务通用）
-- `mysql-DEV.yaml`     - MySQL 数据源通用配置（用户名/密码为占位符）
-- `redis-DEV.yaml`     - Redis 通用配置（地址/密码为占位符）
-- `jwt-DEV.yaml`       - JWT 配置（密钥为占位符）
-- `gateway-DEV.yaml`   - 网关服务配置（端口、超时、网关私钥为占位符）
-- `usercenter-DEV.yaml`- 用户中心服务配置（端口、数据源 URL 为占位符）
-- `base-DEV.yaml`      - 基础数据服务配置（端口、数据源 URL 为占位符）
-- `job-DEV.yaml`       - 作业服务配置（端口、数据源 URL 为占位符）
-- `secret-DEV.yaml`    - 网关公钥等安全相关通用配置（公钥为占位符）
-- `log-DEV.yaml`       - 日志级别与输出路径配置
-- `whitelist-DEV.yaml` - 网关与各服务的接口白名单配置
-
-> 说明：仓库中的上述 `*-DEV.yaml` 文件仅作为 **示例模板**，所有数据库账号、密码、JWT 密钥、RSA 密钥等敏感信息均已使用 `YOUR_***` 占位符处理，请在 **Nacos 控制台中创建同名配置并填入真实值**，不要将真实敏感信息写回到代码仓库。
-
-> 补充：各服务 `application.yml` 中若存在 `spring.cloud.nacos.server-addr/username/password`，请务必使用 **环境变量/JVM 参数** 在运行时覆盖，避免提交真实账号密码到仓库。
-
-**覆盖示例（JVM 参数）**：
+**本地覆盖示例**：
 
 ```bash
 java -jar app.jar \
@@ -181,67 +233,98 @@ java -jar app.jar \
   --spring.cloud.nacos.password=nacos
 ```
 
-**Nacos连接信息**（请根据自己环境填写）示例：
-- 地址: `http://YOUR_NACOS_HOST:8848`
-- 用户名: `YOUR_NACOS_USERNAME`
-- 密码: `YOUR_NACOS_PASSWORD`
-
-### 4. 编译项目
+### 4. 编译
 
 ```bash
-mvn clean install
+mvn clean install -DskipTests
 ```
 
-### 5. 启动服务
+### 5. 启动顺序（推荐）
 
-**启动顺序（推荐）**：
-
-1. **先启动依赖**：MySQL、Nacos（可选 Redis）
-2. **先启动业务服务**：`usercenter` / `base` / `job`
-3. **最后启动网关**：`gateway`
-
-> 说明：网关依赖服务发现与下游服务可用性；先拉起下游服务更利于排查问题（当然也可以全部启动后网关自动恢复路由）。
-
-**启动方式**：
+1. MySQL、Nacos、Redis（按需 RocketMQ）
+2. 业务服务：`usercenter` → `base` → `job`
+3. 最后启动 `gateway`
 
 ```bash
-# 方式1: 使用Maven启动
-cd mms-gateway-bc && mvn spring-boot:run
+# Maven 启动示例
 cd mms-usercenter-bc/mms-usercenter-bc-server && mvn spring-boot:run
 cd mms-base-bc/mms-base-bc-server && mvn spring-boot:run
 cd mms-job-bc/mms-job-bc-server && mvn spring-boot:run
-
-# 方式2: 使用IDE启动
-# 分别运行各服务的启动类
+cd mms-gateway-bc && mvn spring-boot:run
 ```
 
-### 6. 访问服务
+或在 IDE 中运行各 `*Application` 启动类。
 
-- **网关地址**: http://localhost:5092
-- **API文档** (通过网关访问):
-  - 用户中心文档: http://localhost:5092/usercenter/doc.html
-  - 基础数据文档: http://localhost:5092/base/doc.html
-  - 作业服务文档: http://localhost:5092/job/doc.html
+### 6. 访问
+
+| 入口 | 地址 |
+|------|------|
+| 网关 | http://localhost:5092 |
+| API 前缀 | `/api/usercenter/**`、`/api/base/**`、`/api/job/**` |
+| WebSocket | `ws://localhost:5092/ws/{service}/...` |
+| Knife4j（经网关） | http://localhost:5092/api/usercenter/doc.html |
+| | http://localhost:5092/api/base/doc.html |
+| | http://localhost:5092/api/job/doc.html |
+
+Swagger 文档地址以各服务 Nacos 中 `springdoc.swagger-ui.url` 及网关 `swagger.gateway-url` 为准。
+
+## 公共模块能力摘要
+
+| 模块 | 能力 |
+|------|------|
+| `mms-common-bc-core` | `Response`、`BusinessException`、错误码、TraceId、工具类 |
+| `mms-common-bc-webmvc` | 全局 Web 能力、`UserContextUtils`、`FileDownloadService` |
+| `mms-common-bc-security-*` | JWT、网关签名校验、`@RequiresPermission`、认证过滤器 |
+| `mms-common-bc-cache` | Redis 封装 |
+| `mms-common-bc-datasource` | MyBatis Plus 自动配置 |
+| `mms-common-bc-threadpool` | 线程池属性与自动装配 |
+| `mms-common-bc-job` | 任务执行约定、`JobExecuteController` |
+| `mms-common-bc-websocket` | 握手鉴权、会话注册、消息推送 |
+| `mms-common-bc-document` | `ExcelExportService` |
+| `mms-common-bc-mq-rocket` | RocketMQ Spring 集成（封装进行中） |
+
+业务 BC 父 POM 当前依赖 **`mms-common-bc-mq-rocket`**（传递依赖 `mq-api`）。Kafka 模块为预留，未接入业务。
+
+更细的能力清单与代码入口见仓库内 **`prompt/`** 目录（面向开发与 AI 辅助维护的项目文档）。
+
+## 安全架构
+
+### JWT + RSA 网关签名
+
+1. 网关校验 JWT（签名、过期、黑名单）
+2. 网关使用 **RSA 私钥** 对用户信息 + 时间戳签名，写入请求头
+3. 下游使用 **RSA 公钥** 验签，信任透传身份并加载权限
+4. `SecurityContext` 仅存最小认证信息；完整用户资料通过 Feign 查询 usercenter
+
+### Token
+
+- 访问令牌 + 刷新令牌（刷新令牌可走 HttpOnly Cookie）
+- Redis 黑名单支持强制失效
+
+### 密钥生成
+
+```bash
+mvn clean compile -pl mms-common-bc/mms-common-bc-security/mms-common-bc-security-core
+# 运行 RsaKeyGenerator（具体类路径以 security-core 模块为准）
+```
+
+将生成的公私钥分别配置到 Nacos（网关私钥、下游 `secret-*.yaml` 公钥）。
 
 ## 开发说明
 
-### 项目特点
+### 模块命名
 
-- ✅ **Maven多模块管理**: 统一依赖版本，模块职责清晰
-- ✅ **微服务架构**: 服务独立部署，支持水平扩展
-- ✅ **统一认证**: 网关统一JWT验证 + RSA数字签名，支持Token刷新
-- ✅ **安全防护**: Token黑名单机制，防JWT盗用攻击
-- ✅ **服务治理**: 基于Nacos实现服务注册与发现、配置中心
-- ✅ **多环境配置**: 支持DEV/TEST/PROD环境配置分离
-- ✅ **API文档**: 集成Knife4j，自动生成Swagger文档
-- ✅ **统一响应**: 全局统一Response格式和异常处理
-- ✅ **链路追踪**: 全链路TraceId追踪请求链路
-- ✅ **数据库设计**: 完整的RBAC权限模型，支持逻辑删除和审计
-- ✅ **开发规范**: 统一的代码分层和命名规范
+- 业务组件：`mms-{domain}-bc`
+- 分层：`common` / `controller` / `service` / `server` / `feign-api`
+- 公共能力：`mms-common-bc-{能力}`
+
+### 分层职责
+
+- **controller**：参数校验、`Response<T>` 返回
+- **service**：业务与事务（`@Transactional(rollbackFor = Exception.class)`）
+- **mapper**：持久化
 
 ### 服务间调用
-
-使用OpenFeign进行服务间调用：
 
 ```java
 @FeignClient(name = "usercenter", path = "/usercenter/api/user")
@@ -251,137 +334,36 @@ public interface UserCenterFeignClient {
 }
 ```
 
-### 数据库操作
+实际 `path` 需与各服务 `context-path`、网关路由一致。
 
-使用MyBatis Plus进行数据库操作，支持：
-- 自动填充创建时间、更新时间
-- 逻辑删除
-- 分页查询
-- 条件构造器
+### 消息队列（进行中）
 
-### 安全架构说明
-
-项目采用多层次安全防护体系：
-
-#### JWT + RSA签名双重认证
-- **网关层**: 验证JWT Token完整性，使用RSA私钥对用户信息生成数字签名
-- **服务层**: 验证网关RSA签名，确保请求来自可信网关
-- **优势**: 防止请求头篡改、防止绕过网关直接访问、轻量级高性能验证
-
-#### Token管理机制
-- **双Token设计**: 访问令牌(Access Token) + 刷新令牌(Refresh Token)
-- **黑名单机制**: 支持Token强制失效，防止JWT盗用
-- **自动刷新**: 支持Token自动续期，提升用户体验
-
-### 开发规范
-
-1. **模块命名**: `mms-{module}-bc-{layer}`
-   - `bc`: Business Component（业务组件）
-   - `layer`: common/controller/service/server/feign-api
-
-2. **代码分层**:
-   - `common`: 实体、DTO、VO等
-   - `controller`: REST接口层
-   - `service`: 业务逻辑层
-   - `server`: 启动类与配置
-   - `feign-api`: Feign客户端接口
-
-3. **统一响应格式**: 使用 `Response<T>` 封装返回结果
-
-4. **异常处理**: 使用 `BusinessException` 和 `ServerException`，由全局异常处理器统一处理
-
-5. **数据库规范**:
-   - 所有表使用逻辑删除(`deleted`字段)
-   - 审计字段: `create_by`, `create_time`, `update_by`, `update_time`
-   - 索引优化: 主键索引、状态索引、时间索引
-
-## 配置文件说明
-
-项目使用Nacos作为配置中心，各服务的 `application.yml` 仅包含基础配置：
-- 服务名
-- 环境配置
-- Nacos连接信息
-
-具体业务配置（数据库连接、JWT密钥等）需在Nacos配置中心配置。
-
-### 关键对接点（与前端/调用方）
-
-- **网关路由前缀**：
-  - `/usercenter/**` → `lb://usercenter`（StripPrefix=1）
-  - `/base/**` → `lb://base`（StripPrefix=1）
-  - `/job/**` → `lb://job`（StripPrefix=1）
-- **Swagger/Knife4j（通过网关）**：`http://localhost:5092/{service}/doc.html`
-
-### 网关签名配置
-
-项目使用RSA数字签名机制，确保微服务间通信的安全性：
-
-1. **生成RSA密钥对**：
-   ```bash
-   # 编译项目后运行密钥生成工具类
-   mvn clean compile
-   java -cp target/classes com.mms.common.security.utils.RsaKeyGenerator
-   ```
-
-2. **配置网关签名密钥**（在Nacos配置中心）：
-   ```yaml
-   # public-DEV.yaml 或 gateway-DEV.yaml
-   gateway:
-     signature:
-       # RSA私钥（Base64编码的PKCS#8格式），仅网关持有
-       private-key: <生成的私钥>
-       # RSA公钥（Base64编码的X.509格式），各下游服务持有
-       public-key: <生成的公钥>
-       # 签名时间戳有效期（毫秒），默认5分钟，用于防重放攻击
-       timestamp-validity: 300000
-   ```
-
-3. **安全工作流程**：
-   - **请求进入**: 网关验证JWT Token完整性（签名、过期、黑名单检查）
-   - **签名生成**: 使用RSA私钥对用户信息和时间戳生成数字签名
-   - **信息透传**: 将用户信息和签名通过请求头传递给下游服务
-   - **签名验证**: 下游服务使用RSA公钥验证签名，确保请求来自可信网关
-   - **权限加载**: 服务层信任透传的用户信息，直接加载用户权限
-
-4. **安全优势**：
-   - ✅ **防篡改**: RSA签名确保用户信息不被中间人修改
-   - ✅ **防绕过**: 必须通过网关获取有效签名才能访问服务
-   - ✅ **轻量级**: 比JWT更轻量的签名验证机制
-   - ✅ **高性能**: 非对称加密签名验证性能优秀
+- 应用依赖：`rocketmq-spring-boot-starter` **2.3.5**（父 POM 统一管理）
+- 建议自建 Broker：**RocketMQ 5.3.x** 二进制包
+- 配置：在 Nacos 增加 `mq-{profile}.yaml`，并在业务服务 `spring.config.import` 中引用（usercenter 等已预留 import）
 
 ## 目录说明
 
-- `mysql/`: 数据库初始化脚本
-- `logs/`: 服务运行日志文件（按服务分别存储）
-- `nacos/`: Nacos 配置示例（DEV环境，便于本地复现/学习）
-- `mms-common-bc/`: 公共组件模块（核心工具类、Web配置、安全组件等）
-- `mms-gateway-bc/`: API网关服务（路由、鉴权、签名验证）
-- `mms-usercenter-bc/`: 用户中心服务（用户管理、权限控制）
-- `mms-base-bc/`: 基础数据服务（数据字典、系统配置）
-- `LICENSE`: 项目许可证文件
+| 目录 | 说明 |
+|------|------|
+| `mysql/` | 全量初始化与 `prod/` 增量脚本 |
+| `nacos/` | DEV 配置模板 |
+| `script/` | 前后端发布、版本切换、服务重启、日志查看 |
+| `prompt/` | 架构、鉴权、能力清单、任务入口索引（维护用） |
+| `logs/` | 运行日志（按服务，本地运行时生成） |
 
 ## 学习建议
 
-这个项目非常适合以下学习场景：
-
-- **微服务架构学习**: Spring Cloud全家桶实战项目
-- **安全认证开发**: JWT + RSA签名双重认证机制
-- **企业级开发**: 完整的RBAC权限模型和数据库设计
-- **代码规范实践**: Maven多模块管理，统一开发规范
-- **生产环境部署**: Nacos配置中心，多环境支持
-
-**推荐学习路径**:
-1. 先了解项目整体架构和数据库设计
-2. 按模块学习：common → gateway → usercenter → base
-3. 重点掌握JWT认证和RSA签名机制
-4. 实践数据库操作和业务逻辑开发
+1. 阅读 `prompt/索引.md` → `架构/项目总览.md` → `安全/鉴权链路.md`
+2. 从 `mms-common-bc-core`、网关过滤器、usercenter 登录链路入手
+3. 再阅读 base 附件/字典、job 调度实现
 
 ## 联系方式
 
-- **开发团队**: MMS开发团队
-- **邮箱**: 2722562862@qq.com
-- **项目主页**: https://github.com/city-of-star/MyManagementSystem-Backend
+- **开发团队**：MMS 开发团队
+- **邮箱**：2722562862@qq.com
+- **项目主页**：https://github.com/city-of-star/MyManagementSystem-Backend
 
 ## 许可证
 
-本项目采用 [MIT License](LICENSE) 许可证，详见LICENSE文件
+本项目采用 [MIT License](LICENSE)。
