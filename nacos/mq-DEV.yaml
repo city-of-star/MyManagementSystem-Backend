@@ -1,0 +1,14 @@
+# 消息队列配置
+mms:
+  mq:
+    # 是否启用
+    enabled: false
+
+# rocketmq配置
+rocketmq:
+  name-server: 127.0.0.1:9876
+  producer:
+    group: mms_producer
+    send-message-timeout: 3000
+    retry-times-when-send-failed: 2
+    retry-times-when-send-async-failed: 2
