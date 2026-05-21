@@ -17,7 +17,8 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 public class MmsMqProperties {
 
     /**
-     * 是否启用 RocketMQ 发送能力；false 时使用 NoOp 实现
+     * 是否启用 MMS MQ 能力（发送与消费者）。
+     * 显式配置为 false 时使用 NoOp 发送并关闭 @MmsRocketListener 消费者。
      */
-    private boolean enabled = false;
+    private boolean enabled = true;
 }

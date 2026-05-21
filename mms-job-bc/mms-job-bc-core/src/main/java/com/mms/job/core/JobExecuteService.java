@@ -1,17 +1,20 @@
 package com.mms.job.core;
 
-import com.mms.common.core.response.Response;
-import com.mms.common.core.utils.IdUtils;
-import com.mms.common.job.dto.JobExecuteDto;
+import com.mms.common.mq.api.constants.MqTagConstants;
+import com.mms.common.mq.api.constants.MqTopicConstants;
+import com.mms.common.mq.api.enums.MqSendStatus;
+import com.mms.common.mq.api.message.MqMessage;
+import com.mms.common.mq.api.service.MqSendService;
+import com.mms.common.job.dto.JobExecuteDispatchPayload;
 import com.mms.job.common.entity.JobEntity;
 import com.mms.job.common.entity.JobRunLogEntity;
 import com.mms.job.core.mapper.JobRunLogMapper;
+import com.mms.common.core.utils.IdUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.RestTemplate;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -21,8 +24,8 @@ import java.util.Objects;
 /**
  * 实现功能【定时任务执行服务】
  * <p>
- *
- * <p>
+ * 通过 MQ 将执行指令投递至目标业务服务（Tag 为 serviceName），结果由 {@code JobExecuteResultMqListener} 异步回写。
+ * </p>
  *
  * @author li.hongyu
  * @date 2026-02-25 11:07:14
@@ -31,34 +34,27 @@ import java.util.Objects;
 @Service
 public class JobExecuteService {
 
-    /**
-     * 定时任务线程池
-     */
     @Resource(name = "schedulerTaskExecutor")
     private ThreadPoolTaskExecutor schedulerTaskExecutor;
 
     @Resource
-    private RestTemplate restTemplate;
+    private MqSendService mqSendService;
 
     @Resource
     private JobRunLogMapper jobRunLogMapper;
 
     /**
-     * 同步执行任务（在当前线程中执行）
-     *
-     * @param job 任务定义实体
+     * 投递任务执行消息至目标业务服务
      */
     public void execute(JobEntity job) {
         if (job == null) {
             return;
         }
-        // 未启用的任务直接跳过
         if (!Objects.equals(job.getEnabled(), 1)) {
             log.info("定时任务未启用，跳过执行，jobId={}，jobCode={}", job.getId(), job.getJobCode());
             return;
         }
 
-        // 服务名和任务类型不能为空
         String serviceName = job.getServiceName();
         String jobType = job.getJobType();
         if (!StringUtils.hasText(serviceName)) {
@@ -70,47 +66,40 @@ public class JobExecuteService {
             return;
         }
 
-        // 组装请求
-        JobExecuteDto dto = new JobExecuteDto();
-        dto.setJobType(jobType);
-        dto.setParamsJson(job.getParamsJson());
-        dto.setJobId(job.getId());
         String runId = IdUtils.timestampId();
-        dto.setRequestId(runId);
-        // 拼接url
-        String url = "http://gateway/api/" + serviceName + "/internal/job/execute";
-
-        long start = System.currentTimeMillis();
-        // 记录执行开始日志
         JobRunLogEntity runLog = createStartRunLog(job, runId);
+
+        JobExecuteDispatchPayload payload = new JobExecuteDispatchPayload();
+        payload.setJobId(job.getId());
+        payload.setJobType(jobType);
+        payload.setParamsJson(job.getParamsJson());
+        payload.setRequestId(runId);
+        payload.setRunLogId(runLog.getId());
+
+        MqMessage<JobExecuteDispatchPayload> message = MqMessage.<JobExecuteDispatchPayload>builder()
+                .eventType(MqTagConstants.JOB_EXECUTE)
+                .messageKey(runId)
+                .payload(payload)
+                .build();
+
         try {
-            log.info("开始定时任务远程调用，serviceName={}，url={}，jobId={}，jobCode={}，jobType={}", serviceName, url, job.getId(), job.getJobCode(), jobType);
-            Response<?> response = restTemplate.postForObject(url, dto, Response.class);
-            long cost = System.currentTimeMillis() - start;
-            if (response == null) {
-                log.error("定时任务远程调用返回为空，视为失败，jobId={}，jobCode={}，耗时={}ms", job.getId(), job.getJobCode(), cost);
-                markFail(runLog.getId(), cost, "远程调用返回为空", getStackTrace(new RuntimeException("remote response is null")));
+            log.info("投递定时任务 MQ，serviceName={}，jobId={}，jobCode={}，jobType={}，runLogId={}",
+                    serviceName, job.getId(), job.getJobCode(), jobType, runLog.getId());
+            var sendResult = mqSendService.send(MqTopicConstants.JOB, serviceName, message);
+            if (sendResult.getStatus() == MqSendStatus.SKIPPED) {
+                log.warn("MQ 未启用，任务未实际投递，jobId={}，jobCode={}", job.getId(), job.getJobCode());
+                markFail(runLog.getId(), 0L, "MQ 未启用，无法投递任务执行消息", null);
                 return;
             }
-            if (!Objects.equals(response.getCode(), Response.SUCCESS_CODE)) {
-                log.error("定时任务远程调用失败，jobId={}，jobCode={}，耗时={}ms，错误信息={}", job.getId(), job.getJobCode(), cost, response.getMessage());
-                String stack = getStackTrace(new RuntimeException("remote job failed, code=" + response.getCode() + ", message=" + response.getMessage()));
-                markFail(runLog.getId(), cost, response.getMessage(), stack);
-                return;
+            if (sendResult.getStatus() != MqSendStatus.SUCCESS) {
+                markFail(runLog.getId(), 0L, "MQ 投递失败", null);
             }
-            log.info("定时任务远程调用成功，jobId={}，jobCode={}，耗时={}ms", job.getId(), job.getJobCode(), cost);
-            markSuccess(runLog.getId(), response.getData().toString(), cost);
         } catch (Exception e) {
-            long cost = System.currentTimeMillis() - start;
-            log.error("定时任务远程调用异常，jobId={}，jobCode={}，耗时={}ms，错误：{}", job.getId(), job.getJobCode(), cost, e.getMessage(), e);
-            markFail(runLog.getId(), cost, e.getMessage(), getStackTrace(e));
-            // TODO: 后续可以在这里失败重试、告警通知等
+            log.error("定时任务 MQ 投递异常，jobId={}，jobCode={}，错误：{}", job.getId(), job.getJobCode(), e.getMessage(), e);
+            markFail(runLog.getId(), 0L, e.getMessage(), getStackTrace(e));
         }
     }
 
-    /**
-     * 异步提交任务到线程池执行
-     */
     public void submitAsync(JobEntity job) {
         if (job == null) {
             return;
@@ -118,9 +107,6 @@ public class JobExecuteService {
         schedulerTaskExecutor.submit(() -> execute(job));
     }
 
-    /**
-     * 创建并插入一条“开始执行”的运行日志
-     */
     private JobRunLogEntity createStartRunLog(JobEntity job, String runId) {
         JobRunLogEntity logEntity = new JobRunLogEntity();
         logEntity.setJobId(job.getId());
@@ -134,31 +120,6 @@ public class JobExecuteService {
         return logEntity;
     }
 
-    /**
-     * 标记执行成功（仅当当前状态仍为 running 时才更新，避免覆盖人工终止等状态）
-     */
-    private void markSuccess(Long logId, String resultJson, long durationMs) {
-        JobRunLogEntity current = jobRunLogMapper.selectById(logId);
-        if (current == null) {
-            log.warn("标记执行成功时未找到执行记录，logId={}", logId);
-            return;
-        }
-        if (!"running".equals(current.getStatus())) {
-            log.info("执行记录当前状态为 {}，不再覆盖为 success，logId={}", current.getStatus(), logId);
-            return;
-        }
-        JobRunLogEntity entity = new JobRunLogEntity();
-        entity.setId(logId);
-        entity.setResultJson(resultJson);
-        entity.setStatus("success");
-        entity.setEndTime(LocalDateTime.now());
-        entity.setDurationMs(durationMs);
-        jobRunLogMapper.updateById(entity);
-    }
-
-    /**
-     * 标记执行失败（仅当当前状态仍为 running 时才更新，避免覆盖人工终止等状态）
-     */
     private void markFail(Long logId, long durationMs, String errorMsg, String errorStack) {
         JobRunLogEntity current = jobRunLogMapper.selectById(logId);
         if (current == null) {
@@ -179,9 +140,6 @@ public class JobExecuteService {
         jobRunLogMapper.updateById(entity);
     }
 
-    /**
-     * 获取实例ID
-     */
     private String getInstanceId() {
         try {
             return InetAddress.getLocalHost().getHostName();
@@ -191,9 +149,6 @@ public class JobExecuteService {
         }
     }
 
-    /**
-     * 获取Host
-     */
     private String getHost() {
         try {
             return InetAddress.getLocalHost().getHostAddress();
@@ -203,9 +158,6 @@ public class JobExecuteService {
         }
     }
 
-    /**
-     * 将异常堆栈转换为字符串，方便存入数据库
-     */
     private String getStackTrace(Throwable e) {
         if (e == null) {
             return null;
