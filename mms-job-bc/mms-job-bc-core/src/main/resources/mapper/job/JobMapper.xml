@@ -79,6 +79,7 @@
         SET next_run_time = #{nextRunTime}
         WHERE id = #{id}
           AND deleted = 0
+          AND next_run_time = #{oldNextRunTime}
     </update>
 
 </mapper>

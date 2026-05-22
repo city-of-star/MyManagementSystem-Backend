@@ -45,5 +45,5 @@ public interface JobMapper extends BaseMapper<JobEntity> {
      * @param id          任务ID
      * @param nextRunTime 下一次触发时间
      */
-    int updateNextRunTime(@Param("id") Long id, @Param("nextRunTime") LocalDateTime nextRunTime);
+    int updateNextRunTime(@Param("id") Long id, @Param("nextRunTime") LocalDateTime nextRunTime, @Param("oldNextRunTime") LocalDateTime oldNextRunTime);
 }
