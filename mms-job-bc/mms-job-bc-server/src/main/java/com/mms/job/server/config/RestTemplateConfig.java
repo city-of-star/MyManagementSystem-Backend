@@ -7,7 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.web.client.RestTemplate;
 
 /**
- * 实现功能【】
+ * 实现功能【LoadBalanced RestTemplate 配置】
  * <p>
  *
  * </p>

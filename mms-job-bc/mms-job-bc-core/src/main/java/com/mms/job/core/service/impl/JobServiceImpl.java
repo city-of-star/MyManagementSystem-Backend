@@ -8,6 +8,7 @@ import com.mms.common.core.exceptions.ServerException;
 import com.mms.common.core.response.Response;
 import com.mms.common.job.dto.JobValidateDto;
 import com.mms.job.common.dto.*;
+import com.mms.job.common.constant.JobInternalGatewayUrls;
 import com.mms.job.common.entity.JobEntity;
 import com.mms.job.common.vo.JobVo;
 import com.mms.job.core.JobExecuteService;
@@ -327,7 +328,7 @@ public class JobServiceImpl implements JobService {
         dto.setJobType(jobType);
         dto.setParamsJson(paramsJson);
         // 拼接url
-        String url = "http://gateway/api/" + serviceName + "/internal/job/validate";
+        String url = JobInternalGatewayUrls.validateUrl(serviceName);
         try {
             Response<?> response = restTemplate.postForObject(url, dto, Response.class);
             if (response != null && !Objects.equals(response.getCode(), Response.SUCCESS_CODE)) {

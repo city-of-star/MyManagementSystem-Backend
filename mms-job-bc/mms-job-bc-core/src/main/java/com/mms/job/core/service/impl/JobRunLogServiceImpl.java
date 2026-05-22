@@ -8,6 +8,7 @@ import com.mms.job.common.dto.JobRunLogBatchDeleteDto;
 import com.mms.job.common.dto.JobRunLogPageQueryDto;
 import com.mms.job.common.entity.JobEntity;
 import com.mms.job.common.entity.JobRunLogEntity;
+import com.mms.job.common.enums.JobRunStatusEnum;
 import com.mms.job.core.JobExecuteService;
 import com.mms.job.core.mapper.JobMapper;
 import com.mms.job.core.mapper.JobRunLogMapper;
@@ -134,9 +135,7 @@ public class JobRunLogServiceImpl implements JobRunLogService {
             if (logEntity == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "定时任务执行记录不存在");
             }
-            // 仅当状态为 fail / timeout / skip 时允许重试
-            String status = logEntity.getStatus();
-            if (!"fail".equals(status) && !"timeout".equals(status) && !"skip".equals(status)) {
+            if (!JobRunStatusEnum.isRetryable(logEntity.getStatus())) {
                 throw new BusinessException(ErrorCode.INVALID_OPERATION, "仅失败、超时或已跳过的执行记录支持重试");
             }
             Long jobId = logEntity.getJobId();
@@ -170,7 +169,7 @@ public class JobRunLogServiceImpl implements JobRunLogService {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "定时任务执行记录不存在");
             }
             // 仅 running 状态允许终止
-            if (!Objects.equals(logEntity.getStatus(), "running")) {
+            if (!JobRunStatusEnum.RUNNING.matches(logEntity.getStatus())) {
                 throw new BusinessException(ErrorCode.INVALID_OPERATION, "仅运行中的执行记录支持终止");
             }
             LocalDateTime now = LocalDateTime.now();
@@ -181,7 +180,7 @@ public class JobRunLogServiceImpl implements JobRunLogService {
             JobRunLogEntity update = new JobRunLogEntity();
             update.setId(logId);
             // 这里用 skip 状态表示“被人工终止/跳过”
-            update.setStatus("skip");
+            update.setStatus(JobRunStatusEnum.SKIP.getCode());
             update.setEndTime(now);
             update.setDurationMs(durationMs);
             update.setErrorMessage("执行被人工终止");

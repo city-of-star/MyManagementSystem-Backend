@@ -3,8 +3,10 @@ package com.mms.job.core;
 import com.mms.common.core.response.Response;
 import com.mms.common.core.utils.IdUtils;
 import com.mms.common.job.dto.JobExecuteDto;
+import com.mms.job.common.constant.JobInternalGatewayUrls;
 import com.mms.job.common.entity.JobEntity;
 import com.mms.job.common.entity.JobRunLogEntity;
+import com.mms.job.common.enums.JobRunStatusEnum;
 import com.mms.job.core.mapper.JobRunLogMapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -78,7 +80,7 @@ public class JobExecuteService {
         String runId = IdUtils.timestampId();
         dto.setRequestId(runId);
         // 拼接url
-        String url = "http://gateway/api/" + serviceName + "/internal/job/execute";
+        String url = JobInternalGatewayUrls.executeUrl(serviceName);
 
         long start = System.currentTimeMillis();
         // 记录执行开始日志
@@ -126,7 +128,7 @@ public class JobExecuteService {
         logEntity.setJobId(job.getId());
         logEntity.setJobName(job.getJobName());
         logEntity.setRunId(runId);
-        logEntity.setStatus("running");
+        logEntity.setStatus(JobRunStatusEnum.RUNNING.getCode());
         logEntity.setStartTime(LocalDateTime.now());
         logEntity.setInstanceId(getInstanceId());
         logEntity.setHost(getHost());
@@ -143,14 +145,14 @@ public class JobExecuteService {
             log.warn("标记执行成功时未找到执行记录，logId={}", logId);
             return;
         }
-        if (!"running".equals(current.getStatus())) {
+        if (!JobRunStatusEnum.RUNNING.matches(current.getStatus())) {
             log.info("执行记录当前状态为 {}，不再覆盖为 success，logId={}", current.getStatus(), logId);
             return;
         }
         JobRunLogEntity entity = new JobRunLogEntity();
         entity.setId(logId);
         entity.setResultJson(resultJson);
-        entity.setStatus("success");
+        entity.setStatus(JobRunStatusEnum.SUCCESS.getCode());
         entity.setEndTime(LocalDateTime.now());
         entity.setDurationMs(durationMs);
         jobRunLogMapper.updateById(entity);
@@ -165,13 +167,13 @@ public class JobExecuteService {
             log.warn("标记执行失败时未找到执行记录，logId={}", logId);
             return;
         }
-        if (!"running".equals(current.getStatus())) {
+        if (!JobRunStatusEnum.RUNNING.matches(current.getStatus())) {
             log.info("执行记录当前状态为 {}，不再覆盖为 fail，logId={}", current.getStatus(), logId);
             return;
         }
         JobRunLogEntity entity = new JobRunLogEntity();
         entity.setId(logId);
-        entity.setStatus("fail");
+        entity.setStatus(JobRunStatusEnum.FAIL.getCode());
         entity.setEndTime(LocalDateTime.now());
         entity.setDurationMs(durationMs);
         entity.setErrorMessage(errorMsg);
