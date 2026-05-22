@@ -12,7 +12,7 @@ package com.mms.common.mq.api.constants;
 public final class MqConsumerGroupNames {
 
     /**
-     * 作业触发执行消费组
+     * 定时任务触发执行消费组
      */
     public static final String JOB_RUN = "${spring.application.name}_job_run_consumer";
 

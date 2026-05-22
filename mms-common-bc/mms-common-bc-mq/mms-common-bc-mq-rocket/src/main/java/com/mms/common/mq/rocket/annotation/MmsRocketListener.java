@@ -14,8 +14,7 @@ import java.lang.annotation.Target;
 /**
  * 实现功能【MMS RocketMQ 监听器声明注解】
  * <p>
- * 对 {@link RocketMQMessageListener} 的别名封装，统一 topic / tag / consumerGroup 写法。
- * 监听器类需同时标注 {@code @Component}，并在 {@code mms.mq.enabled=true} 时生效。
+ * 对 {@link RocketMQMessageListener} 的别名封装，统一 topic / tag / consumerGroup 写法
  * </p>
  *
  * @author li.hongyu

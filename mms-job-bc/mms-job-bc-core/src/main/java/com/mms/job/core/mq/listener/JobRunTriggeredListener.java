@@ -49,16 +49,16 @@ public class JobRunTriggeredListener extends AbstractMqMessageListener<JobRunMqP
     protected void handleMessage(MqMessage<JobRunMqPayload> message) {
         JobRunMqPayload payload = message.getPayload();
         if (payload == null || payload.getJobId() == null) {
-            log.warn("作业触发消息缺少 jobId，忽略 messageKey={}", message.getMessageKey());
+            log.warn("定时任务触发消息缺少 jobId，忽略 messageKey={}", message.getMessageKey());
             return;
         }
         Long jobId = payload.getJobId();
         JobEntity job = jobMapper.selectById(jobId);
         if (job == null) {
-            log.warn("作业不存在，跳过消费 jobId={}", jobId);
+            log.warn("定时任务不存在，跳过消费 jobId={}", jobId);
             return;
         }
         jobExecuteService.submitAsync(job);
-        log.info("MQ 触发作业已提交异步执行 jobId={}, jobCode={}", jobId, job.getJobCode());
+        log.info("MQ 触发定时任务已提交异步执行 jobId={}, jobCode={}", jobId, job.getJobCode());
     }
 }

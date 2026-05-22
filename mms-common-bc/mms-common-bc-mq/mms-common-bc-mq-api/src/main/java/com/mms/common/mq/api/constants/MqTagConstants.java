@@ -17,7 +17,7 @@ public final class MqTagConstants {
     public static final String PING = "ping";
 
     /**
-     * 作业触发执行
+     * 定时任务触发执行
      */
     public static final String JOB_RUN_TRIGGERED = "job_run_triggered";
 

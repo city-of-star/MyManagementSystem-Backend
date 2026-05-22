@@ -12,11 +12,6 @@ package com.mms.common.mq.api.constants;
 public final class MqTopicConstants {
 
     /**
-     * 作业域 Topic
-     */
-    public static final String JOB = "mms_job";
-
-    /**
      * 用户中心域 Topic
      */
     public static final String USERCENTER = "mms_usercenter";
@@ -25,6 +20,11 @@ public final class MqTopicConstants {
      * 基础数据域 Topic
      */
     public static final String BASE = "mms_base";
+
+    /**
+     * 定时任务域 Topic
+     */
+    public static final String JOB = "mms_job";
 
     private MqTopicConstants() {
         throw new UnsupportedOperationException("常量类不允许实例化");

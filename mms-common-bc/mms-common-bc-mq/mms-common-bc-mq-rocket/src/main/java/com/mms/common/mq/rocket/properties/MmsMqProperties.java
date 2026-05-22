@@ -19,5 +19,5 @@ public class MmsMqProperties {
     /**
      * 是否启用 RocketMQ 发送能力；false 时使用 NoOp 实现
      */
-    private boolean enabled = false;
+    private boolean enabled = true;
 }
