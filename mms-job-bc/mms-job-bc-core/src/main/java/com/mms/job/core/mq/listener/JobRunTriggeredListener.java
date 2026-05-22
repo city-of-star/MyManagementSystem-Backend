@@ -12,8 +12,7 @@ import com.mms.job.core.JobExecuteService;
 import com.mms.job.core.mapper.JobMapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.rocketmq.spring.core.RocketMQTemplate;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 /**
@@ -27,7 +26,7 @@ import org.springframework.stereotype.Component;
  */
 @Slf4j
 @Component
-@ConditionalOnBean(RocketMQTemplate.class)
+@ConditionalOnProperty(prefix = "mms.mq", name = "enabled", havingValue = "true")
 @MmsRocketListener(
         topic = MqTopicConstants.JOB,
         tag = MqTagConstants.JOB_RUN_TRIGGERED,

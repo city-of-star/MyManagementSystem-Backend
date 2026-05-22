@@ -2,13 +2,10 @@ package com.mms.common.job.config;
 
 import com.mms.common.job.JobHandler;
 import com.mms.common.job.JobHandlerRegistry;
-import com.mms.common.job.execute.JobExecuteExecutor;
-import com.mms.common.job.mq.JobExecuteMqListener;
-import com.mms.common.job.web.JobValidateController;
+import com.mms.common.job.web.JobExecuteController;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 
 import java.util.List;
 
@@ -16,27 +13,26 @@ import java.util.List;
  * 实现功能【定时任务组件自动装配配置】
  * <p>
  *
- * </p>
+ * <p>
  *
  * @author li.hongyu
  * @date 2026-03-03 15:25:43
  */
 @Configuration
-@Import(JobExecuteMqListener.class)
 public class JobAutoConfiguration {
 
+    /**
+     * 创建 定时任务执行入口 Bean
+     */
     @Bean
-    @ConditionalOnMissingBean
-    public JobExecuteExecutor jobExecuteExecutor(JobHandlerRegistry jobHandlerRegistry) {
-        return new JobExecuteExecutor(jobHandlerRegistry);
+    @ConditionalOnMissingBean(JobExecuteController.class)
+    public JobExecuteController jobExecuteController(JobHandlerRegistry jobHandlerRegistry) {
+        return new JobExecuteController(jobHandlerRegistry);
     }
 
-    @Bean
-    @ConditionalOnMissingBean(JobValidateController.class)
-    public JobValidateController jobValidateController(JobExecuteExecutor jobExecuteExecutor) {
-        return new JobValidateController(jobExecuteExecutor);
-    }
-
+    /**
+     * 创建 定时任务处理器注册中心 Bean
+     */
     @Bean
     @ConditionalOnMissingBean
     public JobHandlerRegistry jobHandlerRegistry(List<JobHandler> handlers) {

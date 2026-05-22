@@ -44,10 +44,6 @@
             <groupId>com.mms</groupId>
             <artifactId>mms-job-bc-common</artifactId>
         </dependency>
-        <dependency>
-            <groupId>com.mms</groupId>
-            <artifactId>mms-common-bc-mq-rocket</artifactId>
-        </dependency>
     </dependencies>
 
 </project>

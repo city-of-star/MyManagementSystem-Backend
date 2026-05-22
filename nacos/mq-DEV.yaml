@@ -2,7 +2,7 @@
 mms:
   mq:
     # 是否启用（启用后注册 RocketMQ 生产者与消费者）
-    enabled: true
+    enabled: false
 
 # rocketmq配置
 rocketmq:
