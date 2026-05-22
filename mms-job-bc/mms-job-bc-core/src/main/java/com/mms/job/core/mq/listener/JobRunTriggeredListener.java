@@ -12,8 +12,6 @@ import com.mms.job.core.JobExecuteService;
 import com.mms.job.core.mapper.JobMapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
 
 /**
  * 实现功能【作业触发执行 MQ 消费者】
@@ -25,8 +23,6 @@ import org.springframework.stereotype.Component;
  * @date 2026-05-19 18:00:00
  */
 @Slf4j
-@Component
-@ConditionalOnProperty(prefix = "mms.mq", name = "enabled", havingValue = "true")
 @MmsRocketListener(
         topic = MqTopicConstants.JOB,
         tag = MqTagConstants.JOB_RUN_TRIGGERED,
