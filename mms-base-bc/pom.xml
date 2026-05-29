@@ -50,6 +50,12 @@
             <artifactId>mms-common-bc-cache</artifactId>
         </dependency>
 
+        <!-- 依赖 mms-common-bc-document 模块 -->
+        <dependency>
+            <groupId>com.mms</groupId>
+            <artifactId>mms-common-bc-document</artifactId>
+        </dependency>
+
         <!-- 依赖 mms-common-bc-es 模块 -->
         <dependency>
             <groupId>com.mms</groupId>
