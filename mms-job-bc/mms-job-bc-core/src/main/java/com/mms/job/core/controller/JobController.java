@@ -1,7 +1,7 @@
 package com.mms.job.core.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.mms.common.core.constants.usercenter.PermissionConstants;
+import com.mms.common.security.servlet.constants.PermissionConstants;
 import com.mms.common.core.response.Response;
 import com.mms.common.security.servlet.annotations.RequiresPermission;
 import com.mms.job.common.dto.*;
@@ -83,7 +83,7 @@ public class JobController {
     }
 
     @Operation(summary = "执行定时任务", description = "立即触发执行一次定时任务")
-    @RequiresPermission(PermissionConstants.JOB_MANAGEMENT_UPDATE)
+    @RequiresPermission(PermissionConstants.JOB_MANAGEMENT_RUN)
     @PostMapping("/execute")
     public Response<Void> executeJob(@RequestBody @Valid JobExecuteDto dto) {
         jobService.executeJob(dto.getJobId());

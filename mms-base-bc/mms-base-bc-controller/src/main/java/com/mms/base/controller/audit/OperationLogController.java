@@ -5,7 +5,7 @@ import com.mms.base.common.audit.dto.OperationLogBatchDeleteDto;
 import com.mms.base.common.audit.dto.OperationLogPageQueryDto;
 import com.mms.base.common.audit.vo.OperationLogVo;
 import com.mms.base.service.audit.service.OperationLogService;
-import com.mms.common.core.constants.usercenter.PermissionConstants;
+import com.mms.common.security.servlet.constants.PermissionConstants;
 import com.mms.common.core.response.Response;
 import com.mms.common.core.utils.DateUtils;
 import com.mms.common.security.servlet.annotations.RequiresPermission;

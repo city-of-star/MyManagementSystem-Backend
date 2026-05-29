@@ -1,6 +1,6 @@
 package com.mms.usercenter.controller.security;
 
-import com.mms.common.core.constants.usercenter.PermissionConstants;
+import com.mms.common.security.servlet.constants.PermissionConstants;
 import com.mms.common.core.response.Response;
 import com.mms.common.security.servlet.annotations.RequiresPermission;
 import com.mms.usercenter.common.security.dto.OnlineUserForceLogoutDto;

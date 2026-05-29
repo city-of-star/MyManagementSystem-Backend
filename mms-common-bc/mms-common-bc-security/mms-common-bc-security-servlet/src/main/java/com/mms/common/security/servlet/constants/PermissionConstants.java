@@ -1,4 +1,4 @@
-package com.mms.common.core.constants.usercenter;
+package com.mms.common.security.servlet.constants;
 
 /**
  * 实现功能【权限常量类】

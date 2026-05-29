@@ -16,6 +16,11 @@ public final class MqConsumerGroupNames {
      */
     public static final String JOB_RUN = "${spring.application.name}_job_run_consumer";
 
+    /**
+     * 操作日志记录消费组
+     */
+    public static final String AUDIT_OPERATION_LOG = "${spring.application.name}_audit_operation_log_consumer";
+
     private MqConsumerGroupNames() {
         throw new UnsupportedOperationException("常量类不允许实例化");
     }

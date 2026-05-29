@@ -1,14 +1,24 @@
 package com.mms.common.webmvc.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mms.common.mq.api.service.MqSendService;
 import com.mms.common.webmvc.advice.GlobalExceptionAdvice;
+import com.mms.common.webmvc.audit.OperationLogAspect;
+import com.mms.common.webmvc.audit.OperationLogPublisher;
+import com.mms.common.webmvc.audit.OperationLogRequestBodyCacheFilter;
 import com.mms.common.webmvc.filter.TraceIdMvcFilter;
 import com.mms.common.webmvc.file.FileDownloadService;
 import com.mms.common.webmvc.file.impl.FileDownloadServiceImpl;
 import com.mms.common.webmvc.swagger.SwaggerConfig;
 import io.swagger.v3.oas.models.OpenAPI;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
@@ -20,7 +30,6 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
  * @author li.hongyu
  * @date 2026-03-03 15:34:12
  */
-
 @Configuration
 public class WebmvcAutoConfiguration {
 
@@ -75,5 +84,42 @@ public class WebmvcAutoConfiguration {
     @ConditionalOnMissingBean(FileDownloadService.class)
     public FileDownloadService fileDownloadService() {
         return new FileDownloadServiceImpl();
+    }
+
+    /**
+     * 创建 操作日志 MQ 发布器 Bean
+     */
+    @Bean
+    @ConditionalOnClass(MqSendService.class)
+    @ConditionalOnMissingBean
+    public OperationLogPublisher operationLogPublisher(MqSendService mqSendService) {
+        return new OperationLogPublisher(mqSendService);
+    }
+
+    /**
+     * 创建 操作日志采集切面 Bean
+     */
+    @Bean
+    @ConditionalOnClass(MqSendService.class)
+    @ConditionalOnMissingBean
+    @ConditionalOnBean(name = "schedulerTaskExecutor")
+    public OperationLogAspect operationLogAspect(OperationLogPublisher operationLogPublisher,
+                                                 @Qualifier("schedulerTaskExecutor") ThreadPoolTaskExecutor schedulerTaskExecutor,
+                                                 ObjectMapper objectMapper) {
+        return new OperationLogAspect(operationLogPublisher, schedulerTaskExecutor, objectMapper);
+    }
+
+    /**
+     * 创建 JSON 请求体缓存过滤器（供操作日志读取 request body）
+     */
+    @Bean
+    @ConditionalOnMissingBean(name = "operationLogRequestBodyCacheFilterRegistration")
+    public FilterRegistrationBean<OperationLogRequestBodyCacheFilter> operationLogRequestBodyCacheFilterRegistration() {
+        FilterRegistrationBean<OperationLogRequestBodyCacheFilter> registration = new FilterRegistrationBean<>();
+        registration.setFilter(new OperationLogRequestBodyCacheFilter());
+        registration.addUrlPatterns("/*");
+        registration.setName("operationLogRequestBodyCacheFilter");
+        registration.setOrder(new OperationLogRequestBodyCacheFilter().getOrder());
+        return registration;
     }
 }

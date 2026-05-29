@@ -12,7 +12,7 @@ import com.mms.usercenter.common.auth.dto.PermissionTreeQueryDto;
 import com.mms.usercenter.common.auth.dto.PermissionUpdateDto;
 import com.mms.usercenter.common.auth.vo.PermissionVo;
 import com.mms.usercenter.common.auth.vo.RoleVo;
-import com.mms.common.core.constants.usercenter.PermissionConstants;
+import com.mms.common.security.servlet.constants.PermissionConstants;
 import com.mms.usercenter.service.auth.service.PermissionService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

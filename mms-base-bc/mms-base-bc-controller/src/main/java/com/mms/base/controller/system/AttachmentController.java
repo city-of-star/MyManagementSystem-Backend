@@ -9,7 +9,7 @@ import com.mms.base.common.system.dto.AttachmentUpdateDto;
 import com.mms.base.common.system.vo.AttachmentVo;
 import com.mms.base.service.file.service.FileService;
 import com.mms.base.service.system.service.AttachmentService;
-import com.mms.common.core.constants.usercenter.PermissionConstants;
+import com.mms.common.security.servlet.constants.PermissionConstants;
 import com.mms.common.core.exceptions.ServerException;
 import com.mms.common.core.response.Response;
 import com.mms.common.security.servlet.annotations.RequiresPermission;

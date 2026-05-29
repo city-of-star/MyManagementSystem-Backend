@@ -12,7 +12,7 @@ import com.mms.usercenter.common.auth.dto.RoleStatusSwitchDto;
 import com.mms.usercenter.common.auth.dto.RoleUpdateDto;
 import com.mms.usercenter.common.auth.vo.RoleVo;
 import com.mms.usercenter.common.auth.vo.UserDetailVo;
-import com.mms.common.core.constants.usercenter.PermissionConstants;
+import com.mms.common.security.servlet.constants.PermissionConstants;
 import com.mms.usercenter.service.auth.service.RoleService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
