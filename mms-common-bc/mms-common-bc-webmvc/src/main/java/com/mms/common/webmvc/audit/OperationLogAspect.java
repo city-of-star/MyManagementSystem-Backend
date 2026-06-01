@@ -96,6 +96,7 @@ public class OperationLogAspect {
                         permissionCode,
                         userContext,
                         request,
+                        joinPoint.getArgs(),
                         httpMethod,
                         result,
                         method.getReturnType() == void.class,
@@ -120,6 +121,7 @@ public class OperationLogAspect {
                                                    String permissionCode,
                                                    UserContext userContext,
                                                    HttpServletRequest request,
+                                                   Object[] methodArgs,
                                                    String httpMethod,
                                                    Object result,
                                                    boolean voidReturn,
@@ -136,7 +138,7 @@ public class OperationLogAspect {
         payload.setRequestMethod(httpMethod);
         payload.setRequestUrl(buildRequestUrl(request));
         payload.setRequestIp(userContext.getClientIp());
-        payload.setRequestParams(OperationLogPayloadUtils.buildRequestParams(request, objectMapper));
+        payload.setRequestParams(OperationLogPayloadUtils.buildRequestParams(request, methodArgs, objectMapper));
         payload.setResponseData(OperationLogPayloadUtils.buildResponseSummary(result, voidReturn, objectMapper));
         payload.setCostMs(System.currentTimeMillis() - startMs);
         payload.setOperationTime(DateUtils.now());
