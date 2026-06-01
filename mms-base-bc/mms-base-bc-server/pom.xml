@@ -118,6 +118,13 @@
             <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
 
+        <!-- 与 rocketmq-spring-boot 2.3.5 对齐，覆盖 Spring Cloud Alibaba 传递的 5.1.4 -->
+        <dependency>
+            <groupId>org.apache.rocketmq</groupId>
+            <artifactId>rocketmq-client</artifactId>
+            <version>${rocketmq-client.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>

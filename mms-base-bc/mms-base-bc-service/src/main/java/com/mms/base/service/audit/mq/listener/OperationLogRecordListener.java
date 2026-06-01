@@ -6,12 +6,14 @@ import com.mms.common.mq.api.constants.MqConsumerGroupNames;
 import com.mms.common.mq.api.constants.MqTagConstants;
 import com.mms.common.mq.api.constants.MqTopicConstants;
 import com.mms.common.mq.api.message.MqMessage;
-import com.mms.common.mq.rocket.annotation.MmsRocketListener;
 import com.mms.common.mq.rocket.listener.AbstractMqMessageListener;
 import com.mms.common.webmvc.audit.OperationLogRecordMqPayload;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 /**
@@ -24,9 +26,11 @@ import org.springframework.util.StringUtils;
  * @date 2026-05-29 14:00:00
  */
 @Slf4j
-@MmsRocketListener(
+@Component
+@ConditionalOnProperty(prefix = "mms.mq", name = "enabled", havingValue = "true")
+@RocketMQMessageListener(
         topic = MqTopicConstants.BASE,
-        tag = MqTagConstants.AUDIT_OPERATION_LOG_RECORD,
+        selectorExpression = MqTagConstants.AUDIT_OPERATION_LOG_RECORD,
         consumerGroup = MqConsumerGroupNames.AUDIT_OPERATION_LOG
 )
 public class OperationLogRecordListener extends AbstractMqMessageListener<OperationLogRecordMqPayload> {

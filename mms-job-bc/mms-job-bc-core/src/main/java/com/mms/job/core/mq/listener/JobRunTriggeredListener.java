@@ -4,7 +4,6 @@ import com.mms.common.mq.api.constants.MqConsumerGroupNames;
 import com.mms.common.mq.api.constants.MqTagConstants;
 import com.mms.common.mq.api.constants.MqTopicConstants;
 import com.mms.common.mq.api.message.MqMessage;
-import com.mms.common.mq.rocket.annotation.MmsRocketListener;
 import com.mms.common.mq.rocket.listener.AbstractMqMessageListener;
 import com.mms.job.common.entity.JobEntity;
 import com.mms.job.common.mq.JobRunMqPayload;
@@ -12,6 +11,9 @@ import com.mms.job.core.JobExecuteService;
 import com.mms.job.core.mapper.JobMapper;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Component;
 
 /**
  * 实现功能【作业触发执行 MQ 消费者】
@@ -23,9 +25,11 @@ import lombok.extern.slf4j.Slf4j;
  * @date 2026-05-19 18:00:00
  */
 @Slf4j
-@MmsRocketListener(
+@Component
+@ConditionalOnProperty(prefix = "mms.mq", name = "enabled", havingValue = "true")
+@RocketMQMessageListener(
         topic = MqTopicConstants.JOB,
-        tag = MqTagConstants.JOB_RUN_TRIGGERED,
+        selectorExpression = MqTagConstants.JOB_RUN_TRIGGERED,
         consumerGroup = MqConsumerGroupNames.JOB_RUN
 )
 public class JobRunTriggeredListener extends AbstractMqMessageListener<JobRunMqPayload> {
