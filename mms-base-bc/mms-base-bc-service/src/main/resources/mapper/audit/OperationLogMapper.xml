@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mms.base.service.audit.mapper.OperationLogMapper">
+
+    <sql id="operationLogWhere">
+        <where>
+            <if test="dto.userId != null">
+                AND user_id = #{dto.userId}
+            </if>
+            <if test="dto.username != null and dto.username != ''">
+                AND username LIKE CONCAT('%', #{dto.username}, '%')
+            </if>
+            <if test="dto.module != null and dto.module != ''">
+                AND module LIKE CONCAT('%', #{dto.module}, '%')
+            </if>
+            <if test="dto.operationType != null and dto.operationType != ''">
+                AND operation_type = #{dto.operationType}
+            </if>
+            <if test="dto.operationStatus != null">
+                AND operation_status = #{dto.operationStatus}
+            </if>
+            <if test="dto.requestIp != null and dto.requestIp != ''">
+                AND request_ip LIKE CONCAT('%', #{dto.requestIp}, '%')
+            </if>
+            <if test="dto.traceId != null and dto.traceId != ''">
+                AND trace_id LIKE CONCAT('%', #{dto.traceId}, '%')
+            </if>
+            <if test="dto.operationTimeStart != null">
+                AND operation_time <![CDATA[ >= ]]> #{dto.operationTimeStart}
+            </if>
+            <if test="dto.operationTimeEnd != null">
+                AND operation_time <![CDATA[ <= ]]> #{dto.operationTimeEnd}
+            </if>
+        </where>
+    </sql>
+
+    <select id="getOperationLogPage" resultType="com.mms.base.common.audit.vo.OperationLogVo">
+        SELECT
+            id,
+            trace_id,
+            user_id,
+            username,
+            module,
+            operation_type,
+            operation_desc,
+            request_method,
+            request_url,
+            request_ip,
+            operation_status,
+            error_message,
+            cost_ms,
+            operation_time
+        FROM audit_operation_log
+        <include refid="operationLogWhere"/>
+        ORDER BY operation_time DESC
+    </select>
+
+    <select id="getOperationLogById" resultType="com.mms.base.common.audit.vo.OperationLogVo">
+        SELECT
+            id,
+            trace_id,
+            user_id,
+            username,
+            module,
+            operation_type,
+            operation_desc,
+            request_method,
+            request_url,
+            request_ip,
+            request_params,
+            response_data,
+            operation_status,
+            error_message,
+            cost_ms,
+            operation_time
+        FROM audit_operation_log
+        WHERE id = #{logId}
+        LIMIT 1
+    </select>
+
+</mapper>
