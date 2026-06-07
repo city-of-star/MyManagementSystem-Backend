@@ -21,6 +21,11 @@ public final class MqTagConstants {
      */
     public static final String JOB_RUN_TRIGGERED = "job_run_triggered";
 
+    /**
+     * 操作日志记录
+     */
+    public static final String AUDIT_OPERATION_LOG_RECORD = "audit_operation_log_record";
+
     private MqTagConstants() {
         throw new UnsupportedOperationException("常量类不允许实例化");
     }

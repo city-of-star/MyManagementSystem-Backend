@@ -785,7 +785,9 @@ VALUES
     (14, 'job_status', '定时任务状态', 1, 20, '定时任务状态', 0, NOW(), NOW()),
     (15, 'login_status', '登录状态', 1, 13, '用户登录操作的结果状态', 0, NOW(), NOW()),
     (16, 'login_type', '登录类型', 1, 13, '用户登录的方式或类型', 0, NOW(), NOW()),
-    (17, 'preference_value_type', '偏好值类型', 1, 21, '用户偏好配置值类型', 0, NOW(), NOW());
+    (17, 'preference_value_type', '偏好值类型', 1, 21, '用户偏好配置值类型', 0, NOW(), NOW()),
+    (18, 'operation_type', '操作类型', 1, 22, '用户操作日志的操作类型', 0, NOW(), NOW()),
+    (19, 'operation_status', '操作状态', 1, 23, '用户操作日志的操作结果状态', 0, NOW(), NOW());
 
 -- 初始化数据字典数据
 INSERT IGNORE INTO `system_dict_data` (`id`, `dict_type_id`, `dict_label`, `dict_value`, `dict_sort`, `is_default`, `status`, `remark`, `deleted`, `create_time`, `update_time`)
@@ -860,7 +862,18 @@ VALUES
     (54, 17, '字符串', 'string', 1, 1, 1, '偏好值为字符串', 0, NOW(), NOW()),
     (55, 17, '数字', 'number', 2, 0, 1, '偏好值为数字', 0, NOW(), NOW()),
     (56, 17, '布尔', 'boolean', 3, 0, 1, '偏好值为布尔值', 0, NOW(), NOW()),
-    (57, 17, 'JSON', 'json', 4, 0, 1, '偏好值为JSON字符串', 0, NOW(), NOW());
+    (57, 17, 'JSON', 'json', 4, 0, 1, '偏好值为JSON字符串', 0, NOW(), NOW()),
+    -- 操作类型
+    (58, 18, '新增', 'create', 1, 0, 1, '新增操作', 0, NOW(), NOW()),
+    (59, 18, '修改', 'update', 2, 0, 1, '修改操作', 0, NOW(), NOW()),
+    (60, 18, '删除', 'delete', 3, 0, 1, '删除操作', 0, NOW(), NOW()),
+    (61, 18, '导出', 'export', 4, 0, 1, '导出操作', 0, NOW(), NOW()),
+    (62, 18, '分配', 'assign', 5, 0, 1, '分配操作', 0, NOW(), NOW()),
+    (63, 18, '登录', 'login', 6, 0, 1, '登录操作', 0, NOW(), NOW()),
+    (64, 18, '登出', 'logout', 7, 0, 1, '登出操作', 0, NOW(), NOW()),
+    -- 操作状态
+    (65, 19, '失败', '0', 1, 0, 1, '操作失败', 0, NOW(), NOW()),
+    (66, 19, '成功', '1', 2, 1, 1, '操作成功', 0, NOW(), NOW());
 -- 初始化定时任务数据
 INSERT IGNORE INTO `job_def` (`id`,`service_name`,`job_code`,`job_name`,`job_type`,`cron_expr`,`run_mode`,`enabled`,`timeout_ms`,`remark`,`params_json`,`deleted`,`create_by`,`create_time`,`update_by`,`update_time`)
 VALUES

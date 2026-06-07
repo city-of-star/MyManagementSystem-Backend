@@ -5,8 +5,10 @@ import com.mms.common.mq.rocket.properties.MmsMqProperties;
 import com.mms.common.mq.rocket.service.impl.NoOpMqSendService;
 import com.mms.common.mq.rocket.service.impl.RocketMqSendService;
 import com.mms.common.mq.rocket.support.MqMessageSerializer;
+import org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -24,6 +26,7 @@ import org.springframework.context.annotation.Bean;
  * @date 2026-05-19 16:30:00
  */
 @AutoConfiguration
+@AutoConfigureAfter(RocketMQAutoConfiguration.class)
 @EnableConfigurationProperties(MmsMqProperties.class)
 public class RocketMqAutoConfiguration {
 

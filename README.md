@@ -338,7 +338,7 @@ public interface UserCenterFeignClient {
 
 ### 消息队列（进行中）
 
-- 应用依赖：`rocketmq-spring-boot-starter` **2.3.5**（父 POM 统一管理）
+- 应用依赖：`rocketmq-spring-boot-starter` **2.3.5**（父 POM import `rocketmq-spring-boot-parent` BOM，须在 Spring Cloud Alibaba 之前，避免 `rocketmq-client` 被锁到 5.1.4）
 - 建议自建 Broker：**RocketMQ 5.3.x** 二进制包
 - 配置：在 Nacos 增加 `mq-{profile}.yaml`，并在业务服务 `spring.config.import` 中引用（usercenter 等已预留 import）
 

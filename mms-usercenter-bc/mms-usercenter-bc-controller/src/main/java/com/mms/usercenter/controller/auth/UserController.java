@@ -5,7 +5,7 @@ import com.mms.common.security.servlet.annotations.RequiresPermission;
 import com.mms.common.core.response.Response;
 import com.mms.usercenter.common.auth.dto.*;
 import com.mms.usercenter.common.auth.vo.UserDetailVo;
-import com.mms.common.core.constants.usercenter.PermissionConstants;
+import com.mms.common.security.servlet.constants.PermissionConstants;
 import com.mms.usercenter.common.auth.vo.UserPageVo;
 import com.mms.usercenter.service.auth.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
