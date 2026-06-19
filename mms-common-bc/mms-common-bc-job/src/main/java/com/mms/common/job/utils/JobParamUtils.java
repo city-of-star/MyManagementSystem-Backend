@@ -13,7 +13,6 @@ import org.springframework.util.StringUtils;
  * 实现功能【任务参数解析工具类】
  * <p>
  * 业界常见做法：可选参数 + 默认值。JSON 可省略字段（用 DTO 默认值），但拒绝未知字段（防拼写错误）。
- * 详见 docs/任务参数设计规范.md
  * <p>
  *
  * @author li.hongyu
