@@ -23,13 +23,18 @@ import java.time.LocalTime;
  * <p>
  * 1. 提供统一的 Java 8 时间类型配置（LocalDateTime / LocalDate / LocalTime）
  * 2. 统一日期时间格式：参考 {@link DateUtils}
- * 3. 统一常用特性（是否写时间戳、是否忽略未知字段等）
- * <p>
+ * HTTP 接口响应在 webmvc 模块的 JacksonConfig 中基于 common 扩展；
+ * Spring Bean 由 {@link com.mms.common.core.config.CoreAutoConfiguration} 注册。
  *
  * @author li.hongyu
  * @date 2026-03-05 10:57:43
  */
 public final class JacksonObjectMapperUtils {
+
+    /**
+     * Spring 容器中通用 ObjectMapper 的 Bean 名称（供 {@code @Qualifier} 注入）
+     */
+    public static final String COMMON_OBJECT_MAPPER_BEAN_NAME = "commonObjectMapper";
 
     /**
      * 创建统一配置的 JavaTimeModule

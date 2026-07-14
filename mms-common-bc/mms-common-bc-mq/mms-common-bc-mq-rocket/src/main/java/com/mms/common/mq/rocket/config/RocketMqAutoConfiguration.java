@@ -1,12 +1,16 @@
 package com.mms.common.mq.rocket.config;
 
+import com.mms.common.core.config.CoreAutoConfiguration;
+import com.mms.common.core.utils.JacksonObjectMapperUtils;
 import com.mms.common.mq.api.service.MqSendService;
 import com.mms.common.mq.rocket.properties.MmsMqProperties;
 import com.mms.common.mq.rocket.service.impl.NoOpMqSendService;
 import com.mms.common.mq.rocket.service.impl.RocketMqSendService;
 import com.mms.common.mq.rocket.support.MqMessageSerializer;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.rocketmq.spring.autoconfigure.RocketMQAutoConfiguration;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -26,19 +30,20 @@ import org.springframework.context.annotation.Bean;
  * @date 2026-05-19 16:30:00
  */
 @AutoConfiguration
-@AutoConfigureAfter(RocketMQAutoConfiguration.class)
+@AutoConfigureAfter({CoreAutoConfiguration.class, RocketMQAutoConfiguration.class})
 @EnableConfigurationProperties(MmsMqProperties.class)
 public class RocketMqAutoConfiguration {
 
     @Bean
     @ConditionalOnMissingBean
-    public MqMessageSerializer mqMessageSerializer() {
-        return new MqMessageSerializer();
+    @ConditionalOnBean(name = JacksonObjectMapperUtils.COMMON_OBJECT_MAPPER_BEAN_NAME)
+    public MqMessageSerializer mqMessageSerializer(@Qualifier(JacksonObjectMapperUtils.COMMON_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper) {
+        return new MqMessageSerializer(objectMapper);
     }
 
     @Bean
     @ConditionalOnProperty(prefix = "mms.mq", name = "enabled", havingValue = "true")
-    @ConditionalOnBean(RocketMQTemplate.class)
+    @ConditionalOnBean({RocketMQTemplate.class, MqMessageSerializer.class})
     @ConditionalOnMissingBean(MqSendService.class)
     public MqSendService rocketMqSendService(RocketMQTemplate rocketMQTemplate, MqMessageSerializer mqMessageSerializer) {
         return new RocketMqSendService(rocketMQTemplate, mqMessageSerializer);

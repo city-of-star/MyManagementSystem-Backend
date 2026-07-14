@@ -103,7 +103,6 @@ public final class OperationLogPayloadUtils {
     /**
      * 沿 {@link HttpServletRequestWrapper} 链查找 {@link ContentCachingRequestWrapper}
      * <p>
-     * {@link RequestContextHolder} 中的 request 常被 Spring Security 等外层包装，
      * 直接 {@code instanceof} 会失败导致 body 为空。
      * </p>
      */

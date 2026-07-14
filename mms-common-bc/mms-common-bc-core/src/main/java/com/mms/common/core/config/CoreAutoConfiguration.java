@@ -1,6 +1,9 @@
 package com.mms.common.core.config;
 
+
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mms.common.core.listeners.ApplicationStartupLogger;
+import com.mms.common.core.utils.JacksonObjectMapperUtils;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -18,6 +21,15 @@ import org.springframework.context.annotation.Configuration;
 public class CoreAutoConfiguration {
 
     /**
+     * 通用 ObjectMapper
+     */
+    @Bean(name = JacksonObjectMapperUtils.COMMON_OBJECT_MAPPER_BEAN_NAME)
+    @ConditionalOnMissingBean(name = JacksonObjectMapperUtils.COMMON_OBJECT_MAPPER_BEAN_NAME)
+    public ObjectMapper commonObjectMapper() {
+        return JacksonObjectMapperUtils.createCommonObjectMapper();
+    }
+
+    /**
      * 创建 ApplicationStartupLogger Bean
      */
     @Bean
@@ -26,3 +38,4 @@ public class CoreAutoConfiguration {
         return new ApplicationStartupLogger();
     }
 }
+

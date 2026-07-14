@@ -78,6 +78,23 @@ public class UserContextUtils {
     }
 
     /**
+     * 判断用户上下文是否包含有效用户信息
+     * <p>
+     * {@link #getUserContext()} 在请求存在时通常返回非 null 对象，但 header 可能为空，需额外校验 userId/username。
+     * </p>
+     */
+    public static boolean hasUserContext(UserContext userContext) {
+        if (userContext == null) {
+            return false;
+        }
+        if (userContext.getUserId() != null) {
+            return true;
+        }
+        String username = userContext.getUsername();
+        return username != null && !username.isBlank();
+    }
+
+    /**
      * 获取当前请求对象
      * <p>
      * 从 RequestContextHolder 中获取当前请求，仅在 Spring MVC 请求线程中可用
@@ -85,7 +102,7 @@ public class UserContextUtils {
      *
      * @return 当前请求对象，如果不在请求线程中则返回null
      */
-    private static HttpServletRequest getCurrentRequest() {
+    public static HttpServletRequest getCurrentRequest() {
         try {
             ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
             if (attributes != null) {

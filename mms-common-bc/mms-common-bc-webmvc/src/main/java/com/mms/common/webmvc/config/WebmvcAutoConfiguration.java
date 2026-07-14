@@ -1,6 +1,7 @@
 package com.mms.common.webmvc.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mms.common.core.utils.JacksonObjectMapperUtils;
 import com.mms.common.mq.api.service.MqSendService;
 import com.mms.common.webmvc.advice.GlobalExceptionAdvice;
 import com.mms.common.webmvc.audit.OperationLogAspect;
@@ -88,7 +89,7 @@ public class WebmvcAutoConfiguration {
 
     /**
      * 创建 操作日志 MQ 发布器 Bean
-     */
+     */    
     @Bean
     @ConditionalOnClass(MqSendService.class)
     @ConditionalOnMissingBean
@@ -105,7 +106,7 @@ public class WebmvcAutoConfiguration {
     @ConditionalOnBean(name = "schedulerTaskExecutor")
     public OperationLogAspect operationLogAspect(OperationLogPublisher operationLogPublisher,
                                                  @Qualifier("schedulerTaskExecutor") ThreadPoolTaskExecutor schedulerTaskExecutor,
-                                                 ObjectMapper objectMapper) {
+                                                 @Qualifier(JacksonObjectMapperUtils.COMMON_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper) {
         return new OperationLogAspect(operationLogPublisher, schedulerTaskExecutor, objectMapper);
     }
 

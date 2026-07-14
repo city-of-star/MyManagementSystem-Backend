@@ -20,11 +20,10 @@ import java.util.Set;
  */
 public final class OperationLogHttpMethodUtils {
 
+    /**
+     * 可记录的 HTTP 方法
+     */
     private static final Set<String> RECORDABLE_METHODS = Set.of("POST", "PUT", "DELETE");
-
-    private OperationLogHttpMethodUtils() {
-        throw new UnsupportedOperationException("工具类不允许实例化");
-    }
 
     /**
      * 解析 Controller 方法对应的 HTTP 方法
@@ -57,5 +56,9 @@ public final class OperationLogHttpMethodUtils {
      */
     public static boolean isRecordableHttpMethod(String httpMethod) {
         return httpMethod != null && RECORDABLE_METHODS.contains(httpMethod);
+    }
+
+    private OperationLogHttpMethodUtils() {
+        throw new UnsupportedOperationException("工具类不允许实例化");
     }
 }

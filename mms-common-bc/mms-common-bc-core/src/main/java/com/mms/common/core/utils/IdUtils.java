@@ -1,11 +1,13 @@
 package com.mms.common.core.utils;
 
+import com.baomidou.mybatisplus.core.toolkit.IdWorker;
+
 import java.security.SecureRandom;
 import java.util.Random;
 import java.util.UUID;
 
 /**
- * 实现功能【全局ID生成工具类】
+ * 实现功能【全局 ID 生成工具类】
  * <p>
  *
  * <p>
@@ -80,6 +82,13 @@ public final class IdUtils {
      */
     public static String timestampId() {
         return DateUtils.nowTimestamp() + "_" + uuid(8);
+    }
+
+    /**
+     * 生成分布式 Long 型主键（雪花算法）
+     */
+    public static long nextId() {
+        return IdWorker.getId();
     }
 
     private IdUtils() {

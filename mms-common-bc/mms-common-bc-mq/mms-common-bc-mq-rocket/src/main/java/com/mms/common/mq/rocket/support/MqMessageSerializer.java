@@ -2,23 +2,24 @@ package com.mms.common.mq.rocket.support;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mms.common.core.utils.JacksonObjectMapperUtils;
 import com.mms.common.mq.api.exception.MqConsumeException;
 import com.mms.common.mq.api.exception.MqSendException;
 import com.mms.common.mq.api.message.MqMessage;
+import lombok.RequiredArgsConstructor;
 
 /**
  * 实现功能【MQ 消息 JSON 序列化】
  * <p>
- * 与项目统一的 Jackson 时间格式保持一致。
+ * 使用项目统一的 commonObjectMapper，与 MQ 载荷及内部 JSON 场景保持一致。
  * </p>
  *
  * @author li.hongyu
  * @date 2026-05-19 16:30:00
  */
+@RequiredArgsConstructor
 public class MqMessageSerializer {
 
-    private final ObjectMapper objectMapper = JacksonObjectMapperUtils.createCommonObjectMapper();
+    private final ObjectMapper objectMapper;
 
     /**
      * 序列化 MQ 消息

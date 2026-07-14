@@ -1,6 +1,7 @@
 package com.mms.common.websocket.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mms.common.core.config.CoreAutoConfiguration;
 import com.mms.common.core.utils.JacksonObjectMapperUtils;
 import com.mms.common.security.servlet.service.GatewaySignatureVerificationService;
 import com.mms.common.websocket.auth.GatewayCompatibleHandshakeHandler;
@@ -18,6 +19,8 @@ import com.mms.common.websocket.registry.service.WsRegistryService;
 import jakarta.validation.Validator;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -41,14 +44,10 @@ import org.springframework.web.socket.server.HandshakeHandler;
  */
 @Configuration
 @EnableWebSocket
+@AutoConfigureAfter(CoreAutoConfiguration.class)
 @ConditionalOnClass(WebSocketConfigurer.class)
 @EnableConfigurationProperties(WebSocketProperties.class)
 public class WebSocketAutoConfiguration {
-
-    /**
-     * WebSocket 文本帧 JSON 序列化/反序列化
-     */
-    public static final String WEBSOCKET_OBJECT_MAPPER_BEAN_NAME = "websocketObjectMapper";
 
     /**
      * 会话注册服务
@@ -73,15 +72,6 @@ public class WebSocketAutoConfiguration {
     }
 
     /**
-     * WebSocket 专用 JSON 序列化器
-     */
-    @Bean(name = WEBSOCKET_OBJECT_MAPPER_BEAN_NAME)
-    @ConditionalOnMissingBean(name = WEBSOCKET_OBJECT_MAPPER_BEAN_NAME)
-    public ObjectMapper websocketObjectMapper() {
-        return JacksonObjectMapperUtils.createCommonObjectMapper();
-    }
-
-    /**
      * 握手处理器
      */
     @Bean
@@ -92,7 +82,8 @@ public class WebSocketAutoConfiguration {
 
     @Bean
     @Order(1_000)
-    public WsReceiverMessageHandler<?> pingWsMessageHandler(@Qualifier(WEBSOCKET_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper) {
+    @ConditionalOnBean(name = JacksonObjectMapperUtils.COMMON_OBJECT_MAPPER_BEAN_NAME)
+    public WsReceiverMessageHandler<?> pingWsMessageHandler(@Qualifier(JacksonObjectMapperUtils.COMMON_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper) {
         return new PingWsReceiverMessageHandler(objectMapper);
     }
 
@@ -113,7 +104,11 @@ public class WebSocketAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean(WebSocketHandler.class)
-    public WebSocketHandler wsReceiveTextDispatcher(WsRegistryService wsRegistryService, @Qualifier(WEBSOCKET_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper, Validator validator, ObjectProvider<WsReceiverMessageHandler<?>> messageHandlers) {
+    @ConditionalOnBean(name = JacksonObjectMapperUtils.COMMON_OBJECT_MAPPER_BEAN_NAME)
+    public WebSocketHandler wsReceiveTextDispatcher(WsRegistryService wsRegistryService,
+                                                    @Qualifier(JacksonObjectMapperUtils.COMMON_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper,
+                                                    Validator validator,
+                                                    ObjectProvider<WsReceiverMessageHandler<?>> messageHandlers) {
         return new WsReceiveTextDispatcher(wsRegistryService, objectMapper, validator, messageHandlers.orderedStream().toList());
     }
 
@@ -122,7 +117,8 @@ public class WebSocketAutoConfiguration {
      */
     @Bean
     @ConditionalOnMissingBean
-    public WsPushService wsPushService(WsRegistryService wsRegistryService, @Qualifier(WEBSOCKET_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper) {
+    @ConditionalOnBean(name = JacksonObjectMapperUtils.COMMON_OBJECT_MAPPER_BEAN_NAME)
+    public WsPushService wsPushService(WsRegistryService wsRegistryService, @Qualifier(JacksonObjectMapperUtils.COMMON_OBJECT_MAPPER_BEAN_NAME) ObjectMapper objectMapper) {
         return new WsPushServiceImpl(wsRegistryService, objectMapper);
     }
 

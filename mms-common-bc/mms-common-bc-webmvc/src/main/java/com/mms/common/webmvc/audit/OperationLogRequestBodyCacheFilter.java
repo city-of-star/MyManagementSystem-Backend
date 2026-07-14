@@ -26,15 +26,20 @@ public class OperationLogRequestBodyCacheFilter extends OncePerRequestFilter imp
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
+        // 如果请求体不是 JSON 格式，则直接传递给下一个过滤器
         if (!shouldWrap(request)) {
             filterChain.doFilter(request, response);
             return;
         }
-        ContentCachingRequestWrapper wrappedRequest = new ContentCachingRequestWrapper(
-                request, OperationLogConstants.REQUEST_BODY_CACHE_LIMIT);
+        // 创建缓存请求包装器
+        ContentCachingRequestWrapper wrappedRequest = new ContentCachingRequestWrapper(request, OperationLogConstants.REQUEST_BODY_CACHE_LIMIT);
+        // 将包装后的请求传递给下一个过滤器
         filterChain.doFilter(wrappedRequest, response);
     }
 
+    /**
+     * 判断请求体是否为 JSON 格式
+     */
     private boolean shouldWrap(HttpServletRequest request) {
         String contentType = request.getContentType();
         if (contentType == null) {
@@ -43,6 +48,9 @@ public class OperationLogRequestBodyCacheFilter extends OncePerRequestFilter imp
         return contentType.toLowerCase().startsWith(MediaType.APPLICATION_JSON_VALUE);
     }
 
+    /**
+     * 返回过滤器顺序
+     */
     @Override
     public int getOrder() {
         return GatewayConstants.FilterOrder.TRACE_FILTER + 50;

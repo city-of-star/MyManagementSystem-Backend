@@ -10,7 +10,7 @@ import java.util.Optional;
 /**
  * 实现功能【操作日志权限码映射表】
  * <p>
- * 将 {@link PermissionConstants} 中的写操作权限码映射为审计展示字段。
+ * 将 {@link PermissionConstants} 中的写操作权限码映射为审计展示字段
  * TODO: 细化权限编码（如 assign-roles、switch-status 等独立 button 权限），提升 operation_desc 准确度。
  * </p>
  *
@@ -19,6 +19,9 @@ import java.util.Optional;
  */
 public final class OperationLogPermissionMappings {
 
+    /**
+     * 权限码映射表
+     */
     private static final Map<String, OperationLogPermissionMeta> MAPPINGS;
 
     static {
