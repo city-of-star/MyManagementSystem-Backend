@@ -15,8 +15,8 @@ import java.lang.annotation.Target;
  *
  * 使用示例：
  * <pre>
- * @RequiresPermission("user:view")
- * public Page<UserVo> getUserPage(...) { ... }
+ * @RequiresPermission(PermissionConstants.SYSTEM_USER_VIEW)
+ * public Page&lt;UserVo&gt; getUserPage(...) { ... }
  * </pre>
  *
  * @author li.hongyu
@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
 public @interface RequiresPermission {
 
     /**
-     * 所需的权限编码，例如："user:view"
+     * 所需的权限编码，例如：SYSTEM_USER_VIEW
      */
     String value();
 }

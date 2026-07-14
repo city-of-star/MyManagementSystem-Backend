@@ -284,7 +284,7 @@ Swagger 文档地址以各服务 Nacos 中 `springdoc.swagger-ui.url` 及网关 
 
 业务 BC 父 POM 当前依赖 **`mms-common-bc-mq-rocket`**（传递依赖 `mq-api`）。Kafka 模块为预留，未接入业务。
 
-更细的开发约定与代码入口见仓库根目录 **`.cursor/rules/`**（Cursor Agent 自动加载）。
+更细的开发约定与代码入口见仓库根目录 **`.cursor/prompt/后端/`**（Cursor Agent 通过 `.cursor/rules/` 自动加载）。
 
 ## 安全架构
 
@@ -348,12 +348,13 @@ public interface UserCenterFeignClient {
 | `mysql/` | 全量初始化与 `prod/` 增量脚本 |
 | `nacos/` | DEV 配置模板 |
 | `script/` | 前后端发布、版本切换、服务重启、日志查看 |
-| `.cursor/rules/`（仓库根） | Cursor AI 规则：架构、鉴权、编码约定、代码入口 |
+| `.cursor/prompt/`（仓库根） | Cursor AI 提示词：前后端架构、鉴权、编码约定、代码入口 |
+| `.cursor/rules/`（仓库根） | Cursor AI 规则：提示词路由、人设、读取门控 |
 | `logs/` | 运行日志（按服务，本地运行时生成） |
 
 ## 学习建议
 
-1. 阅读仓库根 `.cursor/rules/mms-core.mdc` 与 `mms-auth.mdc`
+1. 阅读仓库根 `.cursor/prompt/后端/索引.md` 与 `安全/鉴权链路.md`
 2. 从 `mms-common-bc-core`、网关过滤器、usercenter 登录链路入手
 3. 再阅读 base 附件/字典、job 调度实现
 

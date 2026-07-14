@@ -7,17 +7,18 @@ package com.mms.common.security.servlet.constants;
  * 
  * 使用说明：
  * - 此常量类主要用于核心的、稳定的权限（如用户管理、角色管理等）
- * - 新增权限时，可以直接在 @RequiresPermission 注解中使用字符串，无需每次都更新此常量类
- * - 权限编码必须与数据库 permission 表中的 permission_code 字段保持一致
+ * - 权限编码格式：大写下划线，如 SYSTEM_USER_VIEW、JOB_MANAGEMENT_CREATE
+ * - 新增权限时，可直接在 @RequiresPermission 注解中使用同格式字符串，无需每次都更新此常量类
+ * - 权限编码必须与数据库 system_permission 表中的 permission_code 字段保持一致
  * 新增权限流程：
- * - 在数据库 permission 表中添加权限记录（通过权限管理界面或 SQL）
- * - 在 Controller 方法上使用 @RequiresPermission("your:permission:code") 注解
+ * - 在数据库 system_permission 表中添加权限记录（通过权限管理界面或 SQL）
+ * - 在 Controller 方法上使用 @RequiresPermission("ORDER_VIEW") 等同格式字符串注解
  * - 如果该权限是核心权限，可在此常量类中添加常量定义
  * 示例：
  * // 方式1：使用常量（用于核心权限）
- * @RequiresPermission(PermissionConstants.USER_VIEW)
+ * @RequiresPermission(PermissionConstants.SYSTEM_USER_VIEW)
  * // 方式2：直接使用字符串（用于新增权限）
- * @RequiresPermission("order:view")
+ * @RequiresPermission("ORDER_VIEW")
  * <p>
  *
  * @author li.hongyu
