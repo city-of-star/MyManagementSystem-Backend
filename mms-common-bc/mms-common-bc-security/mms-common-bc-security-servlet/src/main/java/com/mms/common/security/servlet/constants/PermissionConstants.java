@@ -183,6 +183,16 @@ public final class PermissionConstants {
     public static final String SECURITY_ONLINE_USER_FORCE_LOGOUT = "SECURITY_ONLINE_USER_FORCE_LOGOUT";
 
     /**
+     * 副业收入（目录 + 菜单 + 按钮）
+     */
+    public static final String SIDE_INCOME = "SIDE_INCOME";
+    public static final String SIDE_INCOME_RECORD = "SIDE_INCOME_RECORD";
+    public static final String SIDE_INCOME_RECORD_VIEW = "SIDE_INCOME_RECORD_VIEW";
+    public static final String SIDE_INCOME_RECORD_CREATE = "SIDE_INCOME_RECORD_CREATE";
+    public static final String SIDE_INCOME_RECORD_UPDATE = "SIDE_INCOME_RECORD_UPDATE";
+    public static final String SIDE_INCOME_RECORD_DELETE = "SIDE_INCOME_RECORD_DELETE";
+
+    /**
      * 私有构造函数，防止实例化
      */
     private PermissionConstants() {

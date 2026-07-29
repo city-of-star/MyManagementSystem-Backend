@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mms.base.service.income.mapper.SideIncomeRecordMapper">
+
+    <select id="getSideIncomePage" resultType="com.mms.base.common.income.vo.SideIncomeRecordVo">
+        SELECT
+            id,
+            record_date,
+            amount,
+            gross_amount,
+            source_type,
+            status,
+            note,
+            create_by,
+            create_time,
+            update_by,
+            update_time
+        FROM side_income_record
+        <where>
+            deleted = 0
+            <if test="dto.sourceType != null and dto.sourceType != ''">
+                AND source_type = #{dto.sourceType}
+            </if>
+            <if test="dto.status != null and dto.status != ''">
+                AND status = #{dto.status}
+            </if>
+            <if test="dto.recordDateStart != null">
+                AND record_date <![CDATA[ >= ]]> #{dto.recordDateStart}
+            </if>
+            <if test="dto.recordDateEnd != null">
+                AND record_date <![CDATA[ <= ]]> #{dto.recordDateEnd}
+            </if>
+            <if test="dto.note != null and dto.note != ''">
+                AND note LIKE CONCAT('%', #{dto.note}, '%')
+            </if>
+        </where>
+        ORDER BY record_date DESC, id DESC
+    </select>
+
+    <select id="listDailyStats" resultType="com.mms.base.common.income.vo.SideIncomeDailyStatVo">
+        SELECT
+            record_date AS recordDate,
+            COALESCE(SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END), 0) AS receivedAmount,
+            COALESCE(SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END), 0) AS pendingAmount
+        FROM side_income_record
+        WHERE deleted = 0
+          AND record_date <![CDATA[ >= ]]> #{startDate}
+          AND record_date <![CDATA[ <= ]]> #{endDate}
+        GROUP BY record_date
+        ORDER BY record_date ASC
+    </select>
+
+</mapper>

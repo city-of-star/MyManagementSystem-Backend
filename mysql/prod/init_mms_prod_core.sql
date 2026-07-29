@@ -1,5 +1,5 @@
 -- 创建 mms_prod_core 数据库
-CREATE DATABASE IF NOT EXISTS `mms_prod_core` CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
+CREATE DATABASE IF NOT EXISTS `mms_side_income_prod_core` CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
 -- 使用该数据库
 USE `mms_prod_core`;
@@ -209,6 +209,28 @@ CREATE TABLE IF NOT EXISTS `system_config` (
     KEY `idx_config_type` (`config_type`),
     KEY `idx_status_deleted` (`status`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='系统配置表';
+
+-- 副业收入记录表
+CREATE TABLE IF NOT EXISTS `side_income_record` (
+    `id` bigint NOT NULL COMMENT '主键ID',
+    `record_date` date NOT NULL COMMENT '业务发生日期',
+    `amount` decimal(12, 2) NOT NULL COMMENT '应得金额（元）',
+    `gross_amount` decimal(12, 2) DEFAULT NULL COMMENT '整单流水（元），合作单可选',
+    `source_type` varchar(32) NOT NULL COMMENT '来源：self-自销，partner-合作分成，other-其他',
+    `status` varchar(32) NOT NULL COMMENT '状态：paid-已到账，pending-待结算',
+    `note` varchar(512) DEFAULT NULL COMMENT '备注',
+    `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除',
+    `create_by` bigint DEFAULT NULL COMMENT '创建人ID',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by` bigint DEFAULT NULL COMMENT '更新人ID',
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_record_date` (`record_date`),
+    KEY `idx_source_type` (`source_type`),
+    KEY `idx_status` (`status`),
+    KEY `idx_deleted` (`deleted`),
+    KEY `idx_date_status` (`record_date`, `status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='副业收入记录表';
 
 -- 数据字典类型表
 CREATE TABLE IF NOT EXISTS `system_dict_type` (
@@ -623,7 +645,15 @@ VALUES
     -- 在线用户（菜单 + 按钮）
     (78, 77, 'menu', '在线用户', 'SECURITY_ONLINE_USER', '/security/onlineUserPage', '/security/onlineUser/OnlineUserPage.vue', 'Connection', 141, 1, 1, 0, NOW(), NOW()),
     (79, 78, 'button', '在线用户-查看', 'SECURITY_ONLINE_USER_VIEW', NULL, NULL, NULL, 142, 1, 1, 0, NOW(), NOW()),
-    (80, 78, 'button', '在线用户-强制下线', 'SECURITY_ONLINE_USER_FORCE_LOGOUT', NULL, NULL, NULL, 143, 1, 1, 0, NOW(), NOW());
+    (80, 78, 'button', '在线用户-强制下线', 'SECURITY_ONLINE_USER_FORCE_LOGOUT', NULL, NULL, NULL, 143, 1, 1, 0, NOW(), NOW()),
+
+    -- 副业收入（目录 + 菜单 + 按钮）
+    (81, 0, 'catalog', '副业收入', 'SIDE_INCOME', NULL, NULL, 'Wallet', 5, 1, 1, 0, NOW(), NOW()),
+    (82, 81, 'menu', '收入记录', 'SIDE_INCOME_RECORD', '/income/sideIncomePage', '/income/SideIncomePage.vue', 'Money', 10, 1, 1, 0, NOW(), NOW()),
+    (83, 82, 'button', '收入记录-查看', 'SIDE_INCOME_RECORD_VIEW', NULL, NULL, NULL, 11, 1, 1, 0, NOW(), NOW()),
+    (84, 82, 'button', '收入记录-新增', 'SIDE_INCOME_RECORD_CREATE', NULL, NULL, NULL, 12, 1, 1, 0, NOW(), NOW()),
+    (85, 82, 'button', '收入记录-编辑', 'SIDE_INCOME_RECORD_UPDATE', NULL, NULL, NULL, 13, 1, 1, 0, NOW(), NOW()),
+    (86, 82, 'button', '收入记录-删除', 'SIDE_INCOME_RECORD_DELETE', NULL, NULL, NULL, 14, 1, 1, 0, NOW(), NOW());
 
 -- 将所有权限授予【超级管理员角色】和【管理员角色】
 INSERT IGNORE INTO `system_role_permission` (`id`, `role_id`, `permission_id`, `create_time`)

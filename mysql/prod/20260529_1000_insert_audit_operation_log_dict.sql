@@ -1,4 +1,4 @@
-USE `mms_prod_core`;
+USE `mms_side_income_prod_core`;
 
 -- 插入操作类型字典
 INSERT INTO `system_dict_type` (

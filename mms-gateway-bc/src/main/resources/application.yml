@@ -23,10 +23,10 @@ spring:
       username: nacos
       password: zyntm123lhy
       config:
-        namespace: ${spring.profiles.active}
+        namespace: side-income-${spring.profiles.active}
         group: DEFAULT_GROUP
         file-extension: yaml
       discovery:
-        namespace: ${spring.profiles.active}
+        namespace: side-income-${spring.profiles.active}
         group: DEFAULT_GROUP
 

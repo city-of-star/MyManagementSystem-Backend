@@ -1,4 +1,4 @@
-USE `mms_prod_core`;
+USE `mms_side_income_prod_core`;
 
 -- 创建用户偏好配置表
 CREATE TABLE IF NOT EXISTS `system_user_preference` (
