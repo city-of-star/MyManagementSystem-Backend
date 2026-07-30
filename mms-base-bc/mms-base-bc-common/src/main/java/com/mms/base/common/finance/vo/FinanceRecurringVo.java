@@ -22,7 +22,7 @@ public class FinanceRecurringVo {
     @Schema(description = "模板名称")
     private String name;
 
-    @Schema(description = "方向：income/expense")
+    @Schema(description = "方向：income/expense/transfer")
     private String direction;
 
     @Schema(description = "金额")
@@ -40,7 +40,19 @@ public class FinanceRecurringVo {
     @Schema(description = "账户名称")
     private String accountName;
 
-    @Schema(description = "周期：daily/weekly/monthly")
+    @Schema(description = "转出账户ID")
+    private Long fromAccountId;
+
+    @Schema(description = "转出账户名称")
+    private String fromAccountName;
+
+    @Schema(description = "转入账户ID")
+    private Long toAccountId;
+
+    @Schema(description = "转入账户名称")
+    private String toAccountName;
+
+    @Schema(description = "提醒标签：daily/weekly/monthly，空=无提醒")
     private String cycle;
 
     @Schema(description = "每月几号")

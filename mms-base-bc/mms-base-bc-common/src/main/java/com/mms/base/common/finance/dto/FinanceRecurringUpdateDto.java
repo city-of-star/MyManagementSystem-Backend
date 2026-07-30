@@ -27,21 +27,27 @@ public class FinanceRecurringUpdateDto {
     private String name;
 
     @Size(max = 16, message = "方向长度不能超过16个字符")
-    @Schema(description = "方向：income/expense", example = "income")
+    @Schema(description = "方向：income/expense/transfer", example = "income")
     private String direction;
 
     @DecimalMin(value = "0.00", message = "金额不能为负数")
     @Schema(description = "默认金额（可为0，落账时再填）", example = "10000.00")
     private BigDecimal amount;
 
-    @Schema(description = "分类ID", example = "1")
+    @Schema(description = "分类ID（收入/支出必填）", example = "1")
     private Long categoryId;
 
-    @Schema(description = "账户ID", example = "1")
+    @Schema(description = "账户ID（收入/支出必填）", example = "1")
     private Long accountId;
 
-    @Size(max = 16, message = "周期长度不能超过16个字符")
-    @Schema(description = "周期：daily/weekly/monthly", example = "monthly")
+    @Schema(description = "转出账户ID（转账必填）", example = "7")
+    private Long fromAccountId;
+
+    @Schema(description = "转入账户ID（转账必填）", example = "1")
+    private Long toAccountId;
+
+    @Size(max = 16, message = "提醒标签长度不能超过16个字符")
+    @Schema(description = "提醒标签：daily/weekly/monthly，空=无提醒", example = "monthly")
     private String cycle;
 
     @Schema(description = "每月几号（monthly）", example = "15")

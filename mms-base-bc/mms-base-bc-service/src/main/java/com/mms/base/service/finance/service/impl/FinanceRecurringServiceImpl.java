@@ -24,10 +24,11 @@ import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Objects;
 import java.util.Set;
 
 /**
- * 实现功能【周期记账模板服务实现类】
+ * 实现功能【快捷记账模板服务实现类】
  *
  * @author li.hongyu
  * @date 2026-07-30
@@ -36,7 +37,7 @@ import java.util.Set;
 @Service
 public class FinanceRecurringServiceImpl implements FinanceRecurringService {
 
-    private static final Set<String> DIRECTIONS = Set.of("income", "expense");
+    private static final Set<String> DIRECTIONS = Set.of("income", "expense", "transfer");
     private static final Set<String> CYCLES = Set.of("daily", "weekly", "monthly");
 
     @Resource
@@ -51,12 +52,12 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
     @Override
     public Page<FinanceRecurringVo> getRecurringPage(FinanceRecurringPageQueryDto dto) {
         try {
-            log.info("分页查询周期模板，参数：{}", dto);
+            log.info("分页查询快捷模板，参数：{}", dto);
             Page<FinanceRecurringVo> page = new Page<>(dto.getPageNum(), dto.getPageSize());
             return financeRecurringMapper.getRecurringPage(page, dto);
         } catch (Exception e) {
-            log.error("分页查询周期模板失败：{}", e.getMessage(), e);
-            throw new ServerException("查询周期模板列表失败", e);
+            log.error("分页查询快捷模板失败：{}", e.getMessage(), e);
+            throw new ServerException("查询快捷模板列表失败", e);
         }
     }
 
@@ -68,14 +69,14 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
             }
             FinanceRecurringVo vo = financeRecurringMapper.getRecurringById(id);
             if (vo == null) {
-                throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "周期模板不存在");
+                throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "快捷模板不存在");
             }
             return vo;
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
-            log.error("查询周期模板详情失败：{}", e.getMessage(), e);
-            throw new ServerException("查询周期模板详情失败", e);
+            log.error("查询快捷模板详情失败：{}", e.getMessage(), e);
+            throw new ServerException("查询快捷模板详情失败", e);
         }
     }
 
@@ -83,10 +84,14 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
     @Transactional(rollbackFor = Exception.class)
     public FinanceRecurringVo create(FinanceRecurringCreateDto dto) {
         try {
-            log.info("创建周期模板，参数：{}", dto);
+            log.info("创建快捷模板，参数：{}", dto);
             validateDirectionAndCycle(dto.getDirection(), dto.getCycle());
             validateCycleFields(dto.getCycle(), dto.getDayOfMonth(), dto.getWeekday());
+            validateDirectionFields(dto.getDirection(), dto.getCategoryId(), dto.getAccountId(),
+                    dto.getFromAccountId(), dto.getToAccountId());
             ensureAccountExists(dto.getAccountId());
+            ensureAccountExists(dto.getFromAccountId());
+            ensureAccountExists(dto.getToAccountId());
             ensureCategoryExists(dto.getCategoryId());
 
             FinanceRecurringEntity entity = new FinanceRecurringEntity();
@@ -95,18 +100,21 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
             entity.setAmount(scaleMoney(dto.getAmount()));
             entity.setCategoryId(dto.getCategoryId());
             entity.setAccountId(dto.getAccountId());
-            entity.setCycle(dto.getCycle());
+            entity.setFromAccountId(dto.getFromAccountId());
+            entity.setToAccountId(dto.getToAccountId());
+            entity.setCycle(blankToNull(dto.getCycle()));
             entity.setDayOfMonth(dto.getDayOfMonth());
             entity.setWeekday(dto.getWeekday());
             entity.setEnabled(dto.getEnabled() == null ? 1 : dto.getEnabled());
             entity.setNote(dto.getNote());
+            normalizeByDirection(entity);
             financeRecurringMapper.insert(entity);
             return financeRecurringMapper.getRecurringById(entity.getId());
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
-            log.error("创建周期模板失败：{}", e.getMessage(), e);
-            throw new ServerException("创建周期模板失败", e);
+            log.error("创建快捷模板失败：{}", e.getMessage(), e);
+            throw new ServerException("创建快捷模板失败", e);
         }
     }
 
@@ -114,10 +122,10 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
     @Transactional(rollbackFor = Exception.class)
     public FinanceRecurringVo update(FinanceRecurringUpdateDto dto) {
         try {
-            log.info("更新周期模板，参数：{}", dto);
+            log.info("更新快捷模板，参数：{}", dto);
             FinanceRecurringEntity entity = financeRecurringMapper.selectById(dto.getId());
             if (entity == null) {
-                throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "周期模板不存在");
+                throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "快捷模板不存在");
             }
             if (StringUtils.hasText(dto.getName())) {
                 entity.setName(dto.getName());
@@ -137,9 +145,17 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
                 ensureAccountExists(dto.getAccountId());
                 entity.setAccountId(dto.getAccountId());
             }
-            if (StringUtils.hasText(dto.getCycle())) {
-                validateDirectionAndCycle(null, dto.getCycle());
-                entity.setCycle(dto.getCycle());
+            if (dto.getFromAccountId() != null) {
+                ensureAccountExists(dto.getFromAccountId());
+                entity.setFromAccountId(dto.getFromAccountId());
+            }
+            if (dto.getToAccountId() != null) {
+                ensureAccountExists(dto.getToAccountId());
+                entity.setToAccountId(dto.getToAccountId());
+            }
+            if (dto.getCycle() != null) {
+                validateDirectionAndCycle(null, blankToNull(dto.getCycle()));
+                entity.setCycle(blankToNull(dto.getCycle()));
             }
             if (dto.getDayOfMonth() != null) {
                 entity.setDayOfMonth(dto.getDayOfMonth());
@@ -154,13 +170,16 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
                 entity.setNote(dto.getNote());
             }
             validateCycleFields(entity.getCycle(), entity.getDayOfMonth(), entity.getWeekday());
+            validateDirectionFields(entity.getDirection(), entity.getCategoryId(), entity.getAccountId(),
+                    entity.getFromAccountId(), entity.getToAccountId());
+            normalizeByDirection(entity);
             financeRecurringMapper.updateById(entity);
             return financeRecurringMapper.getRecurringById(entity.getId());
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
-            log.error("更新周期模板失败：{}", e.getMessage(), e);
-            throw new ServerException("更新周期模板失败", e);
+            log.error("更新快捷模板失败：{}", e.getMessage(), e);
+            throw new ServerException("更新快捷模板失败", e);
         }
     }
 
@@ -173,14 +192,14 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
             }
             FinanceRecurringEntity entity = financeRecurringMapper.selectById(id);
             if (entity == null) {
-                throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "周期模板不存在");
+                throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "快捷模板不存在");
             }
             financeRecurringMapper.deleteById(id);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
-            log.error("删除周期模板失败：{}", e.getMessage(), e);
-            throw new ServerException("删除周期模板失败", e);
+            log.error("删除快捷模板失败：{}", e.getMessage(), e);
+            throw new ServerException("删除快捷模板失败", e);
         }
     }
 
@@ -197,17 +216,52 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
-            log.error("批量删除周期模板失败：{}", e.getMessage(), e);
-            throw new ServerException("批量删除周期模板失败", e);
+            log.error("批量删除快捷模板失败：{}", e.getMessage(), e);
+            throw new ServerException("批量删除快捷模板失败", e);
         }
     }
 
     private void validateDirectionAndCycle(String direction, String cycle) {
         if (direction != null && !DIRECTIONS.contains(direction)) {
-            throw new BusinessException(ErrorCode.PARAM_INVALID, "方向不合法，仅支持 income/expense");
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "方向不合法，仅支持 income/expense/transfer");
         }
         if (cycle != null && !CYCLES.contains(cycle)) {
-            throw new BusinessException(ErrorCode.PARAM_INVALID, "周期不合法，仅支持 daily/weekly/monthly");
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "提醒标签不合法，仅支持 daily/weekly/monthly 或留空");
+        }
+    }
+
+    private void validateDirectionFields(String direction, Long categoryId, Long accountId,
+                                         Long fromAccountId, Long toAccountId) {
+        if ("income".equals(direction) || "expense".equals(direction)) {
+            if (categoryId == null) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "收入/支出模板必须指定分类");
+            }
+            if (accountId == null) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "收入/支出模板必须指定账户");
+            }
+        } else if ("transfer".equals(direction)) {
+            if (fromAccountId == null || toAccountId == null) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "转账模板必须指定转出与转入账户");
+            }
+            if (Objects.equals(fromAccountId, toAccountId)) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "转出与转入账户不能相同");
+            }
+        }
+    }
+
+    private void normalizeByDirection(FinanceRecurringEntity entity) {
+        if ("income".equals(entity.getDirection()) || "expense".equals(entity.getDirection())) {
+            entity.setFromAccountId(null);
+            entity.setToAccountId(null);
+        } else if ("transfer".equals(entity.getDirection())) {
+            entity.setAccountId(null);
+            entity.setCategoryId(null);
+        }
+        if (!"monthly".equals(entity.getCycle())) {
+            entity.setDayOfMonth(null);
+        }
+        if (!"weekly".equals(entity.getCycle())) {
+            entity.setWeekday(null);
         }
     }
 
@@ -221,6 +275,9 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
     }
 
     private void ensureAccountExists(Long accountId) {
+        if (accountId == null) {
+            return;
+        }
         FinanceAccountEntity account = financeAccountMapper.selectById(accountId);
         if (account == null) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "账户不存在");
@@ -228,10 +285,17 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
     }
 
     private void ensureCategoryExists(Long categoryId) {
+        if (categoryId == null) {
+            return;
+        }
         FinanceCategoryEntity category = financeCategoryMapper.selectById(categoryId);
         if (category == null) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "分类不存在");
         }
+    }
+
+    private String blankToNull(String value) {
+        return StringUtils.hasText(value) ? value : null;
     }
 
     private BigDecimal scaleMoney(BigDecimal value) {

@@ -27,7 +27,7 @@ public class FinanceAccountUpdateDto {
     private String name;
 
     @Size(max = 32, message = "账户类型长度不能超过32个字符")
-    @Schema(description = "账户类型：cash/wechat/qq/bank/housing_fund/social_security/other", example = "wechat")
+    @Schema(description = "账户类型：cash/wechat/qq/bank/housing_fund/social_security/company_card/medical/other", example = "wechat")
     private String accountType;
 
     @DecimalMin(value = "0", message = "期初余额不能小于0")

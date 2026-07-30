@@ -29,7 +29,7 @@ public class FinanceAccountEntity extends BaseEntity {
     private String name;
 
     @TableField("account_type")
-    @Schema(description = "账户类型：cash/wechat/qq/bank/housing_fund/social_security/other")
+    @Schema(description = "账户类型：cash/wechat/qq/bank/housing_fund/social_security/company_card/medical/other")
     private String accountType;
 
     @TableField("opening_balance")

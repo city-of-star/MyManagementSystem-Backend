@@ -1,6 +1,7 @@
 package com.mms.base.controller.finance;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.mms.base.common.finance.dto.FinancePayrollBatchDto;
 import com.mms.base.common.finance.dto.FinanceTransactionBatchDeleteDto;
 import com.mms.base.common.finance.dto.FinanceTransactionCreateDto;
 import com.mms.base.common.finance.dto.FinanceTransactionFromRecurringDto;
@@ -16,6 +17,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 实现功能【记账流水 Controller】
@@ -52,11 +55,18 @@ public class FinanceTransactionController {
         return Response.success(financeTransactionService.create(dto));
     }
 
-    @Operation(summary = "由周期模板生成流水")
+    @Operation(summary = "由快捷模板生成流水")
     @RequiresPermission(PermissionConstants.FINANCE_TRANSACTION_CREATE)
     @PostMapping("/from-recurring")
     public Response<FinanceTransactionVo> fromRecurring(@RequestBody @Valid FinanceTransactionFromRecurringDto dto) {
         return Response.success(financeTransactionService.createFromRecurring(dto));
+    }
+
+    @Operation(summary = "工资条批量入账")
+    @RequiresPermission(PermissionConstants.FINANCE_TRANSACTION_CREATE)
+    @PostMapping("/payroll-batch")
+    public Response<List<FinanceTransactionVo>> payrollBatch(@RequestBody @Valid FinancePayrollBatchDto dto) {
+        return Response.success(financeTransactionService.createPayrollBatch(dto));
     }
 
     @Operation(summary = "更新流水")

@@ -1,6 +1,7 @@
 package com.mms.base.service.finance.service.impl;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.mms.base.common.finance.dto.FinancePayrollBatchDto;
 import com.mms.base.common.finance.dto.FinanceTransactionBatchDeleteDto;
 import com.mms.base.common.finance.dto.FinanceTransactionCreateDto;
 import com.mms.base.common.finance.dto.FinanceTransactionFromRecurringDto;
@@ -28,6 +29,8 @@ import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 
@@ -216,29 +219,168 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
     @Transactional(rollbackFor = Exception.class)
     public FinanceTransactionVo createFromRecurring(FinanceTransactionFromRecurringDto dto) {
         try {
-            log.info("由周期模板生成流水，参数：{}", dto);
+            log.info("由快捷模板生成流水，参数：{}", dto);
             FinanceRecurringEntity recurring = financeRecurringMapper.selectById(dto.getRecurringId());
             if (recurring == null) {
-                throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "周期模板不存在");
+                throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "快捷模板不存在");
             }
             if (!Integer.valueOf(1).equals(recurring.getEnabled())) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "周期模板已禁用，无法生成流水");
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "快捷模板已禁用，无法生成流水");
+            }
+            BigDecimal amount = dto.getAmount() != null ? dto.getAmount() : recurring.getAmount();
+            if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "金额必须大于0");
             }
             FinanceTransactionCreateDto createDto = new FinanceTransactionCreateDto();
             createDto.setTxnDate(dto.getTxnDate() != null ? dto.getTxnDate() : LocalDate.now());
             createDto.setTxnType(recurring.getDirection());
-            createDto.setAmount(dto.getAmount() != null ? dto.getAmount() : recurring.getAmount());
+            createDto.setAmount(amount);
             createDto.setCategoryId(recurring.getCategoryId());
             createDto.setAccountId(recurring.getAccountId());
+            createDto.setFromAccountId(recurring.getFromAccountId());
+            createDto.setToAccountId(recurring.getToAccountId());
             createDto.setStatus("settled");
             createDto.setNote(StringUtils.hasText(dto.getNote()) ? dto.getNote() : recurring.getNote());
             return create(createDto);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
-            log.error("由周期模板生成流水失败：{}", e.getMessage(), e);
-            throw new ServerException("由周期模板生成流水失败", e);
+            log.error("由快捷模板生成流水失败：{}", e.getMessage(), e);
+            throw new ServerException("由快捷模板生成流水失败", e);
         }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public List<FinanceTransactionVo> createPayrollBatch(FinancePayrollBatchDto dto) {
+        try {
+            log.info("工资条批量入账，参数：{}", dto);
+            if (dto.getVoidTxnId() != null) {
+                delete(dto.getVoidTxnId());
+            }
+            String mode = dto.getMode();
+            if ("net_only".equals(mode)) {
+                return List.of(createNetOnlyPayroll(dto));
+            }
+            if ("detail".equals(mode)) {
+                return createDetailPayroll(dto);
+            }
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "录入模式不合法，仅支持 net_only/detail");
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("工资条批量入账失败：{}", e.getMessage(), e);
+            throw new ServerException("工资条批量入账失败", e);
+        }
+    }
+
+    private FinanceTransactionVo createNetOnlyPayroll(FinancePayrollBatchDto dto) {
+        if (dto.getNetAmount() == null || dto.getNetAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "先记到手金额必须大于0");
+        }
+        FinanceTransactionCreateDto createDto = new FinanceTransactionCreateDto();
+        createDto.setTxnDate(dto.getTxnDate());
+        createDto.setTxnType("income");
+        createDto.setAmount(dto.getNetAmount());
+        createDto.setAccountId(dto.getSalaryAccountId());
+        createDto.setCategoryId(dto.getSalaryCategoryId());
+        createDto.setStatus("pending");
+        createDto.setNote(StringUtils.hasText(dto.getNote()) ? dto.getNote() : "先记到手，待拆工资条");
+        return create(createDto);
+    }
+
+    private List<FinanceTransactionVo> createDetailPayroll(FinancePayrollBatchDto dto) {
+        if (dto.getCompanyCardAccountId() == null || dto.getMedicalAccountId() == null
+                || dto.getHousingFundAccountId() == null) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "明细入账须指定公司卡、医保卡与公积金账户");
+        }
+        List<FinanceTransactionVo> created = new ArrayList<>();
+        String notePrefix = StringUtils.hasText(dto.getNote()) ? dto.getNote() + " | " : "";
+
+        addIncomeIfPositive(created, dto, dto.getBaseSalary(), dto.getSalaryAccountId(),
+                dto.getSalaryCategoryId(), notePrefix + "基本工资");
+        addIncomeIfPositive(created, dto, dto.getComputerSubsidy(), dto.getSalaryAccountId(),
+                dto.getComputerSubsidyCategoryId(), notePrefix + "电脑补贴");
+        addIncomeIfPositive(created, dto, dto.getOvertime(), dto.getSalaryAccountId(),
+                dto.getOvertimeCategoryId(), notePrefix + "加班/绩效");
+        addIncomeIfPositive(created, dto, dto.getMealAllowance(), dto.getCompanyCardAccountId(),
+                dto.getMealAllowanceCategoryId(), notePrefix + "餐补");
+
+        addTransferIfPositive(created, dto, dto.getPersonalMedical(),
+                dto.getSalaryAccountId(), dto.getMedicalAccountId(), notePrefix + "个人医保");
+        addExpenseIfPositive(created, dto, dto.getSocialOther(), dto.getSalaryAccountId(),
+                dto.getSocialOtherCategoryId(), notePrefix + "社保其他");
+        addTransferIfPositive(created, dto, dto.getPersonalHousingFund(),
+                dto.getSalaryAccountId(), dto.getHousingFundAccountId(), notePrefix + "个人公积金");
+        addIncomeIfPositive(created, dto, dto.getCompanyHousingFund(), dto.getHousingFundAccountId(),
+                dto.getCompanyHousingFundCategoryId(), notePrefix + "公司公积金");
+        addIncomeIfPositive(created, dto, dto.getCompanyMedical(), dto.getMedicalAccountId(),
+                dto.getCompanyMedicalCategoryId(), notePrefix + "公司医保");
+        addExpenseIfPositive(created, dto, dto.getTax(), dto.getSalaryAccountId(),
+                dto.getTaxCategoryId(), notePrefix + "个税");
+
+        if (created.isEmpty()) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "没有可入账的金额项");
+        }
+        return created;
+    }
+
+    private void addIncomeIfPositive(List<FinanceTransactionVo> created, FinancePayrollBatchDto dto,
+                                     BigDecimal amount, Long accountId, Long categoryId, String note) {
+        if (!isPositive(amount)) {
+            return;
+        }
+        if (categoryId == null) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, note + "分类不能为空");
+        }
+        FinanceTransactionCreateDto createDto = new FinanceTransactionCreateDto();
+        createDto.setTxnDate(dto.getTxnDate());
+        createDto.setTxnType("income");
+        createDto.setAmount(amount);
+        createDto.setAccountId(accountId);
+        createDto.setCategoryId(categoryId);
+        createDto.setStatus("settled");
+        createDto.setNote(note);
+        created.add(create(createDto));
+    }
+
+    private void addExpenseIfPositive(List<FinanceTransactionVo> created, FinancePayrollBatchDto dto,
+                                      BigDecimal amount, Long accountId, Long categoryId, String note) {
+        if (!isPositive(amount)) {
+            return;
+        }
+        if (categoryId == null) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, note + "分类不能为空");
+        }
+        FinanceTransactionCreateDto createDto = new FinanceTransactionCreateDto();
+        createDto.setTxnDate(dto.getTxnDate());
+        createDto.setTxnType("expense");
+        createDto.setAmount(amount);
+        createDto.setAccountId(accountId);
+        createDto.setCategoryId(categoryId);
+        createDto.setStatus("settled");
+        createDto.setNote(note);
+        created.add(create(createDto));
+    }
+
+    private void addTransferIfPositive(List<FinanceTransactionVo> created, FinancePayrollBatchDto dto,
+                                       BigDecimal amount, Long fromAccountId, Long toAccountId, String note) {
+        if (!isPositive(amount)) {
+            return;
+        }
+        FinanceTransactionCreateDto createDto = new FinanceTransactionCreateDto();
+        createDto.setTxnDate(dto.getTxnDate());
+        createDto.setTxnType("transfer");
+        createDto.setAmount(amount);
+        createDto.setFromAccountId(fromAccountId);
+        createDto.setToAccountId(toAccountId);
+        createDto.setStatus("settled");
+        createDto.setNote(note);
+        created.add(create(createDto));
+    }
+
+    private boolean isPositive(BigDecimal amount) {
+        return amount != null && amount.compareTo(BigDecimal.ZERO) > 0;
     }
 
     private void validateTxnFields(String txnType, Long accountId, Long categoryId,

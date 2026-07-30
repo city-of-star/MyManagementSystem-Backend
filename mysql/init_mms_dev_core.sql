@@ -212,7 +212,7 @@ CREATE TABLE IF NOT EXISTS `system_user_preference` (
 CREATE TABLE IF NOT EXISTS `finance_account` (
     `id` bigint NOT NULL COMMENT '主键ID',
     `name` varchar(64) NOT NULL COMMENT '账户名称',
-    `account_type` varchar(32) NOT NULL COMMENT '账户类型：cash/wechat/qq/bank/housing_fund/social_security/other',
+    `account_type` varchar(32) NOT NULL COMMENT '账户类型：cash/wechat/qq/bank/housing_fund/social_security/company_card/medical/other',
     `opening_balance` decimal(12, 2) NOT NULL DEFAULT 0.00 COMMENT '期初余额',
     `account_no` varchar(128) DEFAULT NULL COMMENT '账号/卡号',
     `note` varchar(512) DEFAULT NULL COMMENT '备注',
@@ -281,11 +281,13 @@ CREATE TABLE IF NOT EXISTS `finance_transaction` (
 CREATE TABLE IF NOT EXISTS `finance_recurring` (
     `id` bigint NOT NULL COMMENT '主键ID',
     `name` varchar(64) NOT NULL COMMENT '模板名称',
-    `direction` varchar(16) NOT NULL COMMENT '方向：income/expense',
+    `direction` varchar(16) NOT NULL COMMENT '方向：income/expense/transfer',
     `amount` decimal(12, 2) NOT NULL DEFAULT 0.00 COMMENT '默认金额（可为0，落账时改）',
-    `category_id` bigint NOT NULL COMMENT '分类ID',
-    `account_id` bigint NOT NULL COMMENT '账户ID',
-    `cycle` varchar(16) NOT NULL COMMENT '周期：daily/weekly/monthly',
+    `category_id` bigint DEFAULT NULL COMMENT '分类ID（收入/支出必填，转账可空）',
+    `account_id` bigint DEFAULT NULL COMMENT '账户ID（收入/支出必填，转账可空）',
+    `from_account_id` bigint DEFAULT NULL COMMENT '转出账户ID（转账模板）',
+    `to_account_id` bigint DEFAULT NULL COMMENT '转入账户ID（转账模板）',
+    `cycle` varchar(16) DEFAULT NULL COMMENT '提醒标签：daily/weekly/monthly，空=无提醒（不自动扣款）',
     `day_of_month` int DEFAULT NULL COMMENT '每月第几天（monthly）',
     `weekday` int DEFAULT NULL COMMENT '星期几 1-7（weekly）',
     `enabled` tinyint NOT NULL DEFAULT 1 COMMENT '是否启用：0-禁用，1-启用',
@@ -298,9 +300,11 @@ CREATE TABLE IF NOT EXISTS `finance_recurring` (
     PRIMARY KEY (`id`),
     KEY `idx_direction` (`direction`),
     KEY `idx_cycle` (`cycle`),
+    KEY `idx_from_account_id` (`from_account_id`),
+    KEY `idx_to_account_id` (`to_account_id`),
     KEY `idx_enabled` (`enabled`),
     KEY `idx_deleted` (`deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='固定账单模板表';
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='快捷记账模板表（手动点一次生成流水，不自动扣款）';
 
 -- 记账种子：账户
 INSERT IGNORE INTO `finance_account`
@@ -308,9 +312,12 @@ INSERT IGNORE INTO `finance_account`
 VALUES
     (1, '微信', 'wechat', 0.00, NULL, '微信零钱/收款', 10, 1, 0, NOW(), NOW()),
     (2, 'QQ', 'qq', 0.00, NULL, 'QQ钱包/红包', 20, 1, 0, NOW(), NOW()),
-    (3, '银行卡', 'bank', 0.00, NULL, '工资卡/储蓄卡', 30, 1, 0, NOW(), NOW()),
-    (4, '公积金', 'housing_fund', 0.00, NULL, '一般不提取，用于累计查看', 40, 1, 0, NOW(), NOW()),
-    (5, '社保', 'social_security', 0.00, NULL, '账号可写在「账号」字段', 50, 1, 0, NOW(), NOW());
+    (3, '招商卡', 'bank', 0.00, NULL, '工资卡（招商银行）', 30, 1, 0, NOW(), NOW()),
+    (4, '公积金', 'housing_fund', 0.00, NULL, '一般不提取，个人+公司缴纳均计入', 40, 1, 0, NOW(), NOW()),
+    (5, '社保', 'social_security', 0.00, NULL, '已停用：养老金等记为支出；医保请用医保卡账户', 50, 0, 0, NOW(), NOW()),
+    (6, '建行卡', 'bank', 0.00, NULL, '租房补贴等到账（建设银行）', 35, 1, 0, NOW(), NOW()),
+    (7, '公司卡', 'company_card', 0.00, NULL, '餐补等到账，可再转出到微信等', 45, 1, 0, NOW(), NOW()),
+    (8, '医保卡', 'medical', 1044.22, NULL, '个人医保账户；期初已计入 opening_balance', 55, 1, 0, NOW(), NOW());
 
 -- 记账种子：收入分类
 INSERT IGNORE INTO `finance_category`
@@ -322,7 +329,12 @@ VALUES
     (14, '网盘推广', 'income', NULL, 40, 1, 1, 0, NOW(), NOW()),
     (15, '工资', 'income', NULL, 50, 1, 1, 0, NOW(), NOW()),
     (16, '租房补贴', 'income', NULL, 60, 1, 1, 0, NOW(), NOW()),
-    (17, '其他收入', 'income', NULL, 70, 1, 1, 0, NOW(), NOW());
+    (17, '其他收入', 'income', NULL, 70, 1, 1, 0, NOW(), NOW()),
+    (18, '电脑补贴', 'income', NULL, 52, 1, 1, 0, NOW(), NOW()),
+    (19, '加班费', 'income', NULL, 54, 1, 1, 0, NOW(), NOW()),
+    (20, '餐补', 'income', NULL, 56, 1, 1, 0, NOW(), NOW()),
+    (35, '公司公积金', 'income', NULL, 58, 1, 1, 0, NOW(), NOW()),
+    (36, '公司医保', 'income', NULL, 59, 1, 1, 0, NOW(), NOW());
 
 -- 记账种子：支出分类
 INSERT IGNORE INTO `finance_category`
@@ -333,20 +345,23 @@ VALUES
     (23, '话费', 'expense', NULL, 30, 1, 1, 0, NOW(), NOW()),
     (24, 'Cursor登录助手', 'expense', NULL, 40, 1, 1, 0, NOW(), NOW()),
     (25, '房租', 'expense', NULL, 50, 1, 1, 0, NOW(), NOW()),
-    (26, '社保扣款', 'expense', NULL, 60, 1, 1, 0, NOW(), NOW()),
+    (26, '社保其他', 'expense', NULL, 60, 1, 1, 0, NOW(), NOW()),
     (27, '公积金扣款', 'expense', NULL, 70, 1, 1, 0, NOW(), NOW()),
     (28, '大额花费', 'expense', NULL, 80, 1, 1, 0, NOW(), NOW()),
-    (29, '其他支出', 'expense', NULL, 90, 1, 1, 0, NOW(), NOW());
+    (29, '其他支出', 'expense', NULL, 90, 1, 1, 0, NOW(), NOW()),
+    (37, '个税', 'expense', NULL, 62, 1, 1, 0, NOW(), NOW());
 
--- 记账种子：固定账单
+-- 记账种子：快捷模板
 INSERT IGNORE INTO `finance_recurring`
-(`id`, `name`, `direction`, `amount`, `category_id`, `account_id`, `cycle`, `day_of_month`, `weekday`, `enabled`, `note`, `deleted`, `create_time`, `update_time`)
+(`id`, `name`, `direction`, `amount`, `category_id`, `account_id`, `from_account_id`, `to_account_id`,
+ `cycle`, `day_of_month`, `weekday`, `enabled`, `note`, `deleted`, `create_time`, `update_time`)
 VALUES
-    (31, '每日饭钱', 'expense', 0.00, 21, 1, 'daily', NULL, NULL, 1, '每天记一笔，金额可改', 0, NOW(), NOW()),
-    (32, '话费', 'expense', 0.00, 23, 1, 'monthly', 1, NULL, 1, '每月话费，请改成真实金额', 0, NOW(), NOW()),
-    (33, 'Cursor登录助手', 'expense', 0.00, 24, 3, 'monthly', 1, NULL, 1, '每月助手费，请改成真实金额', 0, NOW(), NOW()),
-    (34, '房租', 'expense', 0.00, 25, 3, 'monthly', 1, NULL, 1, '每月房租，请改成真实金额', 0, NOW(), NOW());
-
+    (31, '每日饭钱', 'expense', 0.00, 21, 1, NULL, NULL, 'daily', NULL, NULL, 1, '快捷模板：点一次记一笔，不会自动扣款；金额可改', 0, NOW(), NOW()),
+    (32, '话费', 'expense', 0.00, 23, 1, NULL, NULL, 'monthly', 1, NULL, 1, '快捷模板：点一次记一笔，不会自动扣款；金额可改', 0, NOW(), NOW()),
+    (33, 'Cursor登录助手', 'expense', 0.00, 24, 3, NULL, NULL, 'monthly', 1, NULL, 1, '快捷模板：点一次记一笔，不会自动扣款；金额可改', 0, NOW(), NOW()),
+    (34, '房租', 'expense', 0.00, 25, 3, NULL, NULL, 'monthly', 1, NULL, 1, '快捷模板：点一次记一笔，不会自动扣款；金额可改', 0, NOW(), NOW()),
+    (35, '租房补贴', 'income', 0.00, 16, 6, NULL, NULL, 'monthly', NULL, NULL, 1, '发到建行卡；金额不固定，落账时填写', 0, NOW(), NOW()),
+    (36, '公司卡转出', 'transfer', 0.00, NULL, NULL, 7, 1, NULL, NULL, NULL, 1, '公司卡余额转到微信；金额按需填写', 0, NOW(), NOW());
 -- 系统配置表
 CREATE TABLE IF NOT EXISTS `system_config` (
     `id` bigint NOT NULL COMMENT '配置ID',
@@ -804,12 +819,11 @@ VALUES
     (96, 94, 'button', '分类-新增', 'FINANCE_CATEGORY_CREATE', NULL, NULL, NULL, 42, 1, 1, 0, NOW(), NOW()),
     (97, 94, 'button', '分类-编辑', 'FINANCE_CATEGORY_UPDATE', NULL, NULL, NULL, 43, 1, 1, 0, NOW(), NOW()),
     (98, 94, 'button', '分类-删除', 'FINANCE_CATEGORY_DELETE', NULL, NULL, NULL, 44, 1, 1, 0, NOW(), NOW()),
-    (99, 81, 'menu', '固定账单', 'FINANCE_RECURRING', '/finance/recurrings', '/finance/RecurringPage.vue', 'Calendar', 50, 1, 1, 0, NOW(), NOW()),
-    (100, 99, 'button', '固定账单-查看', 'FINANCE_RECURRING_VIEW', NULL, NULL, NULL, 51, 1, 1, 0, NOW(), NOW()),
-    (101, 99, 'button', '固定账单-新增', 'FINANCE_RECURRING_CREATE', NULL, NULL, NULL, 52, 1, 1, 0, NOW(), NOW()),
-    (102, 99, 'button', '固定账单-编辑', 'FINANCE_RECURRING_UPDATE', NULL, NULL, NULL, 53, 1, 1, 0, NOW(), NOW()),
-    (103, 99, 'button', '固定账单-删除', 'FINANCE_RECURRING_DELETE', NULL, NULL, NULL, 54, 1, 1, 0, NOW(), NOW());
-
+    (99, 81, 'menu', '快捷模板', 'FINANCE_RECURRING', '/finance/recurrings', '/finance/RecurringPage.vue', 'Calendar', 50, 1, 1, 0, NOW(), NOW()),
+    (100, 99, 'button', '快捷模板-查看', 'FINANCE_RECURRING_VIEW', NULL, NULL, NULL, 51, 1, 1, 0, NOW(), NOW()),
+    (101, 99, 'button', '快捷模板-新增', 'FINANCE_RECURRING_CREATE', NULL, NULL, NULL, 52, 1, 1, 0, NOW(), NOW()),
+    (102, 99, 'button', '快捷模板-编辑', 'FINANCE_RECURRING_UPDATE', NULL, NULL, NULL, 53, 1, 1, 0, NOW(), NOW()),
+    (103, 99, 'button', '快捷模板-删除', 'FINANCE_RECURRING_DELETE', NULL, NULL, NULL, 54, 1, 1, 0, NOW(), NOW());
 -- 将所有权限授予【超级管理员角色】和【管理员角色】
 INSERT IGNORE INTO `system_role_permission` (`id`, `role_id`, `permission_id`, `create_time`)
 SELECT 

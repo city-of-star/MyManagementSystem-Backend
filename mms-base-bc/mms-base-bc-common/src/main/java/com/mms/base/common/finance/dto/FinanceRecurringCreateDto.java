@@ -26,7 +26,7 @@ public class FinanceRecurringCreateDto {
 
     @NotBlank(message = "方向不能为空")
     @Size(max = 16, message = "方向长度不能超过16个字符")
-    @Schema(description = "方向：income/expense", requiredMode = Schema.RequiredMode.REQUIRED, example = "income")
+    @Schema(description = "方向：income/expense/transfer", requiredMode = Schema.RequiredMode.REQUIRED, example = "income")
     private String direction;
 
     @NotNull(message = "金额不能为空")
@@ -34,17 +34,20 @@ public class FinanceRecurringCreateDto {
     @Schema(description = "默认金额（可为0，落账时再填）", requiredMode = Schema.RequiredMode.REQUIRED, example = "10000.00")
     private BigDecimal amount;
 
-    @NotNull(message = "分类ID不能为空")
-    @Schema(description = "分类ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    @Schema(description = "分类ID（收入/支出必填）", example = "1")
     private Long categoryId;
 
-    @NotNull(message = "账户ID不能为空")
-    @Schema(description = "账户ID", requiredMode = Schema.RequiredMode.REQUIRED, example = "1")
+    @Schema(description = "账户ID（收入/支出必填）", example = "1")
     private Long accountId;
 
-    @NotBlank(message = "周期不能为空")
-    @Size(max = 16, message = "周期长度不能超过16个字符")
-    @Schema(description = "周期：daily/weekly/monthly", requiredMode = Schema.RequiredMode.REQUIRED, example = "monthly")
+    @Schema(description = "转出账户ID（转账必填）", example = "7")
+    private Long fromAccountId;
+
+    @Schema(description = "转入账户ID（转账必填）", example = "1")
+    private Long toAccountId;
+
+    @Size(max = 16, message = "提醒标签长度不能超过16个字符")
+    @Schema(description = "提醒标签：daily/weekly/monthly，空=无提醒（不自动扣款）", example = "monthly")
     private String cycle;
 
     @Schema(description = "每月几号（monthly）", example = "15")

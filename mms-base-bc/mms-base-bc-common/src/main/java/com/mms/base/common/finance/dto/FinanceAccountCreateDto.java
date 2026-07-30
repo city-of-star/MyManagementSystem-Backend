@@ -26,7 +26,7 @@ public class FinanceAccountCreateDto {
 
     @NotBlank(message = "账户类型不能为空")
     @Size(max = 32, message = "账户类型长度不能超过32个字符")
-    @Schema(description = "账户类型：cash/wechat/qq/bank/housing_fund/social_security/other",
+    @Schema(description = "账户类型：cash/wechat/qq/bank/housing_fund/social_security/company_card/medical/other",
             requiredMode = Schema.RequiredMode.REQUIRED, example = "wechat")
     private String accountType;
 

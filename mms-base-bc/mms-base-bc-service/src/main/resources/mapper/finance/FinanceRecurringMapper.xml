@@ -11,6 +11,10 @@
         c.name AS categoryName,
         r.account_id AS accountId,
         a.name AS accountName,
+        r.from_account_id AS fromAccountId,
+        fa.name AS fromAccountName,
+        r.to_account_id AS toAccountId,
+        ta.name AS toAccountName,
         r.cycle,
         r.day_of_month AS dayOfMonth,
         r.weekday,
@@ -28,6 +32,8 @@
         FROM finance_recurring r
         LEFT JOIN finance_category c ON c.id = r.category_id AND c.deleted = 0
         LEFT JOIN finance_account a ON a.id = r.account_id AND a.deleted = 0
+        LEFT JOIN finance_account fa ON fa.id = r.from_account_id AND fa.deleted = 0
+        LEFT JOIN finance_account ta ON ta.id = r.to_account_id AND ta.deleted = 0
         <where>
             r.deleted = 0
             <if test="dto.name != null and dto.name != ''">
@@ -52,6 +58,8 @@
         FROM finance_recurring r
         LEFT JOIN finance_category c ON c.id = r.category_id AND c.deleted = 0
         LEFT JOIN finance_account a ON a.id = r.account_id AND a.deleted = 0
+        LEFT JOIN finance_account fa ON fa.id = r.from_account_id AND fa.deleted = 0
+        LEFT JOIN finance_account ta ON ta.id = r.to_account_id AND ta.deleted = 0
         WHERE r.deleted = 0 AND r.id = #{id}
     </select>
 

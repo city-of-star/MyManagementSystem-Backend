@@ -35,7 +35,8 @@ import java.util.Set;
 public class FinanceAccountServiceImpl implements FinanceAccountService {
 
     private static final Set<String> ACCOUNT_TYPES = Set.of(
-            "cash", "wechat", "qq", "bank", "housing_fund", "social_security", "other");
+            "cash", "wechat", "qq", "bank", "housing_fund", "social_security",
+            "company_card", "medical", "other");
 
     @Resource
     private FinanceAccountMapper financeAccountMapper;

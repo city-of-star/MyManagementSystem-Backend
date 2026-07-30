@@ -1,12 +1,15 @@
 package com.mms.base.service.finance.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.mms.base.common.finance.dto.FinancePayrollBatchDto;
 import com.mms.base.common.finance.dto.FinanceTransactionBatchDeleteDto;
 import com.mms.base.common.finance.dto.FinanceTransactionCreateDto;
 import com.mms.base.common.finance.dto.FinanceTransactionFromRecurringDto;
 import com.mms.base.common.finance.dto.FinanceTransactionPageQueryDto;
 import com.mms.base.common.finance.dto.FinanceTransactionUpdateDto;
 import com.mms.base.common.finance.vo.FinanceTransactionVo;
+
+import java.util.List;
 
 /**
  * 实现功能【记账流水服务】
@@ -29,4 +32,6 @@ public interface FinanceTransactionService {
     void batchDelete(FinanceTransactionBatchDeleteDto dto);
 
     FinanceTransactionVo createFromRecurring(FinanceTransactionFromRecurringDto dto);
+
+    List<FinanceTransactionVo> createPayrollBatch(FinancePayrollBatchDto dto);
 }
