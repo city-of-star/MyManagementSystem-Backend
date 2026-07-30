@@ -2,7 +2,7 @@
 CREATE DATABASE IF NOT EXISTS `mms_side_income_prod_core` CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
 -- 使用该数据库
-USE `mms_prod_core`;
+USE `mms_side_income_prod_core`;
 
 -- 用户表
 CREATE TABLE IF NOT EXISTS `system_user` (
