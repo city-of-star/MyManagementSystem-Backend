@@ -183,14 +183,31 @@ public final class PermissionConstants {
     public static final String SECURITY_ONLINE_USER_FORCE_LOGOUT = "SECURITY_ONLINE_USER_FORCE_LOGOUT";
 
     /**
-     * 副业收入（目录 + 菜单 + 按钮）
+     * 个人记账（目录 + 菜单 + 按钮）
      */
-    public static final String SIDE_INCOME = "SIDE_INCOME";
-    public static final String SIDE_INCOME_RECORD = "SIDE_INCOME_RECORD";
-    public static final String SIDE_INCOME_RECORD_VIEW = "SIDE_INCOME_RECORD_VIEW";
-    public static final String SIDE_INCOME_RECORD_CREATE = "SIDE_INCOME_RECORD_CREATE";
-    public static final String SIDE_INCOME_RECORD_UPDATE = "SIDE_INCOME_RECORD_UPDATE";
-    public static final String SIDE_INCOME_RECORD_DELETE = "SIDE_INCOME_RECORD_DELETE";
+    public static final String FINANCE = "FINANCE";
+    public static final String FINANCE_DASHBOARD = "FINANCE_DASHBOARD";
+    public static final String FINANCE_DASHBOARD_VIEW = "FINANCE_DASHBOARD_VIEW";
+    public static final String FINANCE_TRANSACTION = "FINANCE_TRANSACTION";
+    public static final String FINANCE_TRANSACTION_VIEW = "FINANCE_TRANSACTION_VIEW";
+    public static final String FINANCE_TRANSACTION_CREATE = "FINANCE_TRANSACTION_CREATE";
+    public static final String FINANCE_TRANSACTION_UPDATE = "FINANCE_TRANSACTION_UPDATE";
+    public static final String FINANCE_TRANSACTION_DELETE = "FINANCE_TRANSACTION_DELETE";
+    public static final String FINANCE_ACCOUNT = "FINANCE_ACCOUNT";
+    public static final String FINANCE_ACCOUNT_VIEW = "FINANCE_ACCOUNT_VIEW";
+    public static final String FINANCE_ACCOUNT_CREATE = "FINANCE_ACCOUNT_CREATE";
+    public static final String FINANCE_ACCOUNT_UPDATE = "FINANCE_ACCOUNT_UPDATE";
+    public static final String FINANCE_ACCOUNT_DELETE = "FINANCE_ACCOUNT_DELETE";
+    public static final String FINANCE_CATEGORY = "FINANCE_CATEGORY";
+    public static final String FINANCE_CATEGORY_VIEW = "FINANCE_CATEGORY_VIEW";
+    public static final String FINANCE_CATEGORY_CREATE = "FINANCE_CATEGORY_CREATE";
+    public static final String FINANCE_CATEGORY_UPDATE = "FINANCE_CATEGORY_UPDATE";
+    public static final String FINANCE_CATEGORY_DELETE = "FINANCE_CATEGORY_DELETE";
+    public static final String FINANCE_RECURRING = "FINANCE_RECURRING";
+    public static final String FINANCE_RECURRING_VIEW = "FINANCE_RECURRING_VIEW";
+    public static final String FINANCE_RECURRING_CREATE = "FINANCE_RECURRING_CREATE";
+    public static final String FINANCE_RECURRING_UPDATE = "FINANCE_RECURRING_UPDATE";
+    public static final String FINANCE_RECURRING_DELETE = "FINANCE_RECURRING_DELETE";
 
     /**
      * 私有构造函数，防止实例化

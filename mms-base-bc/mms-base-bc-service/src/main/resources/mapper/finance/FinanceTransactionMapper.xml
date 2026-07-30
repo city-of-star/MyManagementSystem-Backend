@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mms.base.service.finance.mapper.FinanceTransactionMapper">
+
+    <sql id="transactionSelectColumns">
+        t.id,
+        t.txn_date AS txnDate,
+        t.txn_type AS txnType,
+        t.amount,
+        t.category_id AS categoryId,
+        c.name AS categoryName,
+        t.account_id AS accountId,
+        a.name AS accountName,
+        t.from_account_id AS fromAccountId,
+        fa.name AS fromAccountName,
+        t.to_account_id AS toAccountId,
+        ta.name AS toAccountName,
+        t.status,
+        t.note,
+        t.create_by AS createBy,
+        t.create_time AS createTime,
+        t.update_by AS updateBy,
+        t.update_time AS updateTime
+    </sql>
+
+    <select id="getTransactionPage" resultType="com.mms.base.common.finance.vo.FinanceTransactionVo">
+        SELECT
+        <include refid="transactionSelectColumns"/>
+        FROM finance_transaction t
+        LEFT JOIN finance_category c ON c.id = t.category_id AND c.deleted = 0
+        LEFT JOIN finance_account a ON a.id = t.account_id AND a.deleted = 0
+        LEFT JOIN finance_account fa ON fa.id = t.from_account_id AND fa.deleted = 0
+        LEFT JOIN finance_account ta ON ta.id = t.to_account_id AND ta.deleted = 0
+        <where>
+            t.deleted = 0
+            <if test="dto.txnType != null and dto.txnType != ''">
+                AND t.txn_type = #{dto.txnType}
+            </if>
+            <if test="dto.status != null and dto.status != ''">
+                AND t.status = #{dto.status}
+            </if>
+            <if test="dto.accountId != null">
+                AND (t.account_id = #{dto.accountId}
+                  OR t.from_account_id = #{dto.accountId}
+                  OR t.to_account_id = #{dto.accountId})
+            </if>
+            <if test="dto.categoryId != null">
+                AND t.category_id = #{dto.categoryId}
+            </if>
+            <if test="dto.txnDateStart != null">
+                AND t.txn_date <![CDATA[ >= ]]> #{dto.txnDateStart}
+            </if>
+            <if test="dto.txnDateEnd != null">
+                AND t.txn_date <![CDATA[ <= ]]> #{dto.txnDateEnd}
+            </if>
+            <if test="dto.note != null and dto.note != ''">
+                AND t.note LIKE CONCAT('%', #{dto.note}, '%')
+            </if>
+        </where>
+        ORDER BY t.txn_date DESC, t.id DESC
+    </select>
+
+    <select id="getTransactionById" resultType="com.mms.base.common.finance.vo.FinanceTransactionVo">
+        SELECT
+        <include refid="transactionSelectColumns"/>
+        FROM finance_transaction t
+        LEFT JOIN finance_category c ON c.id = t.category_id AND c.deleted = 0
+        LEFT JOIN finance_account a ON a.id = t.account_id AND a.deleted = 0
+        LEFT JOIN finance_account fa ON fa.id = t.from_account_id AND fa.deleted = 0
+        LEFT JOIN finance_account ta ON ta.id = t.to_account_id AND ta.deleted = 0
+        WHERE t.deleted = 0 AND t.id = #{id}
+    </select>
+
+    <select id="listDailyTrends" resultType="com.mms.base.common.finance.vo.FinanceDailyTrendVo">
+        SELECT
+            t.txn_date AS date,
+            COALESCE(SUM(CASE WHEN t.txn_type = 'income' THEN t.amount ELSE 0 END), 0) AS incomeAmount,
+            COALESCE(SUM(CASE WHEN t.txn_type = 'expense' THEN t.amount ELSE 0 END), 0) AS expenseAmount
+        FROM finance_transaction t
+        WHERE t.deleted = 0
+          AND t.status = 'settled'
+          AND t.txn_type IN ('income', 'expense')
+          AND t.txn_date <![CDATA[ >= ]]> #{startDate}
+          AND t.txn_date <![CDATA[ <= ]]> #{endDate}
+        GROUP BY t.txn_date
+        ORDER BY t.txn_date ASC
+    </select>
+
+    <select id="sumAmount" resultType="java.math.BigDecimal">
+        SELECT COALESCE(SUM(t.amount), 0)
+        FROM finance_transaction t
+        WHERE t.deleted = 0
+        <if test="txnType != null and txnType != ''">
+            AND t.txn_type = #{txnType}
+        </if>
+        <if test="status != null and status != ''">
+            AND t.status = #{status}
+        </if>
+        <if test="startDate != null">
+            AND t.txn_date <![CDATA[ >= ]]> #{startDate}
+        </if>
+        <if test="endDate != null">
+            AND t.txn_date <![CDATA[ <= ]]> #{endDate}
+        </if>
+    </select>
+
+    <select id="listExpenseCategoryStats" resultType="com.mms.base.common.finance.vo.FinanceCategoryStatVo">
+        SELECT
+            t.category_id AS categoryId,
+            COALESCE(c.name, '未分类') AS categoryName,
+            COALESCE(SUM(t.amount), 0) AS amount
+        FROM finance_transaction t
+        LEFT JOIN finance_category c ON c.id = t.category_id AND c.deleted = 0
+        WHERE t.deleted = 0
+          AND t.status = 'settled'
+          AND t.txn_type = 'expense'
+          AND t.txn_date <![CDATA[ >= ]]> #{startDate}
+          AND t.txn_date <![CDATA[ <= ]]> #{endDate}
+        GROUP BY t.category_id, c.name
+        ORDER BY amount DESC
+        <if test="limit != null">
+            LIMIT #{limit}
+        </if>
+    </select>
+
+    <select id="countByAccountId" resultType="long">
+        SELECT COUNT(1)
+        FROM finance_transaction t
+        WHERE t.deleted = 0
+          AND (t.account_id = #{accountId}
+            OR t.from_account_id = #{accountId}
+            OR t.to_account_id = #{accountId})
+    </select>
+
+    <select id="countByCategoryId" resultType="long">
+        SELECT COUNT(1)
+        FROM finance_transaction t
+        WHERE t.deleted = 0
+          AND t.category_id = #{categoryId}
+    </select>
+
+</mapper>

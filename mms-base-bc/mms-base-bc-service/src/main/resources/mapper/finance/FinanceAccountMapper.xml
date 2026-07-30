@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mms.base.service.finance.mapper.FinanceAccountMapper">
+
+    <sql id="balanceExpr">
+        COALESCE(a.opening_balance, 0)
+        + COALESCE((
+            SELECT SUM(t.amount) FROM finance_transaction t
+            WHERE t.deleted = 0 AND t.status = 'settled' AND t.txn_type = 'income' AND t.account_id = a.id
+        ), 0)
+        - COALESCE((
+            SELECT SUM(t.amount) FROM finance_transaction t
+            WHERE t.deleted = 0 AND t.status = 'settled' AND t.txn_type = 'expense' AND t.account_id = a.id
+        ), 0)
+        + COALESCE((
+            SELECT SUM(t.amount) FROM finance_transaction t
+            WHERE t.deleted = 0 AND t.status = 'settled' AND t.txn_type = 'transfer' AND t.to_account_id = a.id
+        ), 0)
+        - COALESCE((
+            SELECT SUM(t.amount) FROM finance_transaction t
+            WHERE t.deleted = 0 AND t.status = 'settled' AND t.txn_type = 'transfer' AND t.from_account_id = a.id
+        ), 0)
+    </sql>
+
+    <sql id="accountSelectColumns">
+        a.id,
+        a.name,
+        a.account_type AS accountType,
+        a.opening_balance AS openingBalance,
+        (<include refid="balanceExpr"/>) AS balance,
+        a.account_no AS accountNo,
+        a.note,
+        a.sort_order AS sortOrder,
+        a.enabled,
+        a.create_by AS createBy,
+        a.create_time AS createTime,
+        a.update_by AS updateBy,
+        a.update_time AS updateTime
+    </sql>
+
+    <select id="getAccountPage" resultType="com.mms.base.common.finance.vo.FinanceAccountVo">
+        SELECT
+        <include refid="accountSelectColumns"/>
+        FROM finance_account a
+        <where>
+            a.deleted = 0
+            <if test="dto.name != null and dto.name != ''">
+                AND a.name LIKE CONCAT('%', #{dto.name}, '%')
+            </if>
+            <if test="dto.accountType != null and dto.accountType != ''">
+                AND a.account_type = #{dto.accountType}
+            </if>
+            <if test="dto.enabled != null">
+                AND a.enabled = #{dto.enabled}
+            </if>
+        </where>
+        ORDER BY a.sort_order ASC, a.id DESC
+    </select>
+
+    <select id="listAccountsWithBalance" resultType="com.mms.base.common.finance.vo.FinanceAccountVo">
+        SELECT
+        <include refid="accountSelectColumns"/>
+        FROM finance_account a
+        <where>
+            a.deleted = 0
+            <if test="enabled != null">
+                AND a.enabled = #{enabled}
+            </if>
+        </where>
+        ORDER BY a.sort_order ASC, a.id DESC
+    </select>
+
+    <select id="listAccountBalances" resultType="com.mms.base.common.finance.vo.FinanceAccountBalanceVo">
+        SELECT
+            a.id AS accountId,
+            a.name AS accountName,
+            a.account_type AS accountType,
+            (<include refid="balanceExpr"/>) AS balance
+        FROM finance_account a
+        <where>
+            a.deleted = 0
+            <if test="enabled != null">
+                AND a.enabled = #{enabled}
+            </if>
+        </where>
+        ORDER BY a.sort_order ASC, a.id DESC
+    </select>
+
+    <select id="getAccountWithBalance" resultType="com.mms.base.common.finance.vo.FinanceAccountVo">
+        SELECT
+        <include refid="accountSelectColumns"/>
+        FROM finance_account a
+        WHERE a.deleted = 0 AND a.id = #{id}
+    </select>
+
+</mapper>

@@ -87,6 +87,22 @@ public final class OperationLogPermissionMappings {
         put(map, PermissionConstants.AUDIT_API_ACCESS_LOG_ANALYZE, "接口访问日志", "export", "接口访问统计分析");
         // 在线用户
         put(map, PermissionConstants.SECURITY_ONLINE_USER_FORCE_LOGOUT, "在线用户", "logout", "强制用户下线");
+        // 个人记账 - 流水
+        put(map, PermissionConstants.FINANCE_TRANSACTION_CREATE, "记账流水", "create", "新增记账流水");
+        put(map, PermissionConstants.FINANCE_TRANSACTION_UPDATE, "记账流水", "update", "修改记账流水");
+        put(map, PermissionConstants.FINANCE_TRANSACTION_DELETE, "记账流水", "delete", "删除记账流水");
+        // 个人记账 - 账户
+        put(map, PermissionConstants.FINANCE_ACCOUNT_CREATE, "记账账户", "create", "新增记账账户");
+        put(map, PermissionConstants.FINANCE_ACCOUNT_UPDATE, "记账账户", "update", "修改记账账户");
+        put(map, PermissionConstants.FINANCE_ACCOUNT_DELETE, "记账账户", "delete", "删除记账账户");
+        // 个人记账 - 分类
+        put(map, PermissionConstants.FINANCE_CATEGORY_CREATE, "记账分类", "create", "新增记账分类");
+        put(map, PermissionConstants.FINANCE_CATEGORY_UPDATE, "记账分类", "update", "修改记账分类");
+        put(map, PermissionConstants.FINANCE_CATEGORY_DELETE, "记账分类", "delete", "删除记账分类");
+        // 个人记账 - 周期模板
+        put(map, PermissionConstants.FINANCE_RECURRING_CREATE, "周期记账", "create", "新增周期模板");
+        put(map, PermissionConstants.FINANCE_RECURRING_UPDATE, "周期记账", "update", "修改周期模板");
+        put(map, PermissionConstants.FINANCE_RECURRING_DELETE, "周期记账", "delete", "删除周期模板");
         MAPPINGS = Collections.unmodifiableMap(map);
     }
 
