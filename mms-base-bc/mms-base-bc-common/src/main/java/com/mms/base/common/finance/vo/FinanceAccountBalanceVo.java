@@ -26,4 +26,7 @@ public class FinanceAccountBalanceVo {
 
     @Schema(description = "当前余额")
     private BigDecimal balance;
+
+    @Schema(description = "基金壳下已确认持仓市值（仅 accountType=fund 有值）")
+    private BigDecimal holdingMarketValue;
 }

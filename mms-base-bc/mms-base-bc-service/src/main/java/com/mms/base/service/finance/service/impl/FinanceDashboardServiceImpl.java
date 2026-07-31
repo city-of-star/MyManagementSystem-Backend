@@ -4,6 +4,7 @@ import com.mms.base.common.finance.vo.FinanceAccountBalanceVo;
 import com.mms.base.common.finance.vo.FinanceCategoryStatVo;
 import com.mms.base.common.finance.vo.FinanceDailyTrendVo;
 import com.mms.base.common.finance.vo.FinanceDashboardSummaryVo;
+import com.mms.base.common.finance.vo.FinanceFundAccountMarketVo;
 import com.mms.base.common.finance.vo.FinanceFundHoldingSummaryVo;
 import com.mms.base.service.finance.mapper.FinanceAccountMapper;
 import com.mms.base.service.finance.mapper.FinanceFundHoldingMapper;
@@ -67,6 +68,24 @@ public class FinanceDashboardServiceImpl implements FinanceDashboardService {
                     financeTransactionMapper.sumAmount("transfer", "pending", null, null, userId));
 
             List<FinanceAccountBalanceVo> accounts = financeAccountMapper.listAccountBalances(1, userId);
+            Map<Long, BigDecimal> fundMarketByAccount = financeFundHoldingMapper
+                    .listConfirmedMarketByAccount(userId)
+                    .stream()
+                    .filter(item -> item.getAccountId() != null)
+                    .collect(Collectors.toMap(
+                            FinanceFundAccountMarketVo::getAccountId,
+                            item -> item.getConfirmedMarketValue() == null
+                                    ? BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP)
+                                    : item.getConfirmedMarketValue().setScale(2, RoundingMode.HALF_UP),
+                            (a, b) -> a));
+            for (FinanceAccountBalanceVo account : accounts) {
+                if ("fund".equals(account.getAccountType())) {
+                    account.setHoldingMarketValue(
+                            fundMarketByAccount.getOrDefault(
+                                    account.getAccountId(),
+                                    BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP)));
+                }
+            }
             BigDecimal nonFundAsset = accounts.stream()
                     .filter(item -> item.getAccountType() == null || !"fund".equals(item.getAccountType()))
                     .map(FinanceAccountBalanceVo::getBalance)
