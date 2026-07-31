@@ -1,6 +1,7 @@
 package com.mms.base.service.finance.service;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.mms.base.common.finance.dto.FinanceAdjustmentDto;
 import com.mms.base.common.finance.dto.FinancePayrollBatchDto;
 import com.mms.base.common.finance.dto.FinanceTransactionBatchDeleteDto;
 import com.mms.base.common.finance.dto.FinanceTransactionCreateDto;
@@ -34,4 +35,6 @@ public interface FinanceTransactionService {
     FinanceTransactionVo createFromRecurring(FinanceTransactionFromRecurringDto dto);
 
     List<FinanceTransactionVo> createPayrollBatch(FinancePayrollBatchDto dto);
+
+    FinanceTransactionVo createAdjustment(FinanceAdjustmentDto dto);
 }

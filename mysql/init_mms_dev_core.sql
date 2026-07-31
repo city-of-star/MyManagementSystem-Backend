@@ -253,8 +253,8 @@ CREATE TABLE IF NOT EXISTS `finance_category` (
 CREATE TABLE IF NOT EXISTS `finance_transaction` (
     `id` bigint NOT NULL COMMENT '主键ID',
     `txn_date` date NOT NULL COMMENT '业务日期',
-    `txn_type` varchar(16) NOT NULL COMMENT '类型：income/expense/transfer',
-    `amount` decimal(12, 2) NOT NULL COMMENT '金额（元）',
+    `txn_type` varchar(16) NOT NULL COMMENT '类型：income/expense/transfer/adjustment',
+    `amount` decimal(12, 2) NOT NULL COMMENT '金额（元；adjustment 可为负）',
     `category_id` bigint DEFAULT NULL COMMENT '分类ID（划转可空）',
     `account_id` bigint DEFAULT NULL COMMENT '账户ID（收入/支出）',
     `from_account_id` bigint DEFAULT NULL COMMENT '转出账户ID（划转）',
@@ -287,9 +287,10 @@ CREATE TABLE IF NOT EXISTS `finance_recurring` (
     `account_id` bigint DEFAULT NULL COMMENT '账户ID（收入/支出必填，转账可空）',
     `from_account_id` bigint DEFAULT NULL COMMENT '转出账户ID（转账模板）',
     `to_account_id` bigint DEFAULT NULL COMMENT '转入账户ID（转账模板）',
-    `cycle` varchar(16) DEFAULT NULL COMMENT '提醒标签：daily/weekly/monthly，空=无提醒（不自动扣款）',
-    `day_of_month` int DEFAULT NULL COMMENT '每月第几天（monthly）',
-    `weekday` int DEFAULT NULL COMMENT '星期几 1-7（weekly）',
+    `cycle` varchar(16) DEFAULT NULL COMMENT '提醒标签（已废弃，业务层忽略）',
+    `day_of_month` int DEFAULT NULL COMMENT '每月第几天（已废弃）',
+    `weekday` int DEFAULT NULL COMMENT '星期几 1-7（已废弃）',
+    `sort_order` int NOT NULL DEFAULT 0 COMMENT '排序号',
     `enabled` tinyint NOT NULL DEFAULT 1 COMMENT '是否启用：0-禁用，1-启用',
     `note` varchar(512) DEFAULT NULL COMMENT '备注',
     `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除',
@@ -302,6 +303,7 @@ CREATE TABLE IF NOT EXISTS `finance_recurring` (
     KEY `idx_cycle` (`cycle`),
     KEY `idx_from_account_id` (`from_account_id`),
     KEY `idx_to_account_id` (`to_account_id`),
+    KEY `idx_sort_order` (`sort_order`),
     KEY `idx_enabled` (`enabled`),
     KEY `idx_deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='快捷记账模板表（手动点一次生成流水，不自动扣款）';
@@ -354,14 +356,14 @@ VALUES
 -- 记账种子：快捷模板
 INSERT IGNORE INTO `finance_recurring`
 (`id`, `name`, `direction`, `amount`, `category_id`, `account_id`, `from_account_id`, `to_account_id`,
- `cycle`, `day_of_month`, `weekday`, `enabled`, `note`, `deleted`, `create_time`, `update_time`)
+ `cycle`, `day_of_month`, `weekday`, `sort_order`, `enabled`, `note`, `deleted`, `create_time`, `update_time`)
 VALUES
-    (31, '每日饭钱', 'expense', 0.00, 21, 1, NULL, NULL, 'daily', NULL, NULL, 1, '快捷模板：点一次记一笔，不会自动扣款；金额可改', 0, NOW(), NOW()),
-    (32, '话费', 'expense', 0.00, 23, 1, NULL, NULL, 'monthly', 1, NULL, 1, '快捷模板：点一次记一笔，不会自动扣款；金额可改', 0, NOW(), NOW()),
-    (33, 'Cursor登录助手', 'expense', 0.00, 24, 3, NULL, NULL, 'monthly', 1, NULL, 1, '快捷模板：点一次记一笔，不会自动扣款；金额可改', 0, NOW(), NOW()),
-    (34, '房租', 'expense', 0.00, 25, 3, NULL, NULL, 'monthly', 1, NULL, 1, '快捷模板：点一次记一笔，不会自动扣款；金额可改', 0, NOW(), NOW()),
-    (35, '租房补贴', 'income', 0.00, 16, 6, NULL, NULL, 'monthly', NULL, NULL, 1, '发到建行卡；金额不固定，落账时填写', 0, NOW(), NOW()),
-    (36, '公司卡转出', 'transfer', 0.00, NULL, NULL, 7, 1, NULL, NULL, NULL, 1, '公司卡余额转到微信；金额按需填写', 0, NOW(), NOW());
+    (31, '每日饭钱', 'expense', 0.00, 21, 1, NULL, NULL, NULL, NULL, NULL, 10, 1, '快捷模板：点一次记一笔，不会自动扣款；金额可改', 0, NOW(), NOW()),
+    (32, '话费', 'expense', 0.00, 23, 1, NULL, NULL, NULL, NULL, NULL, 20, 1, '快捷模板：点一次记一笔，不会自动扣款；金额可改', 0, NOW(), NOW()),
+    (33, 'Cursor登录助手', 'expense', 0.00, 24, 3, NULL, NULL, NULL, NULL, NULL, 30, 1, '快捷模板：点一次记一笔，不会自动扣款；金额可改', 0, NOW(), NOW()),
+    (34, '房租', 'expense', 0.00, 25, 3, NULL, NULL, NULL, NULL, NULL, 40, 1, '快捷模板：点一次记一笔，不会自动扣款；金额可改', 0, NOW(), NOW()),
+    (35, '租房补贴', 'income', 0.00, 16, 6, NULL, NULL, NULL, NULL, NULL, 50, 1, '发到建行卡；金额不固定，落账时填写', 0, NOW(), NOW()),
+    (36, '公司卡转出', 'transfer', 0.00, NULL, NULL, 7, 1, NULL, NULL, NULL, 60, 1, '公司卡余额转到微信；金额按需填写', 0, NOW(), NOW());
 -- 系统配置表
 CREATE TABLE IF NOT EXISTS `system_config` (
     `id` bigint NOT NULL COMMENT '配置ID',

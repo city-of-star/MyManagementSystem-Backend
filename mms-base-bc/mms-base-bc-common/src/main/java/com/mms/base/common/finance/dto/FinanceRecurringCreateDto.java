@@ -46,15 +46,8 @@ public class FinanceRecurringCreateDto {
     @Schema(description = "转入账户ID（转账必填）", example = "1")
     private Long toAccountId;
 
-    @Size(max = 16, message = "提醒标签长度不能超过16个字符")
-    @Schema(description = "提醒标签：daily/weekly/monthly，空=无提醒（不自动扣款）", example = "monthly")
-    private String cycle;
-
-    @Schema(description = "每月几号（monthly）", example = "15")
-    private Integer dayOfMonth;
-
-    @Schema(description = "星期几（weekly，1-7）", example = "1")
-    private Integer weekday;
+    @Schema(description = "排序号", example = "10")
+    private Integer sortOrder;
 
     @Schema(description = "是否启用：1-启用，0-禁用", example = "1")
     private Integer enabled;

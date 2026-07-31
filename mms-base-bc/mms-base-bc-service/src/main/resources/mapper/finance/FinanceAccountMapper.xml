@@ -20,6 +20,10 @@
             SELECT SUM(t.amount) FROM finance_transaction t
             WHERE t.deleted = 0 AND t.status = 'settled' AND t.txn_type = 'transfer' AND t.from_account_id = a.id
         ), 0)
+        + COALESCE((
+            SELECT SUM(t.amount) FROM finance_transaction t
+            WHERE t.deleted = 0 AND t.status = 'settled' AND t.txn_type = 'adjustment' AND t.account_id = a.id
+        ), 0)
     </sql>
 
     <sql id="accountSelectColumns">

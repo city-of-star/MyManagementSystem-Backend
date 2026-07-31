@@ -52,14 +52,8 @@ public class FinanceRecurringVo {
     @Schema(description = "转入账户名称")
     private String toAccountName;
 
-    @Schema(description = "提醒标签：daily/weekly/monthly，空=无提醒")
-    private String cycle;
-
-    @Schema(description = "每月几号")
-    private Integer dayOfMonth;
-
-    @Schema(description = "星期几")
-    private Integer weekday;
+    @Schema(description = "排序号")
+    private Integer sortOrder;
 
     @Schema(description = "是否启用：1/0")
     private Integer enabled;

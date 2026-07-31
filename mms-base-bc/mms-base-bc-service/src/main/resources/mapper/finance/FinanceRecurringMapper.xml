@@ -15,9 +15,7 @@
         fa.name AS fromAccountName,
         r.to_account_id AS toAccountId,
         ta.name AS toAccountName,
-        r.cycle,
-        r.day_of_month AS dayOfMonth,
-        r.weekday,
+        r.sort_order AS sortOrder,
         r.enabled,
         r.note,
         r.create_by AS createBy,
@@ -42,14 +40,11 @@
             <if test="dto.direction != null and dto.direction != ''">
                 AND r.direction = #{dto.direction}
             </if>
-            <if test="dto.cycle != null and dto.cycle != ''">
-                AND r.cycle = #{dto.cycle}
-            </if>
             <if test="dto.enabled != null">
                 AND r.enabled = #{dto.enabled}
             </if>
         </where>
-        ORDER BY r.id DESC
+        ORDER BY r.sort_order ASC, r.id DESC
     </select>
 
     <select id="getRecurringById" resultType="com.mms.base.common.finance.vo.FinanceRecurringVo">

@@ -22,11 +22,8 @@ public class FinanceRecurringPageQueryDto {
     @Schema(description = "模板名称关键字")
     private String name;
 
-    @Schema(description = "方向：income/expense")
+    @Schema(description = "方向：income/expense/transfer")
     private String direction;
-
-    @Schema(description = "周期：daily/weekly/monthly")
-    private String cycle;
 
     @Schema(description = "是否启用：1/0")
     private Integer enabled;

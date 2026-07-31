@@ -105,7 +105,7 @@ public class FinancePayrollBatchDto {
     @Schema(description = "公司公积金（入公积金）", example = "300.00")
     private BigDecimal companyHousingFund;
 
-    @Schema(description = "公司医保（入医保卡）", example = "320.00")
+    @Schema(description = "公司医保（统筹，不计账，兼容旧客户端可传但忽略）", example = "320.00")
     private BigDecimal companyMedical;
 
     @Schema(description = "个税", example = "0.00")

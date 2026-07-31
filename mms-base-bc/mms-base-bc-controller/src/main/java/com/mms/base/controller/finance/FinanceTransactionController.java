@@ -1,6 +1,7 @@
 package com.mms.base.controller.finance;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.mms.base.common.finance.dto.FinanceAdjustmentDto;
 import com.mms.base.common.finance.dto.FinancePayrollBatchDto;
 import com.mms.base.common.finance.dto.FinanceTransactionBatchDeleteDto;
 import com.mms.base.common.finance.dto.FinanceTransactionCreateDto;
@@ -67,6 +68,13 @@ public class FinanceTransactionController {
     @PostMapping("/payroll-batch")
     public Response<List<FinanceTransactionVo>> payrollBatch(@RequestBody @Valid FinancePayrollBatchDto dto) {
         return Response.success(financeTransactionService.createPayrollBatch(dto));
+    }
+
+    @Operation(summary = "平账（按真实余额生成差额流水）")
+    @RequiresPermission(PermissionConstants.FINANCE_TRANSACTION_CREATE)
+    @PostMapping("/adjust")
+    public Response<FinanceTransactionVo> adjust(@RequestBody @Valid FinanceAdjustmentDto dto) {
+        return Response.success(financeTransactionService.createAdjustment(dto));
     }
 
     @Operation(summary = "更新流水")

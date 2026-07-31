@@ -1,6 +1,7 @@
 package com.mms.base.service.finance.service.impl;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.mms.base.common.finance.dto.FinanceAdjustmentDto;
 import com.mms.base.common.finance.dto.FinancePayrollBatchDto;
 import com.mms.base.common.finance.dto.FinanceTransactionBatchDeleteDto;
 import com.mms.base.common.finance.dto.FinanceTransactionCreateDto;
@@ -11,6 +12,7 @@ import com.mms.base.common.finance.entity.FinanceAccountEntity;
 import com.mms.base.common.finance.entity.FinanceCategoryEntity;
 import com.mms.base.common.finance.entity.FinanceRecurringEntity;
 import com.mms.base.common.finance.entity.FinanceTransactionEntity;
+import com.mms.base.common.finance.vo.FinanceAccountVo;
 import com.mms.base.common.finance.vo.FinanceTransactionVo;
 import com.mms.base.service.finance.mapper.FinanceAccountMapper;
 import com.mms.base.service.finance.mapper.FinanceCategoryMapper;
@@ -44,7 +46,7 @@ import java.util.Set;
 @Service
 public class FinanceTransactionServiceImpl implements FinanceTransactionService {
 
-    private static final Set<String> TXN_TYPES = Set.of("income", "expense", "transfer");
+    private static final Set<String> TXN_TYPES = Set.of("income", "expense", "transfer", "adjustment");
     private static final Set<String> STATUSES = Set.of("settled", "pending");
 
     @Resource
@@ -95,6 +97,9 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
     public FinanceTransactionVo create(FinanceTransactionCreateDto dto) {
         try {
             log.info("创建记账流水，参数：{}", dto);
+            if ("adjustment".equals(dto.getTxnType())) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "平账请使用专用接口 /finance/transaction/adjust");
+            }
             String status = StringUtils.hasText(dto.getStatus()) ? dto.getStatus() : "settled";
             validateTxnFields(dto.getTxnType(), dto.getAccountId(), dto.getCategoryId(),
                     dto.getFromAccountId(), dto.getToAccountId(), status);
@@ -159,6 +164,16 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
             }
             if (dto.getNote() != null) {
                 entity.setNote(dto.getNote());
+            }
+            if (!"adjustment".equals(entity.getTxnType())
+                    && entity.getAmount() != null
+                    && entity.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "金额必须大于0");
+            }
+            if ("adjustment".equals(entity.getTxnType())
+                    && entity.getAmount() != null
+                    && entity.getAmount().compareTo(BigDecimal.ZERO) == 0) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "平账差额不能为0");
             }
             validateTxnFields(entity.getTxnType(), entity.getAccountId(), entity.getCategoryId(),
                     entity.getFromAccountId(), entity.getToAccountId(), entity.getStatus());
@@ -274,6 +289,45 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
         }
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public FinanceTransactionVo createAdjustment(FinanceAdjustmentDto dto) {
+        try {
+            log.info("平账，参数：{}", dto);
+            FinanceAccountVo account = financeAccountMapper.getAccountWithBalance(dto.getAccountId());
+            if (account == null) {
+                throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "账户不存在");
+            }
+            BigDecimal bookBalance = account.getBalance() == null ? BigDecimal.ZERO : account.getBalance();
+            BigDecimal actual = scaleMoney(dto.getActualBalance());
+            BigDecimal diff = actual.subtract(bookBalance).setScale(2, RoundingMode.HALF_UP);
+            if (diff.compareTo(BigDecimal.ZERO) == 0) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "真实余额与账面一致，无需平账");
+            }
+
+            FinanceTransactionEntity entity = new FinanceTransactionEntity();
+            entity.setTxnDate(dto.getTxnDate());
+            entity.setTxnType("adjustment");
+            entity.setAmount(diff);
+            entity.setAccountId(dto.getAccountId());
+            entity.setCategoryId(null);
+            entity.setFromAccountId(null);
+            entity.setToAccountId(null);
+            entity.setStatus("settled");
+            String note = StringUtils.hasText(dto.getNote())
+                    ? dto.getNote()
+                    : String.format("平账：账面 %s → 真实 %s", bookBalance.toPlainString(), actual.toPlainString());
+            entity.setNote(note);
+            financeTransactionMapper.insert(entity);
+            return financeTransactionMapper.getTransactionById(entity.getId());
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("平账失败：{}", e.getMessage(), e);
+            throw new ServerException("平账失败", e);
+        }
+    }
+
     private FinanceTransactionVo createNetOnlyPayroll(FinancePayrollBatchDto dto) {
         if (dto.getNetAmount() == null || dto.getNetAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new BusinessException(ErrorCode.PARAM_INVALID, "先记到手金额必须大于0");
@@ -314,8 +368,7 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
                 dto.getSalaryAccountId(), dto.getHousingFundAccountId(), notePrefix + "个人公积金");
         addIncomeIfPositive(created, dto, dto.getCompanyHousingFund(), dto.getHousingFundAccountId(),
                 dto.getCompanyHousingFundCategoryId(), notePrefix + "公司公积金");
-        addIncomeIfPositive(created, dto, dto.getCompanyMedical(), dto.getMedicalAccountId(),
-                dto.getCompanyMedicalCategoryId(), notePrefix + "公司医保");
+        // 公司医保为统筹缴费，不入个人医保卡、不生成流水
         addExpenseIfPositive(created, dto, dto.getTax(), dto.getSalaryAccountId(),
                 dto.getTaxCategoryId(), notePrefix + "个税");
 
@@ -386,7 +439,7 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
     private void validateTxnFields(String txnType, Long accountId, Long categoryId,
                                    Long fromAccountId, Long toAccountId, String status) {
         if (!StringUtils.hasText(txnType) || !TXN_TYPES.contains(txnType)) {
-            throw new BusinessException(ErrorCode.PARAM_INVALID, "交易类型不合法，仅支持 income/expense/transfer");
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "交易类型不合法，仅支持 income/expense/transfer/adjustment");
         }
         if (!StringUtils.hasText(status) || !STATUSES.contains(status)) {
             throw new BusinessException(ErrorCode.PARAM_INVALID, "状态不合法，仅支持 settled/pending");
@@ -408,6 +461,13 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
             if (Objects.equals(fromAccountId, toAccountId)) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "转出与转入账户不能相同");
             }
+        } else if ("adjustment".equals(txnType)) {
+            if (accountId == null) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "平账必须指定账户");
+            }
+            if (!"settled".equals(status)) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "平账状态须为已入账");
+            }
         }
     }
 
@@ -417,6 +477,12 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
             entity.setToAccountId(null);
         } else if ("transfer".equals(entity.getTxnType())) {
             entity.setAccountId(null);
+            entity.setCategoryId(null);
+        } else if ("adjustment".equals(entity.getTxnType())) {
+            entity.setFromAccountId(null);
+            entity.setToAccountId(null);
+            entity.setCategoryId(null);
+            entity.setStatus("settled");
         }
     }
 

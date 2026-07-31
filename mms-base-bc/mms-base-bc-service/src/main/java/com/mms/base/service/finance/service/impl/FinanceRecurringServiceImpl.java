@@ -38,7 +38,6 @@ import java.util.Set;
 public class FinanceRecurringServiceImpl implements FinanceRecurringService {
 
     private static final Set<String> DIRECTIONS = Set.of("income", "expense", "transfer");
-    private static final Set<String> CYCLES = Set.of("daily", "weekly", "monthly");
 
     @Resource
     private FinanceRecurringMapper financeRecurringMapper;
@@ -85,8 +84,7 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
     public FinanceRecurringVo create(FinanceRecurringCreateDto dto) {
         try {
             log.info("创建快捷模板，参数：{}", dto);
-            validateDirectionAndCycle(dto.getDirection(), dto.getCycle());
-            validateCycleFields(dto.getCycle(), dto.getDayOfMonth(), dto.getWeekday());
+            validateDirection(dto.getDirection());
             validateDirectionFields(dto.getDirection(), dto.getCategoryId(), dto.getAccountId(),
                     dto.getFromAccountId(), dto.getToAccountId());
             ensureAccountExists(dto.getAccountId());
@@ -102,9 +100,10 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
             entity.setAccountId(dto.getAccountId());
             entity.setFromAccountId(dto.getFromAccountId());
             entity.setToAccountId(dto.getToAccountId());
-            entity.setCycle(blankToNull(dto.getCycle()));
-            entity.setDayOfMonth(dto.getDayOfMonth());
-            entity.setWeekday(dto.getWeekday());
+            entity.setCycle(null);
+            entity.setDayOfMonth(null);
+            entity.setWeekday(null);
+            entity.setSortOrder(dto.getSortOrder() == null ? 0 : dto.getSortOrder());
             entity.setEnabled(dto.getEnabled() == null ? 1 : dto.getEnabled());
             entity.setNote(dto.getNote());
             normalizeByDirection(entity);
@@ -131,7 +130,7 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
                 entity.setName(dto.getName());
             }
             if (StringUtils.hasText(dto.getDirection())) {
-                validateDirectionAndCycle(dto.getDirection(), null);
+                validateDirection(dto.getDirection());
                 entity.setDirection(dto.getDirection());
             }
             if (dto.getAmount() != null) {
@@ -153,15 +152,8 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
                 ensureAccountExists(dto.getToAccountId());
                 entity.setToAccountId(dto.getToAccountId());
             }
-            if (dto.getCycle() != null) {
-                validateDirectionAndCycle(null, blankToNull(dto.getCycle()));
-                entity.setCycle(blankToNull(dto.getCycle()));
-            }
-            if (dto.getDayOfMonth() != null) {
-                entity.setDayOfMonth(dto.getDayOfMonth());
-            }
-            if (dto.getWeekday() != null) {
-                entity.setWeekday(dto.getWeekday());
+            if (dto.getSortOrder() != null) {
+                entity.setSortOrder(dto.getSortOrder());
             }
             if (dto.getEnabled() != null) {
                 entity.setEnabled(dto.getEnabled());
@@ -169,7 +161,10 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
             if (dto.getNote() != null) {
                 entity.setNote(dto.getNote());
             }
-            validateCycleFields(entity.getCycle(), entity.getDayOfMonth(), entity.getWeekday());
+            // 提醒字段已废弃：读写忽略并清空
+            entity.setCycle(null);
+            entity.setDayOfMonth(null);
+            entity.setWeekday(null);
             validateDirectionFields(entity.getDirection(), entity.getCategoryId(), entity.getAccountId(),
                     entity.getFromAccountId(), entity.getToAccountId());
             normalizeByDirection(entity);
@@ -221,12 +216,9 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
         }
     }
 
-    private void validateDirectionAndCycle(String direction, String cycle) {
+    private void validateDirection(String direction) {
         if (direction != null && !DIRECTIONS.contains(direction)) {
             throw new BusinessException(ErrorCode.PARAM_INVALID, "方向不合法，仅支持 income/expense/transfer");
-        }
-        if (cycle != null && !CYCLES.contains(cycle)) {
-            throw new BusinessException(ErrorCode.PARAM_INVALID, "提醒标签不合法，仅支持 daily/weekly/monthly 或留空");
         }
     }
 
@@ -257,21 +249,6 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
             entity.setAccountId(null);
             entity.setCategoryId(null);
         }
-        if (!"monthly".equals(entity.getCycle())) {
-            entity.setDayOfMonth(null);
-        }
-        if (!"weekly".equals(entity.getCycle())) {
-            entity.setWeekday(null);
-        }
-    }
-
-    private void validateCycleFields(String cycle, Integer dayOfMonth, Integer weekday) {
-        if ("monthly".equals(cycle) && dayOfMonth != null && (dayOfMonth < 1 || dayOfMonth > 31)) {
-            throw new BusinessException(ErrorCode.PARAM_INVALID, "每月日期须在 1-31 之间");
-        }
-        if ("weekly".equals(cycle) && weekday != null && (weekday < 1 || weekday > 7)) {
-            throw new BusinessException(ErrorCode.PARAM_INVALID, "星期须在 1-7 之间");
-        }
     }
 
     private void ensureAccountExists(Long accountId) {
@@ -292,10 +269,6 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
         if (category == null) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "分类不存在");
         }
-    }
-
-    private String blankToNull(String value) {
-        return StringUtils.hasText(value) ? value : null;
     }
 
     private BigDecimal scaleMoney(BigDecimal value) {

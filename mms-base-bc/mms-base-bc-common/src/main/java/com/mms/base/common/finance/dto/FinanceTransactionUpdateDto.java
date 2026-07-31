@@ -1,7 +1,6 @@
 package com.mms.base.common.finance.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -30,8 +29,7 @@ public class FinanceTransactionUpdateDto {
     @Schema(description = "交易类型：income/expense/transfer", example = "expense")
     private String txnType;
 
-    @DecimalMin(value = "0.01", message = "金额必须大于0")
-    @Schema(description = "金额", example = "28.50")
+    @Schema(description = "金额（收入/支出/转账须大于0；平账可为负）", example = "28.50")
     private BigDecimal amount;
 
     @Schema(description = "分类ID")

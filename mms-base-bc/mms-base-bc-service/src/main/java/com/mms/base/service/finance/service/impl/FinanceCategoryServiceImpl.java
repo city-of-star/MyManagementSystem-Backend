@@ -168,9 +168,6 @@ public class FinanceCategoryServiceImpl implements FinanceCategoryService {
             if (entity == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "分类不存在");
             }
-            if (Integer.valueOf(1).equals(entity.getIsSystem())) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "系统内置分类不可删除");
-            }
             long refCount = financeTransactionMapper.countByCategoryId(id);
             if (refCount > 0) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "分类存在关联流水，无法删除");
