@@ -1070,6 +1070,7 @@ VALUES
     (40, 11, '用户中心服务', 'usercenter', 1, 0, 1, '用户中心服务（usercenter）', 0, NOW(), NOW()),
     -- 定时任务类型
     (41, 12, '附件清理任务', 'ATTACHMENT_CLEAN', 1, 0, 1, '附件清理任务', 0, NOW(), NOW()),
+    (71, 12, 'MySQL备份任务', 'MYSQL_BACKUP', 2, 0, 1, 'MySQL库备份并推送Git仓库', 0, NOW(), NOW()),
     -- 定时任务运行模式
     (42, 13, '集群单实例执行', 'single', 1, 1, 1, '集群单实例执行', 0, NOW(), NOW()),
     (43, 13, '全实例执行', 'all', 2, 0, 1, '全实例执行', 0, NOW(), NOW()),
@@ -1109,4 +1110,5 @@ VALUES
 -- 初始化定时任务数据
 INSERT IGNORE INTO `job_def` (`id`,`service_name`,`job_code`,`job_name`,`job_type`,`cron_expr`,`run_mode`,`enabled`,`timeout_ms`,`remark`,`params_json`,`deleted`,`create_by`,`create_time`,`update_by`,`update_time`)
 VALUES
-    (1, 'base', 'ATTACHMENT_CLEAN', '附件清理任务', 'ATTACHMENT_CLEAN', '0 0 2 * * ?', 'single', 1, 0, '定期清理已逻辑删除的附件，物理删除文件和记录', '{"batchSize": 100, "deletedDays": 30, "deletePhysicalFile": true, "storageType": "local", "businessType": null, "fileType": null, "maxFileSize": 10485760, "minFileSize": 1024, "pathPattern": null, "retryCount": 2, "continueOnError": true, "orderBy": "id"}', 0, 1, NOW(), 1, NOW());
+    (1, 'base', 'ATTACHMENT_CLEAN', '附件清理任务', 'ATTACHMENT_CLEAN', '0 0 2 * * ?', 'single', 1, 0, '定期清理已逻辑删除的附件，物理删除文件和记录', '{"batchSize": 100, "deletedDays": 30, "deletePhysicalFile": true, "storageType": "local", "businessType": null, "fileType": null, "maxFileSize": 10485760, "minFileSize": 1024, "pathPattern": null, "retryCount": 2, "continueOnError": true, "orderBy": "id"}', 0, 1, NOW(), 1, NOW()),
+    (2, 'base', 'MYSQL_BACKUP', 'MySQL备份任务', 'MYSQL_BACKUP', '0 0 3 * * ?', 'single', 1, 900000, '每天凌晨3点备份核心库并推送到GitHub私有仓，保留最近30天', '{"retainDays": 30}', 0, 1, NOW(), 1, NOW());

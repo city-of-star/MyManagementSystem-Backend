@@ -7,7 +7,8 @@ spring:
     gateway:
       httpclient:
         connect-timeout: 3000 # 连接超时(ms)
-        response-timeout: 15s # 响应超时
+        # 需覆盖 MYSQL_BACKUP（dump+push）；普通接口通常远短于此
+        response-timeout: 15m
       discovery:
         locator:
           enabled: false
@@ -116,8 +117,9 @@ resilience4j:
     instances:
       usercenterCb:
         timeoutDuration: 10s
+      # 覆盖 MYSQL_BACKUP；过短会出现「GitHub 已有备份但 job 记 503」
       baseCb:
-        timeoutDuration: 10s
+        timeoutDuration: 15m
       jobCb:
         timeoutDuration: 10s
 

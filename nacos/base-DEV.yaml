@@ -17,6 +17,23 @@ springdoc:
   swagger-ui:
     url: /base/v3/api-docs
 
+# MySQL 备份推送 Git（生产请在 Nacos base-PROD.yaml 填写真实 token，勿提交到仓库）
+mms:
+  backup:
+    enabled: false
+    repo-url: https://github.com/city-of-star/mms-side-income-data-backup.git
+    github-token: YOUR_GITHUB_PAT
+    work-dir: /lhy/opt/mysql/backup
+    backup-dir: backups
+    # 为空则从 spring.datasource.url 解析库名；生产可显式指定
+    database: mms_side_income_prod_core
+    retain-days: 30
+    mysqldump-path: mysqldump
+    git-path: git
+    branch: main
+    git-user-name: mms-backup
+    git-user-email: mms-backup@localhost
+
 # 文件上传配置
 file:
   upload:

@@ -17,7 +17,12 @@ public enum JobTypeEnum {
     /**
      * 附件物理清理任务
      */
-    ATTACHMENT_CLEAN("ATTACHMENT_CLEAN", "附件清理任务");
+    ATTACHMENT_CLEAN("ATTACHMENT_CLEAN", "附件清理任务"),
+
+    /**
+     * MySQL 库备份并推送到 Git 仓库
+     */
+    MYSQL_BACKUP("MYSQL_BACKUP", "MySQL备份任务");
 
     /**
      * 任务类型
