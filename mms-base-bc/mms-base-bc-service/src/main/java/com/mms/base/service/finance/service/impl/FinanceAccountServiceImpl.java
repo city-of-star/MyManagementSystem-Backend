@@ -7,9 +7,11 @@ import com.mms.base.common.finance.dto.FinanceAccountPageQueryDto;
 import com.mms.base.common.finance.dto.FinanceAccountUpdateDto;
 import com.mms.base.common.finance.entity.FinanceAccountEntity;
 import com.mms.base.common.finance.vo.FinanceAccountVo;
+import com.mms.base.common.system.vo.DictDataVo;
 import com.mms.base.service.finance.mapper.FinanceAccountMapper;
 import com.mms.base.service.finance.mapper.FinanceTransactionMapper;
 import com.mms.base.service.finance.service.FinanceAccountService;
+import com.mms.base.service.system.service.DictDataService;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
@@ -22,7 +24,6 @@ import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
-import java.util.Set;
 
 /**
  * 实现功能【记账账户服务实现类】
@@ -34,15 +35,16 @@ import java.util.Set;
 @Service
 public class FinanceAccountServiceImpl implements FinanceAccountService {
 
-    private static final Set<String> ACCOUNT_TYPES = Set.of(
-            "cash", "wechat", "qq", "bank", "housing_fund", "social_security",
-            "company_card", "medical", "other");
+    private static final String DICT_ACCOUNT_TYPE = "finance_account_type";
 
     @Resource
     private FinanceAccountMapper financeAccountMapper;
 
     @Resource
     private FinanceTransactionMapper financeTransactionMapper;
+
+    @Resource
+    private DictDataService dictDataService;
 
     @Override
     public Page<FinanceAccountVo> getAccountPage(FinanceAccountPageQueryDto dto) {
@@ -193,9 +195,15 @@ public class FinanceAccountServiceImpl implements FinanceAccountService {
     }
 
     private void validateAccountType(String accountType) {
-        if (accountType != null && !ACCOUNT_TYPES.contains(accountType)) {
+        if (!StringUtils.hasText(accountType)) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "账户类型不能为空");
+        }
+        List<DictDataVo> dictList = dictDataService.getDictDataListByTypeCode(DICT_ACCOUNT_TYPE);
+        boolean valid = dictList != null && dictList.stream()
+                .anyMatch(item -> accountType.equals(item.getDictValue()));
+        if (!valid) {
             throw new BusinessException(ErrorCode.PARAM_INVALID,
-                    "账户类型不合法，仅支持 cash/wechat/qq/bank/housing_fund/social_security/other");
+                    "账户类型不合法，请在数据字典【finance_account_type】中维护");
         }
     }
 

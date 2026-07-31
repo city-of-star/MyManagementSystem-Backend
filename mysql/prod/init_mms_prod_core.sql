@@ -214,7 +214,7 @@ CREATE TABLE IF NOT EXISTS `system_config` (
 CREATE TABLE IF NOT EXISTS `finance_account` (
     `id` bigint NOT NULL COMMENT '主键ID',
     `name` varchar(64) NOT NULL COMMENT '账户名称',
-    `account_type` varchar(32) NOT NULL COMMENT '账户类型：cash/wechat/qq/bank/housing_fund/social_security/other',
+    `account_type` varchar(32) NOT NULL COMMENT '账户类型（字典 finance_account_type）',
     `opening_balance` decimal(12, 2) NOT NULL DEFAULT 0.00 COMMENT '期初余额',
     `account_no` varchar(128) DEFAULT NULL COMMENT '账号/卡号',
     `note` varchar(512) DEFAULT NULL COMMENT '备注',
@@ -918,7 +918,13 @@ VALUES
     (11, 'service_name', '服务名', 1, 17, '服务名', 0, NOW(), NOW()),
     (12, 'job_type', '定时任务类型', 1, 18, '定时任务类型', 0, NOW(), NOW()),
     (13, 'Job_run_mode', '定时任务运行模式', 1, 19, '定时任务运行模式', 0, NOW(), NOW()),
-    (14, 'job_status', '定时任务状态', 1, 20, '定时任务状态', 0, NOW(), NOW());
+    (14, 'job_status', '定时任务状态', 1, 20, '定时任务状态', 0, NOW(), NOW()),
+    -- 个人记账
+    (15, 'finance_account_type', '记账账户类型', 1, 30, '个人记账账户类型', 0, NOW(), NOW()),
+    (16, 'finance_txn_type', '记账流水类型', 1, 31, '个人记账流水类型', 0, NOW(), NOW()),
+    (17, 'finance_txn_status', '记账流水状态', 1, 32, '个人记账流水入账状态', 0, NOW(), NOW()),
+    (18, 'finance_direction', '记账分类方向', 1, 33, '个人记账分类收入/支出方向', 0, NOW(), NOW()),
+    (19, 'finance_recurring_direction', '记账模板方向', 1, 34, '个人记账快捷模板方向', 0, NOW(), NOW());
 
 -- 初始化数据字典数据
 INSERT IGNORE INTO `system_dict_data` (`id`, `dict_type_id`, `dict_label`, `dict_value`, `dict_sort`, `is_default`, `status`, `remark`, `deleted`, `create_time`, `update_time`)
@@ -984,7 +990,34 @@ VALUES
     (45, 14, '成功', 'success', 2, 0, 1, '成功', 0, NOW(), NOW()),
     (46, 14, '失败', 'fail', 3, 0, 1, '失败', 0, NOW(), NOW()),
     (47, 14, '超时', 'timeout', 4, 0, 1, '超时''', 0, NOW(), NOW()),
-    (48, 14, '跳过', 'skip', 5, 0, 1, '跳过', 0, NOW(), NOW());
+    (48, 14, '跳过', 'skip', 5, 0, 1, '跳过', 0, NOW(), NOW()),
+    -- 记账账户类型
+    (49, 15, '现金', 'cash', 1, 0, 1, '现金账户', 0, NOW(), NOW()),
+    (50, 15, '微信', 'wechat', 2, 0, 1, '微信钱包', 0, NOW(), NOW()),
+    (51, 15, 'QQ', 'qq', 3, 0, 1, 'QQ钱包', 0, NOW(), NOW()),
+    (52, 15, '银行卡', 'bank', 4, 0, 1, '银行卡', 0, NOW(), NOW()),
+    (53, 15, '支付宝', 'alipay', 5, 1, 1, '支付宝/余额宝等', 0, NOW(), NOW()),
+    (54, 15, '公积金', 'housing_fund', 6, 0, 1, '住房公积金', 0, NOW(), NOW()),
+    (55, 15, '社保', 'social_security', 7, 0, 1, '社保账户', 0, NOW(), NOW()),
+    (56, 15, '公司卡', 'company_card', 8, 0, 1, '公司卡', 0, NOW(), NOW()),
+    (57, 15, '医保', 'medical', 9, 0, 1, '医保账户', 0, NOW(), NOW()),
+    (58, 15, '基金', 'fund', 10, 0, 1, '基金持仓', 0, NOW(), NOW()),
+    (59, 15, '其他', 'other', 99, 0, 1, '其他账户', 0, NOW(), NOW()),
+    -- 记账流水类型
+    (60, 16, '收入', 'income', 1, 0, 1, '收入流水', 0, NOW(), NOW()),
+    (61, 16, '支出', 'expense', 2, 1, 1, '支出流水', 0, NOW(), NOW()),
+    (62, 16, '转账', 'transfer', 3, 0, 1, '账户间转账', 0, NOW(), NOW()),
+    (63, 16, '平账', 'adjustment', 4, 0, 1, '余额对齐差额', 0, NOW(), NOW()),
+    -- 记账流水状态
+    (64, 17, '已入账', 'settled', 1, 1, 1, '已结算入账', 0, NOW(), NOW()),
+    (65, 17, '待结算', 'pending', 2, 0, 1, '待结算（仅收入）', 0, NOW(), NOW()),
+    -- 记账分类方向
+    (66, 18, '收入', 'income', 1, 0, 1, '收入分类', 0, NOW(), NOW()),
+    (67, 18, '支出', 'expense', 2, 1, 1, '支出分类', 0, NOW(), NOW()),
+    -- 记账模板方向
+    (68, 19, '收入', 'income', 1, 0, 1, '收入模板', 0, NOW(), NOW()),
+    (69, 19, '支出', 'expense', 2, 1, 1, '支出模板', 0, NOW(), NOW()),
+    (70, 19, '转账', 'transfer', 3, 0, 1, '转账模板', 0, NOW(), NOW());
 -- 初始化定时任务数据
 INSERT IGNORE INTO `job_def` (`id`,`service_name`,`job_code`,`job_name`,`job_type`,`cron_expr`,`run_mode`,`enabled`,`timeout_ms`,`remark`,`params_json`,`deleted`,`create_by`,`create_time`,`update_by`,`update_time`)
 VALUES
