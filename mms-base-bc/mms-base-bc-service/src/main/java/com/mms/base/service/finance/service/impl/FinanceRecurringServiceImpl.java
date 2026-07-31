@@ -13,6 +13,7 @@ import com.mms.base.service.finance.mapper.FinanceAccountMapper;
 import com.mms.base.service.finance.mapper.FinanceCategoryMapper;
 import com.mms.base.service.finance.mapper.FinanceRecurringMapper;
 import com.mms.base.service.finance.service.FinanceRecurringService;
+import com.mms.base.service.finance.support.FinanceUserSupport;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
@@ -51,9 +52,12 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
     @Override
     public Page<FinanceRecurringVo> getRecurringPage(FinanceRecurringPageQueryDto dto) {
         try {
-            log.info("分页查询快捷模板，参数：{}", dto);
+            Long userId = FinanceUserSupport.requireUserId();
+            log.info("分页查询快捷模板，userId={}，参数：{}", userId, dto);
             Page<FinanceRecurringVo> page = new Page<>(dto.getPageNum(), dto.getPageSize());
-            return financeRecurringMapper.getRecurringPage(page, dto);
+            return financeRecurringMapper.getRecurringPage(page, dto, userId);
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             log.error("分页查询快捷模板失败：{}", e.getMessage(), e);
             throw new ServerException("查询快捷模板列表失败", e);
@@ -63,10 +67,11 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
     @Override
     public FinanceRecurringVo getById(Long id) {
         try {
+            Long userId = FinanceUserSupport.requireUserId();
             if (id == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "模板ID不能为空");
             }
-            FinanceRecurringVo vo = financeRecurringMapper.getRecurringById(id);
+            FinanceRecurringVo vo = financeRecurringMapper.getRecurringById(id, userId);
             if (vo == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "快捷模板不存在");
             }
@@ -83,16 +88,18 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
     @Transactional(rollbackFor = Exception.class)
     public FinanceRecurringVo create(FinanceRecurringCreateDto dto) {
         try {
-            log.info("创建快捷模板，参数：{}", dto);
+            Long userId = FinanceUserSupport.requireUserId();
+            log.info("创建快捷模板，userId={}，参数：{}", userId, dto);
             validateDirection(dto.getDirection());
             validateDirectionFields(dto.getDirection(), dto.getCategoryId(), dto.getAccountId(),
                     dto.getFromAccountId(), dto.getToAccountId());
-            ensureAccountExists(dto.getAccountId());
-            ensureAccountExists(dto.getFromAccountId());
-            ensureAccountExists(dto.getToAccountId());
-            ensureCategoryExists(dto.getCategoryId());
+            ensureAccountExists(dto.getAccountId(), userId);
+            ensureAccountExists(dto.getFromAccountId(), userId);
+            ensureAccountExists(dto.getToAccountId(), userId);
+            ensureCategoryExists(dto.getCategoryId(), userId);
 
             FinanceRecurringEntity entity = new FinanceRecurringEntity();
+            entity.setUserId(userId);
             entity.setName(dto.getName());
             entity.setDirection(dto.getDirection());
             entity.setAmount(scaleMoney(dto.getAmount()));
@@ -108,7 +115,7 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
             entity.setNote(dto.getNote());
             normalizeByDirection(entity);
             financeRecurringMapper.insert(entity);
-            return financeRecurringMapper.getRecurringById(entity.getId());
+            return financeRecurringMapper.getRecurringById(entity.getId(), userId);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -121,11 +128,13 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
     @Transactional(rollbackFor = Exception.class)
     public FinanceRecurringVo update(FinanceRecurringUpdateDto dto) {
         try {
-            log.info("更新快捷模板，参数：{}", dto);
+            Long userId = FinanceUserSupport.requireUserId();
+            log.info("更新快捷模板，userId={}，参数：{}", userId, dto);
             FinanceRecurringEntity entity = financeRecurringMapper.selectById(dto.getId());
             if (entity == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "快捷模板不存在");
             }
+            FinanceUserSupport.requireOwned(entity.getUserId(), "快捷模板不存在");
             if (StringUtils.hasText(dto.getName())) {
                 entity.setName(dto.getName());
             }
@@ -137,19 +146,19 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
                 entity.setAmount(scaleMoney(dto.getAmount()));
             }
             if (dto.getCategoryId() != null) {
-                ensureCategoryExists(dto.getCategoryId());
+                ensureCategoryExists(dto.getCategoryId(), userId);
                 entity.setCategoryId(dto.getCategoryId());
             }
             if (dto.getAccountId() != null) {
-                ensureAccountExists(dto.getAccountId());
+                ensureAccountExists(dto.getAccountId(), userId);
                 entity.setAccountId(dto.getAccountId());
             }
             if (dto.getFromAccountId() != null) {
-                ensureAccountExists(dto.getFromAccountId());
+                ensureAccountExists(dto.getFromAccountId(), userId);
                 entity.setFromAccountId(dto.getFromAccountId());
             }
             if (dto.getToAccountId() != null) {
-                ensureAccountExists(dto.getToAccountId());
+                ensureAccountExists(dto.getToAccountId(), userId);
                 entity.setToAccountId(dto.getToAccountId());
             }
             if (dto.getSortOrder() != null) {
@@ -161,7 +170,6 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
             if (dto.getNote() != null) {
                 entity.setNote(dto.getNote());
             }
-            // 提醒字段已废弃：读写忽略并清空
             entity.setCycle(null);
             entity.setDayOfMonth(null);
             entity.setWeekday(null);
@@ -169,7 +177,7 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
                     entity.getFromAccountId(), entity.getToAccountId());
             normalizeByDirection(entity);
             financeRecurringMapper.updateById(entity);
-            return financeRecurringMapper.getRecurringById(entity.getId());
+            return financeRecurringMapper.getRecurringById(entity.getId(), userId);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -189,6 +197,7 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
             if (entity == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "快捷模板不存在");
             }
+            FinanceUserSupport.requireOwned(entity.getUserId(), "快捷模板不存在");
             financeRecurringMapper.deleteById(id);
         } catch (BusinessException e) {
             throw e;
@@ -251,22 +260,22 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
         }
     }
 
-    private void ensureAccountExists(Long accountId) {
+    private void ensureAccountExists(Long accountId, Long userId) {
         if (accountId == null) {
             return;
         }
         FinanceAccountEntity account = financeAccountMapper.selectById(accountId);
-        if (account == null) {
+        if (account == null || !userId.equals(account.getUserId())) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "账户不存在");
         }
     }
 
-    private void ensureCategoryExists(Long categoryId) {
+    private void ensureCategoryExists(Long categoryId, Long userId) {
         if (categoryId == null) {
             return;
         }
         FinanceCategoryEntity category = financeCategoryMapper.selectById(categoryId);
-        if (category == null) {
+        if (category == null || !userId.equals(category.getUserId())) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "分类不存在");
         }
     }

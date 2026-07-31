@@ -210,6 +210,15 @@ public final class PermissionConstants {
     public static final String FINANCE_RECURRING_DELETE = "FINANCE_RECURRING_DELETE";
 
     /**
+     * 记账初始化配置（菜单+按钮）
+     */
+    public static final String SYSTEM_FINANCE_SETUP = "SYSTEM_FINANCE_SETUP";
+    public static final String SYSTEM_FINANCE_SETUP_VIEW = "SYSTEM_FINANCE_SETUP_VIEW";
+    public static final String SYSTEM_FINANCE_SETUP_CREATE = "SYSTEM_FINANCE_SETUP_CREATE";
+    public static final String SYSTEM_FINANCE_SETUP_UPDATE = "SYSTEM_FINANCE_SETUP_UPDATE";
+    public static final String SYSTEM_FINANCE_SETUP_DELETE = "SYSTEM_FINANCE_SETUP_DELETE";
+
+    /**
      * 私有构造函数，防止实例化
      */
     private PermissionConstants() {

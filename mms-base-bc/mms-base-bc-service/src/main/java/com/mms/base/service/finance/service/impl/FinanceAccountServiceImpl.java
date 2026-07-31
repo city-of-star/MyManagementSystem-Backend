@@ -11,6 +11,7 @@ import com.mms.base.common.system.vo.DictDataVo;
 import com.mms.base.service.finance.mapper.FinanceAccountMapper;
 import com.mms.base.service.finance.mapper.FinanceTransactionMapper;
 import com.mms.base.service.finance.service.FinanceAccountService;
+import com.mms.base.service.finance.support.FinanceUserSupport;
 import com.mms.base.service.system.service.DictDataService;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
@@ -49,9 +50,12 @@ public class FinanceAccountServiceImpl implements FinanceAccountService {
     @Override
     public Page<FinanceAccountVo> getAccountPage(FinanceAccountPageQueryDto dto) {
         try {
-            log.info("分页查询记账账户，参数：{}", dto);
+            Long userId = FinanceUserSupport.requireUserId();
+            log.info("分页查询记账账户，userId={}，参数：{}", userId, dto);
             Page<FinanceAccountVo> page = new Page<>(dto.getPageNum(), dto.getPageSize());
-            return financeAccountMapper.getAccountPage(page, dto);
+            return financeAccountMapper.getAccountPage(page, dto, userId);
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             log.error("分页查询记账账户失败：{}", e.getMessage(), e);
             throw new ServerException("查询记账账户列表失败", e);
@@ -61,7 +65,10 @@ public class FinanceAccountServiceImpl implements FinanceAccountService {
     @Override
     public List<FinanceAccountVo> listAccounts(Integer enabled) {
         try {
-            return financeAccountMapper.listAccountsWithBalance(enabled);
+            Long userId = FinanceUserSupport.requireUserId();
+            return financeAccountMapper.listAccountsWithBalance(enabled, userId);
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             log.error("查询记账账户列表失败：{}", e.getMessage(), e);
             throw new ServerException("查询记账账户列表失败", e);
@@ -71,10 +78,11 @@ public class FinanceAccountServiceImpl implements FinanceAccountService {
     @Override
     public FinanceAccountVo getById(Long id) {
         try {
+            Long userId = FinanceUserSupport.requireUserId();
             if (id == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "账户ID不能为空");
             }
-            FinanceAccountVo vo = financeAccountMapper.getAccountWithBalance(id);
+            FinanceAccountVo vo = financeAccountMapper.getAccountWithBalance(id, userId);
             if (vo == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "账户不存在");
             }
@@ -91,9 +99,11 @@ public class FinanceAccountServiceImpl implements FinanceAccountService {
     @Transactional(rollbackFor = Exception.class)
     public FinanceAccountVo create(FinanceAccountCreateDto dto) {
         try {
-            log.info("创建记账账户，参数：{}", dto);
+            Long userId = FinanceUserSupport.requireUserId();
+            log.info("创建记账账户，userId={}，参数：{}", userId, dto);
             validateAccountType(dto.getAccountType());
             FinanceAccountEntity entity = new FinanceAccountEntity();
+            entity.setUserId(userId);
             entity.setName(dto.getName());
             entity.setAccountType(dto.getAccountType());
             entity.setOpeningBalance(scaleMoney(dto.getOpeningBalance()));
@@ -102,7 +112,7 @@ public class FinanceAccountServiceImpl implements FinanceAccountService {
             entity.setSortOrder(dto.getSortOrder() == null ? 0 : dto.getSortOrder());
             entity.setEnabled(dto.getEnabled() == null ? 1 : dto.getEnabled());
             financeAccountMapper.insert(entity);
-            return financeAccountMapper.getAccountWithBalance(entity.getId());
+            return financeAccountMapper.getAccountWithBalance(entity.getId(), userId);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -115,11 +125,13 @@ public class FinanceAccountServiceImpl implements FinanceAccountService {
     @Transactional(rollbackFor = Exception.class)
     public FinanceAccountVo update(FinanceAccountUpdateDto dto) {
         try {
-            log.info("更新记账账户，参数：{}", dto);
+            Long userId = FinanceUserSupport.requireUserId();
+            log.info("更新记账账户，userId={}，参数：{}", userId, dto);
             FinanceAccountEntity entity = financeAccountMapper.selectById(dto.getId());
             if (entity == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "账户不存在");
             }
+            FinanceUserSupport.requireOwned(entity.getUserId(), "账户不存在");
             if (StringUtils.hasText(dto.getName())) {
                 entity.setName(dto.getName());
             }
@@ -143,7 +155,7 @@ public class FinanceAccountServiceImpl implements FinanceAccountService {
                 entity.setEnabled(dto.getEnabled());
             }
             financeAccountMapper.updateById(entity);
-            return financeAccountMapper.getAccountWithBalance(entity.getId());
+            return financeAccountMapper.getAccountWithBalance(entity.getId(), userId);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -156,6 +168,7 @@ public class FinanceAccountServiceImpl implements FinanceAccountService {
     @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
         try {
+            Long userId = FinanceUserSupport.requireUserId();
             if (id == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "账户ID不能为空");
             }
@@ -163,7 +176,8 @@ public class FinanceAccountServiceImpl implements FinanceAccountService {
             if (entity == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "账户不存在");
             }
-            long refCount = financeTransactionMapper.countByAccountId(id);
+            FinanceUserSupport.requireOwned(entity.getUserId(), "账户不存在");
+            long refCount = financeTransactionMapper.countByAccountId(id, userId);
             if (refCount > 0) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "账户存在关联流水，无法删除");
             }

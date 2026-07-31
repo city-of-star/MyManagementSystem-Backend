@@ -103,6 +103,10 @@ public final class OperationLogPermissionMappings {
         put(map, PermissionConstants.FINANCE_RECURRING_CREATE, "周期记账", "create", "新增周期模板");
         put(map, PermissionConstants.FINANCE_RECURRING_UPDATE, "周期记账", "update", "修改周期模板");
         put(map, PermissionConstants.FINANCE_RECURRING_DELETE, "周期记账", "delete", "删除周期模板");
+
+        put(map, PermissionConstants.SYSTEM_FINANCE_SETUP_CREATE, "记账初始化配置", "create", "新增记账初始化模板");
+        put(map, PermissionConstants.SYSTEM_FINANCE_SETUP_UPDATE, "记账初始化配置", "update", "修改记账初始化模板");
+        put(map, PermissionConstants.SYSTEM_FINANCE_SETUP_DELETE, "记账初始化配置", "delete", "删除记账初始化模板");
         MAPPINGS = Collections.unmodifiableMap(map);
     }
 

@@ -6,23 +6,23 @@
         COALESCE(a.opening_balance, 0)
         + COALESCE((
             SELECT SUM(t.amount) FROM finance_transaction t
-            WHERE t.deleted = 0 AND t.status = 'settled' AND t.txn_type = 'income' AND t.account_id = a.id
+            WHERE t.deleted = 0 AND t.status = 'settled' AND t.txn_type = 'income' AND t.account_id = a.id AND t.user_id = a.user_id
         ), 0)
         - COALESCE((
             SELECT SUM(t.amount) FROM finance_transaction t
-            WHERE t.deleted = 0 AND t.status = 'settled' AND t.txn_type = 'expense' AND t.account_id = a.id
+            WHERE t.deleted = 0 AND t.status = 'settled' AND t.txn_type = 'expense' AND t.account_id = a.id AND t.user_id = a.user_id
         ), 0)
         + COALESCE((
             SELECT SUM(t.amount) FROM finance_transaction t
-            WHERE t.deleted = 0 AND t.status = 'settled' AND t.txn_type = 'transfer' AND t.to_account_id = a.id
+            WHERE t.deleted = 0 AND t.status = 'settled' AND t.txn_type = 'transfer' AND t.to_account_id = a.id AND t.user_id = a.user_id
         ), 0)
         - COALESCE((
             SELECT SUM(t.amount) FROM finance_transaction t
-            WHERE t.deleted = 0 AND t.status = 'settled' AND t.txn_type = 'transfer' AND t.from_account_id = a.id
+            WHERE t.deleted = 0 AND t.status = 'settled' AND t.txn_type = 'transfer' AND t.from_account_id = a.id AND t.user_id = a.user_id
         ), 0)
         + COALESCE((
             SELECT SUM(t.amount) FROM finance_transaction t
-            WHERE t.deleted = 0 AND t.status = 'settled' AND t.txn_type = 'adjustment' AND t.account_id = a.id
+            WHERE t.deleted = 0 AND t.status = 'settled' AND t.txn_type = 'adjustment' AND t.account_id = a.id AND t.user_id = a.user_id
         ), 0)
     </sql>
 
@@ -48,6 +48,7 @@
         FROM finance_account a
         <where>
             a.deleted = 0
+            AND a.user_id = #{userId}
             <if test="dto.name != null and dto.name != ''">
                 AND a.name LIKE CONCAT('%', #{dto.name}, '%')
             </if>
@@ -67,6 +68,7 @@
         FROM finance_account a
         <where>
             a.deleted = 0
+            AND a.user_id = #{userId}
             <if test="enabled != null">
                 AND a.enabled = #{enabled}
             </if>
@@ -83,6 +85,7 @@
         FROM finance_account a
         <where>
             a.deleted = 0
+            AND a.user_id = #{userId}
             <if test="enabled != null">
                 AND a.enabled = #{enabled}
             </if>
@@ -94,7 +97,7 @@
         SELECT
         <include refid="accountSelectColumns"/>
         FROM finance_account a
-        WHERE a.deleted = 0 AND a.id = #{id}
+        WHERE a.deleted = 0 AND a.id = #{id} AND a.user_id = #{userId}
     </select>
 
 </mapper>

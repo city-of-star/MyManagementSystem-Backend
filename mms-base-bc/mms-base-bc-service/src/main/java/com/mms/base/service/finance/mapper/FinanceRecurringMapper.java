@@ -21,10 +21,11 @@ public interface FinanceRecurringMapper extends BaseMapper<FinanceRecurringEntit
      * 分页查询周期模板（关联分类/账户名称）
      */
     Page<FinanceRecurringVo> getRecurringPage(Page<FinanceRecurringVo> page,
-                                              @Param("dto") FinanceRecurringPageQueryDto dto);
+                                              @Param("dto") FinanceRecurringPageQueryDto dto,
+                                              @Param("userId") Long userId);
 
     /**
      * 按ID查询模板详情（关联名称）
      */
-    FinanceRecurringVo getRecurringById(@Param("id") Long id);
+    FinanceRecurringVo getRecurringById(@Param("id") Long id, @Param("userId") Long userId);
 }

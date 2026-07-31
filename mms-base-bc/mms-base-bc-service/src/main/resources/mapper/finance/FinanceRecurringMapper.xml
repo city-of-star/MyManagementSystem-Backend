@@ -28,12 +28,13 @@
         SELECT
         <include refid="recurringSelectColumns"/>
         FROM finance_recurring r
-        LEFT JOIN finance_category c ON c.id = r.category_id AND c.deleted = 0
-        LEFT JOIN finance_account a ON a.id = r.account_id AND a.deleted = 0
-        LEFT JOIN finance_account fa ON fa.id = r.from_account_id AND fa.deleted = 0
-        LEFT JOIN finance_account ta ON ta.id = r.to_account_id AND ta.deleted = 0
+        LEFT JOIN finance_category c ON c.id = r.category_id AND c.deleted = 0 AND c.user_id = r.user_id
+        LEFT JOIN finance_account a ON a.id = r.account_id AND a.deleted = 0 AND a.user_id = r.user_id
+        LEFT JOIN finance_account fa ON fa.id = r.from_account_id AND fa.deleted = 0 AND fa.user_id = r.user_id
+        LEFT JOIN finance_account ta ON ta.id = r.to_account_id AND ta.deleted = 0 AND ta.user_id = r.user_id
         <where>
             r.deleted = 0
+            AND r.user_id = #{userId}
             <if test="dto.name != null and dto.name != ''">
                 AND r.name LIKE CONCAT('%', #{dto.name}, '%')
             </if>
@@ -51,11 +52,11 @@
         SELECT
         <include refid="recurringSelectColumns"/>
         FROM finance_recurring r
-        LEFT JOIN finance_category c ON c.id = r.category_id AND c.deleted = 0
-        LEFT JOIN finance_account a ON a.id = r.account_id AND a.deleted = 0
-        LEFT JOIN finance_account fa ON fa.id = r.from_account_id AND fa.deleted = 0
-        LEFT JOIN finance_account ta ON ta.id = r.to_account_id AND ta.deleted = 0
-        WHERE r.deleted = 0 AND r.id = #{id}
+        LEFT JOIN finance_category c ON c.id = r.category_id AND c.deleted = 0 AND c.user_id = r.user_id
+        LEFT JOIN finance_account a ON a.id = r.account_id AND a.deleted = 0 AND a.user_id = r.user_id
+        LEFT JOIN finance_account fa ON fa.id = r.from_account_id AND fa.deleted = 0 AND fa.user_id = r.user_id
+        LEFT JOIN finance_account ta ON ta.id = r.to_account_id AND ta.deleted = 0 AND ta.user_id = r.user_id
+        WHERE r.deleted = 0 AND r.id = #{id} AND r.user_id = #{userId}
     </select>
 
 </mapper>

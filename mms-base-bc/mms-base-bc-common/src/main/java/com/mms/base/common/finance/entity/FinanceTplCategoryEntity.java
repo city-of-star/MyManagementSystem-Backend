@@ -10,28 +10,24 @@ import lombok.EqualsAndHashCode;
 import java.io.Serial;
 
 /**
- * 实现功能【记账分类实体】
+ * 实现功能【记账初始化模板-分类实体】
  *
  * @author li.hongyu
- * @date 2026-07-30
+ * @date 2026-07-31
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("finance_category")
-@Schema(description = "记账分类实体")
-public class FinanceCategoryEntity extends BaseEntity {
+@TableName("finance_tpl_category")
+@Schema(description = "记账初始化模板-分类实体")
+public class FinanceTplCategoryEntity extends BaseEntity {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
-    @TableField("user_id")
-    @Schema(description = "归属用户ID")
-    private Long userId;
-
     @Schema(description = "分类名称")
     private String name;
 
-    @Schema(description = "方向：income-收入，expense-支出")
+    @Schema(description = "方向：income/expense")
     private String direction;
 
     @Schema(description = "图标")
@@ -43,8 +39,4 @@ public class FinanceCategoryEntity extends BaseEntity {
 
     @Schema(description = "是否启用：1-启用，0-禁用")
     private Integer enabled;
-
-    @TableField("is_system")
-    @Schema(description = "是否系统内置：1-是，0-否")
-    private Integer isSystem;
 }

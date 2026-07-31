@@ -9,26 +9,21 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serial;
-import java.math.BigDecimal;
 
 /**
- * 实现功能【快捷记账模板实体】
+ * 实现功能【记账初始化模板-快捷项实体】
  *
  * @author li.hongyu
- * @date 2026-07-30
+ * @date 2026-07-31
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("finance_recurring")
-@Schema(description = "快捷记账模板实体")
-public class FinanceRecurringEntity extends BaseEntity {
+@TableName("finance_tpl_recurring")
+@Schema(description = "记账初始化模板-快捷项实体")
+public class FinanceTplRecurringEntity extends BaseEntity {
 
     @Serial
     private static final long serialVersionUID = 1L;
-
-    @TableField("user_id")
-    @Schema(description = "归属用户ID")
-    private Long userId;
 
     @Schema(description = "模板名称")
     private String name;
@@ -36,36 +31,21 @@ public class FinanceRecurringEntity extends BaseEntity {
     @Schema(description = "方向：income/expense/transfer")
     private String direction;
 
-    @Schema(description = "金额")
-    private BigDecimal amount;
-
     @TableField(value = "category_id", updateStrategy = FieldStrategy.ALWAYS)
-    @Schema(description = "分类ID（收入/支出必填，转账可空）")
+    @Schema(description = "模板分类ID")
     private Long categoryId;
 
     @TableField(value = "account_id", updateStrategy = FieldStrategy.ALWAYS)
-    @Schema(description = "账户ID（收入/支出必填，转账可空）")
+    @Schema(description = "模板账户ID")
     private Long accountId;
 
     @TableField(value = "from_account_id", updateStrategy = FieldStrategy.ALWAYS)
-    @Schema(description = "转出账户ID（转账模板）")
+    @Schema(description = "模板转出账户ID")
     private Long fromAccountId;
 
     @TableField(value = "to_account_id", updateStrategy = FieldStrategy.ALWAYS)
-    @Schema(description = "转入账户ID（转账模板）")
+    @Schema(description = "模板转入账户ID")
     private Long toAccountId;
-
-    @TableField(updateStrategy = FieldStrategy.ALWAYS)
-    @Schema(description = "提醒标签（已废弃，读写忽略）")
-    private String cycle;
-
-    @TableField(value = "day_of_month", updateStrategy = FieldStrategy.ALWAYS)
-    @Schema(description = "每月几号（已废弃）")
-    private Integer dayOfMonth;
-
-    @TableField(updateStrategy = FieldStrategy.ALWAYS)
-    @Schema(description = "星期几（已废弃）")
-    private Integer weekday;
 
     @TableField("sort_order")
     @Schema(description = "排序号")

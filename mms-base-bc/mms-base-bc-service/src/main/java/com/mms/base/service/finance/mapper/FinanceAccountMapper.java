@@ -23,20 +23,24 @@ public interface FinanceAccountMapper extends BaseMapper<FinanceAccountEntity> {
     /**
      * 分页查询账户（含余额）
      */
-    Page<FinanceAccountVo> getAccountPage(Page<FinanceAccountVo> page, @Param("dto") FinanceAccountPageQueryDto dto);
+    Page<FinanceAccountVo> getAccountPage(Page<FinanceAccountVo> page,
+                                          @Param("dto") FinanceAccountPageQueryDto dto,
+                                          @Param("userId") Long userId);
 
     /**
      * 查询账户列表（含余额）
      */
-    List<FinanceAccountVo> listAccountsWithBalance(@Param("enabled") Integer enabled);
+    List<FinanceAccountVo> listAccountsWithBalance(@Param("enabled") Integer enabled,
+                                                   @Param("userId") Long userId);
 
     /**
      * 查询账户余额简表
      */
-    List<FinanceAccountBalanceVo> listAccountBalances(@Param("enabled") Integer enabled);
+    List<FinanceAccountBalanceVo> listAccountBalances(@Param("enabled") Integer enabled,
+                                                      @Param("userId") Long userId);
 
     /**
      * 按ID查询账户（含余额）
      */
-    FinanceAccountVo getAccountWithBalance(@Param("id") Long id);
+    FinanceAccountVo getAccountWithBalance(@Param("id") Long id, @Param("userId") Long userId);
 }

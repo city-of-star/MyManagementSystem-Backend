@@ -12,6 +12,7 @@ import com.mms.base.common.finance.vo.FinanceCategoryVo;
 import com.mms.base.service.finance.mapper.FinanceCategoryMapper;
 import com.mms.base.service.finance.mapper.FinanceTransactionMapper;
 import com.mms.base.service.finance.service.FinanceCategoryService;
+import com.mms.base.service.finance.support.FinanceUserSupport;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
@@ -47,9 +48,11 @@ public class FinanceCategoryServiceImpl implements FinanceCategoryService {
     @Override
     public Page<FinanceCategoryVo> getCategoryPage(FinanceCategoryPageQueryDto dto) {
         try {
-            log.info("分页查询记账分类，参数：{}", dto);
+            Long userId = FinanceUserSupport.requireUserId();
+            log.info("分页查询记账分类，userId={}，参数：{}", userId, dto);
             Page<FinanceCategoryEntity> page = new Page<>(dto.getPageNum(), dto.getPageSize());
             LambdaQueryWrapper<FinanceCategoryEntity> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(FinanceCategoryEntity::getUserId, userId);
             wrapper.like(StringUtils.hasText(dto.getName()), FinanceCategoryEntity::getName, dto.getName());
             wrapper.eq(StringUtils.hasText(dto.getDirection()), FinanceCategoryEntity::getDirection, dto.getDirection());
             wrapper.eq(dto.getEnabled() != null, FinanceCategoryEntity::getEnabled, dto.getEnabled());
@@ -58,6 +61,8 @@ public class FinanceCategoryServiceImpl implements FinanceCategoryService {
             Page<FinanceCategoryVo> voPage = new Page<>(entityPage.getCurrent(), entityPage.getSize(), entityPage.getTotal());
             voPage.setRecords(entityPage.getRecords().stream().map(this::convertToVo).collect(Collectors.toList()));
             return voPage;
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             log.error("分页查询记账分类失败：{}", e.getMessage(), e);
             throw new ServerException("查询记账分类列表失败", e);
@@ -67,13 +72,17 @@ public class FinanceCategoryServiceImpl implements FinanceCategoryService {
     @Override
     public List<FinanceCategoryVo> listCategories(FinanceCategoryListQueryDto dto) {
         try {
+            Long userId = FinanceUserSupport.requireUserId();
             LambdaQueryWrapper<FinanceCategoryEntity> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(FinanceCategoryEntity::getUserId, userId);
             if (dto != null) {
                 wrapper.eq(StringUtils.hasText(dto.getDirection()), FinanceCategoryEntity::getDirection, dto.getDirection());
                 wrapper.eq(dto.getEnabled() != null, FinanceCategoryEntity::getEnabled, dto.getEnabled());
             }
             wrapper.orderByAsc(FinanceCategoryEntity::getSortOrder).orderByDesc(FinanceCategoryEntity::getId);
             return financeCategoryMapper.selectList(wrapper).stream().map(this::convertToVo).collect(Collectors.toList());
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             log.error("查询记账分类列表失败：{}", e.getMessage(), e);
             throw new ServerException("查询记账分类列表失败", e);
@@ -90,6 +99,7 @@ public class FinanceCategoryServiceImpl implements FinanceCategoryService {
             if (entity == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "分类不存在");
             }
+            FinanceUserSupport.requireOwned(entity.getUserId(), "分类不存在");
             return convertToVo(entity);
         } catch (BusinessException e) {
             throw e;
@@ -103,9 +113,11 @@ public class FinanceCategoryServiceImpl implements FinanceCategoryService {
     @Transactional(rollbackFor = Exception.class)
     public FinanceCategoryVo create(FinanceCategoryCreateDto dto) {
         try {
-            log.info("创建记账分类，参数：{}", dto);
+            Long userId = FinanceUserSupport.requireUserId();
+            log.info("创建记账分类，userId={}，参数：{}", userId, dto);
             validateDirection(dto.getDirection());
             FinanceCategoryEntity entity = new FinanceCategoryEntity();
+            entity.setUserId(userId);
             entity.setName(dto.getName());
             entity.setDirection(dto.getDirection());
             entity.setIcon(dto.getIcon());
@@ -131,6 +143,7 @@ public class FinanceCategoryServiceImpl implements FinanceCategoryService {
             if (entity == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "分类不存在");
             }
+            FinanceUserSupport.requireOwned(entity.getUserId(), "分类不存在");
             if (StringUtils.hasText(dto.getName())) {
                 entity.setName(dto.getName());
             }
@@ -161,6 +174,7 @@ public class FinanceCategoryServiceImpl implements FinanceCategoryService {
     @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
         try {
+            Long userId = FinanceUserSupport.requireUserId();
             if (id == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "分类ID不能为空");
             }
@@ -168,7 +182,8 @@ public class FinanceCategoryServiceImpl implements FinanceCategoryService {
             if (entity == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "分类不存在");
             }
-            long refCount = financeTransactionMapper.countByCategoryId(id);
+            FinanceUserSupport.requireOwned(entity.getUserId(), "分类不存在");
+            long refCount = financeTransactionMapper.countByCategoryId(id, userId);
             if (refCount > 0) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "分类存在关联流水，无法删除");
             }

@@ -210,9 +210,10 @@ CREATE TABLE IF NOT EXISTS `system_config` (
     KEY `idx_status_deleted` (`status`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='系统配置表';
 
--- 记账账户表
+-- 记账账户表（按用户隔离；存量迁移见 mysql/prod/20260731_1200_finance_user_isolation_and_tpl.sql）
 CREATE TABLE IF NOT EXISTS `finance_account` (
     `id` bigint NOT NULL COMMENT '主键ID',
+    `user_id` bigint NOT NULL COMMENT '归属用户ID',
     `name` varchar(64) NOT NULL COMMENT '账户名称',
     `account_type` varchar(32) NOT NULL COMMENT '账户类型（字典 finance_account_type）',
     `opening_balance` decimal(12, 2) NOT NULL DEFAULT 0.00 COMMENT '期初余额',
@@ -226,6 +227,7 @@ CREATE TABLE IF NOT EXISTS `finance_account` (
     `update_by` bigint DEFAULT NULL COMMENT '更新人ID',
     `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
+    KEY `idx_user_id` (`user_id`),
     KEY `idx_account_type` (`account_type`),
     KEY `idx_enabled` (`enabled`),
     KEY `idx_deleted` (`deleted`),
@@ -234,6 +236,7 @@ CREATE TABLE IF NOT EXISTS `finance_account` (
 
 CREATE TABLE IF NOT EXISTS `finance_category` (
     `id` bigint NOT NULL COMMENT '主键ID',
+    `user_id` bigint NOT NULL COMMENT '归属用户ID',
     `name` varchar(64) NOT NULL COMMENT '分类名称',
     `direction` varchar(16) NOT NULL COMMENT '方向：income/expense',
     `icon` varchar(64) DEFAULT NULL COMMENT '图标',
@@ -246,6 +249,7 @@ CREATE TABLE IF NOT EXISTS `finance_category` (
     `update_by` bigint DEFAULT NULL COMMENT '更新人ID',
     `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
+    KEY `idx_user_id` (`user_id`),
     KEY `idx_direction` (`direction`),
     KEY `idx_enabled` (`enabled`),
     KEY `idx_deleted` (`deleted`),
@@ -254,9 +258,10 @@ CREATE TABLE IF NOT EXISTS `finance_category` (
 
 CREATE TABLE IF NOT EXISTS `finance_transaction` (
     `id` bigint NOT NULL COMMENT '主键ID',
+    `user_id` bigint NOT NULL COMMENT '归属用户ID',
     `txn_date` date NOT NULL COMMENT '业务日期',
-    `txn_type` varchar(16) NOT NULL COMMENT '类型：income/expense/transfer',
-    `amount` decimal(12, 2) NOT NULL COMMENT '金额（元）',
+    `txn_type` varchar(16) NOT NULL COMMENT '类型：income/expense/transfer/adjustment',
+    `amount` decimal(12, 2) NOT NULL COMMENT '金额（元；adjustment 可为负）',
     `category_id` bigint DEFAULT NULL COMMENT '分类ID（划转可空）',
     `account_id` bigint DEFAULT NULL COMMENT '账户ID（收入/支出）',
     `from_account_id` bigint DEFAULT NULL COMMENT '转出账户ID（划转）',
@@ -269,6 +274,7 @@ CREATE TABLE IF NOT EXISTS `finance_transaction` (
     `update_by` bigint DEFAULT NULL COMMENT '更新人ID',
     `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
+    KEY `idx_user_id` (`user_id`),
     KEY `idx_txn_date` (`txn_date`),
     KEY `idx_txn_type` (`txn_type`),
     KEY `idx_category_id` (`category_id`),
@@ -282,14 +288,91 @@ CREATE TABLE IF NOT EXISTS `finance_transaction` (
 
 CREATE TABLE IF NOT EXISTS `finance_recurring` (
     `id` bigint NOT NULL COMMENT '主键ID',
+    `user_id` bigint NOT NULL COMMENT '归属用户ID',
     `name` varchar(64) NOT NULL COMMENT '模板名称',
-    `direction` varchar(16) NOT NULL COMMENT '方向：income/expense',
+    `direction` varchar(16) NOT NULL COMMENT '方向：income/expense/transfer',
     `amount` decimal(12, 2) NOT NULL DEFAULT 0.00 COMMENT '默认金额（可为0，落账时改）',
-    `category_id` bigint NOT NULL COMMENT '分类ID',
-    `account_id` bigint NOT NULL COMMENT '账户ID',
-    `cycle` varchar(16) NOT NULL COMMENT '周期：daily/weekly/monthly',
-    `day_of_month` int DEFAULT NULL COMMENT '每月第几天（monthly）',
-    `weekday` int DEFAULT NULL COMMENT '星期几 1-7（weekly）',
+    `category_id` bigint DEFAULT NULL COMMENT '分类ID（收入/支出必填，转账可空）',
+    `account_id` bigint DEFAULT NULL COMMENT '账户ID（收入/支出必填，转账可空）',
+    `from_account_id` bigint DEFAULT NULL COMMENT '转出账户ID（转账模板）',
+    `to_account_id` bigint DEFAULT NULL COMMENT '转入账户ID（转账模板）',
+    `cycle` varchar(16) DEFAULT NULL COMMENT '提醒标签（已废弃，业务层忽略）',
+    `day_of_month` int DEFAULT NULL COMMENT '每月第几天（已废弃）',
+    `weekday` int DEFAULT NULL COMMENT '星期几 1-7（已废弃）',
+    `sort_order` int NOT NULL DEFAULT 0 COMMENT '排序号',
+    `enabled` tinyint NOT NULL DEFAULT 1 COMMENT '是否启用：0-禁用，1-启用',
+    `note` varchar(512) DEFAULT NULL COMMENT '备注',
+    `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除',
+    `create_by` bigint DEFAULT NULL COMMENT '创建人ID',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by` bigint DEFAULT NULL COMMENT '更新人ID',
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_direction` (`direction`),
+    KEY `idx_cycle` (`cycle`),
+    KEY `idx_from_account_id` (`from_account_id`),
+    KEY `idx_to_account_id` (`to_account_id`),
+    KEY `idx_sort_order` (`sort_order`),
+    KEY `idx_enabled` (`enabled`),
+    KEY `idx_deleted` (`deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='快捷记账模板表（手动点一次生成流水，不自动扣款）';
+
+CREATE TABLE IF NOT EXISTS `finance_user_init` (
+    `user_id` bigint NOT NULL COMMENT '用户ID',
+    `init_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '初始化时间',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='记账用户初始化标记';
+
+CREATE TABLE IF NOT EXISTS `finance_tpl_account` (
+    `id` bigint NOT NULL COMMENT '主键ID',
+    `name` varchar(64) NOT NULL COMMENT '账户名称',
+    `account_type` varchar(32) NOT NULL COMMENT '账户类型（字典 finance_account_type）',
+    `note` varchar(512) DEFAULT NULL COMMENT '备注',
+    `sort_order` int NOT NULL DEFAULT 0 COMMENT '排序号',
+    `enabled` tinyint NOT NULL DEFAULT 1 COMMENT '是否启用：0-禁用，1-启用',
+    `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除',
+    `create_by` bigint DEFAULT NULL COMMENT '创建人ID',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by` bigint DEFAULT NULL COMMENT '更新人ID',
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_account_type` (`account_type`),
+    KEY `idx_enabled` (`enabled`),
+    KEY `idx_deleted` (`deleted`),
+    KEY `idx_sort_order` (`sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='记账初始化模板-账户';
+
+CREATE TABLE IF NOT EXISTS `finance_tpl_category` (
+    `id` bigint NOT NULL COMMENT '主键ID',
+    `name` varchar(64) NOT NULL COMMENT '分类名称',
+    `direction` varchar(16) NOT NULL COMMENT '方向：income/expense',
+    `icon` varchar(64) DEFAULT NULL COMMENT '图标',
+    `sort_order` int NOT NULL DEFAULT 0 COMMENT '排序号',
+    `enabled` tinyint NOT NULL DEFAULT 1 COMMENT '是否启用：0-禁用，1-启用',
+    `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除',
+    `create_by` bigint DEFAULT NULL COMMENT '创建人ID',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by` bigint DEFAULT NULL COMMENT '更新人ID',
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_direction` (`direction`),
+    KEY `idx_enabled` (`enabled`),
+    KEY `idx_deleted` (`deleted`),
+    KEY `idx_sort_order` (`sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='记账初始化模板-分类';
+
+CREATE TABLE IF NOT EXISTS `finance_tpl_recurring` (
+    `id` bigint NOT NULL COMMENT '主键ID',
+    `name` varchar(64) NOT NULL COMMENT '模板名称',
+    `direction` varchar(16) NOT NULL COMMENT '方向：income/expense/transfer',
+    `category_id` bigint DEFAULT NULL COMMENT '模板分类ID',
+    `account_id` bigint DEFAULT NULL COMMENT '模板账户ID',
+    `from_account_id` bigint DEFAULT NULL COMMENT '模板转出账户ID',
+    `to_account_id` bigint DEFAULT NULL COMMENT '模板转入账户ID',
+    `sort_order` int NOT NULL DEFAULT 0 COMMENT '排序号',
     `enabled` tinyint NOT NULL DEFAULT 1 COMMENT '是否启用：0-禁用，1-启用',
     `note` varchar(512) DEFAULT NULL COMMENT '备注',
     `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除',
@@ -299,48 +382,46 @@ CREATE TABLE IF NOT EXISTS `finance_recurring` (
     `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
     KEY `idx_direction` (`direction`),
-    KEY `idx_cycle` (`cycle`),
     KEY `idx_enabled` (`enabled`),
-    KEY `idx_deleted` (`deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='固定账单模板表';
+    KEY `idx_deleted` (`deleted`),
+    KEY `idx_sort_order` (`sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='记账初始化模板-快捷项';
 
--- 记账种子：账户
-INSERT IGNORE INTO `finance_account`
-(`id`, `name`, `account_type`, `opening_balance`, `account_no`, `note`, `sort_order`, `enabled`, `deleted`, `create_time`, `update_time`)
+-- 生产全新库：不预置个人业务种子，新用户首次进入记账时从全局模板拷贝
+INSERT IGNORE INTO `finance_tpl_account`
+(`id`, `name`, `account_type`, `note`, `sort_order`, `enabled`, `deleted`, `create_time`, `update_time`)
 VALUES
-    (1, '微信', 'wechat', 0.00, NULL, '微信零钱/收款', 10, 1, 0, NOW(), NOW()),
-    (2, 'QQ', 'qq', 0.00, NULL, 'QQ钱包/红包', 20, 1, 0, NOW(), NOW()),
-    (3, '银行卡', 'bank', 0.00, NULL, '工资卡/储蓄卡', 30, 1, 0, NOW(), NOW()),
-    (4, '公积金', 'housing_fund', 0.00, NULL, '一般不提取，用于累计查看', 40, 1, 0, NOW(), NOW()),
-    (5, '社保', 'social_security', 0.00, NULL, '账号可写在「账号」字段', 50, 1, 0, NOW(), NOW());
+    (1001, '现金', 'cash', '现金账户', 10, 1, 0, NOW(), NOW()),
+    (1002, '微信', 'wechat', '微信零钱', 20, 1, 0, NOW(), NOW()),
+    (1003, '支付宝', 'alipay', '支付宝/余额宝', 30, 1, 0, NOW(), NOW()),
+    (1004, '银行卡', 'bank', '常用银行卡', 40, 1, 0, NOW(), NOW()),
+    (1005, '公积金', 'housing_fund', '住房公积金', 50, 1, 0, NOW(), NOW()),
+    (1006, '医保', 'medical', '医保个人账户', 60, 1, 0, NOW(), NOW());
 
-INSERT IGNORE INTO `finance_category`
-(`id`, `name`, `direction`, `icon`, `sort_order`, `enabled`, `is_system`, `deleted`, `create_time`, `update_time`)
+INSERT IGNORE INTO `finance_tpl_category`
+(`id`, `name`, `direction`, `icon`, `sort_order`, `enabled`, `deleted`, `create_time`, `update_time`)
 VALUES
-    (11, '赞赏码', 'income', NULL, 10, 1, 1, 0, NOW(), NOW()),
-    (12, '微信转账', 'income', NULL, 20, 1, 1, 0, NOW(), NOW()),
-    (13, 'QQ红包', 'income', NULL, 30, 1, 1, 0, NOW(), NOW()),
-    (14, '网盘推广', 'income', NULL, 40, 1, 1, 0, NOW(), NOW()),
-    (15, '工资', 'income', NULL, 50, 1, 1, 0, NOW(), NOW()),
-    (16, '租房补贴', 'income', NULL, 60, 1, 1, 0, NOW(), NOW()),
-    (17, '其他收入', 'income', NULL, 70, 1, 1, 0, NOW(), NOW()),
-    (21, '饭钱', 'expense', NULL, 10, 1, 1, 0, NOW(), NOW()),
-    (22, '买药', 'expense', NULL, 20, 1, 1, 0, NOW(), NOW()),
-    (23, '话费', 'expense', NULL, 30, 1, 1, 0, NOW(), NOW()),
-    (24, 'Cursor登录助手', 'expense', NULL, 40, 1, 1, 0, NOW(), NOW()),
-    (25, '房租', 'expense', NULL, 50, 1, 1, 0, NOW(), NOW()),
-    (26, '社保扣款', 'expense', NULL, 60, 1, 1, 0, NOW(), NOW()),
-    (27, '公积金扣款', 'expense', NULL, 70, 1, 1, 0, NOW(), NOW()),
-    (28, '大额花费', 'expense', NULL, 80, 1, 1, 0, NOW(), NOW()),
-    (29, '其他支出', 'expense', NULL, 90, 1, 1, 0, NOW(), NOW());
+    (2001, '工资', 'income', NULL, 10, 1, 0, NOW(), NOW()),
+    (2002, '奖金补贴', 'income', NULL, 20, 1, 0, NOW(), NOW()),
+    (2003, '理财利息', 'income', NULL, 30, 1, 0, NOW(), NOW()),
+    (2004, '红包转账', 'income', NULL, 40, 1, 0, NOW(), NOW()),
+    (2005, '其他收入', 'income', NULL, 90, 1, 0, NOW(), NOW()),
+    (2101, '餐饮', 'expense', NULL, 10, 1, 0, NOW(), NOW()),
+    (2102, '交通', 'expense', NULL, 20, 1, 0, NOW(), NOW()),
+    (2103, '住房房租', 'expense', NULL, 30, 1, 0, NOW(), NOW()),
+    (2104, '话费网费', 'expense', NULL, 40, 1, 0, NOW(), NOW()),
+    (2105, '日用购物', 'expense', NULL, 50, 1, 0, NOW(), NOW()),
+    (2106, '医疗健康', 'expense', NULL, 60, 1, 0, NOW(), NOW()),
+    (2107, '个税社保', 'expense', NULL, 70, 1, 0, NOW(), NOW()),
+    (2108, '大额支出', 'expense', NULL, 80, 1, 0, NOW(), NOW()),
+    (2109, '其他支出', 'expense', NULL, 90, 1, 0, NOW(), NOW());
 
-INSERT IGNORE INTO `finance_recurring`
-(`id`, `name`, `direction`, `amount`, `category_id`, `account_id`, `cycle`, `day_of_month`, `weekday`, `enabled`, `note`, `deleted`, `create_time`, `update_time`)
+INSERT IGNORE INTO `finance_tpl_recurring`
+(`id`, `name`, `direction`, `category_id`, `account_id`, `from_account_id`, `to_account_id`, `sort_order`, `enabled`, `note`, `deleted`, `create_time`, `update_time`)
 VALUES
-    (31, '每日饭钱', 'expense', 0.00, 21, 1, 'daily', NULL, NULL, 1, '每天记一笔，金额可改', 0, NOW(), NOW()),
-    (32, '话费', 'expense', 0.00, 23, 1, 'monthly', 1, NULL, 1, '每月话费，请改成真实金额', 0, NOW(), NOW()),
-    (33, 'Cursor登录助手', 'expense', 0.00, 24, 3, 'monthly', 1, NULL, 1, '每月助手费，请改成真实金额', 0, NOW(), NOW()),
-    (34, '房租', 'expense', 0.00, 25, 3, 'monthly', 1, NULL, 1, '每月房租，请改成真实金额', 0, NOW(), NOW());
+    (3001, '餐饮', 'expense', 2101, 1002, NULL, NULL, 10, 1, '快捷记一笔；金额拷贝后为0，落账时填写', 0, NOW(), NOW()),
+    (3002, '话费网费', 'expense', 2104, 1004, NULL, NULL, 20, 1, '快捷记一笔；金额拷贝后为0，落账时填写', 0, NOW(), NOW()),
+    (3003, '房租', 'expense', 2103, 1004, NULL, NULL, 30, 1, '快捷记一笔；金额拷贝后为0，落账时填写', 0, NOW(), NOW());
 
 -- 数据字典类型表
 CREATE TABLE IF NOT EXISTS `system_dict_type` (
@@ -780,7 +861,14 @@ VALUES
     (100, 99, 'button', '固定账单-查看', 'FINANCE_RECURRING_VIEW', NULL, NULL, NULL, 51, 1, 1, 0, NOW(), NOW()),
     (101, 99, 'button', '固定账单-新增', 'FINANCE_RECURRING_CREATE', NULL, NULL, NULL, 52, 1, 1, 0, NOW(), NOW()),
     (102, 99, 'button', '固定账单-编辑', 'FINANCE_RECURRING_UPDATE', NULL, NULL, NULL, 53, 1, 1, 0, NOW(), NOW()),
-    (103, 99, 'button', '固定账单-删除', 'FINANCE_RECURRING_DELETE', NULL, NULL, NULL, 54, 1, 1, 0, NOW(), NOW());
+    (103, 99, 'button', '快捷模板-删除', 'FINANCE_RECURRING_DELETE', NULL, NULL, NULL, 54, 1, 1, 0, NOW(), NOW()),
+
+    -- 记账初始化配置（系统管理下，仅超管/管理员）
+    (104, 1, 'menu', '记账初始化配置', 'SYSTEM_FINANCE_SETUP', '/system/financeSetupPage', '/system/financeSetup/FinanceSetupPage.vue', 'Setting', 75, 1, 1, 0, NOW(), NOW()),
+    (105, 104, 'button', '记账初始化-查看', 'SYSTEM_FINANCE_SETUP_VIEW', NULL, NULL, NULL, 76, 1, 1, 0, NOW(), NOW()),
+    (106, 104, 'button', '记账初始化-新增', 'SYSTEM_FINANCE_SETUP_CREATE', NULL, NULL, NULL, 77, 1, 1, 0, NOW(), NOW()),
+    (107, 104, 'button', '记账初始化-编辑', 'SYSTEM_FINANCE_SETUP_UPDATE', NULL, NULL, NULL, 78, 1, 1, 0, NOW(), NOW()),
+    (108, 104, 'button', '记账初始化-删除', 'SYSTEM_FINANCE_SETUP_DELETE', NULL, NULL, NULL, 79, 1, 1, 0, NOW(), NOW());
 
 -- 将所有权限授予【超级管理员角色】和【管理员角色】
 INSERT IGNORE INTO `system_role_permission` (`id`, `role_id`, `permission_id`, `create_time`)

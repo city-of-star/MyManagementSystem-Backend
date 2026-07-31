@@ -26,6 +26,10 @@ public class FinanceTransactionEntity extends BaseEntity {
     @Serial
     private static final long serialVersionUID = 1L;
 
+    @TableField("user_id")
+    @Schema(description = "归属用户ID")
+    private Long userId;
+
     @TableField("txn_date")
     @Schema(description = "交易日期")
     private LocalDate txnDate;

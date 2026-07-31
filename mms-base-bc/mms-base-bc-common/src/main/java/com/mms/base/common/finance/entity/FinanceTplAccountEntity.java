@@ -8,26 +8,21 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 import java.io.Serial;
-import java.math.BigDecimal;
 
 /**
- * 实现功能【记账账户实体】
+ * 实现功能【记账初始化模板-账户实体】
  *
  * @author li.hongyu
- * @date 2026-07-30
+ * @date 2026-07-31
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
-@TableName("finance_account")
-@Schema(description = "记账账户实体")
-public class FinanceAccountEntity extends BaseEntity {
+@TableName("finance_tpl_account")
+@Schema(description = "记账初始化模板-账户实体")
+public class FinanceTplAccountEntity extends BaseEntity {
 
     @Serial
     private static final long serialVersionUID = 1L;
-
-    @TableField("user_id")
-    @Schema(description = "归属用户ID")
-    private Long userId;
 
     @Schema(description = "账户名称")
     private String name;
@@ -35,14 +30,6 @@ public class FinanceAccountEntity extends BaseEntity {
     @TableField("account_type")
     @Schema(description = "账户类型（字典 finance_account_type）")
     private String accountType;
-
-    @TableField("opening_balance")
-    @Schema(description = "期初余额")
-    private BigDecimal openingBalance;
-
-    @TableField("account_no")
-    @Schema(description = "账号/卡号")
-    private String accountNo;
 
     @Schema(description = "备注")
     private String note;

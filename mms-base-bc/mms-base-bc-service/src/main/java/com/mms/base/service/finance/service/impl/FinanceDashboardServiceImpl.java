@@ -7,6 +7,9 @@ import com.mms.base.common.finance.vo.FinanceDashboardSummaryVo;
 import com.mms.base.service.finance.mapper.FinanceAccountMapper;
 import com.mms.base.service.finance.mapper.FinanceTransactionMapper;
 import com.mms.base.service.finance.service.FinanceDashboardService;
+import com.mms.base.service.finance.service.FinanceInitService;
+import com.mms.base.service.finance.support.FinanceUserSupport;
+import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -36,26 +39,34 @@ public class FinanceDashboardServiceImpl implements FinanceDashboardService {
     @Resource
     private FinanceAccountMapper financeAccountMapper;
 
+    @Resource
+    private FinanceInitService financeInitService;
+
     @Override
     public FinanceDashboardSummaryVo getSummary(Integer days) {
         try {
+            financeInitService.ensureInitialized();
+            Long userId = FinanceUserSupport.requireUserId();
             int range = days == null || days < 1 ? 30 : Math.min(days, 90);
             LocalDate today = LocalDate.now();
             LocalDate monthStart = today.withDayOfMonth(1);
             LocalDate trendStart = today.minusDays(range - 1L);
 
-            BigDecimal monthIncome = nullToZero(financeTransactionMapper.sumAmount("income", "settled", monthStart, today));
-            BigDecimal monthExpense = nullToZero(financeTransactionMapper.sumAmount("expense", "settled", monthStart, today));
-            BigDecimal pendingAmount = nullToZero(financeTransactionMapper.sumAmount("income", "pending", null, null));
+            BigDecimal monthIncome = nullToZero(
+                    financeTransactionMapper.sumAmount("income", "settled", monthStart, today, userId));
+            BigDecimal monthExpense = nullToZero(
+                    financeTransactionMapper.sumAmount("expense", "settled", monthStart, today, userId));
+            BigDecimal pendingAmount = nullToZero(
+                    financeTransactionMapper.sumAmount("income", "pending", null, null, userId));
 
-            List<FinanceAccountBalanceVo> accounts = financeAccountMapper.listAccountBalances(1);
+            List<FinanceAccountBalanceVo> accounts = financeAccountMapper.listAccountBalances(1, userId);
             BigDecimal totalAsset = accounts.stream()
                     .map(FinanceAccountBalanceVo::getBalance)
                     .filter(balance -> balance != null)
                     .reduce(BigDecimal.ZERO, BigDecimal::add)
                     .setScale(2, RoundingMode.HALF_UP);
 
-            List<FinanceDailyTrendVo> rawTrends = financeTransactionMapper.listDailyTrends(trendStart, today);
+            List<FinanceDailyTrendVo> rawTrends = financeTransactionMapper.listDailyTrends(trendStart, today, userId);
             Map<LocalDate, FinanceDailyTrendVo> trendMap = rawTrends.stream()
                     .collect(Collectors.toMap(FinanceDailyTrendVo::getDate, item -> item, (a, b) -> a));
             List<FinanceDailyTrendVo> dailyTrends = new ArrayList<>();
@@ -71,7 +82,7 @@ public class FinanceDashboardServiceImpl implements FinanceDashboardService {
             }
 
             List<FinanceCategoryStatVo> expenseCategoryStats =
-                    financeTransactionMapper.listExpenseCategoryStats(monthStart, today, 10);
+                    financeTransactionMapper.listExpenseCategoryStats(monthStart, today, 10, userId);
 
             FinanceDashboardSummaryVo summary = new FinanceDashboardSummaryVo();
             summary.setMonthIncome(monthIncome);
@@ -83,6 +94,8 @@ public class FinanceDashboardServiceImpl implements FinanceDashboardService {
             summary.setDailyTrends(dailyTrends);
             summary.setExpenseCategoryStats(expenseCategoryStats);
             return summary;
+        } catch (BusinessException e) {
+            throw e;
         } catch (Exception e) {
             log.error("查询记账看板汇总失败：{}", e.getMessage(), e);
             throw new ServerException("查询记账看板汇总失败", e);

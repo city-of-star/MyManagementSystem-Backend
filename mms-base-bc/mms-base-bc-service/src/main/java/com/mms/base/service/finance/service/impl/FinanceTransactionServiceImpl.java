@@ -19,6 +19,7 @@ import com.mms.base.service.finance.mapper.FinanceCategoryMapper;
 import com.mms.base.service.finance.mapper.FinanceRecurringMapper;
 import com.mms.base.service.finance.mapper.FinanceTransactionMapper;
 import com.mms.base.service.finance.service.FinanceTransactionService;
+import com.mms.base.service.finance.support.FinanceUserSupport;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
@@ -64,9 +65,10 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
     @Override
     public Page<FinanceTransactionVo> getTransactionPage(FinanceTransactionPageQueryDto dto) {
         try {
-            log.info("分页查询记账流水，参数：{}", dto);
+            Long userId = FinanceUserSupport.requireUserId();
+            log.info("分页查询记账流水，userId={}，参数：{}", userId, dto);
             Page<FinanceTransactionVo> page = new Page<>(dto.getPageNum(), dto.getPageSize());
-            return financeTransactionMapper.getTransactionPage(page, dto);
+            return financeTransactionMapper.getTransactionPage(page, dto, userId);
         } catch (Exception e) {
             log.error("分页查询记账流水失败：{}", e.getMessage(), e);
             throw new ServerException("查询记账流水列表失败", e);
@@ -76,10 +78,11 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
     @Override
     public FinanceTransactionVo getById(Long id) {
         try {
+            Long userId = FinanceUserSupport.requireUserId();
             if (id == null) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "流水ID不能为空");
             }
-            FinanceTransactionVo vo = financeTransactionMapper.getTransactionById(id);
+            FinanceTransactionVo vo = financeTransactionMapper.getTransactionById(id, userId);
             if (vo == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "流水不存在");
             }
@@ -96,19 +99,21 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
     @Transactional(rollbackFor = Exception.class)
     public FinanceTransactionVo create(FinanceTransactionCreateDto dto) {
         try {
-            log.info("创建记账流水，参数：{}", dto);
+            Long userId = FinanceUserSupport.requireUserId();
+            log.info("创建记账流水，userId={}，参数：{}", userId, dto);
             if ("adjustment".equals(dto.getTxnType())) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "平账请使用专用接口 /finance/transaction/adjust");
             }
             String status = StringUtils.hasText(dto.getStatus()) ? dto.getStatus() : "settled";
             validateTxnFields(dto.getTxnType(), dto.getAccountId(), dto.getCategoryId(),
                     dto.getFromAccountId(), dto.getToAccountId(), status);
-            ensureAccountExists(dto.getAccountId());
-            ensureAccountExists(dto.getFromAccountId());
-            ensureAccountExists(dto.getToAccountId());
-            ensureCategoryExists(dto.getCategoryId());
+            ensureAccountExists(dto.getAccountId(), userId);
+            ensureAccountExists(dto.getFromAccountId(), userId);
+            ensureAccountExists(dto.getToAccountId(), userId);
+            ensureCategoryExists(dto.getCategoryId(), userId);
 
             FinanceTransactionEntity entity = new FinanceTransactionEntity();
+            entity.setUserId(userId);
             entity.setTxnDate(dto.getTxnDate());
             entity.setTxnType(dto.getTxnType());
             entity.setAmount(scaleMoney(dto.getAmount()));
@@ -120,7 +125,7 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
             entity.setNote(dto.getNote());
             normalizeByTxnType(entity);
             financeTransactionMapper.insert(entity);
-            return financeTransactionMapper.getTransactionById(entity.getId());
+            return financeTransactionMapper.getTransactionById(entity.getId(), userId);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -133,11 +138,13 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
     @Transactional(rollbackFor = Exception.class)
     public FinanceTransactionVo update(FinanceTransactionUpdateDto dto) {
         try {
-            log.info("更新记账流水，参数：{}", dto);
+            Long userId = FinanceUserSupport.requireUserId();
+            log.info("更新记账流水，userId={}，参数：{}", userId, dto);
             FinanceTransactionEntity entity = financeTransactionMapper.selectById(dto.getId());
             if (entity == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "流水不存在");
             }
+            FinanceUserSupport.requireOwned(entity.getUserId(), "流水不存在");
             if (dto.getTxnDate() != null) {
                 entity.setTxnDate(dto.getTxnDate());
             }
@@ -177,13 +184,13 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
             }
             validateTxnFields(entity.getTxnType(), entity.getAccountId(), entity.getCategoryId(),
                     entity.getFromAccountId(), entity.getToAccountId(), entity.getStatus());
-            ensureAccountExists(entity.getAccountId());
-            ensureAccountExists(entity.getFromAccountId());
-            ensureAccountExists(entity.getToAccountId());
-            ensureCategoryExists(entity.getCategoryId());
+            ensureAccountExists(entity.getAccountId(), userId);
+            ensureAccountExists(entity.getFromAccountId(), userId);
+            ensureAccountExists(entity.getToAccountId(), userId);
+            ensureCategoryExists(entity.getCategoryId(), userId);
             normalizeByTxnType(entity);
             financeTransactionMapper.updateById(entity);
-            return financeTransactionMapper.getTransactionById(entity.getId());
+            return financeTransactionMapper.getTransactionById(entity.getId(), userId);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -203,6 +210,7 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
             if (entity == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "流水不存在");
             }
+            FinanceUserSupport.requireOwned(entity.getUserId(), "流水不存在");
             financeTransactionMapper.deleteById(id);
         } catch (BusinessException e) {
             throw e;
@@ -239,6 +247,7 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
             if (recurring == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "快捷模板不存在");
             }
+            FinanceUserSupport.requireOwned(recurring.getUserId(), "快捷模板不存在");
             if (!Integer.valueOf(1).equals(recurring.getEnabled())) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "快捷模板已禁用，无法生成流水");
             }
@@ -293,8 +302,9 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
     @Transactional(rollbackFor = Exception.class)
     public FinanceTransactionVo createAdjustment(FinanceAdjustmentDto dto) {
         try {
-            log.info("平账，参数：{}", dto);
-            FinanceAccountVo account = financeAccountMapper.getAccountWithBalance(dto.getAccountId());
+            Long userId = FinanceUserSupport.requireUserId();
+            log.info("平账，userId={}，参数：{}", userId, dto);
+            FinanceAccountVo account = financeAccountMapper.getAccountWithBalance(dto.getAccountId(), userId);
             if (account == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "账户不存在");
             }
@@ -306,6 +316,7 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
             }
 
             FinanceTransactionEntity entity = new FinanceTransactionEntity();
+            entity.setUserId(userId);
             entity.setTxnDate(dto.getTxnDate());
             entity.setTxnType("adjustment");
             entity.setAmount(diff);
@@ -319,7 +330,7 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
                     : String.format("平账：账面 %s → 真实 %s", bookBalance.toPlainString(), actual.toPlainString());
             entity.setNote(note);
             financeTransactionMapper.insert(entity);
-            return financeTransactionMapper.getTransactionById(entity.getId());
+            return financeTransactionMapper.getTransactionById(entity.getId(), userId);
         } catch (BusinessException e) {
             throw e;
         } catch (Exception e) {
@@ -486,22 +497,22 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
         }
     }
 
-    private void ensureAccountExists(Long accountId) {
+    private void ensureAccountExists(Long accountId, Long userId) {
         if (accountId == null) {
             return;
         }
         FinanceAccountEntity account = financeAccountMapper.selectById(accountId);
-        if (account == null) {
+        if (account == null || !userId.equals(account.getUserId())) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "账户不存在：" + accountId);
         }
     }
 
-    private void ensureCategoryExists(Long categoryId) {
+    private void ensureCategoryExists(Long categoryId, Long userId) {
         if (categoryId == null) {
             return;
         }
         FinanceCategoryEntity category = financeCategoryMapper.selectById(categoryId);
-        if (category == null) {
+        if (category == null || !userId.equals(category.getUserId())) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "分类不存在：" + categoryId);
         }
     }
