@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mms.base.service.finance.mapper.FinanceFundHoldingMapper">
+
+    <sql id="holdingSelectColumns">
+        h.id,
+        h.account_id AS accountId,
+        a.name AS accountName,
+        h.fund_code AS fundCode,
+        h.fund_name AS fundName,
+        h.fund_category AS fundCategory,
+        h.shares,
+        h.cost_amount AS costAmount,
+        CASE
+            WHEN h.shares IS NULL OR h.shares = 0 THEN NULL
+            ELSE ROUND(h.cost_amount / h.shares, 4)
+        END AS avgCost,
+        h.nav,
+        h.nav_date AS navDate,
+        h.market_value AS marketValue,
+        ROUND(COALESCE(h.market_value, 0) - COALESCE(h.cost_amount, 0), 2) AS profitLoss,
+        h.quote_status AS quoteStatus,
+        h.estimated_market_value AS estimatedMarketValue,
+        h.note,
+        h.sort_order AS sortOrder,
+        h.enabled,
+        h.create_time AS createTime,
+        h.update_time AS updateTime
+    </sql>
+
+    <select id="getHoldingPage" resultType="com.mms.base.common.finance.vo.FinanceFundHoldingVo">
+        SELECT
+        <include refid="holdingSelectColumns"/>
+        FROM finance_fund_holding h
+        LEFT JOIN finance_account a ON a.id = h.account_id AND a.deleted = 0 AND a.user_id = h.user_id
+        <where>
+            h.deleted = 0
+            AND h.user_id = #{userId}
+            <if test="dto.fundName != null and dto.fundName != ''">
+                AND h.fund_name LIKE CONCAT('%', #{dto.fundName}, '%')
+            </if>
+            <if test="dto.accountId != null">
+                AND h.account_id = #{dto.accountId}
+            </if>
+            <if test="dto.fundCategory != null and dto.fundCategory != ''">
+                AND h.fund_category = #{dto.fundCategory}
+            </if>
+            <if test="dto.quoteStatus != null and dto.quoteStatus != ''">
+                AND h.quote_status = #{dto.quoteStatus}
+            </if>
+            <if test="dto.enabled != null">
+                AND h.enabled = #{dto.enabled}
+            </if>
+        </where>
+        ORDER BY h.sort_order ASC, h.id DESC
+    </select>
+
+    <select id="getHoldingById" resultType="com.mms.base.common.finance.vo.FinanceFundHoldingVo">
+        SELECT
+        <include refid="holdingSelectColumns"/>
+        FROM finance_fund_holding h
+        LEFT JOIN finance_account a ON a.id = h.account_id AND a.deleted = 0 AND a.user_id = h.user_id
+        WHERE h.deleted = 0 AND h.id = #{id} AND h.user_id = #{userId}
+    </select>
+
+    <select id="sumHoldings" resultType="com.mms.base.common.finance.vo.FinanceFundHoldingSummaryVo">
+        SELECT
+            ROUND(COALESCE(SUM(CASE WHEN h.quote_status = 'confirmed' THEN h.market_value ELSE 0 END), 0), 2)
+                AS confirmedMarketValue,
+            ROUND(COALESCE(SUM(CASE
+                WHEN h.quote_status = 'delayed' THEN COALESCE(h.estimated_market_value, h.market_value)
+                ELSE 0 END), 0), 2) AS laggedMarketValue,
+            ROUND(COALESCE(SUM(h.cost_amount), 0), 2) AS totalCostAmount
+        FROM finance_fund_holding h
+        WHERE h.deleted = 0 AND h.enabled = 1 AND h.user_id = #{userId}
+    </select>
+
+    <select id="countByAccountId" resultType="long">
+        SELECT COUNT(1)
+        FROM finance_fund_holding
+        WHERE deleted = 0 AND account_id = #{accountId} AND user_id = #{userId}
+    </select>
+
+</mapper>

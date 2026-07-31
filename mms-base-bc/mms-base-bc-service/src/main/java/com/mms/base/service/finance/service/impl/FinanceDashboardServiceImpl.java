@@ -4,7 +4,9 @@ import com.mms.base.common.finance.vo.FinanceAccountBalanceVo;
 import com.mms.base.common.finance.vo.FinanceCategoryStatVo;
 import com.mms.base.common.finance.vo.FinanceDailyTrendVo;
 import com.mms.base.common.finance.vo.FinanceDashboardSummaryVo;
+import com.mms.base.common.finance.vo.FinanceFundHoldingSummaryVo;
 import com.mms.base.service.finance.mapper.FinanceAccountMapper;
+import com.mms.base.service.finance.mapper.FinanceFundHoldingMapper;
 import com.mms.base.service.finance.mapper.FinanceTransactionMapper;
 import com.mms.base.service.finance.service.FinanceDashboardService;
 import com.mms.base.service.finance.service.FinanceInitService;
@@ -42,6 +44,9 @@ public class FinanceDashboardServiceImpl implements FinanceDashboardService {
     @Resource
     private FinanceInitService financeInitService;
 
+    @Resource
+    private FinanceFundHoldingMapper financeFundHoldingMapper;
+
     @Override
     public FinanceDashboardSummaryVo getSummary(Integer days) {
         try {
@@ -58,13 +63,25 @@ public class FinanceDashboardServiceImpl implements FinanceDashboardService {
                     financeTransactionMapper.sumAmount("expense", "settled", monthStart, today, userId));
             BigDecimal pendingAmount = nullToZero(
                     financeTransactionMapper.sumAmount("income", "pending", null, null, userId));
+            BigDecimal pendingTransferAmount = nullToZero(
+                    financeTransactionMapper.sumAmount("transfer", "pending", null, null, userId));
 
             List<FinanceAccountBalanceVo> accounts = financeAccountMapper.listAccountBalances(1, userId);
-            BigDecimal totalAsset = accounts.stream()
+            BigDecimal nonFundAsset = accounts.stream()
+                    .filter(item -> item.getAccountType() == null || !"fund".equals(item.getAccountType()))
                     .map(FinanceAccountBalanceVo::getBalance)
                     .filter(balance -> balance != null)
-                    .reduce(BigDecimal.ZERO, BigDecimal::add)
-                    .setScale(2, RoundingMode.HALF_UP);
+                    .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+            FinanceFundHoldingSummaryVo fundSummary = financeFundHoldingMapper.sumHoldings(userId);
+            BigDecimal fundConfirmed = fundSummary == null || fundSummary.getConfirmedMarketValue() == null
+                    ? BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP)
+                    : fundSummary.getConfirmedMarketValue().setScale(2, RoundingMode.HALF_UP);
+            BigDecimal fundLagged = fundSummary == null || fundSummary.getLaggedMarketValue() == null
+                    ? BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP)
+                    : fundSummary.getLaggedMarketValue().setScale(2, RoundingMode.HALF_UP);
+
+            BigDecimal totalAsset = nonFundAsset.add(fundConfirmed).setScale(2, RoundingMode.HALF_UP);
 
             List<FinanceDailyTrendVo> rawTrends = financeTransactionMapper.listDailyTrends(trendStart, today, userId);
             Map<LocalDate, FinanceDailyTrendVo> trendMap = rawTrends.stream()
@@ -89,6 +106,9 @@ public class FinanceDashboardServiceImpl implements FinanceDashboardService {
             summary.setMonthExpense(monthExpense);
             summary.setMonthBalance(monthIncome.subtract(monthExpense).setScale(2, RoundingMode.HALF_UP));
             summary.setPendingAmount(pendingAmount);
+            summary.setPendingTransferAmount(pendingTransferAmount);
+            summary.setFundConfirmedAsset(fundConfirmed);
+            summary.setFundLaggedAsset(fundLagged);
             summary.setTotalAsset(totalAsset);
             summary.setAccounts(accounts);
             summary.setDailyTrends(dailyTrends);

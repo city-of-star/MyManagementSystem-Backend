@@ -208,6 +208,11 @@ public final class PermissionConstants {
     public static final String FINANCE_RECURRING_CREATE = "FINANCE_RECURRING_CREATE";
     public static final String FINANCE_RECURRING_UPDATE = "FINANCE_RECURRING_UPDATE";
     public static final String FINANCE_RECURRING_DELETE = "FINANCE_RECURRING_DELETE";
+    public static final String FINANCE_FUND_HOLDING = "FINANCE_FUND_HOLDING";
+    public static final String FINANCE_FUND_HOLDING_VIEW = "FINANCE_FUND_HOLDING_VIEW";
+    public static final String FINANCE_FUND_HOLDING_CREATE = "FINANCE_FUND_HOLDING_CREATE";
+    public static final String FINANCE_FUND_HOLDING_UPDATE = "FINANCE_FUND_HOLDING_UPDATE";
+    public static final String FINANCE_FUND_HOLDING_DELETE = "FINANCE_FUND_HOLDING_DELETE";
 
     /**
      * 记账初始化配置（菜单+按钮）

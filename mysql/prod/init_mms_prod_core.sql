@@ -318,6 +318,58 @@ CREATE TABLE IF NOT EXISTS `finance_recurring` (
     KEY `idx_deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='快捷记账模板表（手动点一次生成流水，不自动扣款）';
 
+CREATE TABLE IF NOT EXISTS `finance_fund_holding` (
+    `id` bigint NOT NULL COMMENT '主键（雪花）',
+    `user_id` bigint NOT NULL COMMENT '归属用户ID',
+    `account_id` bigint NOT NULL COMMENT '基金账户壳ID',
+    `fund_code` varchar(32) DEFAULT NULL COMMENT '基金代码',
+    `fund_name` varchar(128) NOT NULL COMMENT '基金名称',
+    `fund_category` varchar(32) NOT NULL COMMENT '分类（字典 finance_fund_category）',
+    `shares` decimal(18, 6) NOT NULL DEFAULT 0.000000 COMMENT '持有份额',
+    `cost_amount` decimal(12, 2) NOT NULL DEFAULT 0.00 COMMENT '持仓成本合计',
+    `nav` decimal(12, 4) DEFAULT NULL COMMENT '最近净值',
+    `nav_date` date DEFAULT NULL COMMENT '净值日期',
+    `market_value` decimal(12, 2) NOT NULL DEFAULT 0.00 COMMENT '最近市值',
+    `quote_status` varchar(16) NOT NULL DEFAULT 'confirmed' COMMENT '估值状态：confirmed/delayed',
+    `estimated_market_value` decimal(12, 2) DEFAULT NULL COMMENT '滞后估算市值',
+    `note` varchar(512) DEFAULT NULL COMMENT '备注',
+    `sort_order` int NOT NULL DEFAULT 0 COMMENT '排序号',
+    `enabled` tinyint NOT NULL DEFAULT 1 COMMENT '是否启用：1/0',
+    `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
+    `create_by` bigint DEFAULT NULL COMMENT '创建人',
+    `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by` bigint DEFAULT NULL COMMENT '更新人',
+    `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_account_id` (`account_id`),
+    KEY `idx_fund_category` (`fund_category`),
+    KEY `idx_quote_status` (`quote_status`),
+    KEY `idx_enabled` (`enabled`),
+    KEY `idx_deleted` (`deleted`),
+    KEY `idx_sort_order` (`sort_order`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='基金持仓';
+
+CREATE TABLE IF NOT EXISTS `finance_fund_nav_snapshot` (
+    `id` bigint NOT NULL COMMENT '主键（雪花）',
+    `user_id` bigint NOT NULL COMMENT '归属用户ID',
+    `holding_id` bigint NOT NULL COMMENT '持仓ID',
+    `nav_date` date NOT NULL COMMENT '净值日期',
+    `nav` decimal(12, 4) NOT NULL COMMENT '净值',
+    `market_value` decimal(12, 2) NOT NULL COMMENT '市值',
+    `quote_status` varchar(16) NOT NULL COMMENT '估值状态',
+    `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
+    `create_by` bigint DEFAULT NULL COMMENT '创建人',
+    `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by` bigint DEFAULT NULL COMMENT '更新人',
+    `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_holding_id` (`holding_id`),
+    KEY `idx_nav_date` (`nav_date`),
+    KEY `idx_deleted` (`deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='基金净值快照';
+
 CREATE TABLE IF NOT EXISTS `finance_user_init` (
     `user_id` bigint NOT NULL COMMENT '用户ID',
     `init_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '初始化时间',
@@ -862,6 +914,11 @@ VALUES
     (101, 99, 'button', '固定账单-新增', 'FINANCE_RECURRING_CREATE', NULL, NULL, NULL, 52, 1, 1, 0, NOW(), NOW()),
     (102, 99, 'button', '固定账单-编辑', 'FINANCE_RECURRING_UPDATE', NULL, NULL, NULL, 53, 1, 1, 0, NOW(), NOW()),
     (103, 99, 'button', '快捷模板-删除', 'FINANCE_RECURRING_DELETE', NULL, NULL, NULL, 54, 1, 1, 0, NOW(), NOW()),
+    (109, 81, 'menu', '基金持仓', 'FINANCE_FUND_HOLDING', '/finance/fundHoldings', '/finance/FundHoldingPage.vue', 'TrendCharts', 35, 1, 1, 0, NOW(), NOW()),
+    (110, 109, 'button', '基金持仓-查看', 'FINANCE_FUND_HOLDING_VIEW', NULL, NULL, NULL, 36, 1, 1, 0, NOW(), NOW()),
+    (111, 109, 'button', '基金持仓-新增', 'FINANCE_FUND_HOLDING_CREATE', NULL, NULL, NULL, 37, 1, 1, 0, NOW(), NOW()),
+    (112, 109, 'button', '基金持仓-编辑', 'FINANCE_FUND_HOLDING_UPDATE', NULL, NULL, NULL, 38, 1, 1, 0, NOW(), NOW()),
+    (113, 109, 'button', '基金持仓-删除', 'FINANCE_FUND_HOLDING_DELETE', NULL, NULL, NULL, 39, 1, 1, 0, NOW(), NOW()),
 
     -- 记账初始化配置（系统管理下，仅超管/管理员）
     (104, 1, 'menu', '记账初始化配置', 'SYSTEM_FINANCE_SETUP', '/system/financeSetupPage', '/system/financeSetup/FinanceSetupPage.vue', 'Setting', 75, 1, 1, 0, NOW(), NOW()),
@@ -1012,7 +1069,9 @@ VALUES
     (16, 'finance_txn_type', '记账流水类型', 1, 31, '个人记账流水类型', 0, NOW(), NOW()),
     (17, 'finance_txn_status', '记账流水状态', 1, 32, '个人记账流水入账状态', 0, NOW(), NOW()),
     (18, 'finance_direction', '记账分类方向', 1, 33, '个人记账分类收入/支出方向', 0, NOW(), NOW()),
-    (19, 'finance_recurring_direction', '记账模板方向', 1, 34, '个人记账快捷模板方向', 0, NOW(), NOW());
+    (19, 'finance_recurring_direction', '记账模板方向', 1, 34, '个人记账快捷模板方向', 0, NOW(), NOW()),
+    (20, 'finance_fund_category', '基金分类', 1, 35, '个人记账基金持仓分类', 0, NOW(), NOW()),
+    (21, 'finance_fund_quote_status', '基金估值状态', 1, 36, '确认/滞后', 0, NOW(), NOW());
 
 -- 初始化数据字典数据
 INSERT IGNORE INTO `system_dict_data` (`id`, `dict_type_id`, `dict_label`, `dict_value`, `dict_sort`, `is_default`, `status`, `remark`, `deleted`, `create_time`, `update_time`)
@@ -1099,14 +1158,24 @@ VALUES
     (63, 16, '平账', 'adjustment', 4, 0, 1, '余额对齐差额', 0, NOW(), NOW()),
     -- 记账流水状态
     (64, 17, '已入账', 'settled', 1, 1, 1, '已结算入账', 0, NOW(), NOW()),
-    (65, 17, '待结算', 'pending', 2, 0, 1, '待结算（仅收入）', 0, NOW(), NOW()),
+    (65, 17, '待结算', 'pending', 2, 0, 1, '待结算（收入或转账）', 0, NOW(), NOW()),
     -- 记账分类方向
     (66, 18, '收入', 'income', 1, 0, 1, '收入分类', 0, NOW(), NOW()),
     (67, 18, '支出', 'expense', 2, 1, 1, '支出分类', 0, NOW(), NOW()),
     -- 记账模板方向
     (68, 19, '收入', 'income', 1, 0, 1, '收入模板', 0, NOW(), NOW()),
     (69, 19, '支出', 'expense', 2, 1, 1, '支出模板', 0, NOW(), NOW()),
-    (70, 19, '转账', 'transfer', 3, 0, 1, '转账模板', 0, NOW(), NOW());
+    (70, 19, '转账', 'transfer', 3, 0, 1, '转账模板', 0, NOW(), NOW()),
+    -- 基金分类
+    (71, 20, '债基', 'bond', 1, 0, 1, NULL, 0, NOW(), NOW()),
+    (72, 20, '主题基金', 'theme', 2, 0, 1, NULL, 0, NOW(), NOW()),
+    (73, 20, '指数（国内）', 'index_cn', 3, 1, 1, NULL, 0, NOW(), NOW()),
+    (74, 20, '指数（海外）', 'index_overseas', 4, 0, 1, NULL, 0, NOW(), NOW()),
+    (75, 20, '美股场外', 'us_otc', 5, 0, 1, NULL, 0, NOW(), NOW()),
+    (76, 20, '其他', 'other', 99, 0, 1, NULL, 0, NOW(), NOW()),
+    -- 基金估值状态
+    (77, 21, '已确认', 'confirmed', 1, 1, 1, '计入总资产', 0, NOW(), NOW()),
+    (78, 21, '滞后待更新', 'delayed', 2, 0, 1, '不计入总资产，单独展示', 0, NOW(), NOW());
 -- 初始化定时任务数据
 INSERT IGNORE INTO `job_def` (`id`,`service_name`,`job_code`,`job_name`,`job_type`,`cron_expr`,`run_mode`,`enabled`,`timeout_ms`,`remark`,`params_json`,`deleted`,`create_by`,`create_time`,`update_by`,`update_time`)
 VALUES

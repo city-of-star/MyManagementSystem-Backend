@@ -455,8 +455,8 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
         if (!StringUtils.hasText(status) || !STATUSES.contains(status)) {
             throw new BusinessException(ErrorCode.PARAM_INVALID, "状态不合法，仅支持 settled/pending");
         }
-        if ("pending".equals(status) && !"income".equals(txnType)) {
-            throw new BusinessException(ErrorCode.PARAM_INVALID, "仅收入流水允许待入账状态");
+        if ("pending".equals(status) && !"income".equals(txnType) && !"transfer".equals(txnType)) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "仅收入或转账流水允许待入账状态");
         }
         if ("income".equals(txnType) || "expense".equals(txnType)) {
             if (accountId == null) {
