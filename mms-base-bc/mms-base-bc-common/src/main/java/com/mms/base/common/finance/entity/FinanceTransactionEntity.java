@@ -1,5 +1,6 @@
 package com.mms.base.common.finance.entity;
 
+import com.baomidou.mybatisplus.annotation.FieldStrategy;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.mms.common.datasource.entity.BaseEntity;
@@ -41,19 +42,20 @@ public class FinanceTransactionEntity extends BaseEntity {
     @Schema(description = "金额")
     private BigDecimal amount;
 
-    @TableField("category_id")
+    /** ALWAYS：类型切换时需把无关外键写成 null，避免幽灵引用挡住删账户 */
+    @TableField(value = "category_id", updateStrategy = FieldStrategy.ALWAYS)
     @Schema(description = "分类ID")
     private Long categoryId;
 
-    @TableField("account_id")
+    @TableField(value = "account_id", updateStrategy = FieldStrategy.ALWAYS)
     @Schema(description = "账户ID（收入/支出）")
     private Long accountId;
 
-    @TableField("from_account_id")
+    @TableField(value = "from_account_id", updateStrategy = FieldStrategy.ALWAYS)
     @Schema(description = "转出账户ID（转账）")
     private Long fromAccountId;
 
-    @TableField("to_account_id")
+    @TableField(value = "to_account_id", updateStrategy = FieldStrategy.ALWAYS)
     @Schema(description = "转入账户ID（转账）")
     private Long toAccountId;
 

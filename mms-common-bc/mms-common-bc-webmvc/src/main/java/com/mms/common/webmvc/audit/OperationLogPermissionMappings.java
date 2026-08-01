@@ -106,6 +106,7 @@ public final class OperationLogPermissionMappings {
         put(map, PermissionConstants.FINANCE_FUND_HOLDING_CREATE, "基金持仓", "create", "新增基金持仓");
         put(map, PermissionConstants.FINANCE_FUND_HOLDING_UPDATE, "基金持仓", "update", "修改基金持仓");
         put(map, PermissionConstants.FINANCE_FUND_HOLDING_DELETE, "基金持仓", "delete", "删除基金持仓");
+        put(map, PermissionConstants.FINANCE_PAYROLL_CONFIG_UPDATE, "工资录入配置", "update", "修改工资录入配置");
 
         put(map, PermissionConstants.SYSTEM_FINANCE_SETUP_CREATE, "记账初始化配置", "create", "新增记账初始化模板");
         put(map, PermissionConstants.SYSTEM_FINANCE_SETUP_UPDATE, "记账初始化配置", "update", "修改记账初始化模板");

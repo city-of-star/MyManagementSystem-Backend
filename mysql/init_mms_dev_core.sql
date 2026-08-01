@@ -368,6 +368,51 @@ CREATE TABLE IF NOT EXISTS `finance_fund_nav_snapshot` (
     KEY `idx_deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='基金净值快照';
 
+CREATE TABLE IF NOT EXISTS `finance_payroll_profile` (
+    `id` bigint NOT NULL COMMENT '主键ID',
+    `user_id` bigint NOT NULL COMMENT '归属用户ID',
+    `salary_account_id` bigint DEFAULT NULL COMMENT '工资到手账户ID',
+    `company_card_account_id` bigint DEFAULT NULL COMMENT '公司卡账户ID',
+    `medical_account_id` bigint DEFAULT NULL COMMENT '医保账户ID',
+    `housing_fund_account_id` bigint DEFAULT NULL COMMENT '公积金账户ID',
+    `salary_category_id` bigint DEFAULT NULL COMMENT '先记到手/基本工资分类ID',
+    `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除',
+    `create_by` bigint DEFAULT NULL COMMENT '创建人ID',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by` bigint DEFAULT NULL COMMENT '更新人ID',
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_user_id` (`user_id`),
+    KEY `idx_deleted` (`deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='个人工资录入配置（账户绑定）';
+
+CREATE TABLE IF NOT EXISTS `finance_payroll_line` (
+    `id` bigint NOT NULL COMMENT '主键ID',
+    `user_id` bigint NOT NULL COMMENT '归属用户ID',
+    `profile_id` bigint NOT NULL COMMENT '配置头ID',
+    `line_key` varchar(32) NOT NULL COMMENT '稳定键：对接 payroll-batch 字段',
+    `label` varchar(64) NOT NULL COMMENT '展示名称',
+    `line_type` varchar(16) NOT NULL COMMENT 'income/expense/transfer',
+    `category_id` bigint DEFAULT NULL COMMENT '分类ID（收入/支出）',
+    `account_id` bigint DEFAULT NULL COMMENT '账户ID（收入/支出；可覆盖头上默认）',
+    `from_account_id` bigint DEFAULT NULL COMMENT '转出账户（转账）',
+    `to_account_id` bigint DEFAULT NULL COMMENT '转入账户（转账）',
+    `count_in_net` tinyint NOT NULL DEFAULT 1 COMMENT '是否计入预估到手：1/0',
+    `default_amount` decimal(12, 2) NOT NULL DEFAULT 0.00 COMMENT '默认金额',
+    `sort_order` int NOT NULL DEFAULT 0 COMMENT '排序号',
+    `enabled` tinyint NOT NULL DEFAULT 1 COMMENT '是否启用：1/0',
+    `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除',
+    `create_by` bigint DEFAULT NULL COMMENT '创建人ID',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by` bigint DEFAULT NULL COMMENT '更新人ID',
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_profile_id` (`profile_id`),
+    KEY `idx_line_key` (`line_key`),
+    KEY `idx_deleted` (`deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='个人工资录入明细行配置';
+
 CREATE TABLE IF NOT EXISTS `finance_user_init` (
     `user_id` bigint NOT NULL COMMENT '用户ID',
     `init_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '初始化时间',
@@ -448,7 +493,8 @@ VALUES
     (5, 2, '社保', 'social_security', 0.00, NULL, '已停用：养老金等记为支出；医保请用医保卡账户', 50, 0, 0, NOW(), NOW()),
     (6, 2, '建行卡', 'bank', 0.00, NULL, '租房补贴等到账（建设银行）', 35, 1, 0, NOW(), NOW()),
     (7, 2, '公司卡', 'company_card', 0.00, NULL, '餐补等到账，可再转出到微信等', 45, 1, 0, NOW(), NOW()),
-    (8, 2, '医保卡', 'medical', 1044.22, NULL, '个人医保账户；期初已计入 opening_balance', 55, 1, 0, NOW(), NOW());
+    (8, 2, '医保卡', 'medical', 1044.22, NULL, '个人医保账户；期初已计入 opening_balance', 55, 1, 0, NOW(), NOW()),
+    (9, 2, '支付宝基金', 'fund', 0.00, NULL, '基金账户壳：持仓市值看基金页，壳余额主要记申购/赎回现金流', 70, 1, 0, NOW(), NOW());
 
 -- 记账种子：收入分类
 INSERT IGNORE INTO `finance_category`
@@ -493,6 +539,122 @@ VALUES
     (34, 2, '房租', 'expense', 0.00, 25, 3, NULL, NULL, NULL, NULL, NULL, 40, 1, '快捷模板：点一次记一笔，不会自动扣款；金额可改', 0, NOW(), NOW()),
     (35, 2, '租房补贴', 'income', 0.00, 16, 6, NULL, NULL, NULL, NULL, NULL, 50, 1, '发到建行卡；金额不固定，落账时填写', 0, NOW(), NOW()),
     (36, 2, '公司卡转出', 'transfer', 0.00, NULL, NULL, 7, 1, NULL, NULL, NULL, 60, 1, '公司卡余额转到微信；金额按需填写', 0, NOW(), NOW());
+
+-- 记账种子：流水测试数据（归属 lhy / user_id=2；日期相对 CURDATE，便于看板趋势与平账联调）
+-- 账户：1微信 2QQ 3招商卡 4公积金 6建行卡 7公司卡 8医保卡
+-- 分类：15工资 16租房补贴 18电脑补贴 19加班费 20餐补 21饭钱 23话费 25房租 26社保其他 35公司公积金 37个税
+INSERT IGNORE INTO `finance_transaction`
+(`id`, `user_id`, `txn_date`, `txn_type`, `amount`, `category_id`, `account_id`, `from_account_id`, `to_account_id`,
+ `status`, `note`, `deleted`, `create_by`, `create_time`, `update_time`)
+VALUES
+    -- ===== 上月残留（验证跨月统计）=====
+    (501, 2, DATE_SUB(CURDATE(), INTERVAL DAYOFMONTH(CURDATE()) + 5 DAY), 'expense', 28.50, 21, 1, NULL, NULL,
+     'settled', '上月午饭', 0, 2, NOW(), NOW()),
+    (502, 2, DATE_SUB(CURDATE(), INTERVAL DAYOFMONTH(CURDATE()) + 3 DAY), 'income', 200.00, 12, 1, NULL, NULL,
+     'settled', '上月微信转账收入', 0, 2, NOW(), NOW()),
+
+    -- ===== 近半月：简化工资条（已拆分入账；日期相对今天，避免月初变成未来日）=====
+    (510, 2, DATE_SUB(CURDATE(), INTERVAL 18 DAY), 'income', 12000.00, 15, 3, NULL, NULL,
+     'settled', '基本工资', 0, 2, NOW(), NOW()),
+    (511, 2, DATE_SUB(CURDATE(), INTERVAL 18 DAY), 'income', 200.00, 18, 3, NULL, NULL,
+     'settled', '电脑补贴', 0, 2, NOW(), NOW()),
+    (512, 2, DATE_SUB(CURDATE(), INTERVAL 18 DAY), 'income', 800.00, 19, 3, NULL, NULL,
+     'settled', '加班/绩效', 0, 2, NOW(), NOW()),
+    (513, 2, DATE_SUB(CURDATE(), INTERVAL 18 DAY), 'income', 600.00, 20, 7, NULL, NULL,
+     'settled', '餐补', 0, 2, NOW(), NOW()),
+    (514, 2, DATE_SUB(CURDATE(), INTERVAL 18 DAY), 'transfer', 100.00, NULL, NULL, 3, 8,
+     'settled', '个人医保', 0, 2, NOW(), NOW()),
+    (515, 2, DATE_SUB(CURDATE(), INTERVAL 18 DAY), 'expense', 425.00, 26, 3, NULL, NULL,
+     'settled', '社保其他', 0, 2, NOW(), NOW()),
+    (516, 2, DATE_SUB(CURDATE(), INTERVAL 18 DAY), 'transfer', 1200.00, NULL, NULL, 3, 4,
+     'settled', '个人公积金', 0, 2, NOW(), NOW()),
+    (517, 2, DATE_SUB(CURDATE(), INTERVAL 18 DAY), 'income', 1200.00, 35, 4, NULL, NULL,
+     'settled', '公司公积金', 0, 2, NOW(), NOW()),
+    (518, 2, DATE_SUB(CURDATE(), INTERVAL 18 DAY), 'expense', 380.00, 37, 3, NULL, NULL,
+     'settled', '个税', 0, 2, NOW(), NOW()),
+
+    -- ===== 本月日常 =====
+    (520, 2, DATE_SUB(CURDATE(), INTERVAL 12 DAY), 'income', 1500.00, 16, 6, NULL, NULL,
+     'settled', '租房补贴到建行', 0, 2, NOW(), NOW()),
+    (521, 2, DATE_SUB(CURDATE(), INTERVAL 11 DAY), 'expense', 2200.00, 25, 3, NULL, NULL,
+     'settled', '房租', 0, 2, NOW(), NOW()),
+    (522, 2, DATE_SUB(CURDATE(), INTERVAL 9 DAY), 'transfer', 300.00, NULL, NULL, 7, 1,
+     'settled', '公司卡转出到微信', 0, 2, NOW(), NOW()),
+    (523, 2, DATE_SUB(CURDATE(), INTERVAL 8 DAY), 'expense', 50.00, 23, 1, NULL, NULL,
+     'settled', '话费充值', 0, 2, NOW(), NOW()),
+    (524, 2, DATE_SUB(CURDATE(), INTERVAL 7 DAY), 'expense', 32.00, 21, 1, NULL, NULL,
+     'settled', '午饭', 0, 2, NOW(), NOW()),
+    (525, 2, DATE_SUB(CURDATE(), INTERVAL 6 DAY), 'expense', 18.50, 21, 1, NULL, NULL,
+     'settled', '晚饭', 0, 2, NOW(), NOW()),
+    (526, 2, DATE_SUB(CURDATE(), INTERVAL 5 DAY), 'income', 66.00, 11, 1, NULL, NULL,
+     'settled', '赞赏码', 0, 2, NOW(), NOW()),
+    (527, 2, DATE_SUB(CURDATE(), INTERVAL 4 DAY), 'expense', 45.00, 21, 1, NULL, NULL,
+     'settled', '午饭', 0, 2, NOW(), NOW()),
+    (528, 2, DATE_SUB(CURDATE(), INTERVAL 3 DAY), 'transfer', 500.00, NULL, NULL, 3, 1,
+     'settled', '招商卡提现到微信', 0, 2, NOW(), NOW()),
+    (529, 2, DATE_SUB(CURDATE(), INTERVAL 2 DAY), 'expense', 128.00, 22, 8, NULL, NULL,
+     'settled', '买药（医保卡）', 0, 2, NOW(), NOW()),
+    (530, 2, DATE_SUB(CURDATE(), INTERVAL 1 DAY), 'expense', 26.00, 21, 1, NULL, NULL,
+     'settled', '午饭', 0, 2, NOW(), NOW()),
+    (531, 2, CURDATE(), 'expense', 15.80, 21, 1, NULL, NULL,
+     'settled', '早饭', 0, 2, NOW(), NOW()),
+
+    -- ===== 待入账 / 平账（联调状态与差额）=====
+    (540, 2, CURDATE(), 'income', 8000.00, 15, 3, NULL, NULL,
+     'pending', '先记到手，待拆工资条', 0, 2, NOW(), NOW()),
+    (541, 2, DATE_SUB(CURDATE(), INTERVAL 1 DAY), 'adjustment', -20.00, NULL, 1, NULL, NULL,
+     'settled', '平账：账面 → 真实（微信零钱差额）', 0, 2, NOW(), NOW()),
+
+    -- ===== 基金壳现金流（账户 9=支付宝基金）=====
+    (550, 2, DATE_SUB(CURDATE(), INTERVAL 40 DAY), 'transfer', 6000.00, NULL, NULL, 3, 9,
+     'settled', '基金申购：沪深300ETF联接', 0, 2, NOW(), NOW()),
+    (551, 2, DATE_SUB(CURDATE(), INTERVAL 35 DAY), 'transfer', 2000.00, NULL, NULL, 3, 9,
+     'settled', '基金申购：纳斯达克100', 0, 2, NOW(), NOW()),
+    (552, 2, DATE_SUB(CURDATE(), INTERVAL 30 DAY), 'transfer', 3100.00, NULL, NULL, 3, 9,
+     'settled', '基金申购：短债稳健', 0, 2, NOW(), NOW()),
+    (553, 2, DATE_SUB(CURDATE(), INTERVAL 20 DAY), 'transfer', 1000.00, NULL, NULL, 3, 9,
+     'settled', '基金申购：沪深300ETF联接', 0, 2, NOW(), NOW()),
+    -- 部分赎回待到账（测看板 pending 转账 / 流水确认到账）
+    (554, 2, DATE_SUB(CURDATE(), INTERVAL 2 DAY), 'transfer', 1000.00, NULL, NULL, 9, 3,
+     'pending', '基金赎回待到账：沪深300ETF联接', 0, 2, NOW(), NOW());
+
+-- 记账种子：基金持仓（挂在支付宝基金壳 account_id=9）
+INSERT IGNORE INTO `finance_fund_holding`
+(`id`, `user_id`, `account_id`, `fund_code`, `fund_name`, `fund_category`,
+ `shares`, `cost_amount`, `nav`, `nav_date`, `market_value`, `quote_status`, `estimated_market_value`,
+ `note`, `sort_order`, `enabled`, `deleted`, `create_by`, `create_time`, `update_time`)
+VALUES
+    -- 已确认：国内指数（已部分赎回，份额/成本已扣）
+    (601, 2, 9, '110020', '沪深300ETF联接', 'index_cn',
+     4200.000000, 5040.00, 1.2500, DATE_SUB(CURDATE(), INTERVAL 1 DAY), 5250.00, 'confirmed', NULL,
+     '测试持仓：确认估值计入总资产；有赎回 pending', 10, 1, 0, 2, NOW(), NOW()),
+    -- 滞后：海外指数（总资产不加确认市值外的估算，看板单独展示）
+    (602, 2, 9, '968000', '纳斯达克100', 'index_overseas',
+     1000.000000, 2000.00, 2.1000, DATE_SUB(CURDATE(), INTERVAL 5 DAY), 2100.00, 'delayed', 2180.00,
+     '测试持仓：滞后待更新', 20, 1, 0, 2, NOW(), NOW()),
+    -- 已确认：债基
+    (603, 2, 9, '000198', '短债稳健', 'bond',
+     3000.000000, 3100.00, 1.0500, DATE_SUB(CURDATE(), INTERVAL 1 DAY), 3150.00, 'confirmed', NULL,
+     '测试持仓：债基', 30, 1, 0, 2, NOW(), NOW());
+
+-- 记账种子：净值快照（给曲线/历史列表用；持仓 601 多点，602/603 少量）
+INSERT IGNORE INTO `finance_fund_nav_snapshot`
+(`id`, `user_id`, `holding_id`, `nav_date`, `nav`, `market_value`, `quote_status`,
+ `deleted`, `create_by`, `create_time`, `update_time`)
+VALUES
+    (701, 2, 601, DATE_SUB(CURDATE(), INTERVAL 30 DAY), 1.1800, 5900.00, 'confirmed', 0, 2, NOW(), NOW()),
+    (702, 2, 601, DATE_SUB(CURDATE(), INTERVAL 25 DAY), 1.2000, 6000.00, 'confirmed', 0, 2, NOW(), NOW()),
+    (703, 2, 601, DATE_SUB(CURDATE(), INTERVAL 20 DAY), 1.2200, 6100.00, 'confirmed', 0, 2, NOW(), NOW()),
+    (704, 2, 601, DATE_SUB(CURDATE(), INTERVAL 14 DAY), 1.2300, 5166.00, 'confirmed', 0, 2, NOW(), NOW()),
+    (705, 2, 601, DATE_SUB(CURDATE(), INTERVAL 7 DAY), 1.2400, 5208.00, 'confirmed', 0, 2, NOW(), NOW()),
+    (706, 2, 601, DATE_SUB(CURDATE(), INTERVAL 3 DAY), 1.2450, 5229.00, 'confirmed', 0, 2, NOW(), NOW()),
+    (707, 2, 601, DATE_SUB(CURDATE(), INTERVAL 1 DAY), 1.2500, 5250.00, 'confirmed', 0, 2, NOW(), NOW()),
+    (711, 2, 602, DATE_SUB(CURDATE(), INTERVAL 20 DAY), 2.0000, 2000.00, 'confirmed', 0, 2, NOW(), NOW()),
+    (712, 2, 602, DATE_SUB(CURDATE(), INTERVAL 10 DAY), 2.0500, 2050.00, 'confirmed', 0, 2, NOW(), NOW()),
+    (713, 2, 602, DATE_SUB(CURDATE(), INTERVAL 5 DAY), 2.1000, 2100.00, 'delayed', 0, 2, NOW(), NOW()),
+    (721, 2, 603, DATE_SUB(CURDATE(), INTERVAL 20 DAY), 1.0400, 3120.00, 'confirmed', 0, 2, NOW(), NOW()),
+    (722, 2, 603, DATE_SUB(CURDATE(), INTERVAL 10 DAY), 1.0450, 3135.00, 'confirmed', 0, 2, NOW(), NOW()),
+    (723, 2, 603, DATE_SUB(CURDATE(), INTERVAL 1 DAY), 1.0500, 3150.00, 'confirmed', 0, 2, NOW(), NOW());
 
 -- lhy 已有个人种子，标记为已初始化（避免再被通用模板覆盖）
 INSERT IGNORE INTO `finance_user_init` (`user_id`, `init_time`, `create_time`, `update_time`)
@@ -973,7 +1135,7 @@ VALUES
     (80, 78, 'button', '在线用户-强制下线', 'SECURITY_ONLINE_USER_FORCE_LOGOUT', NULL, NULL, NULL, 143, 1, 1, 0, NOW(), NOW()),
 
     -- 个人账本（目录 + 菜单 + 按钮）
-    (81, 0, 'catalog', '个人账本', 'FINANCE', NULL, NULL, 'Wallet', 5, 1, 1, 0, NOW(), NOW()),
+    (81, 0, 'catalog', '个人账本', 'FINANCE', NULL, NULL, 'Wallet', 200, 1, 1, 0, NOW(), NOW()),
     (82, 81, 'menu', '概览', 'FINANCE_DASHBOARD', '/finance/dashboard', '/finance/DashboardPage.vue', 'DataAnalysis', 10, 1, 1, 0, NOW(), NOW()),
     (83, 82, 'button', '概览-查看', 'FINANCE_DASHBOARD_VIEW', NULL, NULL, NULL, 11, 1, 1, 0, NOW(), NOW()),
     (84, 81, 'menu', '流水', 'FINANCE_TRANSACTION', '/finance/transactions', '/finance/TransactionPage.vue', 'List', 20, 1, 1, 0, NOW(), NOW()),
@@ -1001,6 +1163,9 @@ VALUES
     (111, 109, 'button', '基金持仓-新增', 'FINANCE_FUND_HOLDING_CREATE', NULL, NULL, NULL, 37, 1, 1, 0, NOW(), NOW()),
     (112, 109, 'button', '基金持仓-编辑', 'FINANCE_FUND_HOLDING_UPDATE', NULL, NULL, NULL, 38, 1, 1, 0, NOW(), NOW()),
     (113, 109, 'button', '基金持仓-删除', 'FINANCE_FUND_HOLDING_DELETE', NULL, NULL, NULL, 39, 1, 1, 0, NOW(), NOW()),
+    (114, 81, 'menu', '工资录入配置', 'FINANCE_PAYROLL_CONFIG', '/finance/payrollConfig', '/finance/PayrollConfigPage.vue', 'Wallet', 55, 1, 1, 0, NOW(), NOW()),
+    (115, 114, 'button', '工资录入配置-查看', 'FINANCE_PAYROLL_CONFIG_VIEW', NULL, NULL, NULL, 56, 1, 1, 0, NOW(), NOW()),
+    (116, 114, 'button', '工资录入配置-编辑', 'FINANCE_PAYROLL_CONFIG_UPDATE', NULL, NULL, NULL, 57, 1, 1, 0, NOW(), NOW()),
 
     -- 记账初始化配置（系统管理下，仅超管/管理员）
     (104, 1, 'menu', '记账初始化配置', 'SYSTEM_FINANCE_SETUP', '/system/financeSetupPage', '/system/financeSetup/FinanceSetupPage.vue', 'Setting', 75, 1, 1, 0, NOW(), NOW()),

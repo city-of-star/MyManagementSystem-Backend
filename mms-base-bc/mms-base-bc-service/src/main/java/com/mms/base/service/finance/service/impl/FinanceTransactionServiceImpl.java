@@ -107,10 +107,10 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
             String status = StringUtils.hasText(dto.getStatus()) ? dto.getStatus() : "settled";
             validateTxnFields(dto.getTxnType(), dto.getAccountId(), dto.getCategoryId(),
                     dto.getFromAccountId(), dto.getToAccountId(), status);
-            ensureAccountExists(dto.getAccountId(), userId);
-            ensureAccountExists(dto.getFromAccountId(), userId);
-            ensureAccountExists(dto.getToAccountId(), userId);
-            ensureCategoryExists(dto.getCategoryId(), userId);
+            ensureAccountExists(dto.getAccountId(), userId, true);
+            ensureAccountExists(dto.getFromAccountId(), userId, true);
+            ensureAccountExists(dto.getToAccountId(), userId, true);
+            ensureCategoryExists(dto.getCategoryId(), userId, true, dto.getTxnType());
 
             FinanceTransactionEntity entity = new FinanceTransactionEntity();
             entity.setUserId(userId);
@@ -145,6 +145,13 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "流水不存在");
             }
             FinanceUserSupport.requireOwned(entity.getUserId(), "流水不存在");
+            if (StringUtils.hasText(dto.getTxnType())
+                    && !dto.getTxnType().equals(entity.getTxnType())) {
+                if ("adjustment".equals(dto.getTxnType()) || "adjustment".equals(entity.getTxnType())) {
+                    throw new BusinessException(ErrorCode.PARAM_INVALID,
+                            "平账流水请使用专用平账接口创建，不能通过更新改成或改出平账类型");
+                }
+            }
             if (dto.getTxnDate() != null) {
                 entity.setTxnDate(dto.getTxnDate());
             }
@@ -184,10 +191,11 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
             }
             validateTxnFields(entity.getTxnType(), entity.getAccountId(), entity.getCategoryId(),
                     entity.getFromAccountId(), entity.getToAccountId(), entity.getStatus());
-            ensureAccountExists(entity.getAccountId(), userId);
-            ensureAccountExists(entity.getFromAccountId(), userId);
-            ensureAccountExists(entity.getToAccountId(), userId);
-            ensureCategoryExists(entity.getCategoryId(), userId);
+            // 仅当本次显式改了账户/分类时要求仍启用；历史流水改状态/备注可沿用已禁用项
+            ensureAccountExists(entity.getAccountId(), userId, dto.getAccountId() != null);
+            ensureAccountExists(entity.getFromAccountId(), userId, dto.getFromAccountId() != null);
+            ensureAccountExists(entity.getToAccountId(), userId, dto.getToAccountId() != null);
+            ensureCategoryExists(entity.getCategoryId(), userId, dto.getCategoryId() != null, entity.getTxnType());
             normalizeByTxnType(entity);
             financeTransactionMapper.updateById(entity);
             return financeTransactionMapper.getTransactionById(entity.getId(), userId);
@@ -307,6 +315,9 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
             FinanceAccountVo account = financeAccountMapper.getAccountWithBalance(dto.getAccountId(), userId);
             if (account == null) {
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "账户不存在");
+            }
+            if (!Integer.valueOf(1).equals(account.getEnabled())) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "账户已禁用：" + account.getName());
             }
             BigDecimal bookBalance = account.getBalance() == null ? BigDecimal.ZERO : account.getBalance();
             BigDecimal actual = scaleMoney(dto.getActualBalance());
@@ -497,7 +508,7 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
         }
     }
 
-    private void ensureAccountExists(Long accountId, Long userId) {
+    private void ensureAccountExists(Long accountId, Long userId, boolean requireEnabled) {
         if (accountId == null) {
             return;
         }
@@ -505,15 +516,26 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
         if (account == null || !userId.equals(account.getUserId())) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "账户不存在：" + accountId);
         }
+        if (requireEnabled && !Integer.valueOf(1).equals(account.getEnabled())) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "账户已禁用：" + account.getName());
+        }
     }
 
-    private void ensureCategoryExists(Long categoryId, Long userId) {
+    private void ensureCategoryExists(Long categoryId, Long userId, boolean requireEnabled, String txnType) {
         if (categoryId == null) {
             return;
         }
         FinanceCategoryEntity category = financeCategoryMapper.selectById(categoryId);
         if (category == null || !userId.equals(category.getUserId())) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "分类不存在：" + categoryId);
+        }
+        if (requireEnabled && !Integer.valueOf(1).equals(category.getEnabled())) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "分类已禁用：" + category.getName());
+        }
+        if (("income".equals(txnType) || "expense".equals(txnType))
+                && StringUtils.hasText(category.getDirection())
+                && !txnType.equals(category.getDirection())) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "分类方向与交易类型不一致");
         }
     }
 

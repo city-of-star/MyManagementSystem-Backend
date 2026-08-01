@@ -10,6 +10,7 @@ import com.mms.base.common.finance.vo.FinanceAccountVo;
 import com.mms.base.common.system.vo.DictDataVo;
 import com.mms.base.service.finance.mapper.FinanceAccountMapper;
 import com.mms.base.service.finance.mapper.FinanceFundHoldingMapper;
+import com.mms.base.service.finance.mapper.FinanceRecurringMapper;
 import com.mms.base.service.finance.mapper.FinanceTransactionMapper;
 import com.mms.base.service.finance.service.FinanceAccountService;
 import com.mms.base.service.finance.support.FinanceUserSupport;
@@ -44,6 +45,9 @@ public class FinanceAccountServiceImpl implements FinanceAccountService {
 
     @Resource
     private FinanceTransactionMapper financeTransactionMapper;
+
+    @Resource
+    private FinanceRecurringMapper financeRecurringMapper;
 
     @Resource
     private FinanceFundHoldingMapper financeFundHoldingMapper;
@@ -144,7 +148,14 @@ public class FinanceAccountServiceImpl implements FinanceAccountService {
                 entity.setAccountType(dto.getAccountType());
             }
             if (dto.getOpeningBalance() != null) {
-                entity.setOpeningBalance(scaleMoney(dto.getOpeningBalance()));
+                BigDecimal incoming = scaleMoney(dto.getOpeningBalance());
+                BigDecimal current = entity.getOpeningBalance() == null
+                        ? BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP)
+                        : entity.getOpeningBalance().setScale(2, RoundingMode.HALF_UP);
+                if (incoming.compareTo(current) != 0) {
+                    throw new BusinessException(ErrorCode.PARAM_INVALID,
+                            "期初余额仅创建时可设置，后续请使用平账调整账面");
+                }
             }
             if (dto.getAccountNo() != null) {
                 entity.setAccountNo(dto.getAccountNo());
@@ -184,6 +195,10 @@ public class FinanceAccountServiceImpl implements FinanceAccountService {
             long refCount = financeTransactionMapper.countByAccountId(id, userId);
             if (refCount > 0) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "账户存在关联流水，无法删除");
+            }
+            long recurringCount = financeRecurringMapper.countByAccountId(id, userId);
+            if (recurringCount > 0) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "账户存在关联快捷模板，无法删除");
             }
             long holdingCount = financeFundHoldingMapper.countByAccountId(id, userId);
             if (holdingCount > 0) {
