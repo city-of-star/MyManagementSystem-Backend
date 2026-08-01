@@ -1,5 +1,6 @@
 package com.mms.base.service.finance.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.base.common.finance.dto.*;
 import com.mms.base.common.finance.entity.FinanceAccountEntity;
@@ -7,6 +8,7 @@ import com.mms.base.common.finance.entity.FinanceFundHoldingEntity;
 import com.mms.base.common.finance.entity.FinanceFundNavSnapshotEntity;
 import com.mms.base.common.finance.entity.FinanceTransactionEntity;
 import com.mms.base.common.finance.vo.FinanceFundHoldingVo;
+import com.mms.base.common.finance.vo.FinanceFundNavSnapshotVo;
 import com.mms.base.common.finance.vo.FinanceFundRedeemResultVo;
 import com.mms.base.common.finance.vo.FinanceTransactionVo;
 import com.mms.base.common.system.vo.DictDataVo;
@@ -22,6 +24,7 @@ import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -31,6 +34,7 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 实现功能【基金持仓服务实现类】
@@ -130,7 +134,7 @@ public class FinanceFundHoldingServiceImpl implements FinanceFundHoldingService 
             financeFundHoldingMapper.insert(entity);
 
             if (nav != null && dto.getNavDate() != null) {
-                insertSnapshot(userId, entity.getId(), dto.getNavDate(), nav, marketValue, quoteStatus);
+                upsertSnapshot(userId, entity.getId(), dto.getNavDate(), nav, marketValue, quoteStatus);
             }
             return financeFundHoldingMapper.getHoldingById(entity.getId(), userId);
         } catch (BusinessException e) {
@@ -391,7 +395,7 @@ public class FinanceFundHoldingServiceImpl implements FinanceFundHoldingService 
             }
             financeFundHoldingMapper.updateById(entity);
             if (entity.getNav() != null) {
-                insertSnapshot(userId, entity.getId(), navDate, entity.getNav(), marketValue, quoteStatus);
+                upsertSnapshot(userId, entity.getId(), navDate, entity.getNav(), marketValue, quoteStatus);
             }
             return financeFundHoldingMapper.getHoldingById(entity.getId(), userId);
         } catch (BusinessException e) {
@@ -402,8 +406,161 @@ public class FinanceFundHoldingServiceImpl implements FinanceFundHoldingService 
         }
     }
 
-    private void insertSnapshot(Long userId, Long holdingId, LocalDate navDate,
-                                BigDecimal nav, BigDecimal marketValue, String quoteStatus) {
+    @Override
+    public Page<FinanceFundNavSnapshotVo> getSnapshotPage(FinanceFundNavSnapshotPageQueryDto dto) {
+        try {
+            Long userId = FinanceUserSupport.requireUserId();
+            requireHolding(dto.getHoldingId(), userId);
+            Page<FinanceFundNavSnapshotEntity> page = new Page<>(dto.getPageNum(), dto.getPageSize());
+            LambdaQueryWrapper<FinanceFundNavSnapshotEntity> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(FinanceFundNavSnapshotEntity::getUserId, userId)
+                    .eq(FinanceFundNavSnapshotEntity::getHoldingId, dto.getHoldingId())
+                    .orderByDesc(FinanceFundNavSnapshotEntity::getNavDate)
+                    .orderByDesc(FinanceFundNavSnapshotEntity::getId);
+            Page<FinanceFundNavSnapshotEntity> entityPage = financeFundNavSnapshotMapper.selectPage(page, wrapper);
+            Page<FinanceFundNavSnapshotVo> voPage =
+                    new Page<>(entityPage.getCurrent(), entityPage.getSize(), entityPage.getTotal());
+            voPage.setRecords(entityPage.getRecords().stream().map(this::toSnapshotVo).collect(Collectors.toList()));
+            return voPage;
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("分页查询基金净值快照失败：{}", e.getMessage(), e);
+            throw new ServerException("查询净值快照失败", e);
+        }
+    }
+
+    @Override
+    public List<FinanceFundNavSnapshotVo> listSnapshots(Long holdingId) {
+        try {
+            Long userId = FinanceUserSupport.requireUserId();
+            requireHolding(holdingId, userId);
+            LambdaQueryWrapper<FinanceFundNavSnapshotEntity> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(FinanceFundNavSnapshotEntity::getUserId, userId)
+                    .eq(FinanceFundNavSnapshotEntity::getHoldingId, holdingId)
+                    .orderByAsc(FinanceFundNavSnapshotEntity::getNavDate)
+                    .orderByAsc(FinanceFundNavSnapshotEntity::getId);
+            return financeFundNavSnapshotMapper.selectList(wrapper).stream()
+                    .map(this::toSnapshotVo)
+                    .collect(Collectors.toList());
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("查询基金净值快照列表失败：{}", e.getMessage(), e);
+            throw new ServerException("查询净值快照失败", e);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public FinanceFundNavSnapshotVo createSnapshot(FinanceFundNavSnapshotCreateDto dto) {
+        try {
+            Long userId = FinanceUserSupport.requireUserId();
+            FinanceFundHoldingEntity holding = requireHolding(dto.getHoldingId(), userId);
+            if (dto.getNav() == null && dto.getMarketValue() == null) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "净值与市值至少填写一项");
+            }
+            BigDecimal nav = dto.getNav() == null ? null : scaleNav(dto.getNav());
+            BigDecimal marketValue = resolveMarketValue(dto.getMarketValue(), holding.getShares(), nav);
+            if (nav == null && marketValue != null
+                    && holding.getShares() != null
+                    && holding.getShares().compareTo(BigDecimal.ZERO) > 0) {
+                nav = marketValue.divide(holding.getShares(), 4, RoundingMode.HALF_UP);
+            }
+            if (marketValue == null && nav != null) {
+                marketValue = resolveMarketValue(null, holding.getShares(), nav);
+            }
+            if (nav == null || marketValue == null) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "净值与市值至少填写一项，且份额需大于 0 才能互算");
+            }
+            String quoteStatus = normalizeQuoteStatus(
+                    StringUtils.hasText(dto.getQuoteStatus()) ? dto.getQuoteStatus() : holding.getQuoteStatus());
+            FinanceFundNavSnapshotEntity snapshot =
+                    upsertSnapshot(userId, holding.getId(), dto.getNavDate(), nav, marketValue, quoteStatus);
+            syncHoldingIfLatestSnapshot(holding, snapshot);
+            return toSnapshotVo(snapshot);
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("新增基金净值快照失败：{}", e.getMessage(), e);
+            throw new ServerException("新增净值快照失败", e);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public FinanceFundNavSnapshotVo updateSnapshot(FinanceFundNavSnapshotUpdateDto dto) {
+        try {
+            Long userId = FinanceUserSupport.requireUserId();
+            FinanceFundNavSnapshotEntity snapshot = requireSnapshot(dto.getId(), userId);
+            FinanceFundHoldingEntity holding = requireHolding(snapshot.getHoldingId(), userId);
+            if (dto.getNavDate() != null) {
+                snapshot.setNavDate(dto.getNavDate());
+            }
+            if (dto.getNav() != null) {
+                snapshot.setNav(scaleNav(dto.getNav()));
+            }
+            if (dto.getMarketValue() != null) {
+                snapshot.setMarketValue(scaleMoney(dto.getMarketValue()));
+            } else if (dto.getNav() != null) {
+                snapshot.setMarketValue(resolveMarketValue(null, holding.getShares(), snapshot.getNav()));
+            }
+            if (StringUtils.hasText(dto.getQuoteStatus())) {
+                snapshot.setQuoteStatus(normalizeQuoteStatus(dto.getQuoteStatus()));
+            }
+            if (snapshot.getNav() == null) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "净值不能为空");
+            }
+            if (snapshot.getMarketValue() == null) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "市值不能为空");
+            }
+            financeFundNavSnapshotMapper.updateById(snapshot);
+            syncHoldingIfLatestSnapshot(holding, snapshot);
+            return toSnapshotVo(snapshot);
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("更新基金净值快照失败：{}", e.getMessage(), e);
+            throw new ServerException("更新净值快照失败", e);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteSnapshot(Long id) {
+        try {
+            Long userId = FinanceUserSupport.requireUserId();
+            FinanceFundNavSnapshotEntity snapshot = requireSnapshot(id, userId);
+            Long holdingId = snapshot.getHoldingId();
+            financeFundNavSnapshotMapper.deleteById(snapshot.getId());
+            FinanceFundHoldingEntity holding = requireHolding(holdingId, userId);
+            FinanceFundNavSnapshotEntity latest = findLatestSnapshot(userId, holdingId);
+            if (latest != null) {
+                syncHoldingIfLatestSnapshot(holding, latest);
+            }
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("删除基金净值快照失败：{}", e.getMessage(), e);
+            throw new ServerException("删除净值快照失败", e);
+        }
+    }
+
+    private FinanceFundNavSnapshotEntity upsertSnapshot(Long userId, Long holdingId, LocalDate navDate,
+                                                        BigDecimal nav, BigDecimal marketValue, String quoteStatus) {
+        LambdaQueryWrapper<FinanceFundNavSnapshotEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FinanceFundNavSnapshotEntity::getUserId, userId)
+                .eq(FinanceFundNavSnapshotEntity::getHoldingId, holdingId)
+                .eq(FinanceFundNavSnapshotEntity::getNavDate, navDate)
+                .last("LIMIT 1");
+        FinanceFundNavSnapshotEntity existing = financeFundNavSnapshotMapper.selectOne(wrapper);
+        if (existing != null) {
+            existing.setNav(nav);
+            existing.setMarketValue(marketValue);
+            existing.setQuoteStatus(quoteStatus);
+            financeFundNavSnapshotMapper.updateById(existing);
+            return existing;
+        }
         FinanceFundNavSnapshotEntity snapshot = new FinanceFundNavSnapshotEntity();
         snapshot.setUserId(userId);
         snapshot.setHoldingId(holdingId);
@@ -412,6 +569,47 @@ public class FinanceFundHoldingServiceImpl implements FinanceFundHoldingService 
         snapshot.setMarketValue(marketValue);
         snapshot.setQuoteStatus(quoteStatus);
         financeFundNavSnapshotMapper.insert(snapshot);
+        return snapshot;
+    }
+
+    private void syncHoldingIfLatestSnapshot(FinanceFundHoldingEntity holding, FinanceFundNavSnapshotEntity snapshot) {
+        FinanceFundNavSnapshotEntity latest = findLatestSnapshot(holding.getUserId(), holding.getId());
+        if (latest == null || !latest.getId().equals(snapshot.getId())) {
+            return;
+        }
+        holding.setNav(snapshot.getNav());
+        holding.setNavDate(snapshot.getNavDate());
+        holding.setMarketValue(snapshot.getMarketValue());
+        holding.setQuoteStatus(snapshot.getQuoteStatus());
+        financeFundHoldingMapper.updateById(holding);
+    }
+
+    private FinanceFundNavSnapshotEntity findLatestSnapshot(Long userId, Long holdingId) {
+        LambdaQueryWrapper<FinanceFundNavSnapshotEntity> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(FinanceFundNavSnapshotEntity::getUserId, userId)
+                .eq(FinanceFundNavSnapshotEntity::getHoldingId, holdingId)
+                .orderByDesc(FinanceFundNavSnapshotEntity::getNavDate)
+                .orderByDesc(FinanceFundNavSnapshotEntity::getId)
+                .last("LIMIT 1");
+        return financeFundNavSnapshotMapper.selectOne(wrapper);
+    }
+
+    private FinanceFundNavSnapshotEntity requireSnapshot(Long id, Long userId) {
+        if (id == null) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "快照ID不能为空");
+        }
+        FinanceFundNavSnapshotEntity snapshot = financeFundNavSnapshotMapper.selectById(id);
+        if (snapshot == null) {
+            throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "净值快照不存在");
+        }
+        FinanceUserSupport.requireOwned(snapshot.getUserId(), "净值快照不存在");
+        return snapshot;
+    }
+
+    private FinanceFundNavSnapshotVo toSnapshotVo(FinanceFundNavSnapshotEntity entity) {
+        FinanceFundNavSnapshotVo vo = new FinanceFundNavSnapshotVo();
+        BeanUtils.copyProperties(entity, vo);
+        return vo;
     }
 
     private FinanceFundHoldingEntity requireHolding(Long id, Long userId) {

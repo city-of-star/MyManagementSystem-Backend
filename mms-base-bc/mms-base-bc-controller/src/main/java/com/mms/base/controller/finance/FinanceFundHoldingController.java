@@ -3,6 +3,7 @@ package com.mms.base.controller.finance;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.base.common.finance.dto.*;
 import com.mms.base.common.finance.vo.FinanceFundHoldingVo;
+import com.mms.base.common.finance.vo.FinanceFundNavSnapshotVo;
 import com.mms.base.common.finance.vo.FinanceFundRedeemResultVo;
 import com.mms.base.common.finance.vo.FinanceTransactionVo;
 import com.mms.base.service.finance.service.FinanceFundHoldingService;
@@ -14,6 +15,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * 实现功能【基金持仓 Controller】
@@ -99,5 +102,44 @@ public class FinanceFundHoldingController {
     @PostMapping("/valuation")
     public Response<FinanceFundHoldingVo> valuation(@RequestBody @Valid FinanceFundValuationDto dto) {
         return Response.success(financeFundHoldingService.updateValuation(dto));
+    }
+
+    @Operation(summary = "分页查询净值快照")
+    @RequiresPermission(PermissionConstants.FINANCE_FUND_HOLDING_VIEW)
+    @PostMapping("/snapshot/page")
+    public Response<Page<FinanceFundNavSnapshotVo>> snapshotPage(
+            @RequestBody @Valid FinanceFundNavSnapshotPageQueryDto dto) {
+        return Response.success(financeFundHoldingService.getSnapshotPage(dto));
+    }
+
+    @Operation(summary = "净值快照列表（曲线用，按日期升序）")
+    @RequiresPermission(PermissionConstants.FINANCE_FUND_HOLDING_VIEW)
+    @GetMapping("/{holdingId}/snapshots")
+    public Response<List<FinanceFundNavSnapshotVo>> listSnapshots(@PathVariable Long holdingId) {
+        return Response.success(financeFundHoldingService.listSnapshots(holdingId));
+    }
+
+    @Operation(summary = "新增净值快照")
+    @RequiresPermission(PermissionConstants.FINANCE_FUND_HOLDING_UPDATE)
+    @PostMapping("/snapshot/create")
+    public Response<FinanceFundNavSnapshotVo> createSnapshot(
+            @RequestBody @Valid FinanceFundNavSnapshotCreateDto dto) {
+        return Response.success(financeFundHoldingService.createSnapshot(dto));
+    }
+
+    @Operation(summary = "更新净值快照")
+    @RequiresPermission(PermissionConstants.FINANCE_FUND_HOLDING_UPDATE)
+    @PutMapping("/snapshot/update")
+    public Response<FinanceFundNavSnapshotVo> updateSnapshot(
+            @RequestBody @Valid FinanceFundNavSnapshotUpdateDto dto) {
+        return Response.success(financeFundHoldingService.updateSnapshot(dto));
+    }
+
+    @Operation(summary = "删除净值快照")
+    @RequiresPermission(PermissionConstants.FINANCE_FUND_HOLDING_UPDATE)
+    @DeleteMapping("/snapshot/{id}")
+    public Response<Void> deleteSnapshot(@PathVariable Long id) {
+        financeFundHoldingService.deleteSnapshot(id);
+        return Response.success();
     }
 }
