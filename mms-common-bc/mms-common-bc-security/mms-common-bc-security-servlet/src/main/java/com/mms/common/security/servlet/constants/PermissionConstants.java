@@ -213,6 +213,9 @@ public final class PermissionConstants {
     public static final String FINANCE_FUND_HOLDING_CREATE = "FINANCE_FUND_HOLDING_CREATE";
     public static final String FINANCE_FUND_HOLDING_UPDATE = "FINANCE_FUND_HOLDING_UPDATE";
     public static final String FINANCE_FUND_HOLDING_DELETE = "FINANCE_FUND_HOLDING_DELETE";
+    public static final String FINANCE_PAYROLL_CONFIG = "FINANCE_PAYROLL_CONFIG";
+    public static final String FINANCE_PAYROLL_CONFIG_VIEW = "FINANCE_PAYROLL_CONFIG_VIEW";
+    public static final String FINANCE_PAYROLL_CONFIG_UPDATE = "FINANCE_PAYROLL_CONFIG_UPDATE";
 
     /**
      * 记账初始化配置（菜单+按钮）

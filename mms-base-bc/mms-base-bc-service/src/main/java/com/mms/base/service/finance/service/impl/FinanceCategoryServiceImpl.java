@@ -10,6 +10,7 @@ import com.mms.base.common.finance.dto.FinanceCategoryUpdateDto;
 import com.mms.base.common.finance.entity.FinanceCategoryEntity;
 import com.mms.base.common.finance.vo.FinanceCategoryVo;
 import com.mms.base.service.finance.mapper.FinanceCategoryMapper;
+import com.mms.base.service.finance.mapper.FinanceRecurringMapper;
 import com.mms.base.service.finance.mapper.FinanceTransactionMapper;
 import com.mms.base.service.finance.service.FinanceCategoryService;
 import com.mms.base.service.finance.support.FinanceUserSupport;
@@ -44,6 +45,9 @@ public class FinanceCategoryServiceImpl implements FinanceCategoryService {
 
     @Resource
     private FinanceTransactionMapper financeTransactionMapper;
+
+    @Resource
+    private FinanceRecurringMapper financeRecurringMapper;
 
     @Override
     public Page<FinanceCategoryVo> getCategoryPage(FinanceCategoryPageQueryDto dto) {
@@ -138,6 +142,7 @@ public class FinanceCategoryServiceImpl implements FinanceCategoryService {
     @Transactional(rollbackFor = Exception.class)
     public FinanceCategoryVo update(FinanceCategoryUpdateDto dto) {
         try {
+            Long userId = FinanceUserSupport.requireUserId();
             log.info("更新记账分类，参数：{}", dto);
             FinanceCategoryEntity entity = financeCategoryMapper.selectById(dto.getId());
             if (entity == null) {
@@ -147,8 +152,17 @@ public class FinanceCategoryServiceImpl implements FinanceCategoryService {
             if (StringUtils.hasText(dto.getName())) {
                 entity.setName(dto.getName());
             }
-            if (StringUtils.hasText(dto.getDirection())) {
+            if (StringUtils.hasText(dto.getDirection())
+                    && !dto.getDirection().equals(entity.getDirection())) {
                 validateDirection(dto.getDirection());
+                long txnCount = financeTransactionMapper.countByCategoryId(entity.getId(), userId);
+                if (txnCount > 0) {
+                    throw new BusinessException(ErrorCode.PARAM_INVALID, "分类存在关联流水，无法修改方向");
+                }
+                long recurringCount = financeRecurringMapper.countByCategoryId(entity.getId(), userId);
+                if (recurringCount > 0) {
+                    throw new BusinessException(ErrorCode.PARAM_INVALID, "分类存在关联快捷模板，无法修改方向");
+                }
                 entity.setDirection(dto.getDirection());
             }
             if (dto.getIcon() != null) {
@@ -186,6 +200,10 @@ public class FinanceCategoryServiceImpl implements FinanceCategoryService {
             long refCount = financeTransactionMapper.countByCategoryId(id, userId);
             if (refCount > 0) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "分类存在关联流水，无法删除");
+            }
+            long recurringCount = financeRecurringMapper.countByCategoryId(id, userId);
+            if (recurringCount > 0) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "分类存在关联快捷模板，无法删除");
             }
             financeCategoryMapper.deleteById(id);
         } catch (BusinessException e) {

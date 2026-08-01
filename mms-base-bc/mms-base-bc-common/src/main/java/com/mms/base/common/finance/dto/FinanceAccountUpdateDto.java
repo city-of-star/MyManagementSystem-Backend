@@ -31,7 +31,7 @@ public class FinanceAccountUpdateDto {
     private String accountType;
 
     @DecimalMin(value = "0", message = "期初余额不能小于0")
-    @Schema(description = "期初余额", example = "100.00")
+    @Schema(description = "期初余额（更新时不可修改，传入须与原值一致；后续请平账）", example = "100.00")
     private BigDecimal openingBalance;
 
     @Size(max = 128, message = "账号长度不能超过128个字符")

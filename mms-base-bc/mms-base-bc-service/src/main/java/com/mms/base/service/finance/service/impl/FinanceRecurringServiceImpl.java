@@ -93,10 +93,10 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
             validateDirection(dto.getDirection());
             validateDirectionFields(dto.getDirection(), dto.getCategoryId(), dto.getAccountId(),
                     dto.getFromAccountId(), dto.getToAccountId());
-            ensureAccountExists(dto.getAccountId(), userId);
-            ensureAccountExists(dto.getFromAccountId(), userId);
-            ensureAccountExists(dto.getToAccountId(), userId);
-            ensureCategoryExists(dto.getCategoryId(), userId);
+            ensureAccountExists(dto.getAccountId(), userId, true);
+            ensureAccountExists(dto.getFromAccountId(), userId, true);
+            ensureAccountExists(dto.getToAccountId(), userId, true);
+            ensureCategoryExists(dto.getCategoryId(), userId, true, dto.getDirection());
 
             FinanceRecurringEntity entity = new FinanceRecurringEntity();
             entity.setUserId(userId);
@@ -146,19 +146,19 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
                 entity.setAmount(scaleMoney(dto.getAmount()));
             }
             if (dto.getCategoryId() != null) {
-                ensureCategoryExists(dto.getCategoryId(), userId);
+                ensureCategoryExists(dto.getCategoryId(), userId, true, entity.getDirection());
                 entity.setCategoryId(dto.getCategoryId());
             }
             if (dto.getAccountId() != null) {
-                ensureAccountExists(dto.getAccountId(), userId);
+                ensureAccountExists(dto.getAccountId(), userId, true);
                 entity.setAccountId(dto.getAccountId());
             }
             if (dto.getFromAccountId() != null) {
-                ensureAccountExists(dto.getFromAccountId(), userId);
+                ensureAccountExists(dto.getFromAccountId(), userId, true);
                 entity.setFromAccountId(dto.getFromAccountId());
             }
             if (dto.getToAccountId() != null) {
-                ensureAccountExists(dto.getToAccountId(), userId);
+                ensureAccountExists(dto.getToAccountId(), userId, true);
                 entity.setToAccountId(dto.getToAccountId());
             }
             if (dto.getSortOrder() != null) {
@@ -175,6 +175,11 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
             entity.setWeekday(null);
             validateDirectionFields(entity.getDirection(), entity.getCategoryId(), entity.getAccountId(),
                     entity.getFromAccountId(), entity.getToAccountId());
+            // 方向变更时，沿用旧分类也要校验方向一致
+            if (entity.getCategoryId() != null
+                    && ("income".equals(entity.getDirection()) || "expense".equals(entity.getDirection()))) {
+                ensureCategoryExists(entity.getCategoryId(), userId, false, entity.getDirection());
+            }
             normalizeByDirection(entity);
             financeRecurringMapper.updateById(entity);
             return financeRecurringMapper.getRecurringById(entity.getId(), userId);
@@ -260,7 +265,7 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
         }
     }
 
-    private void ensureAccountExists(Long accountId, Long userId) {
+    private void ensureAccountExists(Long accountId, Long userId, boolean requireEnabled) {
         if (accountId == null) {
             return;
         }
@@ -268,15 +273,26 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
         if (account == null || !userId.equals(account.getUserId())) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "账户不存在");
         }
+        if (requireEnabled && !Integer.valueOf(1).equals(account.getEnabled())) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "账户已禁用：" + account.getName());
+        }
     }
 
-    private void ensureCategoryExists(Long categoryId, Long userId) {
+    private void ensureCategoryExists(Long categoryId, Long userId, boolean requireEnabled, String direction) {
         if (categoryId == null) {
             return;
         }
         FinanceCategoryEntity category = financeCategoryMapper.selectById(categoryId);
         if (category == null || !userId.equals(category.getUserId())) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "分类不存在");
+        }
+        if (requireEnabled && !Integer.valueOf(1).equals(category.getEnabled())) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "分类已禁用：" + category.getName());
+        }
+        if (("income".equals(direction) || "expense".equals(direction))
+                && StringUtils.hasText(category.getDirection())
+                && !direction.equals(category.getDirection())) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "分类方向与模板方向不一致");
         }
     }
 
