@@ -17,6 +17,7 @@ import com.mms.base.service.finance.mapper.FinanceFundHoldingMapper;
 import com.mms.base.service.finance.mapper.FinanceFundNavSnapshotMapper;
 import com.mms.base.service.finance.mapper.FinanceTransactionMapper;
 import com.mms.base.service.finance.service.FinanceFundHoldingService;
+import com.mms.base.service.finance.support.FinanceTxnBizTypes;
 import com.mms.base.service.finance.support.FinanceUserSupport;
 import com.mms.base.service.system.service.DictDataService;
 import com.mms.common.core.enums.error.ErrorCode;
@@ -213,6 +214,15 @@ public class FinanceFundHoldingServiceImpl implements FinanceFundHoldingService 
         try {
             Long userId = FinanceUserSupport.requireUserId();
             FinanceFundHoldingEntity entity = requireHolding(id, userId);
+            long pendingRedeemCount = financeTransactionMapper.selectCount(
+                    new LambdaQueryWrapper<FinanceTransactionEntity>()
+                            .eq(FinanceTransactionEntity::getUserId, userId)
+                            .eq(FinanceTransactionEntity::getBizType, FinanceTxnBizTypes.FUND_REDEEM)
+                            .eq(FinanceTransactionEntity::getRefId, entity.getId())
+                            .eq(FinanceTransactionEntity::getStatus, "pending"));
+            if (pendingRedeemCount > 0) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "持仓存在待到账赎回，请先确认到账或撤销赎回");
+            }
             financeFundHoldingMapper.deleteById(entity.getId());
         } catch (BusinessException e) {
             throw e;
@@ -301,6 +311,7 @@ public class FinanceFundHoldingServiceImpl implements FinanceFundHoldingService 
                 remainCost = oldCost.multiply(remainShares)
                         .divide(oldShares, 2, RoundingMode.HALF_UP);
             }
+            BigDecimal deductedCost = oldCost.subtract(remainCost).setScale(2, RoundingMode.HALF_UP);
             entity.setShares(remainShares);
             entity.setCostAmount(remainCost);
             entity.setMarketValue(resolveMarketValue(null, entity.getShares(), entity.getNav()));
@@ -317,6 +328,9 @@ public class FinanceFundHoldingServiceImpl implements FinanceFundHoldingService 
             txn.setFromAccountId(entity.getAccountId());
             txn.setToAccountId(dto.getToAccountId());
             txn.setStatus("pending");
+            txn.setBizType(FinanceTxnBizTypes.FUND_REDEEM);
+            txn.setRefId(entity.getId());
+            txn.setBizExtra(FinanceTxnBizTypes.buildRedeemExtra(redeemShares, deductedCost));
             txn.setNote(StringUtils.hasText(dto.getNote())
                     ? dto.getNote()
                     : String.format("基金赎回待到账：%s", entity.getFundName()));
@@ -344,8 +358,13 @@ public class FinanceFundHoldingServiceImpl implements FinanceFundHoldingService 
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "流水不存在");
             }
             FinanceUserSupport.requireOwned(entity.getUserId(), "流水不存在");
-            if (!"transfer".equals(entity.getTxnType()) || !"pending".equals(entity.getStatus())) {
+            if (!FinanceTxnBizTypes.isFundRedeem(entity)
+                    || !"transfer".equals(entity.getTxnType())
+                    || !"pending".equals(entity.getStatus())) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "仅支持确认待到账的赎回转账");
+            }
+            if (!FinanceTxnBizTypes.FUND_REDEEM.equals(entity.getBizType())) {
+                entity.setBizType(FinanceTxnBizTypes.FUND_REDEEM);
             }
             if (dto.getActualAmount() != null) {
                 entity.setAmount(scaleMoney(dto.getActualAmount()));
@@ -364,6 +383,57 @@ public class FinanceFundHoldingServiceImpl implements FinanceFundHoldingService 
         } catch (Exception e) {
             log.error("确认赎回到账失败：{}", e.getMessage(), e);
             throw new ServerException("确认赎回到账失败", e);
+        }
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public FinanceFundHoldingVo cancelRedeem(FinanceFundCancelRedeemDto dto) {
+        try {
+            Long userId = FinanceUserSupport.requireUserId();
+            FinanceTransactionEntity txn = financeTransactionMapper.selectById(dto.getTransactionId());
+            if (txn == null) {
+                throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "流水不存在");
+            }
+            FinanceUserSupport.requireOwned(txn.getUserId(), "流水不存在");
+            if (!FinanceTxnBizTypes.isFundRedeem(txn)
+                    || !"transfer".equals(txn.getTxnType())
+                    || !"pending".equals(txn.getStatus())) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "仅支持撤销待到账的赎回单");
+            }
+
+            BigDecimal redeemShares = FinanceTxnBizTypes.parseExtraDecimal(txn.getBizExtra(), "shares");
+            BigDecimal deductedCost = FinanceTxnBizTypes.parseExtraDecimal(txn.getBizExtra(), "cost");
+            boolean canRestore = txn.getRefId() != null && redeemShares != null && deductedCost != null;
+            FinanceFundHoldingVo holdingVo = null;
+            if (canRestore) {
+                FinanceFundHoldingEntity holding = requireHolding(txn.getRefId(), userId);
+                BigDecimal newShares = nullToZeroShares(holding.getShares()).add(redeemShares);
+                BigDecimal newCost = nullToZeroMoney(holding.getCostAmount()).add(deductedCost)
+                        .setScale(2, RoundingMode.HALF_UP);
+                holding.setShares(scaleShares(newShares));
+                holding.setCostAmount(newCost);
+                holding.setMarketValue(resolveMarketValue(null, holding.getShares(), holding.getNav()));
+                financeFundHoldingMapper.updateById(holding);
+                holdingVo = financeFundHoldingMapper.getHoldingById(holding.getId(), userId);
+            } else if (!Boolean.TRUE.equals(dto.getForceClose())) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID,
+                        "该赎回单缺少份额快照，无法自动回滚持仓。请先到持仓手工加回份额与成本，再强制关闭流水");
+            } else {
+                log.warn("强制关闭赎回流水（无份额回滚）。txnId={}, bizExtra={}",
+                        txn.getId(), txn.getBizExtra());
+                if (txn.getRefId() != null) {
+                    holdingVo = financeFundHoldingMapper.getHoldingById(txn.getRefId(), userId);
+                }
+            }
+
+            financeTransactionMapper.deleteById(txn.getId());
+            return holdingVo;
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("撤销基金赎回失败：{}", e.getMessage(), e);
+            throw new ServerException("撤销基金赎回失败", e);
         }
     }
 

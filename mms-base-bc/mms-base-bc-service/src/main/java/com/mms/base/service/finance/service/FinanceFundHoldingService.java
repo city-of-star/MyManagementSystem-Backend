@@ -35,6 +35,8 @@ public interface FinanceFundHoldingService {
 
     FinanceTransactionVo settleRedeem(FinanceFundSettleRedeemDto dto);
 
+    FinanceFundHoldingVo cancelRedeem(FinanceFundCancelRedeemDto dto);
+
     FinanceFundHoldingVo updateValuation(FinanceFundValuationDto dto);
 
     Page<FinanceFundNavSnapshotVo> getSnapshotPage(FinanceFundNavSnapshotPageQueryDto dto);

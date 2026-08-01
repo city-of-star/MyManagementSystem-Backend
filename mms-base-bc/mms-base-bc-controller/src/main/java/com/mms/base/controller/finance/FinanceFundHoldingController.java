@@ -97,6 +97,13 @@ public class FinanceFundHoldingController {
         return Response.success(financeFundHoldingService.settleRedeem(dto));
     }
 
+    @Operation(summary = "撤销赎回（回滚份额并关闭 pending 流水）")
+    @RequiresPermission(PermissionConstants.FINANCE_FUND_HOLDING_UPDATE)
+    @PostMapping("/cancel-redeem")
+    public Response<FinanceFundHoldingVo> cancelRedeem(@RequestBody @Valid FinanceFundCancelRedeemDto dto) {
+        return Response.success(financeFundHoldingService.cancelRedeem(dto));
+    }
+
     @Operation(summary = "手填估值")
     @RequiresPermission(PermissionConstants.FINANCE_FUND_HOLDING_UPDATE)
     @PostMapping("/valuation")

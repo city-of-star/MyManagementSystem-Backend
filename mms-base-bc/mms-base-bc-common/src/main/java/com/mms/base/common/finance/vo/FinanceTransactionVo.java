@@ -56,6 +56,15 @@ public class FinanceTransactionVo {
     @Schema(description = "状态：settled/pending")
     private String status;
 
+    @Schema(description = "业务类型：fund_redeem 等")
+    private String bizType;
+
+    @Schema(description = "业务关联ID（如持仓ID）")
+    private Long refId;
+
+    @Schema(description = "业务扩展（赎回份额/扣减成本等）")
+    private String bizExtra;
+
     @Schema(description = "备注")
     private String note;
 

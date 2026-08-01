@@ -60,6 +60,18 @@ public class FinanceTransactionEntity extends BaseEntity {
     @Schema(description = "状态：settled-已入账，pending-待入账")
     private String status;
 
+    @TableField("biz_type")
+    @Schema(description = "业务类型：fund_redeem 等")
+    private String bizType;
+
+    @TableField("ref_id")
+    @Schema(description = "业务关联ID（如持仓ID）")
+    private Long refId;
+
+    @TableField("biz_extra")
+    @Schema(description = "业务扩展（赎回份额/扣减成本等）")
+    private String bizExtra;
+
     @Schema(description = "备注")
     private String note;
 }

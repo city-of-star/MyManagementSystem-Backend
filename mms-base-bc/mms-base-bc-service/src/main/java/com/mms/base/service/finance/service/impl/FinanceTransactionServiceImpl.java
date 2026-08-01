@@ -19,6 +19,7 @@ import com.mms.base.service.finance.mapper.FinanceCategoryMapper;
 import com.mms.base.service.finance.mapper.FinanceRecurringMapper;
 import com.mms.base.service.finance.mapper.FinanceTransactionMapper;
 import com.mms.base.service.finance.service.FinanceTransactionService;
+import com.mms.base.service.finance.support.FinanceTxnBizTypes;
 import com.mms.base.service.finance.support.FinanceUserSupport;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
@@ -145,6 +146,7 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "流水不存在");
             }
             FinanceUserSupport.requireOwned(entity.getUserId(), "流水不存在");
+            rejectIfFundRedeemOrder(entity);
             if (dto.getTxnDate() != null) {
                 entity.setTxnDate(dto.getTxnDate());
             }
@@ -211,6 +213,7 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
                 throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "流水不存在");
             }
             FinanceUserSupport.requireOwned(entity.getUserId(), "流水不存在");
+            rejectIfFundRedeemOrder(entity);
             financeTransactionMapper.deleteById(id);
         } catch (BusinessException e) {
             throw e;
@@ -514,6 +517,13 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
         FinanceCategoryEntity category = financeCategoryMapper.selectById(categoryId);
         if (category == null || !userId.equals(category.getUserId())) {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "分类不存在：" + categoryId);
+        }
+    }
+
+    private void rejectIfFundRedeemOrder(FinanceTransactionEntity entity) {
+        if (FinanceTxnBizTypes.isFundRedeem(entity)) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID,
+                    "基金赎回单请使用「确认到账」或「撤销赎回」，不可直接改删");
         }
     }
 

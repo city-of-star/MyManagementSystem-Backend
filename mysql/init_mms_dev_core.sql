@@ -265,6 +265,9 @@ CREATE TABLE IF NOT EXISTS `finance_transaction` (
     `from_account_id` bigint DEFAULT NULL COMMENT '转出账户ID（划转）',
     `to_account_id` bigint DEFAULT NULL COMMENT '转入账户ID（划转）',
     `status` varchar(16) NOT NULL DEFAULT 'settled' COMMENT '状态：settled-已结算，pending-待结算',
+    `biz_type` varchar(32) DEFAULT NULL COMMENT '业务类型：fund_redeem 等',
+    `ref_id` bigint DEFAULT NULL COMMENT '业务关联ID（如持仓ID）',
+    `biz_extra` varchar(512) DEFAULT NULL COMMENT '业务扩展（赎回份额/扣减成本等）',
     `note` varchar(512) DEFAULT NULL COMMENT '备注',
     `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除',
     `create_by` bigint DEFAULT NULL COMMENT '创建人ID',
@@ -280,6 +283,8 @@ CREATE TABLE IF NOT EXISTS `finance_transaction` (
     KEY `idx_from_account_id` (`from_account_id`),
     KEY `idx_to_account_id` (`to_account_id`),
     KEY `idx_status` (`status`),
+    KEY `idx_biz_type` (`biz_type`),
+    KEY `idx_ref_id` (`ref_id`),
     KEY `idx_deleted` (`deleted`),
     KEY `idx_date_type_status` (`txn_date`, `txn_type`, `status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='记账流水表';
