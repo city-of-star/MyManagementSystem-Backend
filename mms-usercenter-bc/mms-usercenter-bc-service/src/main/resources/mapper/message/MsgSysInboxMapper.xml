@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mms.usercenter.service.message.mapper.MsgSysInboxMapper">
+
+    <select id="pageAnnounceUsers" resultType="com.mms.usercenter.common.message.vo.MsgAnnounceUserVo">
+        SELECT
+            i.user_id AS userId,
+            u.username AS username,
+            u.nickname AS nickname,
+            i.read_time AS readTime
+        FROM msg_sys_inbox i
+        LEFT JOIN system_user u ON u.id = i.user_id AND u.deleted = 0
+        WHERE i.deleted = 0
+          AND i.announce_id = #{announceId}
+          AND i.read_flag = #{readFlag}
+        <if test="dto.keyword != null and dto.keyword != ''">
+            AND (
+                u.username LIKE CONCAT('%', #{dto.keyword}, '%')
+                OR u.nickname LIKE CONCAT('%', #{dto.keyword}, '%')
+                OR u.real_name LIKE CONCAT('%', #{dto.keyword}, '%')
+            )
+        </if>
+        ORDER BY i.read_time DESC, i.id DESC
+    </select>
+</mapper>

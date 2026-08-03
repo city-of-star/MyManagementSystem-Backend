@@ -62,6 +62,9 @@ public final class OperationLogPermissionMappings {
         put(map, PermissionConstants.SYSTEM_ATTACHMENT_UPDATE, "附件管理", "update", "修改附件");
         put(map, PermissionConstants.SYSTEM_ATTACHMENT_DELETE, "附件管理", "delete", "删除附件");
         put(map, PermissionConstants.SYSTEM_ATTACHMENT_DOWNLOAD, "附件管理", "export", "下载附件");
+        // 公告管理
+        put(map, PermissionConstants.MESSAGE_ANNOUNCE_CREATE, "公告管理", "create", "发布系统公告");
+        put(map, PermissionConstants.MESSAGE_ANNOUNCE_RETRY, "公告管理", "update", "重试发送公告");
         // 定时任务
         put(map, PermissionConstants.JOB_MANAGEMENT_CREATE, "定时任务", "create", "新增定时任务");
         put(map, PermissionConstants.JOB_MANAGEMENT_UPDATE, "定时任务", "update", "修改定时任务");
@@ -87,6 +90,10 @@ public final class OperationLogPermissionMappings {
         put(map, PermissionConstants.AUDIT_API_ACCESS_LOG_ANALYZE, "接口访问日志", "export", "接口访问统计分析");
         // 在线用户
         put(map, PermissionConstants.SECURITY_ONLINE_USER_FORCE_LOGOUT, "在线用户", "logout", "强制用户下线");
+        // 消息中心
+        put(map, PermissionConstants.MESSAGE_SEND_PRIVATE, "消息中心", "create", "发送私信");
+        put(map, PermissionConstants.MESSAGE_READ, "消息中心", "update", "标记消息已读");
+        put(map, PermissionConstants.MESSAGE_DELETE, "消息中心", "delete", "删除消息");
         MAPPINGS = Collections.unmodifiableMap(map);
     }
 

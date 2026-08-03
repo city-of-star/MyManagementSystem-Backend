@@ -108,6 +108,14 @@ public final class PermissionConstants {
     public static final String SYSTEM_ATTACHMENT_DOWNLOAD = "SYSTEM_ATTACHMENT_DOWNLOAD";
 
     /**
+     * 公告管理（菜单+按钮）
+     */
+    public static final String MESSAGE_ANNOUNCE = "MESSAGE_ANNOUNCE";
+    public static final String MESSAGE_ANNOUNCE_VIEW = "MESSAGE_ANNOUNCE_VIEW";
+    public static final String MESSAGE_ANNOUNCE_CREATE = "MESSAGE_ANNOUNCE_CREATE";
+    public static final String MESSAGE_ANNOUNCE_RETRY = "MESSAGE_ANNOUNCE_RETRY";
+
+    /**
      * 定时任务管理（目录）
      */
     public static final String JOB = "JOB";
@@ -181,6 +189,20 @@ public final class PermissionConstants {
     public static final String SECURITY_ONLINE_USER = "SECURITY_ONLINE_USER";
     public static final String SECURITY_ONLINE_USER_VIEW = "SECURITY_ONLINE_USER_VIEW";
     public static final String SECURITY_ONLINE_USER_FORCE_LOGOUT = "SECURITY_ONLINE_USER_FORCE_LOGOUT";
+
+    /**
+     * 消息中心（目录）
+     */
+    public static final String MESSAGE = "MESSAGE";
+
+    /**
+     * 消息中心（菜单+按钮）
+     */
+    public static final String MESSAGE_CENTER = "MESSAGE_CENTER";
+    public static final String MESSAGE_VIEW = "MESSAGE_VIEW";
+    public static final String MESSAGE_SEND_PRIVATE = "MESSAGE_SEND_PRIVATE";
+    public static final String MESSAGE_READ = "MESSAGE_READ";
+    public static final String MESSAGE_DELETE = "MESSAGE_DELETE";
 
     /**
      * 私有构造函数，防止实例化
