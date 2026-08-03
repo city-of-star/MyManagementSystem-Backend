@@ -75,6 +75,13 @@
             <groupId>org.mindrot</groupId>
             <artifactId>jbcrypt</artifactId>
         </dependency>
+
+        <!-- HTML 净化（公告富文本） -->
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>1.17.2</version>
+        </dependency>
     </dependencies>
 
     <build>
