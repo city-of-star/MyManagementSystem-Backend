@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MMS 消息系统 · 页面原型</title>
+  <style>
+    :root {
+      --bg: #f0f2f5;
+      --panel: #fff;
+      --line: #e5e7eb;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #2563eb;
+      --primary-soft: #eff6ff;
+      --danger: #dc2626;
+      --ok: #16a34a;
+      --warn: #d97706;
+      --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+      --radius: 10px;
+      --header-h: 56px;
+      --sider-w: 220px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      color: var(--text);
+      background: var(--bg);
+    }
+    button, input, textarea, select { font: inherit; }
+    .app {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: var(--sider-w) 1fr;
+      grid-template-rows: var(--header-h) 1fr;
+    }
+    .sider {
+      grid-row: 1 / span 2;
+      background: #111827;
+      color: #e5e7eb;
+      padding: 16px 12px;
+    }
+    .brand {
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      padding: 8px 12px 20px;
+      color: #fff;
+    }
+    .nav-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: #cbd5e1;
+      margin-bottom: 4px;
+      cursor: default;
+    }
+    .nav-item.active {
+      background: #1f2937;
+      color: #fff;
+    }
+    .header {
+      background: var(--panel);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 16px;
+      padding: 0 20px;
+      position: relative;
+    }
+    .bell-wrap { position: relative; }
+    .icon-btn {
+      width: 36px;
+      height: 36px;
+      border: 0;
+      border-radius: 999px;
+      background: #f3f4f6;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+    }
+    .icon-btn:hover { background: #e5e7eb; }
+    .badge {
+      position: absolute;
+      top: -2px;
+      right: -2px;
+      min-width: 18px;
+      height: 18px;
+      padding: 0 5px;
+      border-radius: 999px;
+      background: var(--danger);
+      color: #fff;
+      font-size: 11px;
+      line-height: 18px;
+      text-align: center;
+    }
+    .avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      background: linear-gradient(135deg, #60a5fa, #2563eb);
+      color: #fff;
+      display: grid;
+      place-items: center;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .main {
+      padding: 20px;
+      overflow: auto;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+    .tabs {
+      display: flex;
+      gap: 4px;
+      background: #f3f4f6;
+      padding: 4px;
+      border-radius: 10px;
+    }
+    .tab {
+      border: 0;
+      background: transparent;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: var(--muted);
+    }
+    .tab.active {
+      background: #fff;
+      color: var(--text);
+      font-weight: 600;
+      box-shadow: 0 1px 2px rgba(0,0,0,.06);
+    }
+    .btn {
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 8px;
+      padding: 8px 14px;
+      cursor: pointer;
+    }
+    .btn:hover { background: #f9fafb; }
+    .btn.primary {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+    .btn.primary:hover { filter: brightness(1.05); }
+    .btn.ghost { background: transparent; }
+    .layout-2 {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      min-height: 560px;
+    }
+    .list {
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+    }
+    .list-head, .detail-head {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .list-body { overflow: auto; flex: 1; }
+    .msg-item {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      cursor: pointer;
+    }
+    .msg-item:hover { background: #f9fafb; }
+    .msg-item.active { background: var(--primary-soft); }
+    .msg-item.unread .title { font-weight: 700; }
+    .msg-item .title {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+    .dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--primary);
+      display: inline-block;
+      margin-right: 6px;
+    }
+    .meta, .preview, .hint {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .tag {
+      display: inline-block;
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #f3f4f6;
+      color: var(--muted);
+    }
+    .tag.sys { background: #fff7ed; color: var(--warn); }
+    .tag.priv { background: #eff6ff; color: var(--primary); }
+    .detail { display: flex; flex-direction: column; }
+    .detail-body { padding: 20px; flex: 1; }
+    .detail-title { font-size: 20px; font-weight: 700; margin: 0 0 8px; }
+    .detail-meta { color: var(--muted); font-size: 13px; margin-bottom: 18px; }
+    .detail-content {
+      line-height: 1.7;
+      white-space: pre-wrap;
+      margin-bottom: 20px;
+    }
+    .thread {
+      border-top: 1px solid var(--line);
+      padding-top: 16px;
+      display: grid;
+      gap: 12px;
+    }
+    .bubble {
+      max-width: 80%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: #f3f4f6;
+      font-size: 14px;
+    }
+    .bubble.me {
+      margin-left: auto;
+      background: var(--primary-soft);
+    }
+    .bubble .who { font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+    .reply-box {
+      border-top: 1px solid var(--line);
+      padding: 12px 16px;
+      display: flex;
+      gap: 8px;
+    }
+    .reply-box textarea {
+      flex: 1;
+      min-height: 72px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      resize: vertical;
+    }
+    .dropdown {
+      position: absolute;
+      right: 0;
+      top: 44px;
+      width: 360px;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      z-index: 20;
+      display: none;
+    }
+    .dropdown.show { display: block; }
+    .dropdown .hd {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: 600;
+    }
+    .dropdown .item {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      cursor: pointer;
+    }
+    .dropdown .item:hover { background: #f9fafb; }
+    .dropdown .ft {
+      padding: 10px;
+      text-align: center;
+    }
+    .screen { display: none; }
+    .screen.show { display: block; }
+    .proto-bar {
+      position: fixed;
+      left: 50%;
+      bottom: 18px;
+      transform: translateX(-50%);
+      background: #111827;
+      color: #fff;
+      border-radius: 999px;
+      padding: 8px 10px;
+      display: flex;
+      gap: 6px;
+      z-index: 50;
+      box-shadow: var(--shadow);
+    }
+    .proto-bar button {
+      border: 0;
+      background: transparent;
+      color: #cbd5e1;
+      padding: 8px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+    }
+    .proto-bar button.active, .proto-bar button:hover {
+      background: #374151;
+      color: #fff;
+    }
+    .form {
+      max-width: 720px;
+      padding: 20px;
+    }
+    .field { margin-bottom: 16px; }
+    .field label {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .field input, .field textarea, .field select {
+      width: 100%;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px 12px;
+    }
+    .picker {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .picker-search {
+      border: 0;
+      border-bottom: 1px solid var(--line);
+      width: 100%;
+      padding: 10px 12px;
+    }
+    .picker-list { max-height: 180px; overflow: auto; }
+    .picker-item {
+      padding: 10px 12px;
+      display: flex;
+      justify-content: space-between;
+      cursor: pointer;
+    }
+    .picker-item:hover, .picker-item.selected { background: var(--primary-soft); }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: #eff6ff;
+      color: var(--primary);
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 13px;
+    }
+    .note {
+      margin-top: 12px;
+      padding: 10px 12px;
+      background: #fffbeb;
+      border: 1px solid #fde68a;
+      border-radius: 8px;
+      color: #92400e;
+      font-size: 13px;
+    }
+    .empty {
+      padding: 48px 20px;
+      text-align: center;
+      color: var(--muted);
+    }
+    @media (max-width: 960px) {
+      .app { grid-template-columns: 1fr; }
+      .sider { display: none; }
+      .layout-2 { grid-template-columns: 1fr; }
+      .list { border-right: 0; border-bottom: 1px solid var(--line); max-height: 280px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sider">
+      <div class="brand">MMS</div>
+      <div class="nav-item">工作台</div>
+      <div class="nav-item">系统管理</div>
+      <div class="nav-item active">消息中心</div>
+      <div class="nav-item">作业调度</div>
+    </aside>
+
+    <header class="header">
+      <div class="bell-wrap">
+        <button class="icon-btn" id="bellBtn" title="消息" aria-label="消息">🔔</button>
+        <span class="badge" id="bellBadge">3</span>
+        <div class="dropdown" id="bellDropdown">
+          <div class="hd">
+            <span>消息</span>
+            <button class="btn ghost" onclick="markAllRead()">全部已读</button>
+          </div>
+          <div class="item" onclick="showScreen('center'); selectMsg(0)">
+            <div class="title"><span><span class="dot"></span>作业执行失败</span><span class="tag sys">系统</span></div>
+            <div class="preview">MYSQL_BACKUP 今日 03:00 执行失败…</div>
+          </div>
+          <div class="item" onclick="showScreen('center'); selectMsg(1)">
+            <div class="title"><span><span class="dot"></span>关于周五系统维护</span><span class="tag sys">系统</span></div>
+            <div class="preview">本周五 22:00–23:00 进行升级…</div>
+          </div>
+          <div class="item" onclick="showScreen('center'); selectMsg(2)">
+            <div class="title"><span><span class="dot"></span>请协助核对角色权限</span><span class="tag priv">私信</span></div>
+            <div class="preview">来自 管理员 · 麻烦看下运营角色…</div>
+          </div>
+          <div class="ft">
+            <button class="btn primary" onclick="showScreen('center')">查看全部</button>
+          </div>
+        </div>
+      </div>
+      <div class="avatar">羽</div>
+    </header>
+
+    <main class="main">
+      <!-- 消息中心 -->
+      <section class="screen show" id="screen-center">
+        <div class="toolbar">
+          <div class="tabs" id="inboxTabs">
+            <button class="tab active" data-tab="all">全部</button>
+            <button class="tab" data-tab="sys">系统</button>
+            <button class="tab" data-tab="priv">私信</button>
+          </div>
+          <select id="readFilter" onchange="filterList()">
+            <option value="all">全部状态</option>
+            <option value="unread">仅未读</option>
+            <option value="read">仅已读</option>
+          </select>
+          <div style="flex:1"></div>
+          <button class="btn" onclick="markAllRead()">全部已读</button>
+          <button class="btn primary" onclick="showScreen('compose')">写私信</button>
+          <button class="btn" onclick="showScreen('announce')">发系统公告</button>
+        </div>
+
+        <div class="panel layout-2">
+          <div class="list">
+            <div class="list-head">
+              <strong>收件箱</strong>
+              <span class="hint" id="listCount">3 条</span>
+            </div>
+            <div class="list-body" id="msgList"></div>
+          </div>
+          <div class="detail" id="msgDetail">
+            <div class="empty">从左侧选择一条消息</div>
+          </div>
+        </div>
+        <div class="note">
+          原型说明：选人仅展示「显示名 / 用户名 / 部门」，不含手机号等敏感信息；普通用户也可写私信，发系统公告给管理员演示用。
+        </div>
+      </section>
+
+      <!-- 写私信 -->
+      <section class="screen" id="screen-compose">
+        <div class="toolbar">
+          <button class="btn" onclick="showScreen('center')">← 返回</button>
+          <strong>写私信</strong>
+        </div>
+        <div class="panel form">
+          <div class="field">
+            <label>接收人（精简选人，可搜索）</label>
+            <div id="selectedUser" style="margin-bottom:8px"></div>
+            <div class="picker">
+              <input class="picker-search" id="userSearch" placeholder="搜索显示名 / 用户名…" oninput="renderPicker()" />
+              <div class="picker-list" id="userPicker"></div>
+            </div>
+          </div>
+          <div class="field">
+            <label>标题（可选）</label>
+            <input placeholder="例如：请协助核对角色权限" />
+          </div>
+          <div class="field">
+            <label>正文</label>
+            <textarea rows="6" placeholder="输入私信内容…"></textarea>
+          </div>
+          <button class="btn primary" onclick="alert('原型：这里会调用发送私信接口')">发送</button>
+        </div>
+      </section>
+
+      <!-- 发系统公告 -->
+      <section class="screen" id="screen-announce">
+        <div class="toolbar">
+          <button class="btn" onclick="showScreen('center')">← 返回</button>
+          <strong>发系统公告</strong>
+          <span class="tag sys">管理员</span>
+        </div>
+        <div class="panel form">
+          <div class="field">
+            <label>范围</label>
+            <select>
+              <option>指定用户</option>
+              <option>按角色</option>
+              <option>全员</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>标题</label>
+            <input value="关于周五系统维护" />
+          </div>
+          <div class="field">
+            <label>正文</label>
+            <textarea rows="5">本周五 22:00–23:00 进行系统升级，期间作业调度将暂停，请提前安排。</textarea>
+          </div>
+          <div class="field">
+            <label>业务跳转（可选）</label>
+            <input placeholder="例如：/job/jobRunLogs" value="/job/jobRunLogs" />
+          </div>
+          <button class="btn primary" onclick="alert('原型：展开为每人一条系统通知')">发布公告</button>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div class="proto-bar">
+    <button class="active" data-screen="center" onclick="showScreen('center')">① 消息中心</button>
+    <button data-screen="compose" onclick="showScreen('compose')">② 写私信</button>
+    <button data-screen="announce" onclick="showScreen('announce')">③ 发公告</button>
+    <button onclick="toggleBell()">④ 顶栏铃铛</button>
+  </div>
+
+  <script>
+    const users = [
+      { id: 1, name: '李鸿羽', username: 'lhy', dept: '技术中心' },
+      { id: 2, name: '小满', username: 'xiaoman', dept: '产品中心' },
+      { id: 3, name: '阿柚', username: 'ayou', dept: '运营部' },
+      { id: 4, name: '运维值班', username: 'ops', dept: '技术中心' },
+    ];
+
+    const messages = [
+      {
+        id: 1,
+        type: 'sys',
+        unread: true,
+        title: '作业执行失败',
+        from: '系统',
+        time: '今天 03:12',
+        preview: 'MYSQL_BACKUP 今日 03:00 执行失败，请查看运行日志。',
+        content: '作业 MYSQL_BACKUP 于今天 03:00 执行失败。\n错误摘要：推送 GitHub 超时。\n请前往作业运行日志查看详情并重试。',
+        link: '/job/jobRunLogs',
+        thread: null,
+      },
+      {
+        id: 2,
+        type: 'sys',
+        unread: true,
+        title: '关于周五系统维护',
+        from: '系统 · 管理员公告',
+        time: '昨天 18:20',
+        preview: '本周五 22:00–23:00 进行升级…',
+        content: '本周五 22:00–23:00 进行系统升级，期间作业调度将暂停，请提前安排相关任务。',
+        link: null,
+        thread: null,
+      },
+      {
+        id: 3,
+        type: 'priv',
+        unread: true,
+        title: '请协助核对角色权限',
+        from: '管理员',
+        time: '昨天 15:02',
+        preview: '麻烦看下运营角色是否还需要「作业查看」权限。',
+        content: '麻烦看下运营角色是否还需要「作业查看」权限，确认后回我一声。',
+        link: null,
+        thread: [
+          { me: false, who: '管理员', text: '麻烦看下运营角色是否还需要「作业查看」权限，确认后回我一声。' },
+          { me: true, who: '我', text: '好的，我下午核对后回复你。' },
+        ],
+      },
+      {
+        id: 4,
+        type: 'priv',
+        unread: false,
+        title: '报表口径确认',
+        from: '小满',
+        time: '周一 11:08',
+        preview: '看板总资产是否含基金壳余额？',
+        content: '看板总资产是否含基金壳余额？我们文档要对齐一下。',
+        link: null,
+        thread: [
+          { me: false, who: '小满', text: '看板总资产是否含基金壳余额？我们文档要对齐一下。' },
+        ],
+      },
+    ];
+
+    let currentTab = 'all';
+    let selectedId = null;
+    let pickedUserId = null;
+
+    function showScreen(name) {
+      document.querySelectorAll('.screen').forEach((el) => el.classList.remove('show'));
+      document.getElementById('screen-' + name).classList.add('show');
+      document.querySelectorAll('.proto-bar button[data-screen]').forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.screen === name);
+      });
+      if (name === 'compose') renderPicker();
+      closeBell();
+    }
+
+    function toggleBell() {
+      document.getElementById('bellDropdown').classList.toggle('show');
+    }
+    function closeBell() {
+      document.getElementById('bellDropdown').classList.remove('show');
+    }
+
+    document.getElementById('bellBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleBell();
+    });
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.bell-wrap')) closeBell();
+    });
+
+    document.getElementById('inboxTabs').addEventListener('click', (e) => {
+      const tab = e.target.closest('.tab');
+      if (!tab) return;
+      document.querySelectorAll('#inboxTabs .tab').forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentTab = tab.dataset.tab;
+      filterList();
+    });
+
+    function filteredMessages() {
+      const readFilter = document.getElementById('readFilter').value;
+      return messages.filter((m) => {
+        if (currentTab === 'sys' && m.type !== 'sys') return false;
+        if (currentTab === 'priv' && m.type !== 'priv') return false;
+        if (readFilter === 'unread' && !m.unread) return false;
+        if (readFilter === 'read' && m.unread) return false;
+        return true;
+      });
+    }
+
+    function filterList() {
+      const list = filteredMessages();
+      document.getElementById('listCount').textContent = list.length + ' 条';
+      const box = document.getElementById('msgList');
+      if (!list.length) {
+        box.innerHTML = '<div class="empty">暂无消息</div>';
+        return;
+      }
+      box.innerHTML = list.map((m) => `
+        <div class="msg-item ${m.unread ? 'unread' : ''} ${selectedId === m.id ? 'active' : ''}" onclick="selectMsgById(${m.id})">
+          <div class="title">
+            <span>${m.unread ? '<span class="dot"></span>' : ''}${m.title}</span>
+            <span class="tag ${m.type === 'sys' ? 'sys' : 'priv'}">${m.type === 'sys' ? '系统' : '私信'}</span>
+          </div>
+          <div class="meta">${m.from} · ${m.time}</div>
+          <div class="preview">${m.preview}</div>
+        </div>
+      `).join('');
+    }
+
+    function selectMsg(index) {
+      const m = messages[index];
+      if (m) selectMsgById(m.id);
+    }
+
+    function selectMsgById(id) {
+      selectedId = id;
+      const m = messages.find((x) => x.id === id);
+      if (!m) return;
+      m.unread = false;
+      updateBadge();
+      filterList();
+      const detail = document.getElementById('msgDetail');
+      const threadHtml = m.thread ? `
+        <div class="thread">
+          ${m.thread.map((b) => `
+            <div class="bubble ${b.me ? 'me' : ''}">
+              <div class="who">${b.who}</div>
+              <div>${b.text}</div>
+            </div>
+          `).join('')}
+        </div>
+        <div class="reply-box">
+          <textarea placeholder="回复私信…"></textarea>
+          <button class="btn primary" onclick="alert('原型：发送回复')">回复</button>
+        </div>
+      ` : `
+        <div class="toolbar" style="margin:0">
+          ${m.link ? `<button class="btn primary" onclick="alert('原型：跳转到 ${m.link}')">查看相关业务</button>` : ''}
+          <button class="btn" onclick="alert('原型：仅从我的收件箱删除')">删除</button>
+        </div>
+      `;
+      detail.innerHTML = `
+        <div class="detail-head">
+          <span class="tag ${m.type === 'sys' ? 'sys' : 'priv'}">${m.type === 'sys' ? '系统通知' : '私信'}</span>
+          <span class="hint">已读</span>
+        </div>
+        <div class="detail-body">
+          <h2 class="detail-title">${m.title}</h2>
+          <div class="detail-meta">${m.from} · ${m.time}</div>
+          <div class="detail-content">${m.content}</div>
+          ${threadHtml}
+        </div>
+      `;
+    }
+
+    function markAllRead() {
+      messages.forEach((m) => { m.unread = false; });
+      updateBadge();
+      filterList();
+      if (selectedId) selectMsgById(selectedId);
+    }
+
+    function updateBadge() {
+      const n = messages.filter((m) => m.unread).length;
+      const badge = document.getElementById('bellBadge');
+      badge.style.display = n ? 'inline-block' : 'none';
+      badge.textContent = String(n);
+    }
+
+    function renderPicker() {
+      const q = (document.getElementById('userSearch').value || '').trim().toLowerCase();
+      const list = users.filter((u) =>
+        !q || u.name.includes(q) || u.username.includes(q) || u.dept.includes(q)
+      );
+      document.getElementById('userPicker').innerHTML = list.map((u) => `
+        <div class="picker-item ${pickedUserId === u.id ? 'selected' : ''}" onclick="pickUser(${u.id})">
+          <span><strong>${u.name}</strong> <span class="hint">@${u.username}</span></span>
+          <span class="hint">${u.dept}</span>
+        </div>
+      `).join('') || '<div class="empty">无匹配用户</div>';
+    }
+
+    function pickUser(id) {
+      pickedUserId = id;
+      const u = users.find((x) => x.id === id);
+      document.getElementById('selectedUser').innerHTML = u
+        ? `<span class="chip">已选：${u.name} @${u.username}<button class="btn ghost" style="padding:0 4px;border:0" onclick="pickedUserId=null;document.getElementById('selectedUser').innerHTML='';renderPicker()">✕</button></span>`
+        : '';
+      renderPicker();
+    }
+
+    filterList();
+    updateBadge();
+    selectMsgById(1);
+  </script>
+</body>
+</html>
