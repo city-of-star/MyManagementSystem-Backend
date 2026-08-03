@@ -28,19 +28,16 @@ public class FinanceDashboardSummaryVo {
     @Schema(description = "待入账收入金额")
     private BigDecimal pendingAmount;
 
-    @Schema(description = "总资产 = 非基金账户余额 + 基金已确认市值（方案甲）")
+    @Schema(description = "总资产 = 全部账户账面余额（含基金壳）")
     private BigDecimal totalAsset;
 
-    @Schema(description = "基金已确认市值合计")
-    private BigDecimal fundConfirmedAsset;
+    @Schema(description = "基金账户账面余额合计")
+    private BigDecimal fundAsset;
 
-    @Schema(description = "基金滞后待更新市值合计（不计入总资产）")
-    private BigDecimal fundLaggedAsset;
-
-    @Schema(description = "待入账转账金额（含赎回到账中）")
+    @Schema(description = "待入账转账金额")
     private BigDecimal pendingTransferAmount;
 
-    @Schema(description = "账户余额列表（基金壳余额仅供参考，总资产不重复计入）")
+    @Schema(description = "账户余额列表")
     private List<FinanceAccountBalanceVo> accounts;
 
     @Schema(description = "近 N 日收支趋势")

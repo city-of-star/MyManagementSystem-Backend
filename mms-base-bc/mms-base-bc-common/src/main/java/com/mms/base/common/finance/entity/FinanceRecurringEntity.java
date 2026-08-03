@@ -56,15 +56,15 @@ public class FinanceRecurringEntity extends BaseEntity {
     private Long toAccountId;
 
     @TableField(updateStrategy = FieldStrategy.ALWAYS)
-    @Schema(description = "提醒标签（已废弃，读写忽略）")
+    @Schema(description = "周期：none/daily/weekly/monthly")
     private String cycle;
 
     @TableField(value = "day_of_month", updateStrategy = FieldStrategy.ALWAYS)
-    @Schema(description = "每月几号（已废弃）")
+    @Schema(description = "每月几号（cycle=monthly）")
     private Integer dayOfMonth;
 
     @TableField(updateStrategy = FieldStrategy.ALWAYS)
-    @Schema(description = "星期几（已废弃）")
+    @Schema(description = "星期几（cycle=weekly，1=周一 … 7=周日）")
     private Integer weekday;
 
     @TableField("sort_order")

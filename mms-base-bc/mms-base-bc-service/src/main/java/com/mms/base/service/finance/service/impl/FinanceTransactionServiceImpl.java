@@ -19,7 +19,6 @@ import com.mms.base.service.finance.mapper.FinanceCategoryMapper;
 import com.mms.base.service.finance.mapper.FinanceRecurringMapper;
 import com.mms.base.service.finance.mapper.FinanceTransactionMapper;
 import com.mms.base.service.finance.service.FinanceTransactionService;
-import com.mms.base.service.finance.support.FinanceTxnBizTypes;
 import com.mms.base.service.finance.support.FinanceUserSupport;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
@@ -537,13 +536,6 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
                 && StringUtils.hasText(category.getDirection())
                 && !txnType.equals(category.getDirection())) {
             throw new BusinessException(ErrorCode.PARAM_INVALID, "分类方向与交易类型不一致");
-        }
-    }
-
-    private void rejectIfFundRedeemOrder(FinanceTransactionEntity entity) {
-        if (FinanceTxnBizTypes.isFundRedeem(entity)) {
-            throw new BusinessException(ErrorCode.PARAM_INVALID,
-                    "基金赎回单请使用「确认到账」或「撤销赎回」，不可直接改删");
         }
     }
 

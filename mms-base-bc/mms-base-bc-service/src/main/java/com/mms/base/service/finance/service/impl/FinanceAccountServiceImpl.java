@@ -9,7 +9,6 @@ import com.mms.base.common.finance.entity.FinanceAccountEntity;
 import com.mms.base.common.finance.vo.FinanceAccountVo;
 import com.mms.base.common.system.vo.DictDataVo;
 import com.mms.base.service.finance.mapper.FinanceAccountMapper;
-import com.mms.base.service.finance.mapper.FinanceFundHoldingMapper;
 import com.mms.base.service.finance.mapper.FinanceRecurringMapper;
 import com.mms.base.service.finance.mapper.FinanceTransactionMapper;
 import com.mms.base.service.finance.service.FinanceAccountService;
@@ -48,9 +47,6 @@ public class FinanceAccountServiceImpl implements FinanceAccountService {
 
     @Resource
     private FinanceRecurringMapper financeRecurringMapper;
-
-    @Resource
-    private FinanceFundHoldingMapper financeFundHoldingMapper;
 
     @Resource
     private DictDataService dictDataService;
@@ -199,10 +195,6 @@ public class FinanceAccountServiceImpl implements FinanceAccountService {
             long recurringCount = financeRecurringMapper.countByAccountId(id, userId);
             if (recurringCount > 0) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "账户存在关联快捷模板，无法删除");
-            }
-            long holdingCount = financeFundHoldingMapper.countByAccountId(id, userId);
-            if (holdingCount > 0) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "账户存在关联基金持仓，无法删除");
             }
             financeAccountMapper.deleteById(id);
         } catch (BusinessException e) {

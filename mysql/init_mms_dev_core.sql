@@ -321,58 +321,6 @@ CREATE TABLE IF NOT EXISTS `finance_recurring` (
     KEY `idx_deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='快捷记账模板表（手动点一次生成流水，不自动扣款）';
 
-CREATE TABLE IF NOT EXISTS `finance_fund_holding` (
-    `id` bigint NOT NULL COMMENT '主键（雪花）',
-    `user_id` bigint NOT NULL COMMENT '归属用户ID',
-    `account_id` bigint NOT NULL COMMENT '基金账户壳ID',
-    `fund_code` varchar(32) DEFAULT NULL COMMENT '基金代码',
-    `fund_name` varchar(128) NOT NULL COMMENT '基金名称',
-    `fund_category` varchar(32) NOT NULL COMMENT '分类（字典 finance_fund_category）',
-    `shares` decimal(18, 6) NOT NULL DEFAULT 0.000000 COMMENT '持有份额',
-    `cost_amount` decimal(12, 2) NOT NULL DEFAULT 0.00 COMMENT '持仓成本合计',
-    `nav` decimal(12, 4) DEFAULT NULL COMMENT '最近净值',
-    `nav_date` date DEFAULT NULL COMMENT '净值日期',
-    `market_value` decimal(12, 2) NOT NULL DEFAULT 0.00 COMMENT '最近市值',
-    `quote_status` varchar(16) NOT NULL DEFAULT 'confirmed' COMMENT '估值状态：confirmed/delayed',
-    `estimated_market_value` decimal(12, 2) DEFAULT NULL COMMENT '滞后估算市值',
-    `note` varchar(512) DEFAULT NULL COMMENT '备注',
-    `sort_order` int NOT NULL DEFAULT 0 COMMENT '排序号',
-    `enabled` tinyint NOT NULL DEFAULT 1 COMMENT '是否启用：1/0',
-    `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
-    `create_by` bigint DEFAULT NULL COMMENT '创建人',
-    `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `update_by` bigint DEFAULT NULL COMMENT '更新人',
-    `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    PRIMARY KEY (`id`),
-    KEY `idx_user_id` (`user_id`),
-    KEY `idx_account_id` (`account_id`),
-    KEY `idx_fund_category` (`fund_category`),
-    KEY `idx_quote_status` (`quote_status`),
-    KEY `idx_enabled` (`enabled`),
-    KEY `idx_deleted` (`deleted`),
-    KEY `idx_sort_order` (`sort_order`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='基金持仓';
-
-CREATE TABLE IF NOT EXISTS `finance_fund_nav_snapshot` (
-    `id` bigint NOT NULL COMMENT '主键（雪花）',
-    `user_id` bigint NOT NULL COMMENT '归属用户ID',
-    `holding_id` bigint NOT NULL COMMENT '持仓ID',
-    `nav_date` date NOT NULL COMMENT '净值日期',
-    `nav` decimal(12, 4) NOT NULL COMMENT '净值',
-    `market_value` decimal(12, 2) NOT NULL COMMENT '市值',
-    `quote_status` varchar(16) NOT NULL COMMENT '估值状态',
-    `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '逻辑删除',
-    `create_by` bigint DEFAULT NULL COMMENT '创建人',
-    `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-    `update_by` bigint DEFAULT NULL COMMENT '更新人',
-    `update_time` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
-    PRIMARY KEY (`id`),
-    KEY `idx_user_id` (`user_id`),
-    KEY `idx_holding_id` (`holding_id`),
-    KEY `idx_nav_date` (`nav_date`),
-    KEY `idx_deleted` (`deleted`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='基金净值快照';
-
 CREATE TABLE IF NOT EXISTS `finance_payroll_profile` (
     `id` bigint NOT NULL COMMENT '主键ID',
     `user_id` bigint NOT NULL COMMENT '归属用户ID',
@@ -622,44 +570,6 @@ VALUES
     -- 部分赎回待到账（测看板 pending 转账 / 流水确认到账）
     (554, 2, DATE_SUB(CURDATE(), INTERVAL 2 DAY), 'transfer', 1000.00, NULL, NULL, 9, 3,
      'pending', '基金赎回待到账：沪深300ETF联接', 0, 2, NOW(), NOW());
-
--- 记账种子：基金持仓（挂在支付宝基金壳 account_id=9）
-INSERT IGNORE INTO `finance_fund_holding`
-(`id`, `user_id`, `account_id`, `fund_code`, `fund_name`, `fund_category`,
- `shares`, `cost_amount`, `nav`, `nav_date`, `market_value`, `quote_status`, `estimated_market_value`,
- `note`, `sort_order`, `enabled`, `deleted`, `create_by`, `create_time`, `update_time`)
-VALUES
-    -- 已确认：国内指数（已部分赎回，份额/成本已扣）
-    (601, 2, 9, '110020', '沪深300ETF联接', 'index_cn',
-     4200.000000, 5040.00, 1.2500, DATE_SUB(CURDATE(), INTERVAL 1 DAY), 5250.00, 'confirmed', NULL,
-     '测试持仓：确认估值计入总资产；有赎回 pending', 10, 1, 0, 2, NOW(), NOW()),
-    -- 滞后：海外指数（总资产不加确认市值外的估算，看板单独展示）
-    (602, 2, 9, '968000', '纳斯达克100', 'index_overseas',
-     1000.000000, 2000.00, 2.1000, DATE_SUB(CURDATE(), INTERVAL 5 DAY), 2100.00, 'delayed', 2180.00,
-     '测试持仓：滞后待更新', 20, 1, 0, 2, NOW(), NOW()),
-    -- 已确认：债基
-    (603, 2, 9, '000198', '短债稳健', 'bond',
-     3000.000000, 3100.00, 1.0500, DATE_SUB(CURDATE(), INTERVAL 1 DAY), 3150.00, 'confirmed', NULL,
-     '测试持仓：债基', 30, 1, 0, 2, NOW(), NOW());
-
--- 记账种子：净值快照（给曲线/历史列表用；持仓 601 多点，602/603 少量）
-INSERT IGNORE INTO `finance_fund_nav_snapshot`
-(`id`, `user_id`, `holding_id`, `nav_date`, `nav`, `market_value`, `quote_status`,
- `deleted`, `create_by`, `create_time`, `update_time`)
-VALUES
-    (701, 2, 601, DATE_SUB(CURDATE(), INTERVAL 30 DAY), 1.1800, 5900.00, 'confirmed', 0, 2, NOW(), NOW()),
-    (702, 2, 601, DATE_SUB(CURDATE(), INTERVAL 25 DAY), 1.2000, 6000.00, 'confirmed', 0, 2, NOW(), NOW()),
-    (703, 2, 601, DATE_SUB(CURDATE(), INTERVAL 20 DAY), 1.2200, 6100.00, 'confirmed', 0, 2, NOW(), NOW()),
-    (704, 2, 601, DATE_SUB(CURDATE(), INTERVAL 14 DAY), 1.2300, 5166.00, 'confirmed', 0, 2, NOW(), NOW()),
-    (705, 2, 601, DATE_SUB(CURDATE(), INTERVAL 7 DAY), 1.2400, 5208.00, 'confirmed', 0, 2, NOW(), NOW()),
-    (706, 2, 601, DATE_SUB(CURDATE(), INTERVAL 3 DAY), 1.2450, 5229.00, 'confirmed', 0, 2, NOW(), NOW()),
-    (707, 2, 601, DATE_SUB(CURDATE(), INTERVAL 1 DAY), 1.2500, 5250.00, 'confirmed', 0, 2, NOW(), NOW()),
-    (711, 2, 602, DATE_SUB(CURDATE(), INTERVAL 20 DAY), 2.0000, 2000.00, 'confirmed', 0, 2, NOW(), NOW()),
-    (712, 2, 602, DATE_SUB(CURDATE(), INTERVAL 10 DAY), 2.0500, 2050.00, 'confirmed', 0, 2, NOW(), NOW()),
-    (713, 2, 602, DATE_SUB(CURDATE(), INTERVAL 5 DAY), 2.1000, 2100.00, 'delayed', 0, 2, NOW(), NOW()),
-    (721, 2, 603, DATE_SUB(CURDATE(), INTERVAL 20 DAY), 1.0400, 3120.00, 'confirmed', 0, 2, NOW(), NOW()),
-    (722, 2, 603, DATE_SUB(CURDATE(), INTERVAL 10 DAY), 1.0450, 3135.00, 'confirmed', 0, 2, NOW(), NOW()),
-    (723, 2, 603, DATE_SUB(CURDATE(), INTERVAL 1 DAY), 1.0500, 3150.00, 'confirmed', 0, 2, NOW(), NOW());
 
 -- lhy 已有个人种子，标记为已初始化（避免再被通用模板覆盖）
 INSERT IGNORE INTO `finance_user_init` (`user_id`, `init_time`, `create_time`, `update_time`)
@@ -1163,11 +1073,6 @@ VALUES
     (101, 99, 'button', '快捷模板-新增', 'FINANCE_RECURRING_CREATE', NULL, NULL, NULL, 52, 1, 1, 0, NOW(), NOW()),
     (102, 99, 'button', '快捷模板-编辑', 'FINANCE_RECURRING_UPDATE', NULL, NULL, NULL, 53, 1, 1, 0, NOW(), NOW()),
     (103, 99, 'button', '快捷模板-删除', 'FINANCE_RECURRING_DELETE', NULL, NULL, NULL, 54, 1, 1, 0, NOW(), NOW()),
-    (109, 81, 'menu', '基金持仓', 'FINANCE_FUND_HOLDING', '/finance/fundHoldings', '/finance/FundHoldingPage.vue', 'TrendCharts', 35, 1, 1, 0, NOW(), NOW()),
-    (110, 109, 'button', '基金持仓-查看', 'FINANCE_FUND_HOLDING_VIEW', NULL, NULL, NULL, 36, 1, 1, 0, NOW(), NOW()),
-    (111, 109, 'button', '基金持仓-新增', 'FINANCE_FUND_HOLDING_CREATE', NULL, NULL, NULL, 37, 1, 1, 0, NOW(), NOW()),
-    (112, 109, 'button', '基金持仓-编辑', 'FINANCE_FUND_HOLDING_UPDATE', NULL, NULL, NULL, 38, 1, 1, 0, NOW(), NOW()),
-    (113, 109, 'button', '基金持仓-删除', 'FINANCE_FUND_HOLDING_DELETE', NULL, NULL, NULL, 39, 1, 1, 0, NOW(), NOW()),
     (114, 81, 'menu', '工资录入配置', 'FINANCE_PAYROLL_CONFIG', '/finance/payrollConfig', '/finance/PayrollConfigPage.vue', 'Wallet', 55, 1, 1, 0, NOW(), NOW()),
     (115, 114, 'button', '工资录入配置-查看', 'FINANCE_PAYROLL_CONFIG_VIEW', NULL, NULL, NULL, 56, 1, 1, 0, NOW(), NOW()),
     (116, 114, 'button', '工资录入配置-编辑', 'FINANCE_PAYROLL_CONFIG_UPDATE', NULL, NULL, NULL, 57, 1, 1, 0, NOW(), NOW()),
@@ -1220,7 +1125,6 @@ VALUES
     (18, 3, '产品二部', 'PRODUCT_2', '', '', '', 202, 1, '增长/创新产品线', 0, NOW(), NOW()),
     (19, 3, '设计部', 'DESIGN', '', '', '', 203, 1, 'UI/UX 设计', 0, NOW(), NOW());
 
-
 -- 初始化岗位数据
 INSERT IGNORE INTO `system_post` (`id`, `post_code`, `post_name`, `post_level`, `sort_order`, `status`, `remark`, `deleted`, `create_time`, `update_time`)
 VALUES
@@ -1271,7 +1175,6 @@ VALUES
     -- P8级别：助理/初级
     (31, 'Assistant_Engineer', '助理工程师', 'P8', 31, 1, '初级开发人员，在指导下工作', 0, NOW(), NOW()),
     (32, 'Intern', '实习生', 'P8', 32, 1, '在校实习生', 0, NOW(), NOW());
-
 
 -- 给用户分配部门
 INSERT IGNORE INTO `system_user_dept` (`id`, `user_id`, `dept_id`, `is_primary`, `create_time`)
@@ -1326,8 +1229,6 @@ VALUES
     (22, 'finance_txn_status', '记账流水状态', 1, 32, '个人记账流水入账状态', 0, NOW(), NOW()),
     (23, 'finance_direction', '记账分类方向', 1, 33, '个人记账分类收入/支出方向', 0, NOW(), NOW()),
     (24, 'finance_recurring_direction', '记账模板方向', 1, 34, '个人记账快捷模板方向', 0, NOW(), NOW()),
-    (25, 'finance_fund_category', '基金分类', 1, 35, '个人记账基金持仓分类', 0, NOW(), NOW()),
-    (26, 'finance_fund_quote_status', '基金估值状态', 1, 36, '确认/滞后', 0, NOW(), NOW());
 
 -- 初始化数据字典数据
 INSERT IGNORE INTO `system_dict_data` (`id`, `dict_type_id`, `dict_label`, `dict_value`, `dict_sort`, `is_default`, `status`, `remark`, `deleted`, `create_time`, `update_time`)
@@ -1425,8 +1326,7 @@ VALUES
     (73, 20, '社保', 'social_security', 7, 0, 1, '社保账户', 0, NOW(), NOW()),
     (74, 20, '公司卡', 'company_card', 8, 0, 1, '公司卡', 0, NOW(), NOW()),
     (75, 20, '医保', 'medical', 9, 0, 1, '医保账户', 0, NOW(), NOW()),
-    (76, 20, '基金', 'fund', 10, 0, 1, '基金持仓', 0, NOW(), NOW()),
-    (77, 20, '其他', 'other', 99, 0, 1, '其他账户', 0, NOW(), NOW()),
+    (76, 20, '基金', 'fund', 10, 0, 1, '基金账户', 0, NOW(), NOW()),
     -- 记账流水类型
     (78, 21, '收入', 'income', 1, 0, 1, '收入流水', 0, NOW(), NOW()),
     (79, 21, '支出', 'expense', 2, 1, 1, '支出流水', 0, NOW(), NOW()),
@@ -1441,17 +1341,7 @@ VALUES
     -- 记账模板方向
     (86, 24, '收入', 'income', 1, 0, 1, '收入模板', 0, NOW(), NOW()),
     (87, 24, '支出', 'expense', 2, 1, 1, '支出模板', 0, NOW(), NOW()),
-    (88, 24, '转账', 'transfer', 3, 0, 1, '转账模板', 0, NOW(), NOW()),
-    -- 基金分类
-    (90, 25, '债基', 'bond', 1, 0, 1, NULL, 0, NOW(), NOW()),
-    (91, 25, '主题基金', 'theme', 2, 0, 1, NULL, 0, NOW(), NOW()),
-    (92, 25, '指数（国内）', 'index_cn', 3, 1, 1, NULL, 0, NOW(), NOW()),
-    (93, 25, '指数（海外）', 'index_overseas', 4, 0, 1, NULL, 0, NOW(), NOW()),
-    (94, 25, '美股场外', 'us_otc', 5, 0, 1, NULL, 0, NOW(), NOW()),
-    (95, 25, '其他', 'other', 99, 0, 1, NULL, 0, NOW(), NOW()),
-    -- 基金估值状态
-    (96, 26, '已确认', 'confirmed', 1, 1, 1, '计入总资产', 0, NOW(), NOW()),
-    (97, 26, '滞后待更新', 'delayed', 2, 0, 1, '不计入总资产，单独展示', 0, NOW(), NOW());
+    (88, 24, '转账', 'transfer', 3, 0, 1, '转账模板', 0, NOW(), NOW());
 -- 初始化定时任务数据
 INSERT IGNORE INTO `job_def` (`id`,`service_name`,`job_code`,`job_name`,`job_type`,`cron_expr`,`run_mode`,`enabled`,`timeout_ms`,`remark`,`params_json`,`deleted`,`create_by`,`create_time`,`update_by`,`update_time`)
 VALUES

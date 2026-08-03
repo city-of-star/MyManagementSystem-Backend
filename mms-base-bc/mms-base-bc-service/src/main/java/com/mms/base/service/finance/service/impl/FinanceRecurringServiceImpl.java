@@ -39,6 +39,7 @@ import java.util.Set;
 public class FinanceRecurringServiceImpl implements FinanceRecurringService {
 
     private static final Set<String> DIRECTIONS = Set.of("income", "expense", "transfer");
+    private static final Set<String> CYCLES = Set.of("none", "daily", "weekly", "monthly");
 
     @Resource
     private FinanceRecurringMapper financeRecurringMapper;
@@ -107,9 +108,7 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
             entity.setAccountId(dto.getAccountId());
             entity.setFromAccountId(dto.getFromAccountId());
             entity.setToAccountId(dto.getToAccountId());
-            entity.setCycle(null);
-            entity.setDayOfMonth(null);
-            entity.setWeekday(null);
+            applySchedule(entity, dto.getCycle(), dto.getDayOfMonth(), dto.getWeekday());
             entity.setSortOrder(dto.getSortOrder() == null ? 0 : dto.getSortOrder());
             entity.setEnabled(dto.getEnabled() == null ? 1 : dto.getEnabled());
             entity.setNote(dto.getNote());
@@ -170,9 +169,12 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
             if (dto.getNote() != null) {
                 entity.setNote(dto.getNote());
             }
-            entity.setCycle(null);
-            entity.setDayOfMonth(null);
-            entity.setWeekday(null);
+            if (dto.getCycle() != null || dto.getDayOfMonth() != null || dto.getWeekday() != null) {
+                String cycle = dto.getCycle() != null ? dto.getCycle() : entity.getCycle();
+                Integer dayOfMonth = dto.getDayOfMonth() != null ? dto.getDayOfMonth() : entity.getDayOfMonth();
+                Integer weekday = dto.getWeekday() != null ? dto.getWeekday() : entity.getWeekday();
+                applySchedule(entity, cycle, dayOfMonth, weekday);
+            }
             validateDirectionFields(entity.getDirection(), entity.getCategoryId(), entity.getAccountId(),
                     entity.getFromAccountId(), entity.getToAccountId());
             // 方向变更时，沿用旧分类也要校验方向一致
@@ -253,6 +255,40 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "转出与转入账户不能相同");
             }
         }
+    }
+
+    private void applySchedule(FinanceRecurringEntity entity, String cycleInput, Integer dayOfMonth,
+                               Integer weekday) {
+        String cycle = StringUtils.hasText(cycleInput) ? cycleInput.trim() : "none";
+        if (!CYCLES.contains(cycle)) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "周期不合法，仅支持 none/daily/weekly/monthly");
+        }
+        if ("none".equals(cycle)) {
+            entity.setCycle("none");
+            entity.setDayOfMonth(null);
+            entity.setWeekday(null);
+            return;
+        }
+        entity.setCycle(cycle);
+        if ("daily".equals(cycle)) {
+            entity.setDayOfMonth(null);
+            entity.setWeekday(null);
+            return;
+        }
+        if ("weekly".equals(cycle)) {
+            if (weekday == null || weekday < 1 || weekday > 7) {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "每周模板请指定星期（1=周一 … 7=周日）");
+            }
+            entity.setWeekday(weekday);
+            entity.setDayOfMonth(null);
+            return;
+        }
+        // monthly
+        if (dayOfMonth == null || dayOfMonth < 1 || dayOfMonth > 31) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "每月模板请指定日期（1-31）");
+        }
+        entity.setDayOfMonth(dayOfMonth);
+        entity.setWeekday(null);
     }
 
     private void normalizeByDirection(FinanceRecurringEntity entity) {

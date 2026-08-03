@@ -62,7 +62,7 @@ FROM (
     UNION ALL SELECT @dict_data_base_id + 7, @finance_account_type_id, '社保', 'social_security', 7, 0, 1, '社保账户', 0, NOW(), NOW()
     UNION ALL SELECT @dict_data_base_id + 8, @finance_account_type_id, '公司卡', 'company_card', 8, 0, 1, '公司卡', 0, NOW(), NOW()
     UNION ALL SELECT @dict_data_base_id + 9, @finance_account_type_id, '医保', 'medical', 9, 0, 1, '医保账户', 0, NOW(), NOW()
-    UNION ALL SELECT @dict_data_base_id + 10, @finance_account_type_id, '基金', 'fund', 10, 0, 1, '基金持仓', 0, NOW(), NOW()
+    UNION ALL SELECT @dict_data_base_id + 10, @finance_account_type_id, '基金', 'fund', 10, 0, 1, '基金账户', 0, NOW(), NOW()
     UNION ALL SELECT @dict_data_base_id + 11, @finance_account_type_id, '其他', 'other', 99, 0, 1, '其他账户', 0, NOW(), NOW()
 ) d
 WHERE NOT EXISTS (

@@ -52,6 +52,15 @@ public class FinanceRecurringVo {
     @Schema(description = "转入账户名称")
     private String toAccountName;
 
+    @Schema(description = "周期：none/daily/weekly/monthly")
+    private String cycle;
+
+    @Schema(description = "每月几号（1-31）")
+    private Integer dayOfMonth;
+
+    @Schema(description = "星期几（1=周一 … 7=周日）")
+    private Integer weekday;
+
     @Schema(description = "排序号")
     private Integer sortOrder;
 
