@@ -1,0 +1,1606 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MMS 消息系统 · 普通用户原型</title>
+  <style>
+    /* —— 与 MyManagementSystem-Web/src/assets/style/style.css 对齐 —— */
+    :root {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      line-height: 1.5;
+      font-weight: 400;
+      --mms-primary-color: #0085d0;
+      --mms-primary-rgb: 0, 133, 208;
+      --mms-primary-light: #cce7f6;
+      --mms-primary-soft-bg: #99cfed;
+      --mms-primary-dark: #006aa6;
+      --mms-bg: #f0f2f5;
+      --mms-surface: #ffffff;
+      --mms-surface-2: #fafbfc;
+      --mms-surface-alt: #f5f7fa;
+      --mms-text: #111827;
+      --mms-text-muted: #595959;
+      --mms-border: #e8ebf0;
+      --mms-divider: #f2f3f5;
+      --mms-hover-bg: #f5f7fa;
+      --mms-selection-bg: rgba(var(--mms-primary-rgb), 0.22);
+      --mms-shadow-header: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --mms-shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06);
+      --mms-shadow-tab-active: 0 2px 6px rgba(15, 23, 42, 0.06);
+      --mms-shadow-context-menu: 0 12px 32px rgba(15, 23, 42, 0.18);
+      --mms-shadow-hover: 0 1px 3px rgba(15, 23, 42, 0.08);
+      --mms-scrollbar-thumb: #bfbfbf;
+      --mms-scrollbar-thumb-hover: #8c8c8c;
+      --mms-scrollbar-thumb-tabs: #d9d9d9;
+      --el-color-success: #67c23a;
+      --el-color-warning: #e6a23c;
+      --el-color-danger: #f56c6c;
+      --el-color-info: #909399;
+      --header-h: 64px;
+      --tabs-h: 42px;
+      --sider-w: 240px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
+    body { background: var(--mms-bg); color: var(--mms-text); overflow: hidden; }
+    button, input, textarea, select { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    /* —— 布局：对齐 Layout.vue —— */
+    .app-layout {
+      width: 100%; height: 100vh;
+      display: flex; flex-direction: row;
+      background: var(--mms-bg); overflow: hidden;
+    }
+    .app-sider {
+      width: var(--sider-w); flex-shrink: 0;
+      background: linear-gradient(180deg, #001529 0%, #002140 100%);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex; flex-direction: column;
+      overflow: auto hidden;
+    }
+    .menu { padding: 16px 8px; display: flex; flex-direction: column; gap: 4px; }
+    .menu-folder, .menu-item, .submenu-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 6px;
+      color: rgba(255, 255, 255, 0.85);
+      user-select: none; transition: background .2s, color .2s;
+    }
+    .menu-folder { cursor: pointer; }
+    .menu-folder:hover, .menu-item:hover { background: rgba(255,255,255,.08); color: #fff; }
+    .menu-folder.active { background: var(--mms-primary-soft-bg); }
+    .menu-folder.active .menu-folder-content { color: var(--mms-primary-color); }
+    .menu-folder-content { display: flex; align-items: center; gap: 10px; width: 100%; color: inherit; }
+    .menu-arrow { margin-left: auto; opacity: .6; transition: transform .2s; width: 14px; height: 14px; }
+    .menu-folder.expanded .menu-arrow { transform: rotate(90deg); }
+    .menu-icon { width: 16px; height: 16px; flex-shrink: 0; }
+    .menu-label { font-size: 14px; flex: 1; }
+    .submenu { display: flex; flex-direction: column; padding-left: 20px; margin-top: 4px; gap: 2px; }
+    .submenu-item {
+      padding: 8px 12px; font-size: 13px;
+      color: rgba(255,255,255,.65); cursor: pointer;
+    }
+    .submenu-item:hover { background: rgba(255,255,255,.06); color: rgba(255,255,255,.85); }
+    .submenu-item.active {
+      background: var(--mms-primary-soft-bg);
+      color: var(--mms-primary-color); font-weight: 500;
+    }
+
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
+    .app-header {
+      height: var(--header-h); padding: 0 24px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      background: linear-gradient(180deg, var(--mms-surface) 0%, var(--mms-surface-2) 100%);
+      border-bottom: 1px solid var(--mms-border);
+      box-shadow: var(--mms-shadow-header); z-index: 100;
+    }
+    .header-left { display: flex; align-items: center; }
+    .sidebar-toggle {
+      width: 25px; height: 25px; margin-right: 20px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 10px; color: var(--mms-text-muted); cursor: pointer;
+    }
+    .sidebar-toggle:hover { background: var(--mms-hover-bg); }
+    .logo-area { display: flex; align-items: center; gap: 12px; }
+    .logo-mark {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--mms-primary-color), var(--mms-primary-dark));
+      display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 12px;
+    }
+    .logo-text .name {
+      font-size: 18px; font-weight: 600;
+      background: linear-gradient(135deg, var(--mms-primary-color) 0%, var(--mms-primary-dark) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .header-right { display: flex; align-items: center; gap: 8px; }
+    .bell-wrap { position: relative; }
+    .icon-btn {
+      width: 36px; height: 36px; border: 0; border-radius: 10px;
+      background: transparent; color: var(--mms-text-muted);
+      display: grid; place-items: center; transition: background .2s, color .2s;
+    }
+    .icon-btn:hover { background: var(--mms-hover-bg); color: var(--mms-primary-color); }
+    .badge {
+      position: absolute; top: 2px; right: 2px;
+      min-width: 18px; height: 18px; padding: 0 5px;
+      border-radius: 999px; background: var(--el-color-danger);
+      color: #fff; font-size: 11px; line-height: 18px; text-align: center;
+      border: 2px solid var(--mms-surface);
+    }
+    .user-info {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 10px; border-radius: 999px; cursor: pointer;
+      transition: background .2s, box-shadow .2s;
+    }
+    .user-info:hover { background: var(--mms-hover-bg); box-shadow: var(--mms-shadow-hover); }
+    .user-avatar {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--mms-primary-color), var(--mms-primary-dark));
+      display: grid; place-items: center; color: #fff; font-size: 13px; font-weight: 600;
+      box-shadow: 0 2px 4px rgba(0,0,0,.2);
+    }
+    .username { font-size: 14px; font-weight: 500; }
+
+    .content { flex: 1; display: flex; flex-direction: column; overflow: hidden; background: var(--mms-surface); }
+    .layout-tabs {
+      background: var(--mms-surface); border-bottom: 1px solid var(--mms-border);
+      padding: 0 16px; height: var(--tabs-h); flex-shrink: 0;
+      display: flex; align-items: center;
+      box-shadow: 0 1px 4px rgba(0,0,0,.04);
+    }
+    .tabs-container { display: flex; align-items: center; gap: 2px; height: 100%; }
+    .tab-item {
+      display: flex; align-items: center; gap: 6px;
+      padding: 8px 16px; border-radius: 6px;
+      background: var(--mms-surface-alt); color: var(--mms-text-muted);
+      font-size: 13px; cursor: pointer; border: 1px solid transparent;
+      transition: all .2s; white-space: nowrap;
+    }
+    .tab-item.active {
+      background: var(--mms-surface); color: var(--mms-primary-color);
+      font-weight: 500; border-color: var(--mms-border);
+      box-shadow: var(--mms-shadow-tab-active);
+    }
+    .tab-close {
+      width: 16px; height: 16px; border-radius: 3px;
+      display: grid; place-items: center; color: var(--mms-text-muted);
+    }
+    .tab-close:hover { background: var(--mms-primary-light); color: var(--mms-primary-color); }
+    .content-inner {
+      flex: 1; padding: 16px 24px 24px; overflow: hidden;
+      background: var(--mms-bg);
+      display: flex; flex-direction: column; min-height: 0;
+    }
+    .content-inner::-webkit-scrollbar { width: 8px; }
+    .content-inner::-webkit-scrollbar-thumb {
+      background: var(--mms-scrollbar-thumb); border-radius: 4px;
+    }
+
+    /* —— Element Plus 风格控件 —— */
+    .el-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      height: 32px; padding: 0 15px; border-radius: 4px;
+      border: 1px solid var(--mms-border); background: #fff;
+      color: var(--mms-text); font-size: 14px; line-height: 1;
+      transition: .15s; white-space: nowrap;
+    }
+    .el-btn:hover { color: var(--mms-primary-color); border-color: var(--mms-primary-light); background: #ecf5ff; }
+    .el-btn:disabled { opacity: .5; cursor: not-allowed; }
+    .el-btn--primary {
+      background: var(--mms-primary-color); border-color: var(--mms-primary-color); color: #fff;
+    }
+    .el-btn--primary:hover { background: var(--mms-primary-dark); border-color: var(--mms-primary-dark); color: #fff; }
+    .el-btn--danger { background: var(--el-color-danger); border-color: var(--el-color-danger); color: #fff; }
+    .el-btn--danger:hover { filter: brightness(.95); color: #fff; }
+    .el-btn--danger.is-plain {
+      background: #fef0f0; border-color: #fbc4c4; color: var(--el-color-danger);
+    }
+    .el-btn--danger.is-plain:hover { background: var(--el-color-danger); color: #fff; border-color: var(--el-color-danger); }
+    .el-btn--info {
+      background: #909399; border-color: #909399; color: #fff;
+    }
+    .el-btn--info:hover { filter: brightness(1.05); color: #fff; }
+    .el-btn.is-text { border-color: transparent; background: transparent; color: var(--mms-primary-color); padding: 0 8px; }
+    .el-btn.is-text:hover { background: var(--mms-primary-light); }
+    .el-btn.is-link { border: 0; background: transparent; color: var(--mms-primary-color); height: auto; padding: 0; }
+    .el-btn--small { height: 28px; padding: 0 11px; font-size: 12px; }
+
+    .el-input, .el-select, .el-textarea {
+      width: 100%; height: 32px; padding: 0 11px;
+      border: 1px solid #dcdfe6; border-radius: 4px; background: #fff;
+      outline: none; transition: border-color .15s;
+    }
+    .el-input:focus, .el-select:focus, .el-textarea:focus {
+      border-color: var(--mms-primary-color);
+    }
+    .el-textarea { height: auto; padding: 8px 11px; resize: vertical; min-height: 80px; line-height: 1.6; }
+    .el-input::placeholder, .el-textarea::placeholder { color: #a8abb2; }
+    .rte {
+      min-height: 140px; padding: 10px 12px; border: 1px solid #dcdfe6; border-radius: 4px;
+      background: #fff; line-height: 1.7; font-size: 14px; outline: none;
+    }
+    .rte:focus { border-color: var(--mms-primary-color); }
+    .rte-toolbar {
+      display: flex; gap: 4px; margin-bottom: 6px;
+    }
+    .rte-toolbar button {
+      height: 28px; min-width: 28px; padding: 0 8px;
+      border: 1px solid #dcdfe6; border-radius: 4px; background: #fff; font-size: 13px;
+    }
+    .rte-toolbar button:hover { color: var(--mms-primary-color); border-color: var(--mms-primary-light); }
+    .detail-content.rich { white-space: normal; }
+    .detail-content.rich ul { margin: 8px 0; padding-left: 20px; }
+
+    .el-tag {
+      display: inline-flex; align-items: center;
+      height: 24px; padding: 0 8px; border-radius: 4px;
+      font-size: 12px; border: 1px solid transparent;
+    }
+    .el-tag--primary { background: #ecf5ff; border-color: #d9ecff; color: var(--mms-primary-color); }
+    .el-tag--warning { background: #fdf6ec; border-color: #faecd8; color: var(--el-color-warning); }
+    .el-tag--info { background: #f4f4f5; border-color: #e9e9eb; color: var(--el-color-info); }
+    .el-tag--success { background: #f0f9eb; border-color: #e1f3d8; color: var(--el-color-success); }
+    .el-tag--danger { background: #fef0f0; border-color: #fde2e2; color: var(--el-color-danger); }
+
+    /* 列表内迷你搜索条（圆角胶囊） */
+    .mini-search {
+      display: flex; align-items: center; gap: 8px;
+      height: 32px; padding: 0 12px 0 10px;
+      border: 1px solid var(--mms-border); border-radius: 999px;
+      background: var(--mms-surface-alt);
+      transition: border-color .15s, background .15s;
+      width: 100%;
+    }
+    .mini-search:focus-within {
+      border-color: var(--mms-primary-color);
+      background: #fff;
+    }
+    .mini-search svg { flex-shrink: 0; color: var(--mms-text-muted); }
+    .mini-search input {
+      flex: 1; border: 0; outline: none; background: transparent;
+      font-size: 13px; color: var(--mms-text); min-width: 0; height: 100%; padding: 0;
+    }
+    .mini-search input::placeholder { color: #a8abb2; }
+    .toolbar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 0; margin-bottom: 8px;
+    }
+    .toolbar .spacer { flex: 1; }
+
+    /* 收件箱面板 */
+    .inbox-panel {
+      background: var(--mms-surface); border-radius: 8px;
+      box-shadow: var(--mms-shadow-card);
+      display: grid; grid-template-columns: 360px 1fr;
+      flex: 1; min-height: 0; height: 100%; overflow: hidden;
+      border: 1px solid var(--mms-border);
+    }
+    .inbox-tabs {
+      display: flex; gap: 0; border-bottom: 1px solid var(--mms-border);
+      padding: 0 8px; background: var(--mms-surface-2);
+    }
+    .inbox-tab {
+      position: relative; border: 0; background: transparent;
+      padding: 12px 16px; color: var(--mms-text-muted); font-size: 14px;
+      cursor: pointer;
+    }
+    .inbox-tab:hover { color: var(--mms-primary-color); }
+    .inbox-tab.active {
+      color: var(--mms-primary-color); font-weight: 600;
+    }
+    .inbox-tab.active::after {
+      content: ""; position: absolute; left: 12px; right: 12px; bottom: 0;
+      height: 2px; background: var(--mms-primary-color); border-radius: 1px;
+    }
+    .inbox-tab .count {
+      display: inline-block; min-width: 16px; height: 16px; padding: 0 5px;
+      margin-left: 4px; border-radius: 8px; font-size: 11px; line-height: 16px;
+      background: #f0f2f5; color: var(--mms-text-muted); font-weight: 500;
+    }
+    .inbox-tab.active .count { background: var(--mms-primary-light); color: var(--mms-primary-dark); }
+    .inbox-tab .count.hot { background: #fef0f0; color: var(--el-color-danger); }
+
+    .list-col {
+      display: flex; flex-direction: column; border-right: 1px solid var(--mms-border);
+      min-height: 0; min-width: 0; overflow: hidden;
+    }
+    .list-head {
+      padding: 10px 12px; border-bottom: 1px solid var(--mms-border);
+      display: flex; flex-direction: column; gap: 8px; align-items: stretch;
+    }
+    .list-head-row {
+      display: flex; align-items: center; gap: 8px; min-width: 0;
+    }
+    .list-head-row .mini-search { flex: 1; min-width: 0; }
+    .list-head-actions {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .list-head-actions .el-btn { flex: 1; min-width: 0; justify-content: center; }
+    .list-body { flex: 1; overflow: auto; min-height: 0; }
+    .msg-item {
+      display: flex; gap: 12px; align-items: flex-start;
+      padding: 14px 16px; border-bottom: 1px solid var(--mms-divider);
+      cursor: pointer; transition: background .15s; position: relative;
+    }
+    .msg-item:hover { background: var(--mms-hover-bg); }
+    .msg-item.active { background: rgba(var(--mms-primary-rgb), 0.08); }
+    .msg-item.unread .msg-title { font-weight: 600; color: var(--mms-text); }
+    .msg-avatar {
+      width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+      display: grid; place-items: center; color: #fff; font-size: 13px; font-weight: 600;
+      background: linear-gradient(135deg, var(--mms-primary-color), var(--mms-primary-dark));
+    }
+    .msg-avatar.sys {
+      background: linear-gradient(135deg, #e6a23c, #cf8a1b);
+      font-size: 12px;
+    }
+    .msg-main { flex: 1; min-width: 0; }
+    .msg-row {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 4px; min-width: 0;
+    }
+    .msg-title { font-size: 14px; display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1; }
+    .msg-title .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .mark-icon {
+      width: 14px; height: 14px; flex-shrink: 0; color: var(--mms-primary-color);
+    }
+    .mark-icon.star { color: #e6a23c; }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--mms-primary-color); flex-shrink: 0;
+    }
+    .msg-meta, .msg-preview { font-size: 12px; color: var(--mms-text-muted); }
+    .msg-preview {
+      margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      padding-right: 28px;
+    }
+    .msg-more {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      width: 28px; height: 28px; border: 0; border-radius: 4px;
+      background: transparent; color: var(--mms-text-muted);
+      display: none; align-items: center; justify-content: center; padding: 0; z-index: 2;
+    }
+    .msg-item:hover .msg-more, .msg-more.open { display: inline-flex; background: var(--mms-surface); }
+    .msg-more:hover { color: var(--mms-text); background: var(--mms-hover-bg); }
+    .msg-star {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      width: 28px; height: 28px; border: 0; border-radius: 4px;
+      background: transparent; color: #c0c4cc;
+      display: inline-flex; align-items: center; justify-content: center; padding: 0; z-index: 2;
+      cursor: pointer;
+    }
+    .msg-star:hover { color: #e6a23c; background: rgba(230,162,60,.08); }
+    .msg-star.on { color: #e6a23c; }
+    .msg-star svg { width: 16px; height: 16px; display: block; }
+
+    .filter-chip {
+      height: 28px; padding: 0 12px; border-radius: 14px;
+      border: 1px solid #dcdfe6; background: #fff; color: var(--mms-text-muted);
+      font-size: 12px; cursor: pointer; flex-shrink: 0;
+    }
+    .filter-chip:hover { color: var(--mms-primary-color); border-color: var(--mms-primary-light); }
+    .filter-chip.active {
+      color: var(--mms-primary-color); border-color: var(--mms-primary-color);
+      background: #ecf5ff; font-weight: 500;
+    }
+
+    .btn-round {
+      width: 32px; height: 32px; border-radius: 50%; padding: 0;
+      display: inline-grid; place-items: center; flex-shrink: 0;
+    }
+    .item-menu {
+      position: fixed; z-index: 2500; min-width: 140px;
+      background: var(--mms-surface); border: 1px solid var(--mms-border);
+      border-radius: 6px; box-shadow: var(--mms-shadow-context-menu);
+      padding: 4px 0; display: none;
+    }
+    .item-menu.show { display: block; }
+    .item-menu .mi {
+      display: block; width: 100%; text-align: left; border: 0; background: transparent;
+      padding: 8px 14px; font-size: 13px; color: var(--mms-text); cursor: pointer;
+    }
+    .item-menu .mi:hover { background: var(--mms-hover-bg); }
+    .item-menu .mi.danger { color: var(--el-color-danger); }
+    .detail-sender {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+    }
+    .detail-sender .msg-avatar { width: 40px; height: 40px; font-size: 14px; }
+    .detail-sender .name {
+      font-size: 16px; font-weight: 600; color: var(--mms-text);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+    }
+    .time-sep {
+      display: flex; justify-content: center; align-items: center;
+      margin: 10px 0 14px; user-select: none;
+    }
+    .time-sep span {
+      font-size: 12px; color: #a8abb2; line-height: 1;
+      padding: 3px 8px; border-radius: 4px; background: rgba(0,0,0,.04);
+    }
+    .thread-row { display: flex; gap: 8px; align-items: flex-end; }
+    .thread-row.me { flex-direction: row-reverse; }
+    .thread-row .msg-avatar { width: 40px; height: 40px; font-size: 14px; }
+    .list-foot {
+      padding: 10px 12px; border-top: 1px solid var(--mms-border);
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 13px; color: var(--mms-text-muted);
+    }
+    .pager { display: flex; gap: 4px; align-items: center; }
+    .pager button {
+      min-width: 28px; height: 28px; padding: 0 6px;
+      border: 1px solid var(--mms-border); border-radius: 4px;
+      background: #fff; color: var(--mms-text);
+    }
+    .pager button.active, .pager button:hover:not(:disabled) {
+      color: var(--mms-primary-color); border-color: var(--mms-primary-color);
+    }
+    .pager button:disabled { opacity: .4; cursor: not-allowed; }
+
+    .detail-col { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+    .detail-head {
+      padding: 12px 20px; border-bottom: 1px solid var(--mms-border);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .detail-head .actions { margin-left: auto; display: flex; gap: 8px; }
+    .detail-body { flex: 1; padding: 20px 24px; overflow: auto; }
+    .detail-title { font-size: 18px; font-weight: 600; margin: 0 0 8px; }
+    .detail-meta { font-size: 13px; color: var(--mms-text-muted); margin-bottom: 16px; }
+    .detail-content {
+      font-size: 14px; line-height: 1.75; white-space: pre-wrap;
+      padding: 16px; background: var(--mms-surface-alt); border-radius: 6px;
+      border: 1px solid var(--mms-border); margin-bottom: 16px;
+    }
+    .thread { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+    .bubble {
+      max-width: 78%; padding: 10px 14px; border-radius: 8px;
+      background: var(--mms-surface-alt); border: 1px solid var(--mms-border);
+      font-size: 14px; line-height: 1.6;
+    }
+    .bubble.me {
+      margin-left: auto;
+      background: rgba(var(--mms-primary-rgb), 0.08);
+      border-color: var(--mms-primary-light);
+    }
+    .reply-box {
+      border-top: 1px solid var(--mms-border); padding: 12px 20px;
+      display: flex; gap: 8px; align-items: flex-end; background: var(--mms-surface-2);
+    }
+    .reply-box textarea { flex: 1; min-height: 64px; }
+    .empty {
+      padding: 64px 20px; text-align: center; color: var(--mms-text-muted); font-size: 14px;
+    }
+    .empty-icon { font-size: 40px; margin-bottom: 8px; opacity: .35; }
+
+    /* 铃铛下拉 */
+    .dropdown {
+      position: absolute; right: 0; top: 44px; width: 380px;
+      background: var(--mms-surface); border: 1px solid var(--mms-border);
+      border-radius: 8px; box-shadow: var(--mms-shadow-context-menu);
+      z-index: 200; display: none; overflow: hidden;
+    }
+    .dropdown.show { display: block; }
+    .dropdown .hd {
+      padding: 12px 16px; border-bottom: 1px solid var(--mms-border);
+      display: flex; justify-content: space-between; align-items: center;
+      font-weight: 600; font-size: 14px;
+    }
+    .dropdown .item {
+      padding: 12px 16px; border-bottom: 1px solid var(--mms-divider); cursor: pointer;
+    }
+    .dropdown .item:hover { background: var(--mms-hover-bg); }
+    .dropdown .item.unread .t { font-weight: 600; }
+    .dropdown .ft {
+      padding: 10px; text-align: center; background: var(--mms-surface-2);
+    }
+
+    /* 弹窗 —— 对齐 BaseDialog / el-dialog */
+    .mask {
+      position: fixed; inset: 0; background: rgba(0,0,0,.45);
+      z-index: 1000; display: none; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .mask.show { display: flex; }
+    .dialog {
+      width: 480px; max-width: 100%; max-height: calc(100vh - 48px);
+      background: var(--mms-surface); border-radius: 4px;
+      box-shadow: 0 12px 32px rgba(0,0,0,.18);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .dialog.wide { width: 640px; }
+    .dialog-hd {
+      padding: 16px 20px; border-bottom: 1px solid var(--mms-border);
+      display: flex; align-items: center; justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .dialog-hd .dialog-title {
+      font-size: 18px; font-weight: 600; color: var(--mms-text); line-height: 24px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .dialog-hd .dialog-sub {
+      margin-top: 4px; font-size: 12px; font-weight: 400; color: var(--mms-text-muted);
+    }
+    .dialog-bd { padding: 16px 20px 8px; overflow: auto; flex: 1; min-height: 0; }
+    .dialog-ft {
+      padding: 12px 20px 16px; display: flex; justify-content: flex-end; gap: 12px;
+      flex-shrink: 0;
+    }
+    .dialog-close {
+      border: 0; background: transparent; color: var(--mms-text-muted);
+      width: 32px; height: 32px; border-radius: 4px; font-size: 18px;
+      display: grid; place-items: center; margin: -4px -8px -4px 0;
+    }
+    .dialog-close:hover { background: var(--mms-hover-bg); color: var(--mms-text); }
+
+    /* 表单行 —— 对齐 UserPage dialog-form / label-width 90px */
+    .dialog-form { padding-top: 4px; }
+    .form-item {
+      display: flex; align-items: flex-start; margin-bottom: 18px; gap: 0;
+    }
+    .form-item > .form-label {
+      width: 90px; flex-shrink: 0; padding-top: 6px;
+      font-size: 14px; color: var(--mms-text); text-align: right; padding-right: 12px;
+      line-height: 20px;
+    }
+    .form-item > .form-label .req { color: var(--el-color-danger); margin-right: 2px; }
+    .form-item > .form-content { flex: 1; min-width: 0; }
+    .form-item .form-tip {
+      margin-top: 6px; font-size: 12px; color: var(--mms-text-muted); line-height: 1.5;
+    }
+
+    /* 单选 —— 对齐 el-radio-group */
+    .radio-group { display: flex; flex-wrap: wrap; gap: 16px; padding-top: 6px; }
+    .radio {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 14px; color: var(--mms-text); cursor: pointer; user-select: none;
+    }
+    .radio input { display: none; }
+    .radio .radio-dot {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 1px solid #dcdfe6; background: #fff;
+      display: grid; place-items: center; transition: .15s; flex-shrink: 0;
+    }
+    .radio .radio-dot::after {
+      content: ""; width: 4px; height: 4px; border-radius: 50%;
+      background: transparent; transition: .15s;
+    }
+    .radio input:checked + .radio-dot {
+      border-color: var(--mms-primary-color); background: var(--mms-primary-color);
+    }
+    .radio input:checked + .radio-dot::after { background: #fff; }
+    .radio:hover .radio-dot { border-color: var(--mms-primary-color); }
+
+    /* 找人 / 选人列表 */
+    .contact-search {
+      display: flex; align-items: center; gap: 8px;
+      height: 36px; padding: 0 12px; margin-bottom: 12px;
+      border: 1px solid #dcdfe6; border-radius: 4px; background: #fff;
+      transition: border-color .15s;
+    }
+    .contact-search:focus-within { border-color: var(--mms-primary-color); }
+    .contact-search svg { flex-shrink: 0; color: #a8abb2; }
+    .contact-search input {
+      flex: 1; border: 0; outline: none; background: transparent;
+      font-size: 14px; color: var(--mms-text); min-width: 0; height: 100%;
+    }
+    .contact-search input::placeholder { color: #a8abb2; }
+    .contact-list {
+      border: 1px solid var(--mms-border); border-radius: 4px;
+      max-height: 360px; overflow: auto; background: #fff;
+    }
+    .contact-list.compact { max-height: 200px; }
+    .contact-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 14px; cursor: pointer; border-bottom: 1px solid var(--mms-divider);
+      transition: background .12s;
+    }
+    .contact-item:last-child { border-bottom: 0; }
+    .contact-item:hover { background: var(--mms-hover-bg); }
+    .contact-item.selected { background: rgba(var(--mms-primary-rgb), 0.08); }
+    .contact-item .msg-avatar { width: 36px; height: 36px; font-size: 13px; }
+    .contact-item .ci-main { flex: 1; min-width: 0; }
+    .contact-item .ci-name {
+      font-size: 14px; color: var(--mms-text); font-weight: 500;
+      display: flex; align-items: center; gap: 8px; min-width: 0;
+    }
+    .contact-item .ci-name .n {
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .contact-item .ci-meta {
+      margin-top: 2px; font-size: 12px; color: var(--mms-text-muted);
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .contact-item .ci-check {
+      width: 16px; height: 16px; border-radius: 2px; border: 1px solid #dcdfe6;
+      flex-shrink: 0; display: grid; place-items: center; background: #fff;
+    }
+    .contact-item.selected .ci-check {
+      border-color: var(--mms-primary-color); background: var(--mms-primary-color); color: #fff;
+      font-size: 11px; line-height: 1;
+    }
+    .contact-empty {
+      padding: 40px 16px; text-align: center; color: var(--mms-text-muted); font-size: 14px;
+    }
+    .chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: #ecf5ff; color: var(--mms-primary-color);
+      border: 1px solid #d9ecff; border-radius: 4px;
+      padding: 2px 8px; font-size: 12px; margin: 0 6px 6px 0;
+      height: 24px;
+    }
+    .chip button {
+      border: 0; background: transparent; color: inherit; padding: 0; line-height: 1;
+      font-size: 14px; cursor: pointer;
+    }
+    .chips {
+      min-height: 28px; margin-bottom: 8px;
+      display: flex; flex-wrap: wrap; align-items: center;
+    }
+    .chips .chips-placeholder { font-size: 13px; color: #a8abb2; }
+
+    /* 富文本框 —— 贴近 Quill 外观 */
+    .rte-wrap {
+      border: 1px solid #dcdfe6; border-radius: 4px; overflow: hidden; background: #fff;
+    }
+    .rte-wrap:focus-within { border-color: var(--mms-primary-color); }
+    .rte-wrap .rte-toolbar {
+      display: flex; gap: 4px; padding: 6px 8px;
+      border-bottom: 1px solid var(--mms-border); background: var(--mms-surface-2);
+      margin-bottom: 0;
+    }
+    .rte-wrap .rte {
+      min-height: 140px; border: 0; border-radius: 0; padding: 12px;
+    }
+    .rte-wrap .rte:focus { outline: none; }
+
+    /* Toast */
+    .toast-wrap {
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+      z-index: 3000; display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+    }
+    .toast {
+      min-width: 280px; padding: 12px 16px; border-radius: 4px;
+      background: #fff; border: 1px solid var(--mms-border);
+      box-shadow: var(--mms-shadow-context-menu);
+      display: flex; align-items: center; gap: 8px; font-size: 14px;
+      animation: toast-in .2s ease;
+    }
+    .toast.success { border-color: #e1f3d8; }
+    .toast.warning { border-color: #faecd8; }
+    .toast.error { border-color: #fde2e2; }
+    .toast .mark {
+      width: 18px; height: 18px; border-radius: 50%;
+      display: grid; place-items: center; color: #fff; font-size: 11px; flex-shrink: 0;
+    }
+    .toast.success .mark { background: var(--el-color-success); }
+    .toast.warning .mark { background: var(--el-color-warning); }
+    .toast.error .mark { background: var(--el-color-danger); }
+    .toast.info .mark { background: var(--mms-primary-color); }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: none; } }
+
+    /* 首页占位卡 */
+    .card {
+      background: var(--mms-surface); border-radius: 8px;
+      box-shadow: var(--mms-shadow-card); padding: 16px 20px;
+    }
+
+    .screen { display: none; flex: 1; min-height: 0; flex-direction: column; }
+    .screen.show { display: flex; }
+
+    .app-sider.collapsed { width: 72px; }
+    .app-sider.collapsed .menu-label,
+    .app-sider.collapsed .submenu-label,
+    .app-sider.collapsed .menu-arrow { display: none; }
+    .app-sider.collapsed .menu-folder-content,
+    .app-sider.collapsed .submenu-item,
+    .app-sider.collapsed .menu-item { justify-content: center; }
+
+    @media (max-width: 1100px) {
+      .inbox-panel { grid-template-columns: 1fr; }
+      .list-col { border-right: 0; border-bottom: 1px solid var(--mms-border); max-height: 360px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="app-sider" id="sider">
+      <nav class="menu">
+        <!-- 消息原型：侧栏只保留首页 / 消息中心 / 作业调度；用户管理不在本原型演示 -->
+        <div class="menu-item" data-nav="home" onclick="navTo('home')">
+          <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span class="menu-label">首页</span>
+        </div>
+        <div class="menu-item active" data-nav="center" onclick="navTo('center')">
+          <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="menu-label">消息中心</span>
+        </div>
+        <div class="menu-item" data-nav="job" onclick="toast('info','原型：跳转作业调度')">
+          <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span class="menu-label">作业调度</span>
+        </div>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <header class="app-header">
+        <div class="header-left">
+          <div class="sidebar-toggle" onclick="toggleSider()" title="折叠侧栏">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h10M4 18h16"/></svg>
+          </div>
+          <div class="logo-area">
+            <div class="logo-mark">M</div>
+            <div class="logo-text"><div class="name">My Management System</div></div>
+          </div>
+        </div>
+        <div class="header-right">
+          <div class="bell-wrap">
+            <button class="icon-btn" id="bellBtn" title="消息" aria-label="消息">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+              </svg>
+            </button>
+            <span class="badge" id="bellBadge">0</span>
+            <div class="dropdown" id="bellDropdown">
+              <div class="hd">
+                <span>消息通知</span>
+                <button class="el-btn is-text el-btn--small" onclick="markAllRead()">全部已读</button>
+              </div>
+              <div id="bellList"></div>
+              <div class="ft">
+                <button class="el-btn--primary el-btn" style="width:100%" onclick="navTo('center'); closeBell();">查看全部</button>
+              </div>
+            </div>
+          </div>
+          <div class="user-info" title="当前登录：小满 @xiaoman · 普通用户">
+            <div class="user-avatar">满</div>
+            <span class="username">小满</span>
+            <span class="el-tag el-tag--info" style="margin-left:2px">普通用户</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+          </div>
+        </div>
+      </header>
+
+      <main class="content">
+        <div class="layout-tabs">
+          <div class="tabs-container" id="layoutTabs"></div>
+        </div>
+        <div class="content-inner">
+          <!-- 消息中心 -->
+          <section class="screen show" id="screen-center">
+            <div class="inbox-panel">
+              <div class="list-col">
+                <div class="inbox-tabs" id="inboxTabs">
+                  <button class="inbox-tab active" data-tab="sys">系统<span class="count" id="c-sys">0</span></button>
+                  <button class="inbox-tab" data-tab="priv">私信<span class="count" id="c-priv">0</span></button>
+                </div>
+                <div class="list-head">
+                  <div class="list-head-row">
+                    <div class="mini-search">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
+                      <input id="kwFilter" placeholder="搜索…" oninput="onFilterChange()" />
+                    </div>
+                    <button class="el-btn el-btn--primary el-btn--small btn-round" id="btnFindPeer" onclick="openFindPeer()" title="找人" style="display:none">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 5v14M5 12h14"/></svg>
+                    </button>
+                  </div>
+                  <div class="list-head-row list-head-actions">
+                    <button class="el-btn el-btn--small" onclick="markAllRead()">全部已读</button>
+                    <button class="filter-chip" id="btnStarFilter" onclick="toggleStarFilter()" style="display:none" title="仅看已收藏的系统通知">收藏</button>
+                    <button class="el-btn el-btn--small" id="btnSimPeer" onclick="demoPeerIncoming()" style="display:none" title="原型演示：模拟对方发来私信">模拟来信</button>
+                  </div>
+                </div>
+                <div class="list-body" id="msgList"></div>
+                <div class="list-foot">
+                  <span id="pageInfo">共 0 条</span>
+                  <div class="pager" id="pager"></div>
+                </div>
+              </div>
+              <div class="detail-col" id="msgDetail">
+                <div class="empty"><div class="empty-icon">📭</div>从左侧选择一条消息或会话</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="screen" id="screen-home">
+            <div class="card">
+              <h3 style="margin-top:0">首页</h3>
+              <p style="color:var(--mms-text-muted);font-size:14px">对应真实 MMS 的 <code>/home</code> 首页占位。消息请走顶栏铃铛，或侧栏独立菜单「消息中心」。</p>
+              <button class="el-btn el-btn--primary" onclick="navTo('center')">进入消息中心</button>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+  </div>
+
+
+  <!-- 列表三点菜单 -->
+  <div class="item-menu" id="itemMenu"></div>
+
+  <!-- 找人：对齐 BaseDialog 选人交互 -->
+  <div class="mask" id="maskCompose">
+    <div class="dialog">
+      <div class="dialog-hd">
+        <div class="dialog-title">找人</div>
+        <button class="dialog-close" onclick="closeCompose()" aria-label="关闭">×</button>
+      </div>
+      <div class="dialog-bd">
+        <div class="contact-search">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
+          <input id="composeSearch" placeholder="搜索姓名 / 用户名 / 部门" oninput="renderComposePicker()" />
+        </div>
+        <div class="contact-list" id="composePicker"></div>
+      </div>
+      <div class="dialog-ft">
+        <button class="el-btn" onclick="closeCompose()">取 消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 删除确认 -->
+  <div class="mask" id="maskConfirm">
+    <div class="dialog" style="width:420px">
+      <div class="dialog-hd">
+        <span>提示</span>
+        <button class="dialog-close" onclick="closeConfirm(false)">×</button>
+      </div>
+      <div class="dialog-bd">
+        <p id="confirmText" style="margin:8px 0 16px;font-size:14px;line-height:1.6"></p>
+      </div>
+      <div class="dialog-ft">
+        <button class="el-btn" onclick="closeConfirm(false)">取消</button>
+        <button class="el-btn el-btn--primary" onclick="closeConfirm(true)">确定</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-wrap" id="toastWrap"></div>
+
+  <script>
+    /** 当前登录：普通用户小满（无 MESSAGE_ANNOUNCE） */
+    const ME = { id: 2, name: '小满', username: 'xiaoman', dept: '产品中心' };
+
+    const users = [
+      { id: 1, name: '李鸿羽', username: 'lhy', dept: '技术中心', status: 1 },
+      { id: 2, name: '小满', username: 'xiaoman', dept: '产品中心', status: 1 },
+      { id: 3, name: '阿柚', username: 'ayou', dept: '运营部', status: 1 },
+      { id: 4, name: '运维值班', username: 'ops', dept: '技术中心', status: 1 },
+      { id: 5, name: '陈静', username: 'chenjing', dept: '人事行政', status: 1 },
+      { id: 6, name: '周凯', username: 'zhoukai', dept: '技术中心', status: 0 },
+    ];
+
+    /** 小满视角收件箱：能收系统通知与私信，不能发公告 */
+    let messages = [
+      {
+        id: 201, type: 'sys', unread: true, rich: true,
+        title: '关于周五系统维护',
+        from: '系统 · 管理员公告', fromId: 0,
+        time: '2026-08-02T18:20:00', timeLabel: '昨天 18:20',
+        preview: '本周五 22:00–23:00 进行升级…',
+        content: '本周五 <strong>22:00–23:00</strong> 进行系统升级，期间作业调度将暂停，请提前安排相关任务。',
+        thread: null,
+      },
+      {
+        id: 202, type: 'sys', unread: true,
+        title: '账号安全提醒',
+        from: '系统', fromId: 0,
+        time: '2026-08-02T21:05:00', timeLabel: '昨天 21:05',
+        preview: '检测到异地登录尝试，已拦截。',
+        content: '检测到来自未知设备的登录尝试，系统已自动拦截。\n若非本人操作，请尽快修改密码。',
+        thread: null,
+      },
+      {
+        id: 203, type: 'priv', unread: true,
+        title: '李鸿羽', peerName: '李鸿羽',
+        from: '李鸿羽', fromId: 1, peerId: 1,
+        time: '2026-08-03T10:05:00', timeLabel: '今天 10:05',
+        preview: '看板总资产含基金壳余额，截图补在文档里了。',
+        content: '看板总资产含基金壳余额，截图补在文档里了。',
+        thread: [
+          { me: true, who: '我', text: '看板总资产是否含基金壳余额？我们文档要对齐一下。', when: '周一 11:08', at: '2026-08-01T11:08:00' },
+          { me: false, who: '李鸿羽', text: '含壳余额，看板说明里有一句，我补个截图链接给你。', when: '周一 11:20', at: '2026-08-01T11:20:00' },
+          { me: false, who: '李鸿羽', text: '看板总资产含基金壳余额，截图补在文档里了。', when: '今天 10:05', at: '2026-08-03T10:05:00' },
+        ],
+      },
+      {
+        id: 204, type: 'priv', unread: true,
+        title: '阿柚', peerName: '阿柚',
+        from: '阿柚', fromId: 3, peerId: 3,
+        time: '2026-08-03T09:40:00', timeLabel: '今天 09:40',
+        preview: '下午三点那个字段对齐，你方便吗？',
+        content: '下午三点那个字段对齐，你方便吗？',
+        thread: [
+          { me: false, who: '阿柚', text: '下午三点那个字段对齐，你方便吗？', when: '今天 09:40', at: '2026-08-03T09:40:00' },
+        ],
+      },
+      {
+        id: 205, type: 'sys', unread: false,
+        title: '作业执行成功',
+        from: '系统', fromId: 0,
+        time: '2026-08-01T03:05:00', timeLabel: '周一 03:05',
+        preview: 'DAILY_REPORT 已成功完成。',
+        content: '作业 DAILY_REPORT 于周一 03:00 触发，03:05 执行成功。',
+        thread: null,
+      },
+      {
+        id: 206, type: 'priv', unread: false,
+        title: '李鸿羽', peerName: '李鸿羽',
+        from: '李鸿羽', fromId: 1, peerId: 1,
+        time: '2026-07-29T14:10:00', timeLabel: '07-29 14:10',
+        preview: '收到，三点会议室见。',
+        content: '收到，三点会议室见。',
+        thread: [
+          { me: true, who: '我', text: '下午三点同步一下基金持仓字段。', when: '07-29 14:02', at: '2026-07-29T14:02:00' },
+          { me: false, who: '李鸿羽', text: '收到，三点会议室见。', when: '07-29 14:10', at: '2026-07-29T14:10:00' },
+        ],
+      },
+      {
+        id: 207, type: 'sys', unread: false,
+        title: '欢迎使用消息中心',
+        from: '系统', fromId: 0,
+        time: '2026-07-28T09:00:00', timeLabel: '07-28 09:00',
+        preview: '站内信已开通，系统通知与私信将显示在此。',
+        content: '站内信已开通。系统通知与一对一私信将显示在此；维护公告由管理员发布。',
+        thread: null,
+      },
+    ];
+
+    let currentTab = 'sys';
+    let starOnly = false;
+    let selectedId = null;
+    let pageNum = 1;
+    const pageSize = 6;
+    let composeUserId = null;
+    let confirmResolver = null;
+    let nextId = 300;
+
+    const layoutTabMeta = {
+      center: { title: '消息中心', path: '/message' },
+      home: { title: '首页', path: '/home' },
+    };
+    let openTabs = ['home', 'center'];
+    let activeLayoutTab = 'center';
+
+    /* —— Toast / Confirm —— */
+    function toast(type, text) {
+      const wrap = document.getElementById('toastWrap');
+      const el = document.createElement('div');
+      el.className = 'toast ' + type;
+      const icon = type === 'success' ? '✓' : type === 'error' ? '!' : type === 'warning' ? '!' : 'i';
+      el.innerHTML = `<span class="mark">${icon}</span><span>${escapeHtml(text)}</span>`;
+      wrap.appendChild(el);
+      setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; }, 2200);
+      setTimeout(() => el.remove(), 2600);
+    }
+
+    function confirmDialog(text) {
+      document.getElementById('confirmText').textContent = text;
+      document.getElementById('maskConfirm').classList.add('show');
+      return new Promise((resolve) => { confirmResolver = resolve; });
+    }
+    function closeConfirm(ok) {
+      document.getElementById('maskConfirm').classList.remove('show');
+      if (confirmResolver) confirmResolver(ok);
+      confirmResolver = null;
+    }
+
+    function escapeHtml(s) {
+      return String(s).replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    }
+
+    function avatarChar(name) {
+      const s = String(name || '').trim();
+      return s ? s.slice(0, 1) : '?';
+    }
+
+    function avatarHtml(mOrFrom, fromId, type) {
+      const isSys = type === 'sys' || fromId === 0 || mOrFrom === '系统' || String(mOrFrom || '').startsWith('系统');
+      if (isSys) return '<div class="msg-avatar sys">系</div>';
+      const name = typeof mOrFrom === 'object' ? (mOrFrom.from || '') : (mOrFrom || '');
+      const id = typeof mOrFrom === 'object' ? (mOrFrom.fromId || fromId || 0) : (fromId || 0);
+      const hue = (Number(id) * 47 + avatarChar(name).charCodeAt(0) * 13) % 360;
+      return `<div class="msg-avatar" style="background:hsl(${hue},52%,46%)">${escapeHtml(avatarChar(name))}</div>`;
+    }
+
+    function peerAvatarHtml(m, bubble) {
+      if (bubble.me) {
+        const meUser = users.find((u) => u.id === ME.id) || ME;
+        const hue = (ME.id * 47 + avatarChar(meUser.name).charCodeAt(0) * 13) % 360;
+        return `<div class="msg-avatar" style="background:hsl(${hue},52%,46%)">${escapeHtml(avatarChar(meUser.name))}</div>`;
+      }
+      return avatarHtml(m.from, m.fromId, m.type);
+    }
+
+    function displayTitle(m) {
+      if (m.type === 'priv') return m.peerName || m.from || '私信';
+      return m.title;
+    }
+
+    function nowLabel() {
+      const d = new Date();
+      const hh = String(d.getHours()).padStart(2, '0');
+      const mm = String(d.getMinutes()).padStart(2, '0');
+      return '今天 ' + hh + ':' + mm;
+    }
+    function nowIso() { return new Date().toISOString(); }
+
+    /* —— 导航 / 布局 —— */
+    function toggleSider() {
+      document.getElementById('sider').classList.toggle('collapsed');
+    }
+
+    function navTo(name) {
+      if (!layoutTabMeta[name]) return;
+      if (!openTabs.includes(name)) openTabs.push(name);
+      activeLayoutTab = name;
+      document.querySelectorAll('.screen').forEach((el) => el.classList.remove('show'));
+      document.getElementById('screen-' + name).classList.add('show');
+      document.querySelectorAll('.menu-item').forEach((el) => {
+        el.classList.toggle('active', el.dataset.nav === name);
+      });
+      renderLayoutTabs();
+      if (name === 'center') { filterList(); renderDetail(); }
+      closeBell();
+    }
+
+    function renderLayoutTabs() {
+      const box = document.getElementById('layoutTabs');
+      box.innerHTML = openTabs.map((key) => {
+        const t = layoutTabMeta[key];
+        const canClose = openTabs.length > 1;
+        return `<div class="tab-item ${activeLayoutTab === key ? 'active' : ''}" onclick="navTo('${key}')">
+          <span class="tab-title">${t.title}</span>
+          ${canClose ? `<span class="tab-close" onclick="event.stopPropagation();closeLayoutTab('${key}')">
+            <svg width="12" height="12" viewBox="0 0 12 12"><path d="M9 3L3 9M3 3L9 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          </span>` : ''}
+        </div>`;
+      }).join('');
+    }
+
+    function closeLayoutTab(key) {
+      if (openTabs.length <= 1) return;
+      const idx = openTabs.indexOf(key);
+      openTabs = openTabs.filter((k) => k !== key);
+      if (activeLayoutTab === key) {
+        const next = openTabs[idx] || openTabs[idx - 1] || openTabs[0];
+        navTo(next);
+      } else {
+        renderLayoutTabs();
+      }
+    }
+
+    /* —— 铃铛 —— */
+    function toggleBell() {
+      document.getElementById('bellDropdown').classList.toggle('show');
+      renderBellList();
+    }
+    function closeBell() {
+      document.getElementById('bellDropdown').classList.remove('show');
+    }
+    document.getElementById('bellBtn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleBell();
+    });
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.bell-wrap')) closeBell();
+    });
+
+    function unreadCount() {
+      return messages.filter((m) => m.unread && !m.hidden).length;
+    }
+
+    function updateBadge() {
+      const n = unreadCount();
+      const badge = document.getElementById('bellBadge');
+      badge.style.display = n ? 'inline-block' : 'none';
+      badge.textContent = n > 99 ? '99+' : String(n);
+      updateTabCounts();
+      renderBellList();
+    }
+
+    function renderBellList() {
+      const recent = [...messages].sort((a, b) => b.time.localeCompare(a.time)).slice(0, 5);
+      const box = document.getElementById('bellList');
+      if (!recent.length) {
+        box.innerHTML = '<div class="empty" style="padding:24px">暂无消息</div>';
+        return;
+      }
+      box.innerHTML = recent.map((m) => `
+        <div class="item ${m.unread ? 'unread' : ''}" onclick="openFromBell(${m.id})" style="display:flex;gap:10px;align-items:flex-start">
+          ${avatarHtml(m.from, m.fromId, m.type)}
+          <div style="flex:1;min-width:0">
+            <div class="msg-row">
+              <div class="t" style="font-size:14px;display:flex;align-items:center;gap:6px;min-width:0">
+                ${m.unread ? '<span class="dot"></span>' : ''}
+                <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(displayTitle(m))}</span>
+              </div>
+              <span class="el-tag ${m.type === 'sys' ? 'el-tag--warning' : 'el-tag--primary'}">${m.type === 'sys' ? '系统' : '私信'}</span>
+            </div>
+            <div class="msg-preview">${escapeHtml(m.preview)}</div>
+            <div class="msg-meta" style="margin-top:4px">${escapeHtml(m.timeLabel)}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function openFromBell(id) {
+      closeBell();
+      navTo('center');
+      selectedId = id;
+      const m = messages.find((x) => x.id === id);
+      if (m) {
+        m.unread = false;
+        currentTab = m.type === 'priv' ? 'priv' : 'sys';
+        document.querySelectorAll('#inboxTabs .inbox-tab').forEach((t) => {
+          t.classList.toggle('active', t.dataset.tab === currentTab);
+        });
+        if (currentTab !== 'sys') starOnly = false;
+        syncListHeadUI();
+      }
+      pageNum = 1;
+      // 跳到包含该消息的页
+      const list = filteredMessages();
+      const idx = list.findIndex((x) => x.id === id);
+      if (idx >= 0) pageNum = Math.floor(idx / pageSize) + 1;
+      updateBadge();
+      filterList();
+      renderDetail();
+    }
+
+    /* —— 列表筛选 / 分页 —— */
+    document.getElementById('inboxTabs').addEventListener('click', (e) => {
+      const tab = e.target.closest('.inbox-tab');
+      if (!tab) return;
+      document.querySelectorAll('#inboxTabs .inbox-tab').forEach((t) => t.classList.remove('active'));
+      tab.classList.add('active');
+      currentTab = tab.dataset.tab;
+      if (currentTab !== 'sys') starOnly = false;
+      pageNum = 1;
+      syncListHeadUI();
+      filterList(true);
+    });
+
+    function syncListHeadUI() {
+      const findBtn = document.getElementById('btnFindPeer');
+      if (findBtn) findBtn.style.display = currentTab === 'priv' ? '' : 'none';
+      const starBtn = document.getElementById('btnStarFilter');
+      if (starBtn) {
+        starBtn.style.display = currentTab === 'sys' ? '' : 'none';
+        starBtn.classList.toggle('active', !!starOnly);
+      }
+      const simBtn = document.getElementById('btnSimPeer');
+      if (simBtn) simBtn.style.display = currentTab === 'priv' ? '' : 'none';
+    }
+    function toggleStarFilter() {
+      if (currentTab !== 'sys') return;
+      starOnly = !starOnly;
+      syncListHeadUI();
+      pageNum = 1;
+      filterList(true);
+    }
+    function filteredMessages() {
+      const kwEl = document.getElementById('kwFilter');
+      const kw = ((kwEl && kwEl.value) || '').trim().toLowerCase();
+      return messages
+        .filter((m) => {
+          if (m.hidden) return false;
+          if (m.type !== currentTab) return false;
+          // 收藏：不参与默认排序，仅在「收藏」筛选下展示
+          if (currentTab === 'sys' && starOnly && !m.starred) return false;
+          if (kw) {
+            const hay = (m.title + (m.peerName || '') + m.preview + m.content + m.from).toLowerCase();
+            if (!hay.includes(kw)) return false;
+          }
+          return true;
+        })
+        // 私信置顶 > 未读 > 时间；收藏不抬升排序
+        .sort((a, b) => {
+          if (currentTab === 'priv') {
+            if (!!a.pinned !== !!b.pinned) return a.pinned ? -1 : 1;
+          }
+          if (a.unread !== b.unread) return a.unread ? -1 : 1;
+          return b.time.localeCompare(a.time);
+        });
+    }
+
+    function updateTabCounts() {
+      const visible = messages.filter((m) => !m.hidden);
+      const sys = visible.filter((m) => m.type === 'sys').length;
+      const priv = visible.filter((m) => m.type === 'priv').length;
+      const uSys = visible.filter((m) => m.type === 'sys' && m.unread).length;
+      const uPriv = visible.filter((m) => m.type === 'priv' && m.unread).length;
+      setCount('c-sys', sys, uSys);
+      setCount('c-priv', priv, uPriv);
+    }
+    function setCount(id, total, unread) {
+      const el = document.getElementById(id);
+      el.textContent = unread ? unread : total;
+      el.classList.toggle('hot', !!unread);
+      el.title = unread ? `未读 ${unread} / 共 ${total}` : `共 ${total}`;
+    }
+
+    function onFilterChange() { pageNum = 1; filterList(); }
+
+    let listSnapshot = [];
+
+    function filterList(resort) {
+      if (resort !== false) listSnapshot = filteredMessages();
+      const list = listSnapshot;
+      const total = list.length;
+      const pages = Math.max(1, Math.ceil(total / pageSize) || 1);
+      if (pageNum > pages) pageNum = pages;
+      const start = (pageNum - 1) * pageSize;
+      const pageList = list.slice(start, start + pageSize);
+
+      document.getElementById('pageInfo').textContent = `共 ${total} 条`;
+
+      const box = document.getElementById('msgList');
+      if (!pageList.length) {
+        box.innerHTML = `<div class="empty"><div class="empty-icon">📭</div>${currentTab === 'sys' && starOnly ? '暂无收藏' : '暂无消息'}</div>`;
+      } else {
+        box.innerHTML = pageList.map((m) => {
+          const starBtn = m.type === 'sys' ? `
+            <button class="msg-star ${m.starred ? 'on' : ''}" title="${m.starred ? '取消收藏' : '收藏'}" onclick="toggleStar(event, ${m.id})">
+              ${m.starred
+                ? '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 17.3l6.18 3.7-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>'
+                : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M12 17.3l6.18 3.7-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/></svg>'}
+            </button>` : `
+            <button class="msg-more" title="更多" onclick="openItemMenu(event, ${m.id})">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+            </button>`;
+          return `
+          <div class="msg-item ${m.unread ? 'unread' : ''} ${selectedId === m.id ? 'active' : ''}" onclick="selectMsgById(${m.id})">
+            ${avatarHtml(m.from, m.fromId, m.type)}
+            <div class="msg-main">
+              <div class="msg-row">
+                <div class="msg-title">
+                  ${m.unread ? '<span class="dot"></span>' : '<span style="width:8px;flex-shrink:0"></span>'}
+                  <span class="t">${escapeHtml(displayTitle(m))}</span>
+                  ${m.pinned ? '<svg class="mark-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M14.4 6L14 4H5v17h2v-7h5.6l.4 2h7V6z"/></svg>' : ''}
+                </div>
+              </div>
+              <div class="msg-preview">${escapeHtml(m.preview)}</div>
+            </div>
+            ${starBtn}
+          </div>`;
+        }).join('');
+      }
+
+      // pager
+      const pager = document.getElementById('pager');
+      let html = `<button ${pageNum <= 1 ? 'disabled' : ''} onclick="gotoPage(${pageNum - 1})">‹</button>`;
+      for (let i = 1; i <= pages; i++) {
+        if (pages > 5 && Math.abs(i - pageNum) > 1 && i !== 1 && i !== pages) {
+          if (i === 2 || i === pages - 1) html += `<span style="padding:0 2px">…</span>`;
+          continue;
+        }
+        html += `<button class="${i === pageNum ? 'active' : ''}" onclick="gotoPage(${i})">${i}</button>`;
+      }
+      html += `<button ${pageNum >= pages ? 'disabled' : ''} onclick="gotoPage(${pageNum + 1})">›</button>`;
+      pager.innerHTML = html;
+      updateTabCounts();
+    }
+
+    function gotoPage(p) {
+      pageNum = p;
+      filterList(false);
+    }
+
+    function selectMsgById(id, quiet) {
+      selectedId = id;
+      const m = messages.find((x) => x.id === id);
+      if (!m) return;
+      const wasUnread = m.unread;
+      m.unread = false;
+      if (wasUnread) updateBadge();
+      // 打开已读后不重排，避免条目「跳没了」；切 Tab / 搜索 / 全部已读 时再重排
+      filterList(false);
+      renderDetail();
+    }
+
+    function renderDetail() {
+      const detail = document.getElementById('msgDetail');
+      const m = messages.find((x) => x.id === selectedId);
+      if (!m) {
+        detail.innerHTML = '<div class="empty"><div class="empty-icon">📭</div>从左侧选择一条消息或会话</div>';
+        return;
+      }
+
+      const isPriv = m.type === 'priv';
+      let bodyExtra = '';
+      if (isPriv && m.thread) {
+        bodyExtra = `<div class="thread">${renderThreadHtml(m)}</div>`;
+      }
+
+      detail.innerHTML = `
+        <div class="detail-head">
+          <span class="el-tag ${isPriv ? 'el-tag--primary' : 'el-tag--warning'}">${isPriv ? '私信' : '系统通知'}</span>
+          <span class="el-tag el-tag--info">已读</span>
+        </div>
+        <div class="detail-body">
+          <div class="detail-sender">
+            ${avatarHtml(m.from, m.fromId, m.type)}
+            <div class="name">${escapeHtml(displayTitle(m))}</div>
+          </div>
+          ${!isPriv ? `
+            <div class="time-sep"><span>${escapeHtml(m.timeLabel)}</span></div>
+            <div class="detail-content ${m.rich ? 'rich' : ''}">${m.rich ? m.content : escapeHtml(m.content)}</div>
+          ` : ''}
+          ${bodyExtra}
+        </div>
+        ${isPriv ? `
+          <div class="reply-box">
+            <textarea class="el-textarea" id="replyText" placeholder="回复私信…"></textarea>
+            <button class="el-btn el-btn--primary" onclick="sendReply(${m.id})">回复</button>
+          </div>
+        ` : ''}
+      `;
+    }
+
+    /** 微信式：间隔 >= 5 分钟才在聊天中央显示时间 */
+    const TIME_GAP_MS = 5 * 60 * 1000;
+    function renderThreadHtml(m) {
+      let prevAt = null;
+      return m.thread.map((b) => {
+        const at = b.at ? Date.parse(b.at) : NaN;
+        const showSep = !Number.isNaN(at)
+          ? (prevAt === null || at - prevAt >= TIME_GAP_MS)
+          : (prevAt === null);
+        if (!Number.isNaN(at)) prevAt = at;
+        else if (prevAt === null) prevAt = 0;
+        const sep = showSep && b.when
+          ? `<div class="time-sep"><span>${escapeHtml(b.when)}</span></div>`
+          : '';
+        return `
+          ${sep}
+          <div class="thread-row ${b.me ? 'me' : ''}">
+            ${peerAvatarHtml(m, b)}
+            <div class="bubble ${b.me ? 'me' : ''}">
+              <div>${escapeHtml(b.text)}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+
+    async function deleteMsg(id) {
+      const m = messages.find((x) => x.id === id);
+      if (!m) return;
+      const tip = m.type === 'priv'
+        ? '确定删除该聊天？聊天记录将一并删除（仅自己侧）。之后再找人会开新会话。'
+        : '确定删除该通知？';
+      const ok = await confirmDialog(tip);
+      if (!ok) return;
+      messages = messages.filter((x) => x.id !== id);
+      if (selectedId === id) selectedId = null;
+      updateBadge();
+      filterList(true);
+      renderDetail();
+      toast('success', '已删除');
+    }
+
+    function markAllRead() {
+      const n = unreadCount();
+      messages.forEach((m) => { m.unread = false; });
+      updateBadge();
+      filterList(true);
+      if (selectedId) renderDetail();
+      toast('success', n ? `已将 ${n} 条消息标为已读` : '没有未读消息');
+      closeBell();
+    }
+
+    function sendReply(id) {
+      const ta = document.getElementById('replyText');
+      const text = (ta?.value || '').trim();
+      if (!text) { toast('warning', '请输入回复内容'); return; }
+      const m = messages.find((x) => x.id === id);
+      if (!m || !m.thread) return;
+      m.thread.push({ me: true, who: '我', text, when: nowLabel(), at: nowIso() });
+      m.preview = text;
+      m.content = text;
+      m.time = nowIso();
+      m.timeLabel = nowLabel();
+      // 会话顶到前面：更新时间即可（排序用 time）
+      ta.value = '';
+      filterList();
+      renderDetail();
+    }
+
+
+    /* —— 列表三点菜单 —— */
+    let menuMsgId = null;
+    function closeItemMenu() {
+      const menu = document.getElementById('itemMenu');
+      menu.classList.remove('show');
+      menu.innerHTML = '';
+      menuMsgId = null;
+      document.querySelectorAll('.msg-more.open').forEach((el) => el.classList.remove('open'));
+    }
+    function openItemMenu(e, id) {
+      e.stopPropagation();
+      const m = messages.find((x) => x.id === id);
+      if (!m) return;
+      const btn = e.currentTarget;
+      const menu = document.getElementById('itemMenu');
+      const wasOpen = menu.classList.contains('show') && menuMsgId === id;
+      closeItemMenu();
+      if (wasOpen) return;
+      menuMsgId = id;
+      btn.classList.add('open');
+      if (m.type !== 'priv') return;
+      let items = '';
+      items += `<button class="mi" onclick="hideConversation(${id})">不显示</button>`;
+      items += `<button class="mi danger" onclick="closeItemMenu(); deleteMsg(${id})">删除</button>`;
+      items += `<button class="mi" onclick="togglePin(${id})">${m.pinned ? '取消置顶' : '置顶'}</button>`;
+      menu.innerHTML = items;
+      menu.onclick = (ev) => ev.stopPropagation();
+      menu.classList.add('show');
+      const r = btn.getBoundingClientRect();
+      const mw = menu.offsetWidth || 140;
+      const mh = menu.offsetHeight || 120;
+      let left = r.right - mw;
+      let top = r.bottom + 4;
+      if (left < 8) left = 8;
+      if (top + mh > window.innerHeight - 8) top = r.top - mh - 4;
+      menu.style.left = left + 'px';
+      menu.style.top = top + 'px';
+    }
+    function hideConversation(id) {
+      const m = messages.find((x) => x.id === id);
+      if (!m || m.type !== 'priv') return;
+      m.hidden = true;
+      if (selectedId === id) selectedId = null;
+      closeItemMenu();
+      updateBadge();
+      filterList(true);
+      renderDetail();
+      toast('success', '已暂时不显示（对方来信会再出现，也可再次找人打开）');
+    }
+    function togglePin(id) {
+      const m = messages.find((x) => x.id === id);
+      if (!m || m.type !== 'priv') return;
+      m.pinned = !m.pinned;
+      closeItemMenu();
+      filterList(true);
+      toast('success', m.pinned ? '已置顶' : '已取消置顶');
+    }
+    function toggleStar(e, id) {
+      if (e) e.stopPropagation();
+      const m = messages.find((x) => x.id === id);
+      if (!m || m.type !== 'sys') return;
+      m.starred = !m.starred;
+      filterList(!!starOnly);
+    }
+
+    function simulatePeerMessage(peerId, text) {
+      const conv = messages.find((m) => m.type === 'priv' && m.peerId === peerId);
+      if (!conv) return;
+      const when = nowLabel();
+      const at = nowIso();
+      conv.hidden = false;
+      conv.unread = true;
+      conv.time = at;
+      conv.timeLabel = when;
+      conv.preview = text;
+      conv.thread = conv.thread || [];
+      conv.thread.push({ me: false, who: conv.peerName || conv.from, text, when, at });
+      updateBadge();
+      filterList(true);
+      if (selectedId === conv.id) renderDetail();
+    }
+    function demoPeerIncoming() {
+      const hidden = messages.find((m) => m.type === 'priv' && m.hidden);
+      const selected = messages.find((m) => m.id === selectedId && m.type === 'priv');
+      const any = messages.find((m) => m.type === 'priv');
+      const conv = hidden || selected || any;
+      if (!conv) {
+        toast('warning', '没有可模拟的私信会话');
+        return;
+      }
+      simulatePeerMessage(conv.peerId, '（模拟）你好，这是一条新消息');
+      currentTab = 'priv';
+      document.querySelectorAll('#inboxTabs .inbox-tab').forEach((t) => {
+        t.classList.toggle('active', t.dataset.tab === 'priv');
+      });
+      syncListHeadUI();
+      toast('success', `已模拟 ${conv.peerName || conv.from} 来信（若曾不显示会自动再出现）`);
+    }
+    document.addEventListener('click', () => closeItemMenu());
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeItemMenu(); });
+
+    /* —— 找人 / 私信会话 —— */
+    function openFindPeer() {
+      openCompose();
+    }
+    function openCompose() {
+      composeUserId = null;
+      document.getElementById('composeSearch').value = '';
+      document.getElementById('maskCompose').classList.add('show');
+      renderComposePicker();
+      setTimeout(() => document.getElementById('composeSearch').focus(), 0);
+    }
+    function closeCompose() {
+      document.getElementById('maskCompose').classList.remove('show');
+    }
+    function userAvatarHtml(u) {
+      const hue = (Number(u.id) * 47 + avatarChar(u.name).charCodeAt(0) * 13) % 360;
+      return `<div class="msg-avatar" style="background:hsl(${hue},52%,46%)">${escapeHtml(avatarChar(u.name))}</div>`;
+    }
+    function renderComposePicker() {
+      const q = (document.getElementById('composeSearch').value || '').trim().toLowerCase();
+      const existingPeers = new Set(
+        messages.filter((m) => m.type === 'priv').map((m) => m.peerId)
+      );
+      const list = users.filter((u) =>
+        u.id !== ME.id &&
+        (!q || u.name.toLowerCase().includes(q) || u.username.includes(q) || u.dept.includes(q))
+      );
+      const box = document.getElementById('composePicker');
+      if (!list.length) {
+        box.innerHTML = '<div class="contact-empty">无匹配用户</div>';
+        return;
+      }
+      box.innerHTML = list.map((u) => `
+        <div class="contact-item" onclick="addOrOpenPeer(${u.id})">
+          ${userAvatarHtml(u)}
+          <div class="ci-main">
+            <div class="ci-name">
+              <span class="n">${escapeHtml(u.name)}</span>
+              ${existingPeers.has(u.id) ? '<span class="el-tag el-tag--primary">已有会话</span>' : ''}
+            </div>
+            <div class="ci-meta">@${escapeHtml(u.username)} · ${escapeHtml(u.dept)}${u.status === 0 ? ' · 已禁用' : ''}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+    function addOrOpenPeer(userId) {
+      const u = users.find((x) => x.id === userId);
+      if (!u) return;
+      let conv = messages.find((m) => m.type === 'priv' && m.peerId === userId);
+      if (!conv) {
+        const id = ++nextId;
+        conv = {
+          id, type: 'priv', unread: false, hidden: false, pinned: false,
+          title: u.name, peerName: u.name, from: u.name, fromId: u.id, peerId: u.id,
+          time: nowIso(), timeLabel: nowLabel(),
+          preview: '暂无消息，打个招呼吧',
+          content: '',
+          thread: [],
+        };
+        messages.unshift(conv);
+      } else {
+        // 不显示 ≠ 删除：再次找人打开原会话与历史
+        conv.hidden = false;
+      }
+      closeCompose();
+      currentTab = 'priv';
+      document.querySelectorAll('#inboxTabs .inbox-tab').forEach((t) => {
+        t.classList.toggle('active', t.dataset.tab === 'priv');
+      });
+      selectedId = conv.id;
+      pageNum = 1;
+      updateBadge();
+      filterList(true);
+      renderDetail();
+    }
+
+        /* —— 遮罩点击空白关闭 —— */
+    ['maskCompose', 'maskConfirm'].forEach((id) => {
+      document.getElementById(id).addEventListener('click', (e) => {
+        if (e.target.id !== id) return;
+        if (id === 'maskCompose') closeCompose();
+        else closeConfirm(false);
+      });
+    });
+
+    /* init */
+    renderLayoutTabs();
+    syncListHeadUI();
+    updateBadge();
+    filterList();
+    selectMsgById(201, true);
+  </script>
+</body>
+</html>
