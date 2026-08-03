@@ -35,37 +35,37 @@
         <java.version>17</java.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
-        
+
         <!-- 编码配置 -->
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 
         <!-- 统一构建时间格式，供 builder-info.properties 使用 -->
         <maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss</maven.build.timestamp.format>
-        
+
         <!-- Spring Boot版本 -->
         <spring-boot.version>3.2.4</spring-boot.version>
-        
+
         <!-- Spring Cloud版本 -->
         <spring-cloud.version>2023.0.1</spring-cloud.version>
         <spring-cloud-alibaba.version>2023.0.1.0</spring-cloud-alibaba.version>
-        
+
         <!-- 数据库相关 -->
         <mybatis-plus.version>3.5.7</mybatis-plus.version>
         <mysql.version>8.0.33</mysql.version>
-        
+
         <!-- 工具类 -->
         <lombok.version>1.18.30</lombok.version>
         <hutool.version>5.3.1</hutool.version>
         <jjwt.version>0.12.5</jjwt.version>
         <jbcrypt.version>0.4</jbcrypt.version>
-        
+
         <!-- EasyExcel -->
         <easyexcel.version>3.3.2</easyexcel.version>
-        
+
         <!-- Knife4j文档 -->
         <knife4j.version>4.4.0</knife4j.version>
-        
+
         <!-- Jakarta Servlet API -->
         <jakarta.servlet-api.version>6.0.0</jakarta.servlet-api.version>
 
@@ -87,7 +87,7 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            
+
             <!-- EasyExcel -->
             <dependency>
                 <groupId>com.alibaba</groupId>
@@ -214,6 +214,11 @@
             <dependency>
                 <groupId>com.baomidou</groupId>
                 <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-core</artifactId>
                 <version>${mybatis-plus.version}</version>
             </dependency>
 
