@@ -113,6 +113,9 @@ public final class PermissionConstants {
     public static final String MESSAGE_ANNOUNCE = "MESSAGE_ANNOUNCE";
     public static final String MESSAGE_ANNOUNCE_VIEW = "MESSAGE_ANNOUNCE_VIEW";
     public static final String MESSAGE_ANNOUNCE_CREATE = "MESSAGE_ANNOUNCE_CREATE";
+    public static final String MESSAGE_ANNOUNCE_UPDATE = "MESSAGE_ANNOUNCE_UPDATE";
+    public static final String MESSAGE_ANNOUNCE_RECALL = "MESSAGE_ANNOUNCE_RECALL";
+    public static final String MESSAGE_ANNOUNCE_DELETE = "MESSAGE_ANNOUNCE_DELETE";
     public static final String MESSAGE_ANNOUNCE_RETRY = "MESSAGE_ANNOUNCE_RETRY";
 
     /**

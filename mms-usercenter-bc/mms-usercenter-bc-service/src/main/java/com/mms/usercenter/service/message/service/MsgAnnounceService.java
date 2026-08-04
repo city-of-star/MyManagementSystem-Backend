@@ -3,6 +3,7 @@ package com.mms.usercenter.service.message.service;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.usercenter.common.message.dto.MsgAnnounceCreateDto;
 import com.mms.usercenter.common.message.dto.MsgAnnouncePageQueryDto;
+import com.mms.usercenter.common.message.dto.MsgAnnounceUpdateDto;
 import com.mms.usercenter.common.message.dto.MsgAnnounceUserPageQueryDto;
 import com.mms.usercenter.common.message.vo.MsgAnnounceUserVo;
 import com.mms.usercenter.common.message.vo.MsgAnnounceVo;
@@ -23,6 +24,12 @@ public interface MsgAnnounceService {
     MsgAnnounceVo getAnnounceById(Long id);
 
     MsgAnnounceVo createAnnounce(MsgAnnounceCreateDto dto);
+
+    MsgAnnounceVo updateAnnounce(Long id, MsgAnnounceUpdateDto dto);
+
+    void recallAnnounce(Long id);
+
+    void deleteAnnounce(Long id);
 
     void retryAnnounce(Long id);
 

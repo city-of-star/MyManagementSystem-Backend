@@ -69,10 +69,10 @@ public class MsgDmServiceImpl implements MsgDmService {
         int pageNum = dto.getPageNum() == null || dto.getPageNum() < 1 ? 1 : dto.getPageNum();
         int pageSize = dto.getPageSize() == null || dto.getPageSize() < 1 ? 20 : dto.getPageSize();
 
+        // 找人后未发消息的空会话也要进列表（hidden=0）；删除/不显示已 hidden=1，不会出现
         List<MsgDmMemberEntity> members = msgDmMemberMapper.selectList(new LambdaQueryWrapper<MsgDmMemberEntity>()
                 .eq(MsgDmMemberEntity::getUserId, userId)
-                .eq(MsgDmMemberEntity::getHidden, 0)
-                .isNotNull(MsgDmMemberEntity::getLastMsgId));
+                .eq(MsgDmMemberEntity::getHidden, 0));
 
         Set<Long> peerIds = members.stream().map(MsgDmMemberEntity::getPeerId).collect(Collectors.toSet());
         Map<Long, UserEntity> peerMap = peerIds.isEmpty() ? Map.of()
@@ -80,9 +80,6 @@ public class MsgDmServiceImpl implements MsgDmService {
 
         List<MsgDmConversationVo> all = new ArrayList<>();
         for (MsgDmMemberEntity member : members) {
-            if (member.getLastMsgId() == null && (member.getClearedBeforeId() == null || member.getClearedBeforeId() == 0)) {
-                continue;
-            }
             UserEntity peer = peerMap.get(member.getPeerId());
             if (StringUtils.hasText(dto.getKeyword())) {
                 if (peer == null) {
@@ -142,24 +139,31 @@ public class MsgDmServiceImpl implements MsgDmService {
         }
         MsgDmMemberEntity self = requireMember(dto.getConversationId(), userId);
         int pageNum = dto.getPageNum() == null || dto.getPageNum() < 1 ? 1 : dto.getPageNum();
-        int pageSize = dto.getPageSize() == null || dto.getPageSize() < 1 ? 50 : dto.getPageSize();
+        int pageSize = dto.getPageSize() == null || dto.getPageSize() < 1 ? 20 : Math.min(dto.getPageSize(), 100);
         long clearedBefore = self.getClearedBeforeId() == null ? 0L : self.getClearedBeforeId();
+        // 有 beforeId 时走游标分页（触顶加载更早消息），避免 OFFSET 在新消息插入后错位
+        boolean cursorMode = dto.getBeforeId() != null && dto.getBeforeId() > 0;
 
-        Page<MsgDmMessageEntity> page = msgDmMessageMapper.selectPage(new Page<>(pageNum, pageSize),
-                new LambdaQueryWrapper<MsgDmMessageEntity>()
-                        .eq(MsgDmMessageEntity::getConversationId, dto.getConversationId())
-                        .gt(MsgDmMessageEntity::getId, clearedBefore)
-                        .orderByDesc(MsgDmMessageEntity::getId));
+        LambdaQueryWrapper<MsgDmMessageEntity> wrapper = new LambdaQueryWrapper<MsgDmMessageEntity>()
+                .eq(MsgDmMessageEntity::getConversationId, dto.getConversationId())
+                .gt(MsgDmMessageEntity::getId, clearedBefore)
+                .lt(cursorMode, MsgDmMessageEntity::getId, dto.getBeforeId())
+                .orderByDesc(MsgDmMessageEntity::getId);
+        Page<MsgDmMessageEntity> page = msgDmMessageMapper.selectPage(
+                new Page<>(cursorMode ? 1 : pageNum, pageSize), wrapper);
 
-        Long maxId = page.getRecords().stream().map(MsgDmMessageEntity::getId).max(Long::compareTo).orElse(null);
-        if (maxId != null && (self.getLastReadMsgId() == null || maxId > self.getLastReadMsgId())) {
-            self.setLastReadMsgId(maxId);
-            self.setUnreadCount(0);
-            if (self.getHidden() != null && self.getHidden() == 1) {
-                self.setHidden(0);
+        // 仅首屏（非游标）把本页最新消息记为已读；历史触顶加载不改已读位点
+        if (!cursorMode) {
+            Long maxId = page.getRecords().stream().map(MsgDmMessageEntity::getId).max(Long::compareTo).orElse(null);
+            if (maxId != null && (self.getLastReadMsgId() == null || maxId > self.getLastReadMsgId())) {
+                self.setLastReadMsgId(maxId);
+                self.setUnreadCount(0);
+                if (self.getHidden() != null && self.getHidden() == 1) {
+                    self.setHidden(0);
+                }
+                msgDmMemberMapper.updateById(self);
+                msgUnreadSupport.pushUnread(userId);
             }
-            msgDmMemberMapper.updateById(self);
-            msgUnreadSupport.pushUnread(userId);
         }
 
         Page<MsgDmMessageVo> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());

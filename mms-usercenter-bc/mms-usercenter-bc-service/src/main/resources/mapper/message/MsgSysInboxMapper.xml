@@ -7,9 +7,12 @@
             i.user_id AS userId,
             u.username AS username,
             u.nickname AS nickname,
+            d.dept_name AS primaryDeptName,
             i.read_time AS readTime
         FROM msg_sys_inbox i
         LEFT JOIN system_user u ON u.id = i.user_id AND u.deleted = 0
+        LEFT JOIN system_user_dept ud ON ud.user_id = i.user_id AND ud.is_primary = 1
+        LEFT JOIN system_dept d ON d.id = ud.dept_id AND d.deleted = 0
         WHERE i.deleted = 0
           AND i.announce_id = #{announceId}
           AND i.read_flag = #{readFlag}
@@ -18,6 +21,7 @@
                 u.username LIKE CONCAT('%', #{dto.keyword}, '%')
                 OR u.nickname LIKE CONCAT('%', #{dto.keyword}, '%')
                 OR u.real_name LIKE CONCAT('%', #{dto.keyword}, '%')
+                OR d.dept_name LIKE CONCAT('%', #{dto.keyword}, '%')
             )
         </if>
         ORDER BY i.read_time DESC, i.id DESC

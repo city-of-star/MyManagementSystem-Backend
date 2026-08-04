@@ -735,6 +735,9 @@ VALUES
     (88, 87, 'button', '公告-查看', 'MESSAGE_ANNOUNCE_VIEW', NULL, NULL, NULL, 87, 1, 1, 0, NOW(), NOW()),
     (89, 87, 'button', '公告-发布', 'MESSAGE_ANNOUNCE_CREATE', NULL, NULL, NULL, 88, 1, 1, 0, NOW(), NOW()),
     (90, 87, 'button', '公告-重试发送', 'MESSAGE_ANNOUNCE_RETRY', NULL, NULL, NULL, 89, 1, 1, 0, NOW(), NOW()),
+    (91, 87, 'button', '公告-修改', 'MESSAGE_ANNOUNCE_UPDATE', NULL, NULL, NULL, 90, 1, 1, 0, NOW(), NOW()),
+    (92, 87, 'button', '公告-撤回', 'MESSAGE_ANNOUNCE_RECALL', NULL, NULL, NULL, 91, 1, 1, 0, NOW(), NOW()),
+    (93, 87, 'button', '公告-删除', 'MESSAGE_ANNOUNCE_DELETE', NULL, NULL, NULL, 92, 1, 1, 0, NOW(), NOW()),
 
     -- 消息中心（目录）
     (81, 0, 'catalog', '消息中心', 'MESSAGE', NULL, NULL, 'Bell', 150, 1, 1, 0, NOW(), NOW()),

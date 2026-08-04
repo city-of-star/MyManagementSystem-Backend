@@ -6,6 +6,7 @@ import com.mms.common.security.servlet.annotations.RequiresPermission;
 import com.mms.common.security.servlet.constants.PermissionConstants;
 import com.mms.usercenter.common.message.dto.MsgAnnounceCreateDto;
 import com.mms.usercenter.common.message.dto.MsgAnnouncePageQueryDto;
+import com.mms.usercenter.common.message.dto.MsgAnnounceUpdateDto;
 import com.mms.usercenter.common.message.dto.MsgAnnounceUserPageQueryDto;
 import com.mms.usercenter.common.message.vo.MsgAnnounceUserVo;
 import com.mms.usercenter.common.message.vo.MsgAnnounceVo;
@@ -14,9 +15,11 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -57,6 +60,30 @@ public class MsgAnnounceController {
     @PostMapping("/create")
     public Response<MsgAnnounceVo> createAnnounce(@RequestBody @Valid MsgAnnounceCreateDto dto) {
         return Response.success(msgAnnounceService.createAnnounce(dto));
+    }
+
+    @Operation(summary = "修改公告")
+    @RequiresPermission(PermissionConstants.MESSAGE_ANNOUNCE_UPDATE)
+    @PutMapping("/{id}")
+    public Response<MsgAnnounceVo> updateAnnounce(@PathVariable Long id,
+                                                  @RequestBody @Valid MsgAnnounceUpdateDto dto) {
+        return Response.success(msgAnnounceService.updateAnnounce(id, dto));
+    }
+
+    @Operation(summary = "撤回公告")
+    @RequiresPermission(PermissionConstants.MESSAGE_ANNOUNCE_RECALL)
+    @PostMapping("/{id}/recall")
+    public Response<Void> recallAnnounce(@PathVariable Long id) {
+        msgAnnounceService.recallAnnounce(id);
+        return Response.success();
+    }
+
+    @Operation(summary = "删除公告")
+    @RequiresPermission(PermissionConstants.MESSAGE_ANNOUNCE_DELETE)
+    @DeleteMapping("/{id}")
+    public Response<Void> deleteAnnounce(@PathVariable Long id) {
+        msgAnnounceService.deleteAnnounce(id);
+        return Response.success();
     }
 
     @Operation(summary = "重试发送公告")
