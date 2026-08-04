@@ -30,9 +30,11 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -79,6 +81,9 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
     @Qualifier("schedulerTaskExecutor")
     private ThreadPoolTaskExecutor schedulerTaskExecutor;
 
+    @Resource
+    private PlatformTransactionManager transactionManager;
+
     @Override
     public Page<MsgAnnounceVo> getAnnouncePage(MsgAnnouncePageQueryDto dto) {
         int pageNum = dto.getPageNum() == null || dto.getPageNum() < 1 ? 1 : dto.getPageNum();
@@ -108,7 +113,6 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
     }
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public MsgAnnounceVo createAnnounce(MsgAnnounceCreateDto dto) {
         validateScope(dto);
         String html = MsgHtmlSanitizeUtils.sanitize(dto.getContentHtml());
@@ -120,28 +124,37 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
             throw new BusinessException("发送范围内没有可用用户");
         }
 
-        MsgSysAnnounceEntity entity = new MsgSysAnnounceEntity();
-        entity.setTitle(dto.getTitle().trim());
-        entity.setContentHtml(html);
-        entity.setContentText(MsgHtmlSanitizeUtils.toPlainText(html, 500));
-        entity.setScopeType(dto.getScopeType());
-        entity.setScopePayload(writeScopePayload(dto));
-        entity.setStatus(MsgConstants.ANNOUNCE_PENDING);
-        entity.setTotalTarget(targetUserIds.size());
-        entity.setSuccessCount(0);
-        entity.setFailCount(0);
-        entity.setDeleted(0);
-        msgSysAnnounceMapper.insert(entity);
+        String title = dto.getTitle().trim();
+        String text = MsgHtmlSanitizeUtils.toPlainText(html, 500);
+        String scopePayload = writeScopePayload(dto);
+        Integer scopeType = dto.getScopeType();
+        int totalTarget = targetUserIds.size();
 
-        Long announceId = entity.getId();
-        // 一律提交后再扇出并推 WS，避免事务未提交时客户端脏读
-        runAfterCommit(() -> {
-            if (targetUserIds.size() <= MsgConstants.SYNC_FANOUT_MAX) {
-                doFanout(announceId, targetUserIds);
-            } else {
-                schedulerTaskExecutor.execute(() -> doFanout(announceId, targetUserIds));
-            }
+        // 先提交发件记录，再扇出，避免脏读；小范围同步扇出后返回最新状态
+        Long announceId = new TransactionTemplate(transactionManager).execute(status -> {
+            MsgSysAnnounceEntity entity = new MsgSysAnnounceEntity();
+            entity.setTitle(title);
+            entity.setContentHtml(html);
+            entity.setContentText(text);
+            entity.setScopeType(scopeType);
+            entity.setScopePayload(scopePayload);
+            entity.setStatus(MsgConstants.ANNOUNCE_PENDING);
+            entity.setTotalTarget(totalTarget);
+            entity.setSuccessCount(0);
+            entity.setFailCount(0);
+            entity.setDeleted(0);
+            msgSysAnnounceMapper.insert(entity);
+            return entity.getId();
         });
+        if (announceId == null) {
+            throw new BusinessException("公告创建失败");
+        }
+
+        if (targetUserIds.size() <= MsgConstants.SYNC_FANOUT_MAX) {
+            doFanout(announceId, targetUserIds);
+        } else {
+            schedulerTaskExecutor.execute(() -> doFanout(announceId, targetUserIds));
+        }
         return getAnnounceById(announceId);
     }
 
@@ -150,6 +163,9 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
     public MsgAnnounceVo updateAnnounce(Long id, MsgAnnounceUpdateDto dto) {
         MsgSysAnnounceEntity entity = requireAnnounce(id);
         Integer status = entity.getStatus();
+        if (status != null && status == MsgConstants.ANNOUNCE_PENDING) {
+            throw new BusinessException("公告待发送，暂不可修改");
+        }
         if (status != null && status == MsgConstants.ANNOUNCE_RUNNING) {
             throw new BusinessException("公告发送中，暂不可修改");
         }
@@ -174,6 +190,9 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
             inbox.setTitle(title);
             inbox.setContentHtml(html);
             inbox.setContentText(text);
+            // 修改正文后重新标未读，驱动铃铛提醒
+            inbox.setReadFlag(0);
+            inbox.setReadTime(null);
             msgSysInboxMapper.updateById(inbox);
             if (inbox.getUserId() != null) {
                 notifyUserIds.add(inbox.getUserId());
@@ -188,8 +207,10 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
     public void recallAnnounce(Long id) {
         MsgSysAnnounceEntity entity = requireAnnounce(id);
         Integer status = entity.getStatus();
-        if (status != null && status == MsgConstants.ANNOUNCE_RUNNING) {
-            throw new BusinessException("公告发送中，暂不可撤回");
+        // 待发送 / 发送中均不可撤，避免与扇出竞态
+        if (status != null && (status == MsgConstants.ANNOUNCE_PENDING
+                || status == MsgConstants.ANNOUNCE_RUNNING)) {
+            throw new BusinessException("公告尚未发送完成，暂不可撤回");
         }
         if (status != null && status == MsgConstants.ANNOUNCE_RECALLED) {
             throw new BusinessException("公告已撤回");
@@ -257,6 +278,15 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
         if (entity == null) {
             return;
         }
+        Integer status = entity.getStatus();
+        if (status != null && status == MsgConstants.ANNOUNCE_RECALLED) {
+            log.info("公告已撤回，跳过扇出 announceId={}", announceId);
+            return;
+        }
+        if (status == null || status != MsgConstants.ANNOUNCE_PENDING) {
+            log.warn("公告状态非待发送，跳过扇出 announceId={} status={}", announceId, status);
+            return;
+        }
         entity.setStatus(MsgConstants.ANNOUNCE_RUNNING);
         msgSysAnnounceMapper.updateById(entity);
 
@@ -264,6 +294,18 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
         int fail = entity.getFailCount() == null ? 0 : entity.getFailCount();
         try {
             for (int i = 0; i < targetUserIds.size(); i += MsgConstants.FANOUT_BATCH_SIZE) {
+                if (isFanoutAborted(announceId)) {
+                    log.info("公告扇出中止（已撤回或删除） announceId={}", announceId);
+                    return;
+                }
+                // 批次内使用最新标题正文
+                MsgSysAnnounceEntity latest = msgSysAnnounceMapper.selectById(announceId);
+                if (latest == null || (latest.getStatus() != null
+                        && latest.getStatus() == MsgConstants.ANNOUNCE_RECALLED)) {
+                    log.info("公告扇出中止 announceId={}", announceId);
+                    return;
+                }
+                entity = latest;
                 int end = Math.min(i + MsgConstants.FANOUT_BATCH_SIZE, targetUserIds.size());
                 List<Long> batch = targetUserIds.subList(i, end);
                 List<Long> notified = new ArrayList<>();
@@ -281,8 +323,14 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
                 entity.setSuccessCount(success);
                 entity.setFailCount(fail);
                 entity.setCursorJson(writeCursor(end));
+                // 保持发送中，避免中途被改成其他态后覆盖撤回
+                entity.setStatus(MsgConstants.ANNOUNCE_RUNNING);
                 msgSysAnnounceMapper.updateById(entity);
                 msgUnreadSupport.pushUnreadBatch(notified);
+            }
+            if (isFanoutAborted(announceId)) {
+                log.info("公告扇出结束前已撤回/删除，不再回写完成态 announceId={}", announceId);
+                return;
             }
             entity.setStatus(fail > 0 ? MsgConstants.ANNOUNCE_FAILED : MsgConstants.ANNOUNCE_DONE);
             if (fail > 0) {
@@ -295,12 +343,22 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
             msgSysAnnounceMapper.updateById(entity);
         } catch (Exception ex) {
             log.error("公告扇出异常 announceId={}", announceId, ex);
+            if (isFanoutAborted(announceId)) {
+                return;
+            }
             entity.setStatus(MsgConstants.ANNOUNCE_FAILED);
             entity.setErrorMsg(ex.getMessage() == null ? "发送失败" : truncate(ex.getMessage(), 500));
             entity.setSuccessCount(success);
             entity.setFailCount(fail);
             msgSysAnnounceMapper.updateById(entity);
         }
+    }
+
+    /** 已删除或已撤回则中止扇出回写 */
+    private boolean isFanoutAborted(Long announceId) {
+        MsgSysAnnounceEntity current = msgSysAnnounceMapper.selectById(announceId);
+        return current == null
+                || (current.getStatus() != null && current.getStatus() == MsgConstants.ANNOUNCE_RECALLED);
     }
 
     private boolean insertInboxIfAbsent(MsgSysAnnounceEntity announce, Long userId) {

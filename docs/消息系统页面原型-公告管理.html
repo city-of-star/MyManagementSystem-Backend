@@ -211,6 +211,11 @@
       color: var(--mms-primary-color); font-size: 14px; cursor: pointer;
     }
     .el-link:hover { color: var(--mms-primary-dark); }
+    .row-ops { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+    .recalled-tip {
+      margin-bottom: 12px; padding: 10px 12px; border-radius: 6px;
+      background: #f4f4f5; color: var(--mms-text-muted); font-size: 13px;
+    }
 
     /* Pagination —— 对齐 Pagination.vue */
     .pagination {
@@ -605,6 +610,7 @@
                       <option value="RUNNING">发送中</option>
                       <option value="PENDING">待发送</option>
                       <option value="FAILED">失败</option>
+                      <option value="RECALLED">已撤回</option>
                     </select>
                   </div>
                 </div>
@@ -639,6 +645,7 @@
                     <th style="width:170px">发布时间</th>
                     <th style="width:90px">状态</th>
                     <th style="width:120px">已读/总数</th>
+                    <th style="width:140px">操作</th>
                   </tr>
                 </thead>
                 <tbody id="tbody"></tbody>
@@ -756,7 +763,7 @@
       </div>
       <div class="dialog-ft">
         <button class="el-btn" onclick="closeAnnounce()">取 消</button>
-        <button class="el-btn el-btn--primary" onclick="submitAnnounce()">发 布</button>
+        <button class="el-btn el-btn--primary" id="announceSubmitBtn" onclick="submitAnnounce()">发 布</button>
       </div>
     </div>
   </div>
@@ -856,11 +863,25 @@
         readers: [],
         unreadUsers: [],
       },
+      {
+        id: 5,
+        title: '已撤回示例：错误发布的测试公告',
+        scopeLabel: '指定 3 人',
+        publisher: '李鸿羽',
+        time: '2026-08-04 11:00:00',
+        status: 'RECALLED',
+        total: 3,
+        read: 1,
+        contentHtml: '<p>撤回后用户消息中心不再显示该公告。</p>',
+        readers: [{ name: '小满', dept: '产品中心', when: '2026-08-04 11:05:00', hue: 200 }],
+        unreadUsers: [],
+      },
     ];
 
     let query = { title: '', publisher: '', status: '', pageNum: 1, pageSize: 10 };
     let filteredCache = [];
     let detailId = null;
+    let editingId = null;
     let rosterTab = 'read';
     let rosterPage = 1;
     let rosterKw = '';
@@ -887,9 +908,22 @@
         RUNNING: ['primary', '发送中'],
         PENDING: ['info', '待发送'],
         FAILED: ['danger', '失败'],
+        RECALLED: ['info', '已撤回'],
       };
       const [t, label] = map[st] || ['info', st];
       return `<span class="el-tag el-tag--${t}">${label}</span>`;
+    }
+    function canEdit(a) { return a.status === 'DONE' || a.status === 'FAILED'; }
+    function canRecall(a) { return a.status === 'DONE' || a.status === 'FAILED'; }
+    function canDelete(a) { return a.status !== 'RUNNING'; }
+    function canRetry(a) { return a.status === 'FAILED'; }
+    function rowOpsHtml(a) {
+      const btns = [];
+      if (canEdit(a)) btns.push(`<button class="el-link" onclick="event.stopPropagation();openEdit(${a.id})">修改</button>`);
+      if (canRecall(a)) btns.push(`<button class="el-link" onclick="event.stopPropagation();recallAnnounce(${a.id})">撤回</button>`);
+      if (canRetry(a)) btns.push(`<button class="el-link" onclick="event.stopPropagation();retryAnnounce(${a.id})">重试</button>`);
+      if (canDelete(a)) btns.push(`<button class="el-link" style="color:var(--el-color-danger)" onclick="event.stopPropagation();deleteAnnounce(${a.id})">删除</button>`);
+      return btns.length ? `<div class="row-ops">${btns.join('')}</div>` : '<span class="muted">—</span>';
     }
 
     function applyFilter() {
@@ -945,8 +979,9 @@
             <td>${escapeHtml(a.time)}</td>
             <td>${statusTag(a.status)}</td>
             <td>${a.read} / ${a.total}</td>
+            <td>${rowOpsHtml(a)}</td>
           </tr>`).join('')
-        : `<tr><td colspan="7" class="empty-cell">暂无数据</td></tr>`;
+        : `<tr><td colspan="8" class="empty-cell">暂无数据</td></tr>`;
 
       let ph = `<button ${query.pageNum <= 1 ? 'disabled' : ''} onclick="gotoPage(${query.pageNum - 1})">‹</button>`;
       for (let i = 1; i <= pages; i++) {
@@ -1032,9 +1067,14 @@
             <button class="el-btn" onclick="backToList()">返回</button>
           </div>
           <div class="right">
+            ${canEdit(a) ? `<button class="el-btn" onclick="openEdit(${a.id})">修改</button>` : ''}
+            ${canRecall(a) ? `<button class="el-btn" onclick="recallAnnounce(${a.id})">撤回</button>` : ''}
+            ${canRetry(a) ? `<button class="el-btn el-btn--primary" onclick="retryAnnounce(${a.id})">重试发送</button>` : ''}
+            ${canDelete(a) ? `<button class="el-btn" style="color:var(--el-color-danger);border-color:#fde2e2" onclick="deleteAnnounce(${a.id})">删除</button>` : ''}
             <button class="el-btn" style="color:var(--mms-primary-color);border-color:var(--mms-primary-light)" onclick="renderDetail()">刷新</button>
           </div>
         </div>
+        ${a.status === 'RECALLED' ? '<div class="recalled-tip">该公告已撤回，用户消息中心不再显示；如需彻底清理可删除。</div>' : ''}
         <div class="el-card hero">
           <div class="el-card__body">
             <div class="hero-main">
@@ -1070,6 +1110,7 @@
                 <tr><th>已读</th><td>${a.read}</td></tr>
                 <tr><th>未读</th><td>${unread}</td></tr>
               </table>
+              ${a.status === 'RECALLED' ? '<div class="muted" style="margin-bottom:12px">已撤回：收件箱已软删，名单仅作历史参考。</div>' : ''}
               <div class="detail-tabs">
                 <button class="detail-tab ${rosterTab === 'read' ? 'active' : ''}" onclick="setRosterTab('read')">已读名单（${a.read}）</button>
                 <button class="detail-tab ${rosterTab === 'unread' ? 'active' : ''}" onclick="setRosterTab('unread')">未读名单（${unread}）</button>
@@ -1141,17 +1182,65 @@
       if (!e.target.closest('#announceUserSelect')) closeAnnounceUserDropdown();
     });
     function openAnnounce() {
+      editingId = null;
       announceUserIds = new Set();
       announceScope = 'users';
       syncAnnounceScopeUI();
+      document.querySelector('.dialog-hd .dialog-title').textContent = '发系统公告';
+      document.getElementById('announceSubmitBtn').textContent = '发 布';
+      document.getElementById('scopeRow').closest('.form-item').style.display = '';
+      document.getElementById('announceAudienceLabel').closest('.form-item').style.display = '';
       document.getElementById('announceSearch').value = '';
+      document.getElementById('announceTitle').value = '关于周五系统维护';
+      document.getElementById('announceEditor').innerHTML = '本周五 <strong>22:00–23:00</strong> 进行系统升级，期间作业调度将暂停，请提前安排相关任务。';
       document.getElementById('maskAnnounce').classList.add('show');
       renderAnnounceSelected();
       renderAnnouncePicker();
     }
+    function openEdit(id) {
+      const a = announces.find((x) => x.id === id);
+      if (!a || !canEdit(a)) { toast('warning', '当前状态不可修改'); return; }
+      editingId = id;
+      document.querySelector('.dialog-hd .dialog-title').textContent = '修改公告';
+      document.getElementById('announceSubmitBtn').textContent = '保 存';
+      document.getElementById('scopeRow').closest('.form-item').style.display = 'none';
+      document.getElementById('announceAudienceLabel').closest('.form-item').style.display = 'none';
+      document.getElementById('announceTitle').value = a.title;
+      document.getElementById('announceEditor').innerHTML = a.contentHtml || '';
+      document.getElementById('maskAnnounce').classList.add('show');
+    }
     function closeAnnounce() {
       closeAnnounceUserDropdown();
+      editingId = null;
       document.getElementById('maskAnnounce').classList.remove('show');
+    }
+    function recallAnnounce(id) {
+      const a = announces.find((x) => x.id === id);
+      if (!a || !canRecall(a)) { toast('warning', '当前状态不可撤回'); return; }
+      if (!confirm('撤回后，用户消息中心将不再显示该公告。确定撤回？')) return;
+      a.status = 'RECALLED';
+      a.unreadUsers = [];
+      toast('success', '公告已撤回');
+      if (detailId === id) renderDetail();
+      else renderTable();
+    }
+    function deleteAnnounce(id) {
+      const a = announces.find((x) => x.id === id);
+      if (!a || !canDelete(a)) { toast('warning', '当前状态不可删除'); return; }
+      if (!confirm('确定删除该公告？收件箱对应通知也会移除。')) return;
+      announces = announces.filter((x) => x.id !== id);
+      toast('success', '已删除');
+      if (detailId === id) backToList();
+      else renderTable();
+    }
+    function retryAnnounce(id) {
+      const a = announces.find((x) => x.id === id);
+      if (!a || !canRetry(a)) { toast('warning', '仅失败状态可重试'); return; }
+      a.status = 'RUNNING';
+      a.read = 0;
+      toast('success', '已重新提交发送');
+      if (detailId === id) renderDetail();
+      else renderTable();
     }
     function renderAnnounceSelected() {
       const box = document.getElementById('announceSelected');
@@ -1202,6 +1291,17 @@
       const bodyHtml = (document.getElementById('announceEditor').innerHTML || '').trim();
       const bodyText = (document.getElementById('announceEditor').innerText || '').trim();
       if (!title || !bodyText) { toast('warning', '请填写标题和正文'); return; }
+      if (editingId != null) {
+        const a = announces.find((x) => x.id === editingId);
+        if (!a || !canEdit(a)) { toast('warning', '当前状态不可修改'); return; }
+        a.title = title;
+        a.contentHtml = bodyHtml;
+        closeAnnounce();
+        toast('success', '公告已更新');
+        if (detailId === a.id) renderDetail();
+        else renderTable();
+        return;
+      }
       if (announceScope === 'users' && !announceUserIds.size) {
         toast('warning', '请至少选择一个用户'); return;
       }

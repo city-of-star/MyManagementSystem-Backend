@@ -44,7 +44,7 @@ public class MsgSysAnnounceEntity extends BaseEntity {
     @Schema(description = "范围快照 JSON")
     private String scopePayload;
 
-    @Schema(description = "状态：0待发送 1发送中 2已完成 3失败")
+    @Schema(description = "状态：0待发送 1发送中 2已完成 3失败 4已撤回")
     private Integer status;
 
     @TableField("total_target")

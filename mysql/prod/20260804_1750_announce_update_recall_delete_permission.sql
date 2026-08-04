@@ -1,5 +1,9 @@
 -- 公告管理：修改 / 撤回 / 删除 按钮权限
 -- 执行库：当前业务库
+-- 同步：msg_sys_announce.status 注释含 4=已撤回（无列结构变更）
+
+ALTER TABLE `msg_sys_announce`
+    MODIFY COLUMN `status` tinyint NOT NULL DEFAULT 0 COMMENT '状态：0待发送 1发送中 2已完成 3失败 4已撤回';
 
 SET @announce_menu_id = (SELECT `id` FROM `system_permission` WHERE `permission_code` = 'MESSAGE_ANNOUNCE' AND `deleted` = 0 LIMIT 1);
 
