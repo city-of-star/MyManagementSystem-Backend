@@ -886,7 +886,7 @@ CREATE TABLE IF NOT EXISTS `msg_sys_announce` (
     `content_text` varchar(500) DEFAULT NULL COMMENT '纯文本摘要',
     `scope_type` tinyint NOT NULL COMMENT '范围：1指定人 2角色 3全员',
     `scope_payload` json DEFAULT NULL COMMENT '用户ID/角色ID列表快照',
-    `status` tinyint NOT NULL DEFAULT 0 COMMENT '状态：0待发送 1发送中 2已完成 3失败',
+    `status` tinyint NOT NULL DEFAULT 0 COMMENT '状态：0待发送 1发送中 2已完成 3失败 4已撤回',
     `total_target` int NOT NULL DEFAULT 0 COMMENT '目标人数',
     `success_count` int NOT NULL DEFAULT 0 COMMENT '成功人数',
     `fail_count` int NOT NULL DEFAULT 0 COMMENT '失败人数',

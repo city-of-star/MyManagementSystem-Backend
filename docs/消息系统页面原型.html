@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MMS 消息系统 · 原型入口</title>
+  <style>
+    :root {
+      --mms-primary-color: #0085d0;
+      --mms-primary-dark: #006aa6;
+      --mms-bg: #f0f2f5;
+      --mms-surface: #ffffff;
+      --mms-text: #111827;
+      --mms-text-muted: #595959;
+      --mms-border: #e8ebf0;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh;
+      font-family: system-ui, -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--mms-bg); color: var(--mms-text);
+      display: flex; align-items: center; justify-content: center; padding: 32px 16px;
+    }
+    .wrap { width: 100%; max-width: 960px; }
+    h1 { margin: 0 0 8px; font-size: 22px; }
+    .sub { color: var(--mms-text-muted); font-size: 14px; margin-bottom: 24px; line-height: 1.6; }
+    .cards { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+    a.card {
+      display: block; padding: 24px 20px;
+      background: var(--mms-surface); border: 1px solid var(--mms-border);
+      border-radius: 10px; text-decoration: none; color: inherit;
+      box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+      transition: border-color .15s, box-shadow .15s;
+    }
+    a.card:hover {
+      border-color: var(--mms-primary-color);
+      box-shadow: 0 4px 16px rgba(0, 133, 208, 0.12);
+    }
+    .role {
+      display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 4px;
+      margin-bottom: 10px; font-weight: 500;
+    }
+    .role.admin { background: #fdf6ec; color: #e6a23c; }
+    .role.user { background: #f4f4f5; color: #909399; }
+    .role.mgmt { background: #ecf5ff; color: #409eff; }
+    .card h2 { margin: 0 0 8px; font-size: 17px; color: var(--mms-primary-dark); }
+    .card ul { margin: 0; padding-left: 18px; color: var(--mms-text-muted); font-size: 13px; line-height: 1.7; }
+    .foot { margin-top: 20px; font-size: 13px; color: var(--mms-text-muted); }
+    .foot a { color: var(--mms-primary-color); }
+    @media (max-width: 900px) { .cards { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>MMS 消息系统 · 页面原型</h1>
+    <p class="sub">
+      收件箱按角色分看；公告管理为系统管理子菜单（按 <code>MESSAGE_ANNOUNCE_*</code> 细权限）。<br />
+      主入口仍是顶栏铃铛；侧栏「消息中心」为独立顶层菜单；「发公告」入口保留在消息中心，公告管理也可发。<br />
+      原型供交互对照；与现网冲突时以代码 / <a href="消息系统功能设计.md">功能设计</a> 为准。
+    </p>
+    <div class="cards">
+      <a class="card" href="消息系统页面原型-管理员.html">
+        <span class="role admin">管理员 · 收件箱</span>
+        <h2>李鸿羽 · 消息中心</h2>
+        <ul>
+          <li>找人会话 + 发系统公告（快捷）</li>
+          <li>收件箱：系统 / 私信全能力</li>
+          <li>权限：含 MESSAGE_ANNOUNCE_CREATE 等</li>
+        </ul>
+      </a>
+      <a class="card" href="消息系统页面原型-普通用户.html">
+        <span class="role user">普通用户</span>
+        <h2>小满 · 消息中心</h2>
+        <ul>
+          <li>找人会话、收系统通知</li>
+          <li>无「发系统公告」入口</li>
+          <li>已读 / 删除 / 铃铛同管理员</li>
+        </ul>
+      </a>
+      <a class="card" href="消息系统页面原型-公告管理.html">
+        <span class="role mgmt">系统管理</span>
+        <h2>公告管理</h2>
+        <ul>
+          <li>列表含操作列：改 / 撤 / 删 / 重试</li>
+          <li>状态含已撤回；已读 / 未读名单</li>
+          <li>本页也可发公告（与消息中心同能力）</li>
+        </ul>
+      </a>
+    </div>
+    <p class="foot">设计说明：<a href="消息系统功能设计.md">消息系统功能设计.md</a></p>
+  </div>
+</body>
+</html>

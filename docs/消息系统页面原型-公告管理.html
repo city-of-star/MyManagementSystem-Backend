@@ -1,0 +1,1347 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MMS · 公告管理原型</title>
+  <style>
+    :root {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      line-height: 1.5;
+      --mms-primary-color: #0085d0;
+      --mms-primary-rgb: 0, 133, 208;
+      --mms-primary-light: #cce7f6;
+      --mms-primary-soft-bg: #99cfed;
+      --mms-primary-dark: #006aa6;
+      --mms-bg: #f0f2f5;
+      --mms-surface: #ffffff;
+      --mms-surface-2: #fafbfc;
+      --mms-surface-alt: #f5f7fa;
+      --mms-text: #111827;
+      --mms-text-muted: #595959;
+      --mms-border: #e8ebf0;
+      --mms-divider: #f2f3f5;
+      --mms-hover-bg: #f5f7fa;
+      --mms-shadow-header: 0 2px 8px rgba(0, 0, 0, 0.04);
+      --mms-shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06);
+      --el-color-success: #67c23a;
+      --el-color-warning: #e6a23c;
+      --el-color-danger: #f56c6c;
+      --el-color-info: #909399;
+      --header-h: 64px;
+      --tabs-h: 42px;
+      --sider-w: 240px;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; }
+    body { background: var(--mms-bg); color: var(--mms-text); overflow: hidden; }
+    button, input, textarea, select { font: inherit; color: inherit; }
+    button { cursor: pointer; }
+    a { color: inherit; text-decoration: none; }
+
+    .app-layout { width: 100%; height: 100vh; display: flex; background: var(--mms-bg); overflow: hidden; }
+    .app-sider {
+      width: var(--sider-w); flex-shrink: 0;
+      background: linear-gradient(180deg, #001529 0%, #002140 100%);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      overflow: auto;
+    }
+    .menu { padding: 16px 8px; display: flex; flex-direction: column; gap: 4px; }
+    .menu-item, .submenu-item, .menu-folder {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 12px; border-radius: 6px;
+      color: rgba(255, 255, 255, 0.85); user-select: none; cursor: pointer;
+    }
+    .menu-item:hover, .menu-folder:hover { background: rgba(255,255,255,.08); color: #fff; }
+    .menu-folder-content { display: flex; align-items: center; gap: 10px; width: 100%; }
+    .menu-arrow { margin-left: auto; width: 14px; height: 14px; opacity: .6; }
+    .menu-icon { width: 16px; height: 16px; flex-shrink: 0; }
+    .menu-label { font-size: 14px; flex: 1; }
+    .submenu { display: flex; flex-direction: column; padding-left: 20px; margin-top: 4px; gap: 2px; }
+    .submenu-item { padding: 8px 12px; font-size: 13px; color: rgba(255,255,255,.65); }
+    .submenu-item:hover { background: rgba(255,255,255,.06); color: rgba(255,255,255,.85); }
+    .submenu-item.active {
+      background: var(--mms-primary-soft-bg);
+      color: var(--mms-primary-color); font-weight: 500;
+    }
+
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: hidden; }
+    .app-header {
+      height: var(--header-h); padding: 0 24px; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: space-between;
+      background: linear-gradient(180deg, var(--mms-surface) 0%, var(--mms-surface-2) 100%);
+      border-bottom: 1px solid var(--mms-border);
+      box-shadow: var(--mms-shadow-header);
+    }
+    .logo-area { display: flex; align-items: center; gap: 12px; }
+    .logo-mark {
+      width: 32px; height: 32px; border-radius: 8px;
+      background: linear-gradient(135deg, var(--mms-primary-color), var(--mms-primary-dark));
+      display: grid; place-items: center; color: #fff; font-weight: 700; font-size: 12px;
+    }
+    .logo-text .name {
+      font-size: 18px; font-weight: 600;
+      background: linear-gradient(135deg, var(--mms-primary-color) 0%, var(--mms-primary-dark) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .header-right { display: flex; align-items: center; gap: 10px; color: var(--mms-text-muted); font-size: 13px; }
+    .avatar-sm {
+      width: 32px; height: 32px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--mms-primary-color), var(--mms-primary-dark));
+      color: #fff; display: grid; place-items: center; font-size: 12px; font-weight: 600;
+    }
+    .layout-tabs {
+      height: var(--tabs-h); flex-shrink: 0; padding: 0 16px;
+      display: flex; align-items: flex-end; gap: 4px;
+      background: var(--mms-surface); border-bottom: 1px solid var(--mms-border);
+    }
+    .layout-tab {
+      height: 34px; padding: 0 14px; border: 0; border-radius: 6px 6px 0 0;
+      background: transparent; color: var(--mms-text-muted); font-size: 13px;
+    }
+    .layout-tab.active {
+      background: var(--mms-bg); color: var(--mms-primary-color); font-weight: 600;
+      border: 1px solid var(--mms-border); border-bottom-color: var(--mms-bg);
+      margin-bottom: -1px;
+    }
+
+    /* 内容区 —— 对齐 Layout content-inner + UserPage gap:16px */
+    .content {
+      flex: 1; min-height: 0; overflow: auto;
+      padding: 24px;
+    }
+    .content:has(#viewDetail.show) {
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .announce-page, .announce-detail-page {
+      display: flex; flex-direction: column; gap: 16px;
+    }
+    .view { display: none; }
+    .view.show { display: block; }
+    /* 详情：塞进可视区，外层不再出滚动条；名单在卡片内滚 */
+    #viewDetail.show {
+      display: flex; flex-direction: column;
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+    }
+    #viewDetail.show .announce-detail-page {
+      flex: 1; min-height: 0; overflow: hidden;
+    }
+
+    /* SearchForm —— 对齐 SearchForm.vue */
+    .search-card {
+      padding: 16px 20px;
+      background: var(--mms-surface);
+      border-radius: 8px;
+      box-shadow: var(--mms-shadow-card);
+    }
+    .search-form {
+      display: flex; flex-wrap: wrap;
+      margin-bottom: 0;
+    }
+    .search-form .el-form-item {
+      display: inline-flex; align-items: center;
+      margin: 0 32px 18px 0;
+      vertical-align: middle;
+    }
+    .search-form .el-form-item > label {
+      width: 110px; flex-shrink: 0; text-align: right; padding-right: 12px;
+      font-size: 14px; color: var(--mms-text); line-height: 32px;
+      box-sizing: border-box;
+    }
+    .search-form .el-form-item .el-form-item__content { width: 220px; }
+    .search-form .el-form-item .el-input,
+    .search-form .el-form-item .el-select { width: 100%; box-sizing: border-box; }
+    .divider {
+      height: 1px;
+      background-color: var(--mms-divider);
+      margin: 12px 0;
+    }
+    .button-group {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+    }
+
+    /* Toolbar —— 对齐 Toolbar.vue */
+    .toolbar {
+      display: flex; align-items: center; justify-content: flex-start;
+      padding: 8px 0; gap: 8px;
+    }
+
+    /* DataTable —— 对齐 DataTable.vue：border + stripe + 表头/单元格居中，无外层卡片 */
+    table.el-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      background: var(--mms-surface);
+      border: 1px solid var(--mms-border);
+    }
+    table.el-table th {
+      background: var(--mms-surface-alt);
+      color: var(--mms-text-muted);
+      font-weight: 600;
+      text-align: center;
+      padding: 8px 0;
+      border: 1px solid var(--mms-border);
+      white-space: nowrap;
+      height: 40px;
+      box-sizing: border-box;
+    }
+    table.el-table td {
+      padding: 8px 12px;
+      border: 1px solid var(--mms-border);
+      vertical-align: middle;
+      text-align: center;
+      color: var(--mms-text);
+      height: 48px;
+      box-sizing: border-box;
+    }
+    table.el-table tbody tr:nth-child(even) { background: #fafafa; }
+    table.el-table tbody tr:hover > td { background: var(--mms-hover-bg); }
+    .cell-ellipsis {
+      max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      display: inline-block; vertical-align: bottom;
+    }
+    .el-link {
+      border: 0; background: transparent; padding: 0;
+      color: var(--mms-primary-color); font-size: 14px; cursor: pointer;
+    }
+    .el-link:hover { color: var(--mms-primary-dark); }
+    .row-ops { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+    .recalled-tip {
+      margin-bottom: 12px; padding: 10px 12px; border-radius: 6px;
+      background: #f4f4f5; color: var(--mms-text-muted); font-size: 13px;
+    }
+
+    /* Pagination —— 对齐 Pagination.vue */
+    .pagination {
+      margin-top: 16px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--mms-text-muted);
+    }
+    .pagination .pager-btns { display: flex; gap: 4px; align-items: center; }
+    .pagination button {
+      min-width: 32px; height: 32px; padding: 0 4px;
+      border: 0; border-radius: 2px; background: #f0f2f5; font-size: 13px; color: var(--mms-text);
+    }
+    .pagination button.active {
+      background: var(--mms-primary-color); color: #fff;
+    }
+    .pagination button:disabled { opacity: .5; cursor: not-allowed; background: #f0f2f5; }
+    .pagination select {
+      height: 32px; border: 1px solid #dcdfe6; border-radius: 2px; padding: 0 8px; background: #fff;
+    }
+    .pagination .total { margin-right: 8px; }
+
+    /* 控件 */
+    .el-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      height: 32px; padding: 0 15px; border-radius: 4px;
+      border: 1px solid var(--mms-border); background: #fff;
+      color: var(--mms-text); font-size: 14px; line-height: 1; white-space: nowrap;
+    }
+    .el-btn:hover { color: var(--mms-primary-color); border-color: var(--mms-primary-light); background: #ecf5ff; }
+    .el-btn--primary { background: var(--mms-primary-color); border-color: var(--mms-primary-color); color: #fff; }
+    .el-btn--primary:hover { background: var(--mms-primary-dark); border-color: var(--mms-primary-dark); color: #fff; }
+    .el-btn--info { background: #909399; border-color: #909399; color: #fff; }
+    .el-btn--info:hover { filter: brightness(1.05); color: #fff; }
+    .el-btn--danger.is-plain {
+      background: #fef0f0; border-color: #fbc4c4; color: var(--el-color-danger);
+    }
+    .el-input, .el-select {
+      height: 32px; padding: 0 11px;
+      border: 1px solid #dcdfe6; border-radius: 4px; background: #fff; outline: none;
+    }
+    .el-input:focus, .el-select:focus { border-color: var(--mms-primary-color); }
+    .el-input.is-disabled { background: #f5f7fa; color: var(--mms-text-muted); cursor: default; }
+
+    .el-tag {
+      display: inline-flex; align-items: center; height: 24px; padding: 0 8px;
+      border-radius: 4px; font-size: 12px; border: 1px solid transparent;
+    }
+    .el-tag--success { background: #f0f9eb; color: #67c23a; border-color: #e1f3d8; }
+    .el-tag--primary { background: #ecf5ff; color: #409eff; border-color: #d9ecff; }
+    .el-tag--info { background: #f4f4f5; color: #909399; border-color: #e9e9eb; }
+    .el-tag--danger { background: #fef0f0; color: #f56c6c; border-color: #fde2e2; }
+    .el-tag--warning { background: #fdf6ec; color: #e6a23c; border-color: #faecd8; }
+
+    /* 详情页 —— 对齐 UserDetailPage */
+    .page-head {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .page-head .left, .page-head .right { display: flex; gap: 8px; align-items: center; }
+    .el-card {
+      background: var(--mms-surface); border-radius: 10px;
+      box-shadow: var(--mms-shadow-card); border: 1px solid var(--mms-border);
+      overflow: hidden;
+    }
+    .el-card + .el-card { margin-top: 0; }
+    .el-card__header {
+      padding: 14px 18px; border-bottom: 1px solid var(--mms-divider);
+      font-size: 15px; font-weight: 600;
+    }
+    .el-card__body { padding: 18px; }
+    .hero .hero-main { display: flex; align-items: flex-start; gap: 14px; }
+    .hero .hero-info { flex: 1; min-width: 0; }
+    .hero-title { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+    .hero-title .name { font-size: 18px; font-weight: 600; }
+    .hero-title .sub { font-size: 13px; color: var(--mms-text-muted); }
+    .hero-tags { display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap; }
+    .hero-meta {
+      display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px 24px; margin-top: 14px; font-size: 13px;
+    }
+    .hero-meta .label { color: var(--mms-text-muted); }
+    .page-head { flex-shrink: 0; }
+    .hero { flex-shrink: 0; }
+    .detail-grid {
+      display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px;
+      flex: 1; min-height: 0; align-items: stretch;
+    }
+    .detail-grid > .el-card {
+      display: flex; flex-direction: column; min-height: 0; overflow: hidden;
+    }
+    .detail-grid > .el-card > .el-card__body {
+      flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;
+    }
+    .section-title { font-size: 15px; font-weight: 600; }
+    .desc-table {
+      width: 100%; border-collapse: collapse; font-size: 13px; flex-shrink: 0;
+    }
+    .desc-table th, .desc-table td {
+      border: 1px solid var(--mms-border); padding: 10px 12px; text-align: left;
+    }
+    .desc-table th {
+      width: 110px; background: #fafafa; color: var(--mms-text-muted); font-weight: 500;
+      white-space: nowrap;
+    }
+    .announce-html {
+      font-size: 14px; line-height: 1.7;
+      flex: 1; min-height: 0; overflow: auto;
+    }
+    .announce-html h3 { margin: 0 0 8px; font-size: 15px; }
+    .announce-html p { margin: 0 0 10px; }
+    .announce-html ul { margin: 8px 0; padding-left: 20px; }
+    .roster-panel {
+      flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden;
+    }
+    .roster-search {
+      margin-bottom: 10px; flex-shrink: 0;
+    }
+    .roster-search .el-input { width: 100%; }
+    .user-list {
+      display: flex; flex-direction: column;
+      flex: 1; min-height: 0;
+      overflow: auto; border: 1px solid var(--mms-border); border-radius: 4px;
+      padding: 0 12px; background: #fff;
+    }
+    .user-row {
+      display: flex; align-items: center; gap: 10px;
+      padding: 10px 0; border-bottom: 1px solid var(--mms-divider);
+    }
+    .user-row:last-child { border-bottom: 0; }
+    .user-row .av {
+      width: 32px; height: 32px; border-radius: 50%; flex-shrink: 0;
+      display: grid; place-items: center; color: #fff; font-size: 12px; font-weight: 600;
+    }
+    .user-row .info { flex: 1; min-width: 0; }
+    .user-row .name { font-size: 13px; font-weight: 500; }
+    .user-row .dept { font-size: 12px; color: var(--mms-text-muted); }
+    .user-row .when { font-size: 12px; color: var(--mms-text-muted); white-space: nowrap; }
+    .roster-foot {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-top: 10px; flex-shrink: 0; font-size: 12px; color: var(--mms-text-muted);
+    }
+    .roster-foot .pager-btns { display: flex; gap: 4px; }
+    .roster-foot button {
+      min-width: 28px; height: 28px; border: 1px solid #dcdfe6; border-radius: 2px;
+      background: #fff; font-size: 12px;
+    }
+    .roster-foot button.active {
+      background: var(--mms-primary-color); border-color: var(--mms-primary-color); color: #fff;
+    }
+    .roster-foot button:disabled { opacity: .5; cursor: not-allowed; }
+    .detail-tabs {
+      display: flex; gap: 0; margin-bottom: 12px; border-bottom: 1px solid var(--mms-divider);
+      flex-shrink: 0;
+    }
+    .detail-tab {
+      height: 36px; padding: 0 14px; border: 0; background: transparent;
+      color: var(--mms-text-muted); font-size: 13px; position: relative;
+    }
+    .detail-tab.active { color: var(--mms-primary-color); font-weight: 600; }
+    .detail-tab.active::after {
+      content: ''; position: absolute; left: 12px; right: 12px; bottom: 0;
+      height: 2px; background: var(--mms-primary-color);
+    }
+    .muted { color: var(--mms-text-muted); }
+    .empty-cell { text-align: center; padding: 40px 12px !important; color: var(--mms-text-muted); }
+    .roster-empty {
+      flex: 1; min-height: 120px; display: grid; place-items: center;
+      border: 1px dashed var(--mms-border); border-radius: 4px; color: var(--mms-text-muted); font-size: 13px;
+    }
+
+    @media (max-width: 1100px) {
+      .detail-grid { grid-template-columns: 1fr; }
+      .hero-meta { grid-template-columns: 1fr; }
+    }
+
+    /* —— 发公告弹窗（与消息中心原型一致） —— */
+    .mask {
+      position: fixed; inset: 0; background: rgba(0,0,0,.45);
+      z-index: 1000; display: none; align-items: center; justify-content: center;
+      padding: 24px;
+    }
+    .mask.show { display: flex; }
+    .dialog {
+      width: 480px; max-width: 100%; max-height: calc(100vh - 48px);
+      background: var(--mms-surface); border-radius: 4px;
+      box-shadow: 0 12px 32px rgba(0,0,0,.18);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .dialog.wide { width: 1200px; max-height: calc(100vh - 24px); overflow: auto; }
+    .dialog.wide .dialog-bd { overflow: visible; }
+    .dialog-hd {
+      padding: 16px 20px; border-bottom: 1px solid var(--mms-border);
+      display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+    }
+    .dialog-hd .dialog-title {
+      font-size: 18px; font-weight: 600; color: var(--mms-text); line-height: 24px;
+    }
+    .dialog-bd { padding: 16px 20px 8px; overflow: auto; flex: 1; min-height: 0; }
+    .dialog-ft {
+      padding: 12px 20px 16px; display: flex; justify-content: flex-end; gap: 12px; flex-shrink: 0;
+    }
+    .dialog-close {
+      border: 0; background: transparent; color: var(--mms-text-muted);
+      width: 32px; height: 32px; border-radius: 4px; font-size: 18px;
+      display: grid; place-items: center; margin: -4px -8px -4px 0;
+    }
+    .dialog-close:hover { background: var(--mms-hover-bg); color: var(--mms-text); }
+    .dialog-form { padding-top: 4px; }
+    .form-item { display: flex; align-items: flex-start; margin-bottom: 18px; }
+    .form-item > .form-label {
+      width: 90px; flex-shrink: 0; padding-top: 6px;
+      font-size: 14px; color: var(--mms-text); text-align: right; padding-right: 12px; line-height: 20px;
+    }
+    .form-item > .form-label .req { color: var(--el-color-danger); margin-right: 2px; }
+    .form-item > .form-content { flex: 1; min-width: 0; }
+    .radio-group { display: flex; flex-wrap: wrap; gap: 16px; padding-top: 6px; }
+    .radio {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 14px; color: var(--mms-text); cursor: pointer; user-select: none;
+    }
+    .radio input { display: none; }
+    .radio .radio-dot {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 1px solid #dcdfe6; background: #fff; display: grid; place-items: center; flex-shrink: 0;
+    }
+    .radio .radio-dot::after {
+      content: ""; width: 4px; height: 4px; border-radius: 50%; background: transparent;
+    }
+    .radio input:checked + .radio-dot {
+      border-color: var(--mms-primary-color); background: var(--mms-primary-color);
+    }
+    .radio input:checked + .radio-dot::after { background: #fff; }
+    .audience-modes { position: relative; min-height: 32px; }
+    .audience-mode { display: none; }
+    .audience-mode.active { display: block; }
+    .ms-select {
+      position: relative; min-height: 32px;
+      border: 1px solid #dcdfe6; border-radius: 4px;
+      padding: 4px 30px 4px 8px; background: #fff;
+      display: flex; flex-wrap: wrap; gap: 4px; align-items: center; cursor: text;
+    }
+    .ms-select.open, .ms-select:focus-within { border-color: var(--mms-primary-color); }
+    .ms-select .ms-tags { display: contents; }
+    .ms-select .ms-input {
+      flex: 1; min-width: 80px; border: 0; outline: none; background: transparent;
+      height: 24px; font-size: 14px; padding: 0 4px;
+    }
+    .ms-select .ms-caret {
+      position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+      color: #a8abb2; font-size: 12px; pointer-events: none;
+    }
+    .ms-dropdown {
+      display: none; position: absolute; left: 0; right: 0; top: calc(100% + 4px);
+      max-height: 220px; overflow: auto; z-index: 20;
+      background: #fff; border: 1px solid #e4e7ed; border-radius: 4px;
+      box-shadow: 0 6px 16px rgba(0,0,0,.08);
+    }
+    .ms-select.open .ms-dropdown { display: block; }
+    .chip {
+      display: inline-flex; align-items: center; gap: 4px;
+      height: 24px; padding: 0 8px; border-radius: 4px;
+      background: #ecf5ff; color: var(--mms-primary-color); font-size: 12px;
+    }
+    .chip button { border: 0; background: transparent; color: inherit; padding: 0; font-size: 14px; line-height: 1; }
+    .contact-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 8px 12px; cursor: pointer; border-bottom: 1px solid var(--mms-divider);
+    }
+    .contact-item:hover { background: var(--mms-hover-bg); }
+    .contact-item.selected { background: rgba(var(--mms-primary-rgb), 0.08); }
+    .contact-item .msg-avatar {
+      width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+      display: grid; place-items: center; color: #fff; font-size: 12px; font-weight: 600;
+    }
+    .ci-main { flex: 1; min-width: 0; }
+    .ci-name { font-size: 13px; font-weight: 500; }
+    .ci-meta { font-size: 12px; color: var(--mms-text-muted); }
+    .ci-check { width: 18px; color: var(--mms-primary-color); text-align: center; }
+    .contact-empty { padding: 16px; text-align: center; color: var(--mms-text-muted); font-size: 13px; }
+
+    .ql-snow { border: 1px solid #ccc; border-radius: 4px; background: #fff; overflow: hidden; }
+    .ql-snow:focus-within { border-color: var(--mms-primary-color); }
+    .ql-toolbar {
+      display: flex; flex-wrap: wrap; gap: 2px 0; align-items: center;
+      padding: 8px; border-bottom: 1px solid #ccc; background: #fff;
+    }
+    .ql-toolbar .ql-formats {
+      display: inline-flex; align-items: center; gap: 2px;
+      margin-right: 12px; padding-right: 12px; border-right: 1px solid #e4e7ed;
+    }
+    .ql-toolbar .ql-formats:last-child { border-right: 0; margin-right: 0; padding-right: 0; }
+    .ql-toolbar button, .ql-toolbar .ql-picker {
+      height: 28px; min-width: 28px; padding: 0 6px;
+      border: 0; border-radius: 2px; background: transparent; color: #444; font-size: 13px; line-height: 28px;
+    }
+    .ql-toolbar button:hover { background: #f0f2f5; color: var(--mms-primary-color); }
+    .ql-toolbar .ql-picker {
+      appearance: none;
+      background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23888'/%3E%3C/svg%3E") no-repeat right 6px center;
+      padding-right: 18px;
+    }
+    .ql-container {
+      height: 480px; overflow: auto; padding: 12px 15px;
+      font-size: 14px; line-height: 1.7; outline: none;
+    }
+
+    .toast-wrap {
+      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
+      z-index: 3000; display: flex; flex-direction: column; gap: 8px; pointer-events: none;
+    }
+    .toast {
+      min-width: 280px; padding: 12px 16px; border-radius: 4px;
+      background: #fff; border: 1px solid var(--mms-border);
+      box-shadow: 0 12px 32px rgba(15, 23, 42, 0.18);
+      display: flex; align-items: center; gap: 8px; font-size: 14px;
+    }
+    .toast .mark {
+      width: 18px; height: 18px; border-radius: 50%;
+      display: grid; place-items: center; color: #fff; font-size: 11px; background: var(--el-color-success);
+    }
+    .toast.warning .mark { background: var(--el-color-warning); }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <aside class="app-sider">
+      <nav class="menu">
+        <div class="menu-item" onclick="location.href='消息系统页面原型-管理员.html'">
+          <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span class="menu-label">首页</span>
+        </div>
+        <div class="menu-item" onclick="location.href='消息系统页面原型-管理员.html'">
+          <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span class="menu-label">消息中心</span>
+        </div>
+        <div class="menu-folder">
+          <div class="menu-folder-content">
+            <svg class="menu-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            <span class="menu-label">系统管理</span>
+            <svg class="menu-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+          </div>
+        </div>
+        <div class="submenu">
+          <div class="submenu-item" onclick="toast('info','原型：用户管理（占位）')">用户管理</div>
+          <div class="submenu-item active">公告管理</div>
+        </div>
+      </nav>
+    </aside>
+
+    <div class="main">
+      <header class="app-header">
+        <div class="logo-area">
+          <div class="logo-mark">M</div>
+          <div class="logo-text"><div class="name">MyManagementSystem</div></div>
+        </div>
+        <div class="header-right">
+          <span>李鸿羽 · 管理员</span>
+          <div class="avatar-sm">羽</div>
+        </div>
+      </header>
+      <div class="layout-tabs">
+        <button class="layout-tab active" id="layoutTabLabel">公告管理</button>
+      </div>
+
+      <div class="content">
+        <!-- 列表：对齐 UserPage = SearchForm + Toolbar + DataTable + Pagination -->
+        <div class="view show" id="viewList">
+          <div class="announce-page">
+            <div class="search-card">
+              <div class="search-form">
+                <div class="el-form-item">
+                  <label>标题</label>
+                  <div class="el-form-item__content">
+                    <input class="el-input" id="qTitle" placeholder="请输入标题" />
+                  </div>
+                </div>
+                <div class="el-form-item">
+                  <label>发布人</label>
+                  <div class="el-form-item__content">
+                    <input class="el-input" id="qPublisher" placeholder="请输入发布人" />
+                  </div>
+                </div>
+                <div class="el-form-item">
+                  <label>状态</label>
+                  <div class="el-form-item__content">
+                    <select class="el-select" id="qStatus">
+                      <option value="">全部</option>
+                      <option value="DONE">已完成</option>
+                      <option value="RUNNING">发送中</option>
+                      <option value="PENDING">待发送</option>
+                      <option value="FAILED">失败</option>
+                      <option value="RECALLED">已撤回</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+              <div class="divider"></div>
+              <div class="button-group">
+                <button class="el-btn el-btn--primary" onclick="handleSearch()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.3-4.3"/></svg>
+                  查询
+                </button>
+                <button class="el-btn el-btn--info" onclick="handleReset()">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9"/><polyline points="3 4 3 12 11 12"/></svg>
+                  重置
+                </button>
+              </div>
+            </div>
+
+            <div class="toolbar">
+              <button class="el-btn el-btn--primary" onclick="openAnnounce()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                发公告
+              </button>
+            </div>
+
+            <table class="el-table">
+                <thead>
+                  <tr>
+                    <th style="width:70px">序号</th>
+                    <th>标题</th>
+                    <th style="width:140px">范围</th>
+                    <th style="width:100px">发布人</th>
+                    <th style="width:170px">发布时间</th>
+                    <th style="width:90px">状态</th>
+                    <th style="width:120px">已读/总数</th>
+                    <th style="width:140px">操作</th>
+                  </tr>
+                </thead>
+                <tbody id="tbody"></tbody>
+            </table>
+
+            <div class="pagination">
+              <span class="total" id="totalText">共 0 条</span>
+              <select id="pageSize" onchange="changePageSize()">
+                <option value="10">10条/页</option>
+                <option value="20">20条/页</option>
+                <option value="50">50条/页</option>
+              </select>
+              <div class="pager-btns" id="pager"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 详情：页内切换，左上角返回 —— 对齐 UserDetailPage -->
+        <div class="view" id="viewDetail">
+          <div class="announce-detail-page" id="detailRoot"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 发系统公告 —— 与消息中心原型同一套弹窗 -->
+  <div class="mask" id="maskAnnounce">
+    <div class="dialog wide">
+      <div class="dialog-hd">
+        <div class="dialog-title">发系统公告</div>
+        <button class="dialog-close" onclick="closeAnnounce()" aria-label="关闭">×</button>
+      </div>
+      <div class="dialog-bd">
+        <div class="dialog-form">
+          <div class="form-item">
+            <div class="form-label"><span class="req">*</span>范围</div>
+            <div class="form-content">
+              <div class="radio-group" id="scopeRow">
+                <label class="radio"><input type="radio" name="announceScope" value="users" checked /><span class="radio-dot"></span>指定用户</label>
+                <label class="radio"><input type="radio" name="announceScope" value="role" /><span class="radio-dot"></span>按角色</label>
+                <label class="radio"><input type="radio" name="announceScope" value="all" /><span class="radio-dot"></span>全员</label>
+              </div>
+            </div>
+          </div>
+          <div class="form-item">
+            <div class="form-label" id="announceAudienceLabel"><span class="req">*</span>接收人</div>
+            <div class="form-content">
+              <div class="audience-modes">
+                <div class="audience-mode active" data-scope="users">
+                  <div class="ms-select" id="announceUserSelect" onclick="openAnnounceUserDropdown()">
+                    <div class="ms-tags" id="announceSelected"></div>
+                    <input class="ms-input" id="announceSearch" placeholder="搜索并选择用户" autocomplete="off"
+                      oninput="renderAnnouncePicker(); openAnnounceUserDropdown()" onfocus="openAnnounceUserDropdown()" />
+                    <span class="ms-caret">▾</span>
+                    <div class="ms-dropdown" id="announcePicker"></div>
+                  </div>
+                </div>
+                <div class="audience-mode" data-scope="role">
+                  <select class="el-select" id="announceRole" style="width:100%">
+                    <option value="admin">系统管理员</option>
+                    <option value="ops">运营</option>
+                    <option value="tech">技术中心</option>
+                  </select>
+                </div>
+                <div class="audience-mode" data-scope="all">
+                  <input class="el-input is-disabled" value="全部用户" readonly tabindex="-1" style="width:100%" />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="form-item">
+            <div class="form-label"><span class="req">*</span>标题</div>
+            <div class="form-content">
+              <input class="el-input" id="announceTitle" value="关于周五系统维护" placeholder="请输入公告标题" style="width:100%" />
+            </div>
+          </div>
+          <div class="form-item" style="margin-bottom:0">
+            <div class="form-label"><span class="req">*</span>正文</div>
+            <div class="form-content">
+              <div class="ql-snow">
+                <div class="ql-toolbar">
+                  <span class="ql-formats">
+                    <button type="button" onclick="document.execCommand('bold')" title="加粗"><b>B</b></button>
+                    <button type="button" onclick="document.execCommand('italic')" title="斜体"><i>I</i></button>
+                    <button type="button" onclick="document.execCommand('underline')" title="下划线"><u>U</u></button>
+                    <button type="button" onclick="document.execCommand('strikeThrough')" title="删除线"><s>S</s></button>
+                  </span>
+                  <span class="ql-formats">
+                    <select class="ql-picker" onchange="document.execCommand('formatBlock', false, this.value)" title="标题">
+                      <option value="p">正文</option>
+                      <option value="h1">H1</option>
+                      <option value="h2">H2</option>
+                      <option value="h3">H3</option>
+                    </select>
+                  </span>
+                  <span class="ql-formats">
+                    <button type="button" onclick="document.execCommand('insertOrderedList')" title="有序列表">1.</button>
+                    <button type="button" onclick="document.execCommand('insertUnorderedList')" title="无序列表">•</button>
+                  </span>
+                  <span class="ql-formats">
+                    <button type="button" onclick="document.execCommand('justifyLeft')" title="左对齐">左</button>
+                    <button type="button" onclick="document.execCommand('justifyCenter')" title="居中">中</button>
+                    <button type="button" onclick="document.execCommand('justifyRight')" title="右对齐">右</button>
+                  </span>
+                  <span class="ql-formats">
+                    <button type="button" onclick="document.execCommand('createLink', false, prompt('链接 URL','https://')||undefined)" title="链接">链接</button>
+                    <button type="button" onclick="document.execCommand('removeFormat')" title="清除格式">清</button>
+                  </span>
+                </div>
+                <div class="ql-container" id="announceEditor" contenteditable="true" data-placeholder="请输入公告内容">本周五 <strong>22:00–23:00</strong> 进行系统升级，期间作业调度将暂停，请提前安排相关任务。</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dialog-ft">
+        <button class="el-btn" onclick="closeAnnounce()">取 消</button>
+        <button class="el-btn el-btn--primary" id="announceSubmitBtn" onclick="submitAnnounce()">发 布</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-wrap" id="toastWrap"></div>
+
+  <script>
+    const users = [
+      { id: 2, name: '小满', username: 'xiaoman', dept: '产品中心' },
+      { id: 3, name: '阿泽', username: 'aze', dept: '研发中心' },
+      { id: 4, name: '林夕', username: 'linxi', dept: '运营中心' },
+      { id: 5, name: '老周', username: 'laozhou', dept: '财务' },
+      { id: 6, name: '小北', username: 'xiaobei', dept: '客服' },
+    ];
+
+    const depts = ['产品中心', '研发中心', '运营中心', '财务', '客服', '总部', '运维'];
+    const surnames = ['小', '阿', '林', '老', '陈', '王', '李', '张', '赵', '周', '吴', '郑'];
+    function mockPerson(i, read) {
+      const name = surnames[i % surnames.length] + (['满', '泽', '夕', '周', '北', '超', '然', '宁', '航', '琪'][i % 10]);
+      const hue = (i * 47) % 360;
+      const base = {
+        name, dept: depts[i % depts.length], hue,
+      };
+      if (read) {
+        const h = 18 + (i % 5);
+        const m = (i * 3) % 60;
+        const s = (i * 7) % 60;
+        base.when = `2026-08-01 ${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+      }
+      return base;
+    }
+    // 演示多人：已读 96 / 未读 32（列表可分页滚动）
+    const demoReaders = Array.from({ length: 96 }, (_, i) => mockPerson(i, true));
+    const demoUnread = Array.from({ length: 32 }, (_, i) => mockPerson(100 + i, false));
+
+    let announces = [
+      {
+        id: 1,
+        title: '本周六系统维护通知（02:00–04:00）',
+        scopeLabel: '全员',
+        publisher: '李鸿羽',
+        time: '2026-08-01 18:20:00',
+        status: 'DONE',
+        total: 128,
+        read: 96,
+        contentHtml: '<h3>维护安排</h3><p>本周六 02:00–04:00 进行数据库例行维护，期间登录与作业调度将不可用。</p><ul><li>请提前保存未提交数据</li><li>紧急联系值班：运维值班群</li></ul>',
+        readers: demoReaders,
+        unreadUsers: demoUnread,
+      },
+      {
+        id: 2,
+        title: '权限模型调整说明（角色管理员请阅）',
+        scopeLabel: '角色：系统管理员',
+        publisher: '超级管理员',
+        time: '2026-07-28 10:05:00',
+        status: 'DONE',
+        total: 6,
+        read: 6,
+        contentHtml: '<p>自下周一起，菜单权限以权限码为准，请各管理员自查角色授权。</p>',
+        readers: [
+          { name: '李鸿羽', dept: '总部', when: '2026-07-28 10:12:00', hue: 210 },
+          { name: '陈超', dept: '总部', when: '2026-07-28 11:00:00', hue: 40 },
+          { name: '阿泽', dept: '研发中心', when: '2026-07-28 11:20:00', hue: 160 },
+          { name: '林夕', dept: '运营中心', when: '2026-07-28 12:01:00', hue: 320 },
+          { name: '小满', dept: '产品中心', when: '2026-07-28 13:10:00', hue: 200 },
+          { name: '老周', dept: '财务', when: '2026-07-28 14:00:00', hue: 30 },
+        ],
+        unreadUsers: [],
+      },
+      {
+        id: 3,
+        title: '作业失败告警通道试运行',
+        scopeLabel: '指定 12 人',
+        publisher: '李鸿羽',
+        time: '2026-08-03 09:40:00',
+        status: 'RUNNING',
+        total: 12,
+        read: 3,
+        contentHtml: '<p>试运行期间，作业失败将同步写入系统通知。请相关同事反馈漏推 / 误推情况。</p>',
+        readers: [
+          { name: '阿泽', dept: '研发中心', when: '2026-08-03 09:55:00', hue: 160 },
+          { name: '小满', dept: '产品中心', when: '2026-08-03 10:02:00', hue: 200 },
+          { name: '林夕', dept: '运营中心', when: '2026-08-03 10:15:00', hue: 320 },
+        ],
+        unreadUsers: Array.from({ length: 9 }, (_, i) => mockPerson(50 + i, false)),
+      },
+      {
+        id: 4,
+        title: '季度安全宣贯',
+        scopeLabel: '全员',
+        publisher: '李鸿羽',
+        time: '2026-07-15 16:00:00',
+        status: 'FAILED',
+        total: 128,
+        read: 0,
+        contentHtml: '<p>发送失败示例：落地后可在此重试。</p>',
+        readers: [],
+        unreadUsers: [],
+      },
+      {
+        id: 5,
+        title: '已撤回示例：错误发布的测试公告',
+        scopeLabel: '指定 3 人',
+        publisher: '李鸿羽',
+        time: '2026-08-04 11:00:00',
+        status: 'RECALLED',
+        total: 3,
+        read: 1,
+        contentHtml: '<p>撤回后用户消息中心不再显示该公告。</p>',
+        readers: [{ name: '小满', dept: '产品中心', when: '2026-08-04 11:05:00', hue: 200 }],
+        unreadUsers: [],
+      },
+    ];
+
+    let query = { title: '', publisher: '', status: '', pageNum: 1, pageSize: 10 };
+    let filteredCache = [];
+    let detailId = null;
+    let editingId = null;
+    let rosterTab = 'read';
+    let rosterPage = 1;
+    let rosterKw = '';
+    const rosterPageSize = 20;
+    let announceScope = 'users';
+    let announceUserIds = new Set();
+
+    function escapeHtml(s) {
+      return String(s ?? '').replace(/[&<>"']/g, (c) => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+      }[c]));
+    }
+    function toast(type, text) {
+      const wrap = document.getElementById('toastWrap');
+      const el = document.createElement('div');
+      el.className = 'toast ' + (type === 'warning' ? 'warning' : '');
+      el.innerHTML = `<span class="mark">${type === 'warning' ? '!' : '✓'}</span><span>${escapeHtml(text)}</span>`;
+      wrap.appendChild(el);
+      setTimeout(() => el.remove(), 2400);
+    }
+    function statusTag(st) {
+      const map = {
+        DONE: ['success', '已完成'],
+        RUNNING: ['primary', '发送中'],
+        PENDING: ['info', '待发送'],
+        FAILED: ['danger', '失败'],
+        RECALLED: ['info', '已撤回'],
+      };
+      const [t, label] = map[st] || ['info', st];
+      return `<span class="el-tag el-tag--${t}">${label}</span>`;
+    }
+    function canEdit(a) { return a.status === 'DONE' || a.status === 'FAILED'; }
+    function canRecall(a) { return a.status === 'DONE' || a.status === 'FAILED'; }
+    function canDelete(a) { return a.status !== 'RUNNING'; }
+    function canRetry(a) { return a.status === 'FAILED'; }
+    function rowOpsHtml(a) {
+      const btns = [];
+      if (canEdit(a)) btns.push(`<button class="el-link" onclick="event.stopPropagation();openEdit(${a.id})">修改</button>`);
+      if (canRecall(a)) btns.push(`<button class="el-link" onclick="event.stopPropagation();recallAnnounce(${a.id})">撤回</button>`);
+      if (canRetry(a)) btns.push(`<button class="el-link" onclick="event.stopPropagation();retryAnnounce(${a.id})">重试</button>`);
+      if (canDelete(a)) btns.push(`<button class="el-link" style="color:var(--el-color-danger)" onclick="event.stopPropagation();deleteAnnounce(${a.id})">删除</button>`);
+      return btns.length ? `<div class="row-ops">${btns.join('')}</div>` : '<span class="muted">—</span>';
+    }
+
+    function applyFilter() {
+      filteredCache = announces.filter((a) => {
+        if (query.title && !a.title.includes(query.title)) return false;
+        if (query.publisher && !a.publisher.includes(query.publisher)) return false;
+        if (query.status && a.status !== query.status) return false;
+        return true;
+      });
+    }
+    function handleSearch() {
+      query.title = (document.getElementById('qTitle').value || '').trim();
+      query.publisher = (document.getElementById('qPublisher').value || '').trim();
+      query.status = document.getElementById('qStatus').value;
+      query.pageNum = 1;
+      renderTable();
+    }
+    function handleReset() {
+      document.getElementById('qTitle').value = '';
+      document.getElementById('qPublisher').value = '';
+      document.getElementById('qStatus').value = '';
+      query = { title: '', publisher: '', status: '', pageNum: 1, pageSize: Number(document.getElementById('pageSize').value) || 10 };
+      renderTable();
+    }
+    function changePageSize() {
+      query.pageSize = Number(document.getElementById('pageSize').value) || 10;
+      query.pageNum = 1;
+      renderTable();
+    }
+    function gotoPage(p) {
+      query.pageNum = p;
+      renderTable();
+    }
+    function renderTable() {
+      applyFilter();
+      const total = filteredCache.length;
+      const pages = Math.max(1, Math.ceil(total / query.pageSize));
+      if (query.pageNum > pages) query.pageNum = pages;
+      const start = (query.pageNum - 1) * query.pageSize;
+      const rows = filteredCache.slice(start, start + query.pageSize);
+      document.getElementById('totalText').textContent = `共 ${total} 条`;
+      document.getElementById('tbody').innerHTML = rows.length
+        ? rows.map((a, idx) => `
+          <tr>
+            <td>${(query.pageNum - 1) * query.pageSize + idx + 1}</td>
+            <td>
+              <button class="el-link" onclick="openDetail(${a.id})" title="${escapeHtml(a.title)}">
+                <span class="cell-ellipsis">${escapeHtml(a.title)}</span>
+              </button>
+            </td>
+            <td><span class="el-tag el-tag--warning">${escapeHtml(a.scopeLabel)}</span></td>
+            <td>${escapeHtml(a.publisher)}</td>
+            <td>${escapeHtml(a.time)}</td>
+            <td>${statusTag(a.status)}</td>
+            <td>${a.read} / ${a.total}</td>
+            <td>${rowOpsHtml(a)}</td>
+          </tr>`).join('')
+        : `<tr><td colspan="8" class="empty-cell">暂无数据</td></tr>`;
+
+      let ph = `<button ${query.pageNum <= 1 ? 'disabled' : ''} onclick="gotoPage(${query.pageNum - 1})">‹</button>`;
+      for (let i = 1; i <= pages; i++) {
+        ph += `<button class="${i === query.pageNum ? 'active' : ''}" onclick="gotoPage(${i})">${i}</button>`;
+      }
+      ph += `<button ${query.pageNum >= pages ? 'disabled' : ''} onclick="gotoPage(${query.pageNum + 1})">›</button>`;
+      document.getElementById('pager').innerHTML = ph;
+    }
+
+    function showView(name) {
+      document.getElementById('viewList').classList.toggle('show', name === 'list');
+      document.getElementById('viewDetail').classList.toggle('show', name === 'detail');
+      document.getElementById('layoutTabLabel').textContent = name === 'detail' ? '公告详情' : '公告管理';
+    }
+    function backToList() {
+      detailId = null;
+      showView('list');
+      renderTable();
+    }
+    function openDetail(id) {
+      detailId = id;
+      rosterTab = 'read';
+      rosterPage = 1;
+      rosterKw = '';
+      showView('detail');
+      renderDetail();
+    }
+    function setRosterTab(tab) {
+      rosterTab = tab;
+      rosterPage = 1;
+      rosterKw = '';
+      renderDetail();
+    }
+    function onRosterSearch(val) {
+      rosterKw = val || '';
+      rosterPage = 1;
+      renderDetail(true);
+    }
+    function gotoRosterPage(p) {
+      rosterPage = p;
+      renderDetail();
+    }
+    function filteredRoster(a) {
+      const raw = rosterTab === 'read' ? (a.readers || []) : (a.unreadUsers || []);
+      const kw = rosterKw.trim().toLowerCase();
+      if (!kw) return raw;
+      return raw.filter((u) =>
+        (u.name || '').toLowerCase().includes(kw)
+        || (u.dept || '').toLowerCase().includes(kw)
+      );
+    }
+    function renderDetail(keepSearchFocus) {
+      const a = announces.find((x) => x.id === detailId);
+      const root = document.getElementById('detailRoot');
+      if (!a) {
+        root.innerHTML = '<div class="muted">公告不存在</div>';
+        return;
+      }
+      const unread = Math.max(0, a.total - a.read);
+      const pct = a.total ? Math.round((a.read / a.total) * 100) : 0;
+      const all = filteredRoster(a);
+      const pages = Math.max(1, Math.ceil(all.length / rosterPageSize) || 1);
+      if (rosterPage > pages) rosterPage = pages;
+      const start = (rosterPage - 1) * rosterPageSize;
+      const pageList = all.slice(start, start + rosterPageSize);
+
+      let pagerHtml = '';
+      if (all.length) {
+        pagerHtml = `<button ${rosterPage <= 1 ? 'disabled' : ''} onclick="gotoRosterPage(${rosterPage - 1})">‹</button>`;
+        const maxBtns = 5;
+        let from = Math.max(1, rosterPage - 2);
+        let to = Math.min(pages, from + maxBtns - 1);
+        from = Math.max(1, to - maxBtns + 1);
+        for (let i = from; i <= to; i++) {
+          pagerHtml += `<button class="${i === rosterPage ? 'active' : ''}" onclick="gotoRosterPage(${i})">${i}</button>`;
+        }
+        pagerHtml += `<button ${rosterPage >= pages ? 'disabled' : ''} onclick="gotoRosterPage(${rosterPage + 1})">›</button>`;
+      }
+
+      root.innerHTML = `
+        <div class="page-head">
+          <div class="left">
+            <button class="el-btn" onclick="backToList()">返回</button>
+          </div>
+          <div class="right">
+            ${canEdit(a) ? `<button class="el-btn" onclick="openEdit(${a.id})">修改</button>` : ''}
+            ${canRecall(a) ? `<button class="el-btn" onclick="recallAnnounce(${a.id})">撤回</button>` : ''}
+            ${canRetry(a) ? `<button class="el-btn el-btn--primary" onclick="retryAnnounce(${a.id})">重试发送</button>` : ''}
+            ${canDelete(a) ? `<button class="el-btn" style="color:var(--el-color-danger);border-color:#fde2e2" onclick="deleteAnnounce(${a.id})">删除</button>` : ''}
+            <button class="el-btn" style="color:var(--mms-primary-color);border-color:var(--mms-primary-light)" onclick="renderDetail()">刷新</button>
+          </div>
+        </div>
+        ${a.status === 'RECALLED' ? '<div class="recalled-tip">该公告已撤回，用户消息中心不再显示；如需彻底清理可删除。</div>' : ''}
+        <div class="el-card hero">
+          <div class="el-card__body">
+            <div class="hero-main">
+              <div class="hero-info">
+                <div class="hero-title">
+                  <span class="name">${escapeHtml(a.title)}</span>
+                  <span class="sub">#${a.id}</span>
+                </div>
+                <div class="hero-tags">
+                  ${statusTag(a.status)}
+                  <span class="el-tag el-tag--warning">${escapeHtml(a.scopeLabel)}</span>
+                </div>
+                <div class="hero-meta">
+                  <div><span class="label">发布人：</span>${escapeHtml(a.publisher)}</div>
+                  <div><span class="label">发布时间：</span>${escapeHtml(a.time)}</div>
+                  <div><span class="label">收件人：</span>${a.total}</div>
+                  <div><span class="label">已读进度：</span>${a.read} / ${a.total}（${pct}%）</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="detail-grid">
+          <div class="el-card">
+            <div class="el-card__header"><div class="section-title">公告正文</div></div>
+            <div class="el-card__body"><div class="announce-html">${a.contentHtml}</div></div>
+          </div>
+          <div class="el-card">
+            <div class="el-card__header"><div class="section-title">阅读情况</div></div>
+            <div class="el-card__body">
+              <table class="desc-table" style="margin-bottom:14px">
+                <tr><th>收件人</th><td>${a.total}</td></tr>
+                <tr><th>已读</th><td>${a.read}</td></tr>
+                <tr><th>未读</th><td>${unread}</td></tr>
+              </table>
+              ${a.status === 'RECALLED' ? '<div class="muted" style="margin-bottom:12px">已撤回：收件箱已软删，名单仅作历史参考。</div>' : ''}
+              <div class="detail-tabs">
+                <button class="detail-tab ${rosterTab === 'read' ? 'active' : ''}" onclick="setRosterTab('read')">已读名单（${a.read}）</button>
+                <button class="detail-tab ${rosterTab === 'unread' ? 'active' : ''}" onclick="setRosterTab('unread')">未读名单（${unread}）</button>
+              </div>
+              <div class="roster-panel">
+                <div class="roster-search">
+                  <input class="el-input" id="rosterSearchInput" placeholder="搜索姓名 / 部门…" value="${escapeHtml(rosterKw)}"
+                    oninput="onRosterSearch(this.value)" />
+                </div>
+                ${!all.length
+                  ? `<div class="roster-empty">${rosterKw.trim() ? '无匹配人员' : (rosterTab === 'read' ? '暂无已读' : '暂无未读')}</div>`
+                  : `<div class="user-list">${pageList.map((u) => `
+                      <div class="user-row">
+                        <div class="av" style="background:hsl(${u.hue || 200},52%,46%)">${escapeHtml((u.name || '?').slice(0, 1))}</div>
+                        <div class="info">
+                          <div class="name">${escapeHtml(u.name)}</div>
+                          <div class="dept">${escapeHtml(u.dept || '')}</div>
+                        </div>
+                        <div class="when">${u.when ? escapeHtml(u.when) : '未读'}</div>
+                      </div>`).join('')}</div>
+                    <div class="roster-foot">
+                      <span>共 ${all.length} 人 · 第 ${rosterPage}/${pages} 页</span>
+                      <div class="pager-btns">${pagerHtml}</div>
+                    </div>`}
+              </div>
+            </div>
+          </div>
+        </div>`;
+      if (keepSearchFocus) {
+        const inp = document.getElementById('rosterSearchInput');
+        if (inp) {
+          inp.focus();
+          const len = inp.value.length;
+          inp.setSelectionRange(len, len);
+        }
+      }
+    }
+
+    /* —— 发公告（与消息中心同源交互） —— */
+    function userAvatarHtml(u) {
+      const hue = (Number(u.id) * 47 + u.name.charCodeAt(0) * 13) % 360;
+      return `<div class="msg-avatar" style="background:hsl(${hue},52%,46%)">${escapeHtml(u.name.slice(0, 1))}</div>`;
+    }
+    function syncAnnounceScopeUI() {
+      document.querySelectorAll('#scopeRow input[name="announceScope"]').forEach((r) => {
+        r.checked = r.value === announceScope;
+      });
+      document.querySelectorAll('.audience-mode').forEach((p) => {
+        p.classList.toggle('active', p.dataset.scope === announceScope);
+      });
+      const label = document.getElementById('announceAudienceLabel');
+      if (announceScope === 'role') label.innerHTML = '<span class="req">*</span>角色';
+      else if (announceScope === 'all') label.innerHTML = '<span class="req">*</span>接收人';
+      else label.innerHTML = '<span class="req">*</span>接收人';
+    }
+    document.getElementById('scopeRow').addEventListener('change', (e) => {
+      const input = e.target.closest('input[name="announceScope"]');
+      if (!input) return;
+      announceScope = input.value;
+      syncAnnounceScopeUI();
+    });
+    function openAnnounceUserDropdown() {
+      document.getElementById('announceUserSelect').classList.add('open');
+    }
+    function closeAnnounceUserDropdown() {
+      document.getElementById('announceUserSelect').classList.remove('open');
+    }
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#announceUserSelect')) closeAnnounceUserDropdown();
+    });
+    function openAnnounce() {
+      editingId = null;
+      announceUserIds = new Set();
+      announceScope = 'users';
+      syncAnnounceScopeUI();
+      document.querySelector('.dialog-hd .dialog-title').textContent = '发系统公告';
+      document.getElementById('announceSubmitBtn').textContent = '发 布';
+      document.getElementById('scopeRow').closest('.form-item').style.display = '';
+      document.getElementById('announceAudienceLabel').closest('.form-item').style.display = '';
+      document.getElementById('announceSearch').value = '';
+      document.getElementById('announceTitle').value = '关于周五系统维护';
+      document.getElementById('announceEditor').innerHTML = '本周五 <strong>22:00–23:00</strong> 进行系统升级，期间作业调度将暂停，请提前安排相关任务。';
+      document.getElementById('maskAnnounce').classList.add('show');
+      renderAnnounceSelected();
+      renderAnnouncePicker();
+    }
+    function openEdit(id) {
+      const a = announces.find((x) => x.id === id);
+      if (!a || !canEdit(a)) { toast('warning', '当前状态不可修改'); return; }
+      editingId = id;
+      document.querySelector('.dialog-hd .dialog-title').textContent = '修改公告';
+      document.getElementById('announceSubmitBtn').textContent = '保 存';
+      document.getElementById('scopeRow').closest('.form-item').style.display = 'none';
+      document.getElementById('announceAudienceLabel').closest('.form-item').style.display = 'none';
+      document.getElementById('announceTitle').value = a.title;
+      document.getElementById('announceEditor').innerHTML = a.contentHtml || '';
+      document.getElementById('maskAnnounce').classList.add('show');
+    }
+    function closeAnnounce() {
+      closeAnnounceUserDropdown();
+      editingId = null;
+      document.getElementById('maskAnnounce').classList.remove('show');
+    }
+    function recallAnnounce(id) {
+      const a = announces.find((x) => x.id === id);
+      if (!a || !canRecall(a)) { toast('warning', '当前状态不可撤回'); return; }
+      if (!confirm('撤回后，用户消息中心将不再显示该公告。确定撤回？')) return;
+      a.status = 'RECALLED';
+      a.unreadUsers = [];
+      toast('success', '公告已撤回');
+      if (detailId === id) renderDetail();
+      else renderTable();
+    }
+    function deleteAnnounce(id) {
+      const a = announces.find((x) => x.id === id);
+      if (!a || !canDelete(a)) { toast('warning', '当前状态不可删除'); return; }
+      if (!confirm('确定删除该公告？收件箱对应通知也会移除。')) return;
+      announces = announces.filter((x) => x.id !== id);
+      toast('success', '已删除');
+      if (detailId === id) backToList();
+      else renderTable();
+    }
+    function retryAnnounce(id) {
+      const a = announces.find((x) => x.id === id);
+      if (!a || !canRetry(a)) { toast('warning', '仅失败状态可重试'); return; }
+      a.status = 'RUNNING';
+      a.read = 0;
+      toast('success', '已重新提交发送');
+      if (detailId === id) renderDetail();
+      else renderTable();
+    }
+    function renderAnnounceSelected() {
+      const box = document.getElementById('announceSelected');
+      const input = document.getElementById('announceSearch');
+      if (!announceUserIds.size) {
+        box.innerHTML = '';
+        input.placeholder = '搜索并选择用户';
+        return;
+      }
+      input.placeholder = '';
+      box.innerHTML = [...announceUserIds].map((id) => {
+        const u = users.find((x) => x.id === id);
+        return `<span class="chip">${escapeHtml(u.name)} <button type="button" onclick="event.stopPropagation();announceUserIds.delete(${id});renderAnnounceSelected();renderAnnouncePicker()">×</button></span>`;
+      }).join('');
+    }
+    function renderAnnouncePicker() {
+      const q = (document.getElementById('announceSearch').value || '').trim().toLowerCase();
+      const list = users.filter((u) =>
+        !q || u.name.toLowerCase().includes(q) || u.username.includes(q) || u.dept.includes(q)
+      );
+      const box = document.getElementById('announcePicker');
+      if (!list.length) {
+        box.innerHTML = '<div class="contact-empty">无匹配用户</div>';
+        return;
+      }
+      box.innerHTML = list.map((u) => {
+        const selected = announceUserIds.has(u.id);
+        return `
+          <div class="contact-item ${selected ? 'selected' : ''}" onclick="event.stopPropagation();toggleAnnounceUser(${u.id})">
+            ${userAvatarHtml(u)}
+            <div class="ci-main">
+              <div class="ci-name">${escapeHtml(u.name)}</div>
+              <div class="ci-meta">@${escapeHtml(u.username)} · ${escapeHtml(u.dept)}</div>
+            </div>
+            <div class="ci-check">${selected ? '✓' : ''}</div>
+          </div>`;
+      }).join('');
+    }
+    function toggleAnnounceUser(id) {
+      if (announceUserIds.has(id)) announceUserIds.delete(id);
+      else announceUserIds.add(id);
+      renderAnnounceSelected();
+      renderAnnouncePicker();
+      document.getElementById('announceSearch').focus();
+    }
+    function submitAnnounce() {
+      const title = document.getElementById('announceTitle').value.trim();
+      const bodyHtml = (document.getElementById('announceEditor').innerHTML || '').trim();
+      const bodyText = (document.getElementById('announceEditor').innerText || '').trim();
+      if (!title || !bodyText) { toast('warning', '请填写标题和正文'); return; }
+      if (editingId != null) {
+        const a = announces.find((x) => x.id === editingId);
+        if (!a || !canEdit(a)) { toast('warning', '当前状态不可修改'); return; }
+        a.title = title;
+        a.contentHtml = bodyHtml;
+        closeAnnounce();
+        toast('success', '公告已更新');
+        if (detailId === a.id) renderDetail();
+        else renderTable();
+        return;
+      }
+      if (announceScope === 'users' && !announceUserIds.size) {
+        toast('warning', '请至少选择一个用户'); return;
+      }
+      let scopeLabel = '';
+      let total = 0;
+      if (announceScope === 'all') { scopeLabel = '全员'; total = 128; }
+      else if (announceScope === 'role') {
+        const role = document.getElementById('announceRole');
+        scopeLabel = '角色：' + role.options[role.selectedIndex].text;
+        total = 6;
+      } else {
+        scopeLabel = `指定 ${announceUserIds.size} 人`;
+        total = announceUserIds.size;
+      }
+      const id = announces.length ? Math.max(...announces.map((x) => x.id)) + 1 : 1;
+      announces.unshift({
+        id,
+        title,
+        scopeLabel,
+        publisher: '李鸿羽',
+        time: new Date().toISOString().slice(0, 19).replace('T', ' '),
+        status: 'RUNNING',
+        total,
+        read: 0,
+        contentHtml: bodyHtml,
+        readers: [],
+        unreadUsers: [],
+      });
+      closeAnnounce();
+      query.pageNum = 1;
+      showView('list');
+      renderTable();
+      toast('success', '公告已提交发送');
+    }
+
+    document.getElementById('maskAnnounce').addEventListener('click', (e) => {
+      if (e.target.id === 'maskAnnounce') closeAnnounce();
+    });
+
+    renderTable();
+  </script>
+</body>
+</html>
