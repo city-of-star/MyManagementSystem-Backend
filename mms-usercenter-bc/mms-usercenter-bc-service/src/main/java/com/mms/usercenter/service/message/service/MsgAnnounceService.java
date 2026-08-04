@@ -31,8 +31,6 @@ public interface MsgAnnounceService {
 
     void deleteAnnounce(Long id);
 
-    void retryAnnounce(Long id);
-
     Page<MsgAnnounceUserVo> pageReadUsers(Long announceId, MsgAnnounceUserPageQueryDto dto);
 
     Page<MsgAnnounceUserVo> pageUnreadUsers(Long announceId, MsgAnnounceUserPageQueryDto dto);

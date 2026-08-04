@@ -5,8 +5,10 @@ import com.mms.usercenter.common.message.dto.MsgDmConversationPageQueryDto;
 import com.mms.usercenter.common.message.dto.MsgDmMessagePageQueryDto;
 import com.mms.usercenter.common.message.dto.MsgDmOpenDto;
 import com.mms.usercenter.common.message.dto.MsgDmSendDto;
+import com.mms.usercenter.common.message.dto.MsgDmUserSearchDto;
 import com.mms.usercenter.common.message.vo.MsgDmConversationVo;
 import com.mms.usercenter.common.message.vo.MsgDmMessageVo;
+import com.mms.usercenter.common.message.vo.MsgDmUserVo;
 
 /**
  * 实现功能【私信服务】
@@ -38,4 +40,7 @@ public interface MsgDmService {
 
     /** 当前用户全部私信未读清零 */
     void markAllRead();
+
+    /** 找人：启用用户轻量分页（不含用户管理权限） */
+    Page<MsgDmUserVo> searchUsers(MsgDmUserSearchDto dto);
 }

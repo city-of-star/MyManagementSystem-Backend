@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mms.usercenter.service.message.mapper.MsgDmMemberMapper">
+
+    <select id="pageConversations" resultType="com.mms.usercenter.common.message.entity.MsgDmMemberEntity">
+        SELECT
+            m.id,
+            m.conversation_id,
+            m.user_id,
+            m.peer_id,
+            m.hidden,
+            m.pinned,
+            m.pinned_time,
+            m.unread_count,
+            m.last_read_msg_id,
+            m.cleared_before_id,
+            m.last_msg_id,
+            m.last_msg_preview,
+            m.last_msg_time,
+            m.deleted,
+            m.create_by,
+            m.create_time,
+            m.update_by,
+            m.update_time
+        FROM msg_dm_member m
+        LEFT JOIN system_user u ON u.id = m.peer_id AND u.deleted = 0
+        WHERE m.deleted = 0
+          AND m.user_id = #{userId}
+          AND m.hidden = 0
+        <if test="keyword != null and keyword != ''">
+            AND (
+                u.nickname LIKE CONCAT('%', #{keyword}, '%')
+                OR u.username LIKE CONCAT('%', #{keyword}, '%')
+                OR u.real_name LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        <choose>
+            <when test="sortMode != null and sortMode == 'time'">
+                ORDER BY m.last_msg_time DESC, m.id DESC
+            </when>
+            <otherwise>
+                ORDER BY
+                    CASE WHEN IFNULL(m.pinned, 0) = 1 THEN 0 ELSE 1 END,
+                    CASE WHEN IFNULL(m.unread_count, 0) &gt; 0 THEN 0 ELSE 1 END,
+                    m.last_msg_time DESC,
+                    m.id DESC
+            </otherwise>
+        </choose>
+    </select>
+</mapper>

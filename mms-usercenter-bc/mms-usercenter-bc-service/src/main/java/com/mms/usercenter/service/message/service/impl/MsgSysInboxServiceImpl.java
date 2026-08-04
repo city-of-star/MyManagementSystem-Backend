@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.webmvc.utils.UserContextUtils;
+import com.mms.usercenter.common.message.constants.MsgConstants;
 import com.mms.usercenter.common.message.dto.MsgSysInboxPageQueryDto;
 import com.mms.usercenter.common.message.dto.MsgSysInboxStarDto;
 import com.mms.usercenter.common.message.entity.MsgSysInboxEntity;
@@ -51,9 +52,13 @@ public class MsgSysInboxServiceImpl implements MsgSysInboxService {
                 .and(StringUtils.hasText(dto.getKeyword()), w -> w
                         .like(MsgSysInboxEntity::getTitle, dto.getKeyword())
                         .or()
-                        .like(MsgSysInboxEntity::getContentText, dto.getKeyword()))
-                .orderByAsc(MsgSysInboxEntity::getReadFlag)
-                .orderByDesc(MsgSysInboxEntity::getCreateTime);
+                        .like(MsgSysInboxEntity::getContentText, dto.getKeyword()));
+        if (MsgConstants.SORT_TIME.equalsIgnoreCase(dto.getSortMode())) {
+            wrapper.orderByDesc(MsgSysInboxEntity::getCreateTime);
+        } else {
+            wrapper.orderByAsc(MsgSysInboxEntity::getReadFlag)
+                    .orderByDesc(MsgSysInboxEntity::getCreateTime);
+        }
         Page<MsgSysInboxEntity> page = msgSysInboxMapper.selectPage(new Page<>(pageNum, pageSize), wrapper);
         Page<MsgSysInboxVo> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
         result.setRecords(page.getRecords().stream().map(this::toVo).collect(Collectors.toList()));

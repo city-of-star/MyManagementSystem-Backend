@@ -2,7 +2,6 @@ package com.mms.usercenter.service.message.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
@@ -15,6 +14,7 @@ import com.mms.usercenter.common.message.dto.MsgAnnounceUpdateDto;
 import com.mms.usercenter.common.message.dto.MsgAnnounceUserPageQueryDto;
 import com.mms.usercenter.common.message.entity.MsgSysAnnounceEntity;
 import com.mms.usercenter.common.message.entity.MsgSysInboxEntity;
+import com.mms.usercenter.common.message.vo.MsgAnnounceReadStatVo;
 import com.mms.usercenter.common.message.vo.MsgAnnounceUserVo;
 import com.mms.usercenter.common.message.vo.MsgAnnounceVo;
 import com.mms.usercenter.service.auth.mapper.UserMapper;
@@ -27,13 +27,9 @@ import com.mms.usercenter.service.message.utils.MsgHtmlSanitizeUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.StringUtils;
@@ -78,10 +74,6 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
     private ObjectMapper objectMapper;
 
     @Resource
-    @Qualifier("schedulerTaskExecutor")
-    private ThreadPoolTaskExecutor schedulerTaskExecutor;
-
-    @Resource
     private PlatformTransactionManager transactionManager;
 
     @Override
@@ -96,9 +88,7 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
         Page<MsgAnnounceVo> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
         List<MsgAnnounceVo> records = page.getRecords().stream().map(this::toListVo).collect(Collectors.toList());
         fillCreatorNames(records);
-        for (MsgAnnounceVo vo : records) {
-            fillReadStats(vo);
-        }
+        fillReadStatsBatch(records);
         result.setRecords(records);
         return result;
     }
@@ -108,7 +98,7 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
         MsgSysAnnounceEntity entity = requireAnnounce(id);
         MsgAnnounceVo vo = toDetailVo(entity);
         fillCreatorNames(List.of(vo));
-        fillReadStats(vo);
+        fillReadStatsBatch(List.of(vo));
         return vo;
     }
 
@@ -116,7 +106,7 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
     public MsgAnnounceVo createAnnounce(MsgAnnounceCreateDto dto) {
         validateScope(dto);
         String html = MsgHtmlSanitizeUtils.sanitize(dto.getContentHtml());
-        if (!StringUtils.hasText(html)) {
+        if (!hasMeaningfulContent(html)) {
             throw new BusinessException("公告内容不能为空");
         }
         List<Long> targetUserIds = resolveTargetUserIds(dto);
@@ -130,7 +120,6 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
         Integer scopeType = dto.getScopeType();
         int totalTarget = targetUserIds.size();
 
-        // 先提交发件记录，再扇出，避免脏读；小范围同步扇出后返回最新状态
         Long announceId = new TransactionTemplate(transactionManager).execute(status -> {
             MsgSysAnnounceEntity entity = new MsgSysAnnounceEntity();
             entity.setTitle(title);
@@ -150,12 +139,15 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
             throw new BusinessException("公告创建失败");
         }
 
-        if (targetUserIds.size() <= MsgConstants.SYNC_FANOUT_MAX) {
-            doFanout(announceId, targetUserIds);
-        } else {
-            schedulerTaskExecutor.execute(() -> doFanout(announceId, targetUserIds));
+        doFanout(announceId, targetUserIds);
+
+        MsgAnnounceVo vo = getAnnounceById(announceId);
+        if (vo.getStatus() == null || vo.getStatus() != MsgConstants.ANNOUNCE_DONE) {
+            throw new BusinessException(StringUtils.hasText(vo.getErrorMsg())
+                    ? vo.getErrorMsg()
+                    : "公告发送失败");
         }
-        return getAnnounceById(announceId);
+        return vo;
     }
 
     @Override
@@ -163,17 +155,11 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
     public MsgAnnounceVo updateAnnounce(Long id, MsgAnnounceUpdateDto dto) {
         MsgSysAnnounceEntity entity = requireAnnounce(id);
         Integer status = entity.getStatus();
-        if (status != null && status == MsgConstants.ANNOUNCE_PENDING) {
-            throw new BusinessException("公告待发送，暂不可修改");
-        }
-        if (status != null && status == MsgConstants.ANNOUNCE_RUNNING) {
-            throw new BusinessException("公告发送中，暂不可修改");
-        }
-        if (status != null && status == MsgConstants.ANNOUNCE_RECALLED) {
-            throw new BusinessException("已撤回的公告不可修改");
+        if (status == null || (status != MsgConstants.ANNOUNCE_DONE && status != MsgConstants.ANNOUNCE_FAILED)) {
+            throw new BusinessException("仅已发送或失败的公告可修改");
         }
         String html = MsgHtmlSanitizeUtils.sanitize(dto.getContentHtml());
-        if (!StringUtils.hasText(html)) {
+        if (!hasMeaningfulContent(html)) {
             throw new BusinessException("公告内容不能为空");
         }
         String title = dto.getTitle().trim();
@@ -190,7 +176,6 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
             inbox.setTitle(title);
             inbox.setContentHtml(html);
             inbox.setContentText(text);
-            // 修改正文后重新标未读，驱动铃铛提醒
             inbox.setReadFlag(0);
             inbox.setReadTime(null);
             msgSysInboxMapper.updateById(inbox);
@@ -207,11 +192,6 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
     public void recallAnnounce(Long id) {
         MsgSysAnnounceEntity entity = requireAnnounce(id);
         Integer status = entity.getStatus();
-        // 待发送 / 发送中均不可撤，避免与扇出竞态
-        if (status != null && (status == MsgConstants.ANNOUNCE_PENDING
-                || status == MsgConstants.ANNOUNCE_RUNNING)) {
-            throw new BusinessException("公告尚未发送完成，暂不可撤回");
-        }
         if (status != null && status == MsgConstants.ANNOUNCE_RECALLED) {
             throw new BusinessException("公告已撤回");
         }
@@ -224,35 +204,9 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void deleteAnnounce(Long id) {
-        MsgSysAnnounceEntity entity = requireAnnounce(id);
-        Integer status = entity.getStatus();
-        if (status != null && status == MsgConstants.ANNOUNCE_RUNNING) {
-            throw new BusinessException("公告发送中，暂不可删除");
-        }
+        requireAnnounce(id);
         softDeleteInboxByAnnounce(id);
         msgSysAnnounceMapper.deleteById(id);
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public void retryAnnounce(Long id) {
-        MsgSysAnnounceEntity entity = requireAnnounce(id);
-        if (entity.getStatus() == null || entity.getStatus() != MsgConstants.ANNOUNCE_FAILED) {
-            throw new BusinessException("仅失败状态的公告可重试发送");
-        }
-        List<Long> targetUserIds = resolveTargetUserIdsFromEntity(entity);
-        if (targetUserIds.isEmpty()) {
-            throw new BusinessException("发送范围内没有可用用户");
-        }
-        entity.setStatus(MsgConstants.ANNOUNCE_PENDING);
-        entity.setErrorMsg(null);
-        entity.setCursorJson(null);
-        entity.setTotalTarget(targetUserIds.size());
-        entity.setSuccessCount(0);
-        entity.setFailCount(0);
-        msgSysAnnounceMapper.updateById(entity);
-        Long announceId = entity.getId();
-        runAfterCommit(() -> schedulerTaskExecutor.execute(() -> doFanout(announceId, targetUserIds)));
     }
 
     @Override
@@ -280,39 +234,35 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
         }
         Integer status = entity.getStatus();
         if (status != null && status == MsgConstants.ANNOUNCE_RECALLED) {
-            log.info("公告已撤回，跳过扇出 announceId={}", announceId);
             return;
         }
         if (status == null || status != MsgConstants.ANNOUNCE_PENDING) {
-            log.warn("公告状态非待发送，跳过扇出 announceId={} status={}", announceId, status);
             return;
         }
-        entity.setStatus(MsgConstants.ANNOUNCE_RUNNING);
-        msgSysAnnounceMapper.updateById(entity);
+        if (msgSysAnnounceMapper.casStatus(announceId,
+                MsgConstants.ANNOUNCE_PENDING, MsgConstants.ANNOUNCE_RUNNING) <= 0) {
+            return;
+        }
+        entity = msgSysAnnounceMapper.selectById(announceId);
+        if (entity == null) {
+            return;
+        }
 
-        int success = entity.getSuccessCount() == null ? 0 : entity.getSuccessCount();
-        int fail = entity.getFailCount() == null ? 0 : entity.getFailCount();
+        int fail = 0;
         try {
             for (int i = 0; i < targetUserIds.size(); i += MsgConstants.FANOUT_BATCH_SIZE) {
                 if (isFanoutAborted(announceId)) {
-                    log.info("公告扇出中止（已撤回或删除） announceId={}", announceId);
                     return;
                 }
-                // 批次内使用最新标题正文
-                MsgSysAnnounceEntity latest = msgSysAnnounceMapper.selectById(announceId);
-                if (latest == null || (latest.getStatus() != null
-                        && latest.getStatus() == MsgConstants.ANNOUNCE_RECALLED)) {
-                    log.info("公告扇出中止 announceId={}", announceId);
-                    return;
-                }
-                entity = latest;
                 int end = Math.min(i + MsgConstants.FANOUT_BATCH_SIZE, targetUserIds.size());
                 List<Long> batch = targetUserIds.subList(i, end);
                 List<Long> notified = new ArrayList<>();
                 for (Long userId : batch) {
+                    if (isFanoutAborted(announceId)) {
+                        return;
+                    }
                     try {
                         if (insertInboxIfAbsent(entity, userId)) {
-                            success++;
                             notified.add(userId);
                         }
                     } catch (Exception ex) {
@@ -320,18 +270,25 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
                         log.warn("公告扇出失败 announceId={} userId={}", announceId, userId, ex);
                     }
                 }
+                int success = countActiveInbox(announceId);
                 entity.setSuccessCount(success);
                 entity.setFailCount(fail);
                 entity.setCursorJson(writeCursor(end));
-                // 保持发送中，避免中途被改成其他态后覆盖撤回
                 entity.setStatus(MsgConstants.ANNOUNCE_RUNNING);
                 msgSysAnnounceMapper.updateById(entity);
                 msgUnreadSupport.pushUnreadBatch(notified);
             }
             if (isFanoutAborted(announceId)) {
-                log.info("公告扇出结束前已撤回/删除，不再回写完成态 announceId={}", announceId);
                 return;
             }
+            MsgSysAnnounceEntity current = msgSysAnnounceMapper.selectById(announceId);
+            if (current == null || (current.getStatus() != null
+                    && current.getStatus() != MsgConstants.ANNOUNCE_RUNNING)) {
+                return;
+            }
+            int success = countActiveInbox(announceId);
+            entity.setSuccessCount(success);
+            entity.setFailCount(fail);
             entity.setStatus(fail > 0 ? MsgConstants.ANNOUNCE_FAILED : MsgConstants.ANNOUNCE_DONE);
             if (fail > 0) {
                 entity.setErrorMsg(success == 0
@@ -346,22 +303,32 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
             if (isFanoutAborted(announceId)) {
                 return;
             }
+            MsgSysAnnounceEntity current = msgSysAnnounceMapper.selectById(announceId);
+            if (current == null || (current.getStatus() != null
+                    && current.getStatus() != MsgConstants.ANNOUNCE_RUNNING)) {
+                return;
+            }
             entity.setStatus(MsgConstants.ANNOUNCE_FAILED);
             entity.setErrorMsg(ex.getMessage() == null ? "发送失败" : truncate(ex.getMessage(), 500));
-            entity.setSuccessCount(success);
+            entity.setSuccessCount(countActiveInbox(announceId));
             entity.setFailCount(fail);
             msgSysAnnounceMapper.updateById(entity);
         }
     }
 
-    /** 已删除或已撤回则中止扇出回写 */
     private boolean isFanoutAborted(Long announceId) {
         MsgSysAnnounceEntity current = msgSysAnnounceMapper.selectById(announceId);
-        return current == null
-                || (current.getStatus() != null && current.getStatus() == MsgConstants.ANNOUNCE_RECALLED);
+        if (current == null) {
+            return true;
+        }
+        Integer status = current.getStatus();
+        return status != null && status == MsgConstants.ANNOUNCE_RECALLED;
     }
 
     private boolean insertInboxIfAbsent(MsgSysAnnounceEntity announce, Long userId) {
+        if (isFanoutAborted(announce.getId())) {
+            return false;
+        }
         MsgSysInboxEntity existing = msgSysInboxMapper.selectByAnnounceUserIncludeDeleted(announce.getId(), userId);
         if (existing != null) {
             if (existing.getDeleted() != null && existing.getDeleted() == 1) {
@@ -418,6 +385,19 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
         msgUnreadSupport.pushUnreadBatch(notifyUserIds);
     }
 
+    private int countActiveInbox(Long announceId) {
+        Long count = msgSysInboxMapper.selectCount(new LambdaQueryWrapper<MsgSysInboxEntity>()
+                .eq(MsgSysInboxEntity::getAnnounceId, announceId));
+        return count == null ? 0 : count.intValue();
+    }
+
+    private boolean hasMeaningfulContent(String html) {
+        if (!StringUtils.hasText(html)) {
+            return false;
+        }
+        return StringUtils.hasText(MsgHtmlSanitizeUtils.toPlainText(html, 0));
+    }
+
     private void validateScope(MsgAnnounceCreateDto dto) {
         Integer scopeType = dto.getScopeType();
         if (scopeType == null || (scopeType != MsgConstants.SCOPE_USER
@@ -441,26 +421,6 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
             return filterEnabledUsers(loadUserIdsByRoles(dto.getRoleIds()));
         }
         return filterEnabledUsers(loadAllEnabledUserIds());
-    }
-
-    private List<Long> resolveTargetUserIdsFromEntity(MsgSysAnnounceEntity entity) {
-        try {
-            Map<String, Object> payload = objectMapper.readValue(
-                    entity.getScopePayload() == null ? "{}" : entity.getScopePayload(),
-                    new TypeReference<>() {});
-            Integer scopeType = entity.getScopeType();
-            if (scopeType != null && scopeType == MsgConstants.SCOPE_USER) {
-                List<Long> userIds = readLongList(payload.get("userIds"));
-                return filterEnabledUsers(new LinkedHashSet<>(userIds));
-            }
-            if (scopeType != null && scopeType == MsgConstants.SCOPE_ROLE) {
-                List<Long> roleIds = readLongList(payload.get("roleIds"));
-                return filterEnabledUsers(loadUserIdsByRoles(roleIds));
-            }
-            return filterEnabledUsers(loadAllEnabledUserIds());
-        } catch (Exception ex) {
-            throw new BusinessException("公告范围快照解析失败");
-        }
     }
 
     private Set<Long> loadUserIdsByRoles(List<Long> roleIds) {
@@ -531,22 +491,6 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private List<Long> readLongList(Object value) {
-        if (!(value instanceof List<?> list) || list.isEmpty()) {
-            return List.of();
-        }
-        List<Long> result = new ArrayList<>();
-        for (Object item : list) {
-            if (item instanceof Number number) {
-                result.add(number.longValue());
-            } else if (item != null) {
-                result.add(Long.parseLong(String.valueOf(item)));
-            }
-        }
-        return result;
-    }
-
     private MsgSysAnnounceEntity requireAnnounce(Long id) {
         MsgSysAnnounceEntity entity = msgSysAnnounceMapper.selectById(id);
         if (entity == null) {
@@ -565,15 +509,26 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
         return toListVo(entity);
     }
 
-    private void fillReadStats(MsgAnnounceVo vo) {
-        Long readCount = msgSysInboxMapper.selectCount(new LambdaQueryWrapper<MsgSysInboxEntity>()
-                .eq(MsgSysInboxEntity::getAnnounceId, vo.getId())
-                .eq(MsgSysInboxEntity::getReadFlag, 1));
-        Long unreadCount = msgSysInboxMapper.selectCount(new LambdaQueryWrapper<MsgSysInboxEntity>()
-                .eq(MsgSysInboxEntity::getAnnounceId, vo.getId())
-                .eq(MsgSysInboxEntity::getReadFlag, 0));
-        vo.setReadCount(readCount == null ? 0 : readCount.intValue());
-        vo.setUnreadCount(unreadCount == null ? 0 : unreadCount.intValue());
+    private void fillReadStatsBatch(List<MsgAnnounceVo> records) {
+        if (records == null || records.isEmpty()) {
+            return;
+        }
+        List<Long> ids = records.stream().map(MsgAnnounceVo::getId).filter(id -> id != null).toList();
+        if (ids.isEmpty()) {
+            return;
+        }
+        Map<Long, MsgAnnounceReadStatVo> statMap = msgSysInboxMapper.countReadStatsByAnnounceIds(ids).stream()
+                .collect(Collectors.toMap(MsgAnnounceReadStatVo::getAnnounceId, s -> s, (a, b) -> a));
+        for (MsgAnnounceVo vo : records) {
+            MsgAnnounceReadStatVo stat = statMap.get(vo.getId());
+            if (stat == null) {
+                vo.setReadCount(0);
+                vo.setUnreadCount(0);
+            } else {
+                vo.setReadCount(stat.getReadCount() == null ? 0 : stat.getReadCount());
+                vo.setUnreadCount(stat.getUnreadCount() == null ? 0 : stat.getUnreadCount());
+            }
+        }
     }
 
     private void fillCreatorNames(List<MsgAnnounceVo> records) {
@@ -588,19 +543,6 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
             if (user != null) {
                 vo.setCreateByName(StringUtils.hasText(user.getNickname()) ? user.getNickname() : user.getUsername());
             }
-        }
-    }
-
-    private void runAfterCommit(Runnable task) {
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-                @Override
-                public void afterCommit() {
-                    task.run();
-                }
-            });
-        } else {
-            task.run();
         }
     }
 

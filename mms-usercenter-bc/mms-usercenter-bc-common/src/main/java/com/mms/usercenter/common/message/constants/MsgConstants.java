@@ -26,9 +26,13 @@ public final class MsgConstants {
 
     public static final String WS_TYPE_MSG_UNREAD = "msg_unread";
 
-    public static final int SYNC_FANOUT_MAX = 50;
-
     public static final int FANOUT_BATCH_SIZE = 200;
+
+    /** 列表排序：未读优先（默认） */
+    public static final String SORT_UNREAD = "unread";
+
+    /** 列表排序：纯时间倒序（铃铛最近消息） */
+    public static final String SORT_TIME = "time";
 
     private MsgConstants() {
         throw new UnsupportedOperationException("常量类不允许实例化");

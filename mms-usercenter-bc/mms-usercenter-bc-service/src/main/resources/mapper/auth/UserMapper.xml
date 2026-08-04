@@ -121,5 +121,29 @@
           AND deleted = 0
     </select>
 
+    <select id="searchMsgDmUsers" resultType="com.mms.usercenter.common.message.vo.MsgDmUserVo">
+        SELECT
+            u.id,
+            u.username,
+            u.nickname,
+            u.real_name AS realName,
+            d.dept_name AS primaryDeptName
+        FROM system_user u
+        LEFT JOIN system_user_dept ud ON u.id = ud.user_id AND ud.is_primary = 1
+        LEFT JOIN system_dept d ON ud.dept_id = d.id AND d.deleted = 0
+        WHERE u.deleted = 0
+          AND u.status = 1
+          AND u.id != #{excludeUserId}
+        <if test="keyword != null and keyword != ''">
+            AND (
+                u.username LIKE CONCAT('%', #{keyword}, '%')
+                OR u.nickname LIKE CONCAT('%', #{keyword}, '%')
+                OR u.real_name LIKE CONCAT('%', #{keyword}, '%')
+                OR d.dept_name LIKE CONCAT('%', #{keyword}, '%')
+            )
+        </if>
+        ORDER BY u.nickname ASC, u.username ASC
+    </select>
+
 </mapper>
 

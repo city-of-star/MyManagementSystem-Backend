@@ -1,6 +1,7 @@
 package com.mms.usercenter.service.message.mapper;
 
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.usercenter.common.message.entity.MsgDmMemberEntity;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -19,6 +20,14 @@ import java.time.LocalDateTime;
  */
 @Mapper
 public interface MsgDmMemberMapper extends BaseMapper<MsgDmMemberEntity> {
+
+    /**
+     * SQL 分页查询当前用户可见会话（支持关键词、排序模式）。
+     */
+    Page<MsgDmMemberEntity> pageConversations(@Param("page") Page<MsgDmMemberEntity> page,
+                                              @Param("userId") Long userId,
+                                              @Param("keyword") String keyword,
+                                              @Param("sortMode") String sortMode);
 
     /**
      * 接收方未读原子自增，并刷新预览（同时取消隐藏）

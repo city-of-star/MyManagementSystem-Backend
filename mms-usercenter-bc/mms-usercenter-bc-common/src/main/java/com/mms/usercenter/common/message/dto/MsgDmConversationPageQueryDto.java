@@ -24,4 +24,7 @@ public class MsgDmConversationPageQueryDto {
 
     @Schema(description = "对方昵称/用户名关键词")
     private String keyword;
+
+    @Schema(description = "排序：unread（默认，置顶+未读优先）/ time（纯时间倒序）")
+    private String sortMode;
 }
