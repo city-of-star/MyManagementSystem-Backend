@@ -79,6 +79,14 @@
                             AND up.post_id = #{dto.postId}
                     )
             </if>
+            <if test="dto.keyword != null and dto.keyword != ''">
+                AND (
+                    u.username LIKE CONCAT('%', #{dto.keyword}, '%')
+                    OR u.nickname LIKE CONCAT('%', #{dto.keyword}, '%')
+                    OR u.real_name LIKE CONCAT('%', #{dto.keyword}, '%')
+                    OR d.dept_name LIKE CONCAT('%', #{dto.keyword}, '%')
+                )
+            </if>
         </where>
         ORDER BY u.create_time DESC
     </select>

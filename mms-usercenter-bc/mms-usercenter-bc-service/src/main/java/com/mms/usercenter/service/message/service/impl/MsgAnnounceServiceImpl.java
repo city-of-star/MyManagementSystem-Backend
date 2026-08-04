@@ -134,11 +134,14 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
         msgSysAnnounceMapper.insert(entity);
 
         Long announceId = entity.getId();
-        if (targetUserIds.size() <= MsgConstants.SYNC_FANOUT_MAX) {
-            doFanout(announceId, targetUserIds);
-        } else {
-            runAfterCommit(() -> schedulerTaskExecutor.execute(() -> doFanout(announceId, targetUserIds)));
-        }
+        // 一律提交后再扇出并推 WS，避免事务未提交时客户端脏读
+        runAfterCommit(() -> {
+            if (targetUserIds.size() <= MsgConstants.SYNC_FANOUT_MAX) {
+                doFanout(announceId, targetUserIds);
+            } else {
+                schedulerTaskExecutor.execute(() -> doFanout(announceId, targetUserIds));
+            }
+        });
         return getAnnounceById(announceId);
     }
 
@@ -281,9 +284,13 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
                 msgSysAnnounceMapper.updateById(entity);
                 msgUnreadSupport.pushUnreadBatch(notified);
             }
-            entity.setStatus(fail > 0 && success == 0 ? MsgConstants.ANNOUNCE_FAILED : MsgConstants.ANNOUNCE_DONE);
-            if (fail > 0 && success == 0) {
-                entity.setErrorMsg("全部目标用户发送失败");
+            entity.setStatus(fail > 0 ? MsgConstants.ANNOUNCE_FAILED : MsgConstants.ANNOUNCE_DONE);
+            if (fail > 0) {
+                entity.setErrorMsg(success == 0
+                        ? "全部目标用户发送失败"
+                        : String.format("部分发送失败：成功 %d，失败 %d", success, fail));
+            } else {
+                entity.setErrorMsg(null);
             }
             msgSysAnnounceMapper.updateById(entity);
         } catch (Exception ex) {
@@ -297,10 +304,16 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
     }
 
     private boolean insertInboxIfAbsent(MsgSysAnnounceEntity announce, Long userId) {
-        Long exists = msgSysInboxMapper.selectCount(new LambdaQueryWrapper<MsgSysInboxEntity>()
-                .eq(MsgSysInboxEntity::getAnnounceId, announce.getId())
-                .eq(MsgSysInboxEntity::getUserId, userId));
-        if (exists != null && exists > 0) {
+        MsgSysInboxEntity existing = msgSysInboxMapper.selectByAnnounceUserIncludeDeleted(announce.getId(), userId);
+        if (existing != null) {
+            if (existing.getDeleted() != null && existing.getDeleted() == 1) {
+                msgSysInboxMapper.restoreDeletedInbox(
+                        existing.getId(),
+                        announce.getTitle(),
+                        announce.getContentHtml(),
+                        announce.getContentText());
+                return true;
+            }
             return false;
         }
         MsgSysInboxEntity inbox = new MsgSysInboxEntity();
@@ -318,10 +331,16 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
             msgSysInboxMapper.insert(inbox);
             return true;
         } catch (Exception ex) {
-            Long again = msgSysInboxMapper.selectCount(new LambdaQueryWrapper<MsgSysInboxEntity>()
-                    .eq(MsgSysInboxEntity::getAnnounceId, announce.getId())
-                    .eq(MsgSysInboxEntity::getUserId, userId));
-            if (again != null && again > 0) {
+            MsgSysInboxEntity again = msgSysInboxMapper.selectByAnnounceUserIncludeDeleted(announce.getId(), userId);
+            if (again != null) {
+                if (again.getDeleted() != null && again.getDeleted() == 1) {
+                    msgSysInboxMapper.restoreDeletedInbox(
+                            again.getId(),
+                            announce.getTitle(),
+                            announce.getContentHtml(),
+                            announce.getContentText());
+                    return true;
+                }
                 return false;
             }
             throw ex;

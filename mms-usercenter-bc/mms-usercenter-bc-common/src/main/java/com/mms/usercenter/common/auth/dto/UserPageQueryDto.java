@@ -65,5 +65,8 @@ public class UserPageQueryDto {
 
     @Schema(description = "所属岗位ID（根据岗位筛选）", example = "1")
     private Long postId;
+
+    @Schema(description = "综合关键词（用户名/昵称/真实姓名/主部门名模糊）", example = "研发")
+    private String keyword;
 }
 

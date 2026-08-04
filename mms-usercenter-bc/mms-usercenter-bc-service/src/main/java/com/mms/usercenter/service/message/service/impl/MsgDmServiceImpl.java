@@ -2,8 +2,11 @@ package com.mms.usercenter.service.message.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.mms.base.common.system.vo.AttachmentVo;
+import com.mms.base.feign.AttachmentFeign;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
+import com.mms.common.core.response.Response;
 import com.mms.common.webmvc.utils.UserContextUtils;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.message.dto.MsgDmConversationPageQueryDto;
@@ -22,7 +25,9 @@ import com.mms.usercenter.service.message.mapper.MsgDmMessageMapper;
 import com.mms.usercenter.service.message.service.MsgDmService;
 import com.mms.usercenter.service.message.support.MsgUnreadSupport;
 import jakarta.annotation.Resource;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
@@ -30,6 +35,7 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -45,6 +51,7 @@ import java.util.stream.Collectors;
  * @author li.hongyu
  * @date 2026-08-03 23:10:00
  */
+@Slf4j
 @Service
 public class MsgDmServiceImpl implements MsgDmService {
 
@@ -63,13 +70,15 @@ public class MsgDmServiceImpl implements MsgDmService {
     @Resource
     private MsgUnreadSupport msgUnreadSupport;
 
+    @Resource
+    private AttachmentFeign attachmentFeign;
+
     @Override
     public Page<MsgDmConversationVo> getConversationPage(MsgDmConversationPageQueryDto dto) {
         Long userId = requireUserId();
         int pageNum = dto.getPageNum() == null || dto.getPageNum() < 1 ? 1 : dto.getPageNum();
         int pageSize = dto.getPageSize() == null || dto.getPageSize() < 1 ? 20 : dto.getPageSize();
 
-        // 找人后未发消息的空会话也要进列表（hidden=0）；删除/不显示已 hidden=1，不会出现
         List<MsgDmMemberEntity> members = msgDmMemberMapper.selectList(new LambdaQueryWrapper<MsgDmMemberEntity>()
                 .eq(MsgDmMemberEntity::getUserId, userId)
                 .eq(MsgDmMemberEntity::getHidden, 0));
@@ -77,6 +86,7 @@ public class MsgDmServiceImpl implements MsgDmService {
         Set<Long> peerIds = members.stream().map(MsgDmMemberEntity::getPeerId).collect(Collectors.toSet());
         Map<Long, UserEntity> peerMap = peerIds.isEmpty() ? Map.of()
                 : userMapper.selectBatchIds(peerIds).stream().collect(Collectors.toMap(UserEntity::getId, u -> u, (a, b) -> a));
+        Map<Long, String> avatarUrlCache = new HashMap<>();
 
         List<MsgDmConversationVo> all = new ArrayList<>();
         for (MsgDmMemberEntity member : members) {
@@ -93,7 +103,7 @@ public class MsgDmServiceImpl implements MsgDmService {
                     continue;
                 }
             }
-            all.add(toConversationVo(member, peer));
+            all.add(toConversationVo(member, peer, avatarUrlCache));
         }
 
         all.sort(Comparator
@@ -127,7 +137,20 @@ public class MsgDmServiceImpl implements MsgDmService {
             self.setHidden(0);
             msgDmMemberMapper.updateById(self);
         }
-        return toConversationVo(self, peer);
+        return toConversationVo(self, peer, new HashMap<>());
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public MsgDmConversationVo getConversationById(Long conversationId) {
+        Long userId = requireUserId();
+        MsgDmMemberEntity self = requireMember(conversationId, userId);
+        if (self.getHidden() != null && self.getHidden() == 1) {
+            self.setHidden(0);
+            msgDmMemberMapper.updateById(self);
+        }
+        UserEntity peer = userMapper.selectById(self.getPeerId());
+        return toConversationVo(self, peer, new HashMap<>());
     }
 
     @Override
@@ -141,7 +164,6 @@ public class MsgDmServiceImpl implements MsgDmService {
         int pageNum = dto.getPageNum() == null || dto.getPageNum() < 1 ? 1 : dto.getPageNum();
         int pageSize = dto.getPageSize() == null || dto.getPageSize() < 1 ? 20 : Math.min(dto.getPageSize(), 100);
         long clearedBefore = self.getClearedBeforeId() == null ? 0L : self.getClearedBeforeId();
-        // 有 beforeId 时走游标分页（触顶加载更早消息），避免 OFFSET 在新消息插入后错位
         boolean cursorMode = dto.getBeforeId() != null && dto.getBeforeId() > 0;
 
         LambdaQueryWrapper<MsgDmMessageEntity> wrapper = new LambdaQueryWrapper<MsgDmMessageEntity>()
@@ -152,15 +174,22 @@ public class MsgDmServiceImpl implements MsgDmService {
         Page<MsgDmMessageEntity> page = msgDmMessageMapper.selectPage(
                 new Page<>(cursorMode ? 1 : pageNum, pageSize), wrapper);
 
-        // 仅首屏（非游标）把本页最新消息记为已读；历史触顶加载不改已读位点
         if (!cursorMode) {
             Long maxId = page.getRecords().stream().map(MsgDmMessageEntity::getId).max(Long::compareTo).orElse(null);
+            boolean changed = false;
             if (maxId != null && (self.getLastReadMsgId() == null || maxId > self.getLastReadMsgId())) {
                 self.setLastReadMsgId(maxId);
+                changed = true;
+            }
+            if (self.getUnreadCount() != null && self.getUnreadCount() > 0) {
                 self.setUnreadCount(0);
-                if (self.getHidden() != null && self.getHidden() == 1) {
-                    self.setHidden(0);
-                }
+                changed = true;
+            }
+            if (self.getHidden() != null && self.getHidden() == 1) {
+                self.setHidden(0);
+                changed = true;
+            }
+            if (changed) {
                 msgDmMemberMapper.updateById(self);
                 msgUnreadSupport.pushUnread(userId);
             }
@@ -213,13 +242,7 @@ public class MsgDmServiceImpl implements MsgDmService {
         self.setUnreadCount(0);
         msgDmMemberMapper.updateById(self);
 
-        peerMember.setHidden(0);
-        peerMember.setLastMsgId(message.getId());
-        peerMember.setLastMsgPreview(preview);
-        peerMember.setLastMsgTime(now);
-        int unread = peerMember.getUnreadCount() == null ? 0 : peerMember.getUnreadCount();
-        peerMember.setUnreadCount(unread + 1);
-        msgDmMemberMapper.updateById(peerMember);
+        msgDmMemberMapper.incrUnreadAndPreview(peerMember.getId(), message.getId(), preview, now);
 
         MsgDmConversationEntity conversation = msgDmConversationMapper.selectById(dto.getConversationId());
         if (conversation != null) {
@@ -244,6 +267,8 @@ public class MsgDmServiceImpl implements MsgDmService {
         MsgDmMemberEntity self = requireMember(conversationId, userId);
         self.setHidden(1);
         msgDmMemberMapper.updateById(self);
+        // hidden 会话不计入未读，需推送校准角标
+        msgUnreadSupport.pushUnread(userId);
     }
 
     @Override
@@ -280,6 +305,14 @@ public class MsgDmServiceImpl implements MsgDmService {
         msgUnreadSupport.pushUnread(userId);
     }
 
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void markAllRead() {
+        Long userId = requireUserId();
+        msgDmMemberMapper.markAllReadByUserId(userId);
+        msgUnreadSupport.pushUnread(userId);
+    }
+
     private MsgDmConversationEntity getOrCreateConversation(Long userA, Long userB) {
         long low = Math.min(userA, userB);
         long high = Math.max(userA, userB);
@@ -294,8 +327,19 @@ public class MsgDmServiceImpl implements MsgDmService {
         conversation.setUserLowId(low);
         conversation.setUserHighId(high);
         conversation.setDeleted(0);
-        msgDmConversationMapper.insert(conversation);
-        return conversation;
+        try {
+            msgDmConversationMapper.insert(conversation);
+            return conversation;
+        } catch (DuplicateKeyException ex) {
+            MsgDmConversationEntity again = msgDmConversationMapper.selectOne(new LambdaQueryWrapper<MsgDmConversationEntity>()
+                    .eq(MsgDmConversationEntity::getUserLowId, low)
+                    .eq(MsgDmConversationEntity::getUserHighId, high)
+                    .last("LIMIT 1"));
+            if (again != null) {
+                return again;
+            }
+            throw ex;
+        }
     }
 
     private MsgDmMemberEntity getOrCreateMember(Long conversationId, Long userId, Long peerId) {
@@ -316,8 +360,19 @@ public class MsgDmServiceImpl implements MsgDmService {
         member.setLastReadMsgId(0L);
         member.setClearedBeforeId(0L);
         member.setDeleted(0);
-        msgDmMemberMapper.insert(member);
-        return member;
+        try {
+            msgDmMemberMapper.insert(member);
+            return member;
+        } catch (DuplicateKeyException ex) {
+            MsgDmMemberEntity again = msgDmMemberMapper.selectOne(new LambdaQueryWrapper<MsgDmMemberEntity>()
+                    .eq(MsgDmMemberEntity::getConversationId, conversationId)
+                    .eq(MsgDmMemberEntity::getUserId, userId)
+                    .last("LIMIT 1"));
+            if (again != null) {
+                return again;
+            }
+            throw ex;
+        }
     }
 
     private MsgDmMemberEntity requireMember(Long conversationId, Long userId) {
@@ -331,7 +386,7 @@ public class MsgDmServiceImpl implements MsgDmService {
         return member;
     }
 
-    private MsgDmConversationVo toConversationVo(MsgDmMemberEntity member, UserEntity peer) {
+    private MsgDmConversationVo toConversationVo(MsgDmMemberEntity member, UserEntity peer, Map<Long, String> avatarUrlCache) {
         MsgDmConversationVo vo = new MsgDmConversationVo();
         vo.setId(member.getConversationId());
         vo.setPeerUserId(member.getPeerId());
@@ -344,11 +399,34 @@ public class MsgDmServiceImpl implements MsgDmService {
             vo.setPeerNickname(StringUtils.hasText(peer.getNickname()) ? peer.getNickname() : peer.getUsername());
             vo.setPeerAvatarId(peer.getAvatarId());
             vo.setPeerAvailable(peer.getStatus() != null && peer.getStatus() == 1);
+            if (peer.getAvatarId() != null) {
+                vo.setPeerAvatarUrl(resolveAvatarUrl(peer.getAvatarId(), avatarUrlCache));
+            }
         } else {
             vo.setPeerNickname("未知用户");
             vo.setPeerAvailable(false);
         }
         return vo;
+    }
+
+    private String resolveAvatarUrl(Long avatarId, Map<Long, String> cache) {
+        if (avatarId == null) {
+            return null;
+        }
+        if (cache.containsKey(avatarId)) {
+            return cache.get(avatarId);
+        }
+        String url = null;
+        try {
+            Response<AttachmentVo> resp = attachmentFeign.getAttachmentById(avatarId);
+            if (resp != null && Objects.equals(resp.getCode(), Response.SUCCESS_CODE) && resp.getData() != null) {
+                url = resp.getData().getFileUrl();
+            }
+        } catch (Exception e) {
+            log.warn("解析私信对方头像失败 avatarId={}: {}", avatarId, e.getMessage());
+        }
+        cache.put(avatarId, url);
+        return url;
     }
 
     private Long requireUserId() {

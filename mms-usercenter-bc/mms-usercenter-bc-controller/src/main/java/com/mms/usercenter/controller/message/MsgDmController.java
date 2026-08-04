@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Resource;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -47,6 +48,13 @@ public class MsgDmController {
         return Response.success(msgDmService.getConversationPage(dto));
     }
 
+    @Operation(summary = "按会话ID获取（深链打开）")
+    @RequiresPermission(PermissionConstants.MESSAGE_VIEW)
+    @GetMapping("/conversation/{id}")
+    public Response<MsgDmConversationVo> getConversationById(@PathVariable("id") Long conversationId) {
+        return Response.success(msgDmService.getConversationById(conversationId));
+    }
+
     @Operation(summary = "找人打开会话")
     @RequiresPermission(PermissionConstants.MESSAGE_SEND_PRIVATE)
     @PostMapping("/conversation/open")
@@ -66,6 +74,14 @@ public class MsgDmController {
     @PostMapping("/message/send")
     public Response<MsgDmMessageVo> sendMessage(@RequestBody @Valid MsgDmSendDto dto) {
         return Response.success(msgDmService.sendMessage(dto));
+    }
+
+    @Operation(summary = "私信全部已读")
+    @RequiresPermission(PermissionConstants.MESSAGE_READ)
+    @PostMapping("/conversation/read-all")
+    public Response<Void> markAllRead() {
+        msgDmService.markAllRead();
+        return Response.success();
     }
 
     @Operation(summary = "不显示会话")
