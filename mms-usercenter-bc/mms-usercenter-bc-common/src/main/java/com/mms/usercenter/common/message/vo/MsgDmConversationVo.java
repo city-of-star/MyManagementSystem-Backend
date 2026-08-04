@@ -33,6 +33,9 @@ public class MsgDmConversationVo {
     @Schema(description = "对方头像附件ID")
     private Long peerAvatarId;
 
+    @Schema(description = "对方头像 URL")
+    private String peerAvatarUrl;
+
     @Schema(description = "最近消息预览")
     private String lastMsgPreview;
 
