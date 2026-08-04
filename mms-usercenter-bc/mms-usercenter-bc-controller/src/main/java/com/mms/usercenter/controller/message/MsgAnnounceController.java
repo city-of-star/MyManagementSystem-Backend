@@ -86,14 +86,6 @@ public class MsgAnnounceController {
         return Response.success();
     }
 
-    @Operation(summary = "重试发送公告")
-    @RequiresPermission(PermissionConstants.MESSAGE_ANNOUNCE_RETRY)
-    @PostMapping("/{id}/retry")
-    public Response<Void> retryAnnounce(@PathVariable Long id) {
-        msgAnnounceService.retryAnnounce(id);
-        return Response.success();
-    }
-
     @Operation(summary = "已读用户分页")
     @RequiresPermission(PermissionConstants.MESSAGE_ANNOUNCE_VIEW)
     @PostMapping("/{id}/read-users")

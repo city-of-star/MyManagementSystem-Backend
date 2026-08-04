@@ -98,7 +98,7 @@ public class PermissionController {
         return Response.success(permissionService.listPermissionTree(dto));
     }
 
-    @Operation(summary = "查询当前用户的权限树（用于前端菜单展示）", 
+    @Operation(summary = "查询当前用户的权限树（用于前端菜单展示）",
                description = "返回当前登录用户有权限的权限树，固定返回启用、可见、目录或菜单类型的权限")
     @GetMapping("/tree/current-user")
     public Response<List<PermissionVo>> listCurrentUserPermissionTree() {

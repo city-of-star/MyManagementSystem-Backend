@@ -4,11 +4,15 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.usercenter.common.message.dto.MsgAnnounceUserPageQueryDto;
 import com.mms.usercenter.common.message.entity.MsgSysInboxEntity;
+import com.mms.usercenter.common.message.vo.MsgAnnounceReadStatVo;
 import com.mms.usercenter.common.message.vo.MsgAnnounceUserVo;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
+
+import java.util.Collection;
+import java.util.List;
 
 /**
  * 实现功能【系统收件箱 Mapper】
@@ -26,6 +30,11 @@ public interface MsgSysInboxMapper extends BaseMapper<MsgSysInboxEntity> {
                                               @Param("announceId") Long announceId,
                                               @Param("readFlag") Integer readFlag,
                                               @Param("dto") MsgAnnounceUserPageQueryDto dto);
+
+    /**
+     * 批量统计公告已读/未读（避免列表 N+1）。
+     */
+    List<MsgAnnounceReadStatVo> countReadStatsByAnnounceIds(@Param("announceIds") Collection<Long> announceIds);
 
     /**
      * 含逻辑删除行（用于扇出幂等：用户删过收件后再扇出需恢复）

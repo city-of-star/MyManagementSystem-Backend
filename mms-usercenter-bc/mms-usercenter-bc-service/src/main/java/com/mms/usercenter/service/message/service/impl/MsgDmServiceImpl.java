@@ -9,15 +9,18 @@ import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.response.Response;
 import com.mms.common.webmvc.utils.UserContextUtils;
 import com.mms.usercenter.common.auth.entity.UserEntity;
+import com.mms.usercenter.common.message.constants.MsgConstants;
 import com.mms.usercenter.common.message.dto.MsgDmConversationPageQueryDto;
 import com.mms.usercenter.common.message.dto.MsgDmMessagePageQueryDto;
 import com.mms.usercenter.common.message.dto.MsgDmOpenDto;
 import com.mms.usercenter.common.message.dto.MsgDmSendDto;
+import com.mms.usercenter.common.message.dto.MsgDmUserSearchDto;
 import com.mms.usercenter.common.message.entity.MsgDmConversationEntity;
 import com.mms.usercenter.common.message.entity.MsgDmMemberEntity;
 import com.mms.usercenter.common.message.entity.MsgDmMessageEntity;
 import com.mms.usercenter.common.message.vo.MsgDmConversationVo;
 import com.mms.usercenter.common.message.vo.MsgDmMessageVo;
+import com.mms.usercenter.common.message.vo.MsgDmUserVo;
 import com.mms.usercenter.service.auth.mapper.UserMapper;
 import com.mms.usercenter.service.message.mapper.MsgDmConversationMapper;
 import com.mms.usercenter.service.message.mapper.MsgDmMemberMapper;
@@ -34,12 +37,15 @@ import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 /**
@@ -54,6 +60,12 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 public class MsgDmServiceImpl implements MsgDmService {
+
+    private static final Executor AVATAR_RESOLVE_EXECUTOR = Executors.newFixedThreadPool(4, r -> {
+        Thread t = new Thread(r, "msg-dm-avatar");
+        t.setDaemon(true);
+        return t;
+    });
 
     @Resource
     private MsgDmConversationMapper msgDmConversationMapper;
@@ -78,43 +90,35 @@ public class MsgDmServiceImpl implements MsgDmService {
         Long userId = requireUserId();
         int pageNum = dto.getPageNum() == null || dto.getPageNum() < 1 ? 1 : dto.getPageNum();
         int pageSize = dto.getPageSize() == null || dto.getPageSize() < 1 ? 20 : dto.getPageSize();
+        String sortMode = MsgConstants.SORT_TIME.equalsIgnoreCase(dto.getSortMode())
+                ? MsgConstants.SORT_TIME
+                : MsgConstants.SORT_UNREAD;
 
-        List<MsgDmMemberEntity> members = msgDmMemberMapper.selectList(new LambdaQueryWrapper<MsgDmMemberEntity>()
-                .eq(MsgDmMemberEntity::getUserId, userId)
-                .eq(MsgDmMemberEntity::getHidden, 0));
+        Page<MsgDmMemberEntity> memberPage = msgDmMemberMapper.pageConversations(
+                new Page<>(pageNum, pageSize),
+                userId,
+                StringUtils.hasText(dto.getKeyword()) ? dto.getKeyword().trim() : null,
+                sortMode);
 
+        List<MsgDmMemberEntity> members = memberPage.getRecords();
         Set<Long> peerIds = members.stream().map(MsgDmMemberEntity::getPeerId).collect(Collectors.toSet());
         Map<Long, UserEntity> peerMap = peerIds.isEmpty() ? Map.of()
                 : userMapper.selectBatchIds(peerIds).stream().collect(Collectors.toMap(UserEntity::getId, u -> u, (a, b) -> a));
-        Map<Long, String> avatarUrlCache = new HashMap<>();
 
-        List<MsgDmConversationVo> all = new ArrayList<>();
-        for (MsgDmMemberEntity member : members) {
-            UserEntity peer = peerMap.get(member.getPeerId());
-            if (StringUtils.hasText(dto.getKeyword())) {
-                if (peer == null) {
-                    continue;
-                }
-                String kw = dto.getKeyword();
-                boolean hit = (peer.getNickname() != null && peer.getNickname().contains(kw))
-                        || (peer.getUsername() != null && peer.getUsername().contains(kw))
-                        || (peer.getRealName() != null && peer.getRealName().contains(kw));
-                if (!hit) {
-                    continue;
-                }
+        Set<Long> avatarIds = new HashSet<>();
+        for (UserEntity peer : peerMap.values()) {
+            if (peer.getAvatarId() != null) {
+                avatarIds.add(peer.getAvatarId());
             }
-            all.add(toConversationVo(member, peer, avatarUrlCache));
         }
+        Map<Long, String> avatarUrlCache = resolveAvatarUrls(avatarIds);
 
-        all.sort(Comparator
-                .comparing((MsgDmConversationVo v) -> v.getPinned() != null && v.getPinned() == 1 ? 0 : 1)
-                .thenComparing(v -> v.getUnreadCount() != null && v.getUnreadCount() > 0 ? 0 : 1)
-                .thenComparing(MsgDmConversationVo::getLastMsgTime, Comparator.nullsLast(Comparator.reverseOrder())));
-
-        int from = Math.min((pageNum - 1) * pageSize, all.size());
-        int to = Math.min(from + pageSize, all.size());
-        Page<MsgDmConversationVo> page = new Page<>(pageNum, pageSize, all.size());
-        page.setRecords(all.subList(from, to));
+        List<MsgDmConversationVo> records = new ArrayList<>(members.size());
+        for (MsgDmMemberEntity member : members) {
+            records.add(toConversationVo(member, peerMap.get(member.getPeerId()), avatarUrlCache));
+        }
+        Page<MsgDmConversationVo> page = new Page<>(memberPage.getCurrent(), memberPage.getSize(), memberPage.getTotal());
+        page.setRecords(records);
         return page;
     }
 
@@ -131,13 +135,15 @@ public class MsgDmServiceImpl implements MsgDmService {
             throw new BusinessException("对方账号不可用");
         }
         MsgDmConversationEntity conversation = getOrCreateConversation(userId, peerId);
-        MsgDmMemberEntity self = getOrCreateMember(conversation.getId(), userId, peerId);
-        getOrCreateMember(conversation.getId(), peerId, userId);
+        // 自己侧可见；对方侧默认 hidden=1，等首条消息再露出，避免空会话污染对方列表
+        MsgDmMemberEntity self = getOrCreateMember(conversation.getId(), userId, peerId, 0);
+        getOrCreateMember(conversation.getId(), peerId, userId, 1);
         if (self.getHidden() != null && self.getHidden() == 1) {
             self.setHidden(0);
             msgDmMemberMapper.updateById(self);
         }
-        return toConversationVo(self, peer, new HashMap<>());
+        return toConversationVo(self, peer, resolveAvatarUrls(
+                peer.getAvatarId() == null ? Set.of() : Set.of(peer.getAvatarId())));
     }
 
     @Override
@@ -150,7 +156,8 @@ public class MsgDmServiceImpl implements MsgDmService {
             msgDmMemberMapper.updateById(self);
         }
         UserEntity peer = userMapper.selectById(self.getPeerId());
-        return toConversationVo(self, peer, new HashMap<>());
+        Set<Long> avatarIds = peer != null && peer.getAvatarId() != null ? Set.of(peer.getAvatarId()) : Set.of();
+        return toConversationVo(self, peer, resolveAvatarUrls(avatarIds));
     }
 
     @Override
@@ -267,7 +274,6 @@ public class MsgDmServiceImpl implements MsgDmService {
         MsgDmMemberEntity self = requireMember(conversationId, userId);
         self.setHidden(1);
         msgDmMemberMapper.updateById(self);
-        // hidden 会话不计入未读，需推送校准角标
         msgUnreadSupport.pushUnread(userId);
     }
 
@@ -313,6 +319,15 @@ public class MsgDmServiceImpl implements MsgDmService {
         msgUnreadSupport.pushUnread(userId);
     }
 
+    @Override
+    public Page<MsgDmUserVo> searchUsers(MsgDmUserSearchDto dto) {
+        Long userId = requireUserId();
+        int pageNum = dto.getPageNum() == null || dto.getPageNum() < 1 ? 1 : dto.getPageNum();
+        int pageSize = dto.getPageSize() == null || dto.getPageSize() < 1 ? 30 : Math.min(dto.getPageSize(), 50);
+        String keyword = StringUtils.hasText(dto.getKeyword()) ? dto.getKeyword().trim() : null;
+        return userMapper.searchMsgDmUsers(new Page<>(pageNum, pageSize), keyword, userId);
+    }
+
     private MsgDmConversationEntity getOrCreateConversation(Long userA, Long userB) {
         long low = Math.min(userA, userB);
         long high = Math.max(userA, userB);
@@ -342,7 +357,10 @@ public class MsgDmServiceImpl implements MsgDmService {
         }
     }
 
-    private MsgDmMemberEntity getOrCreateMember(Long conversationId, Long userId, Long peerId) {
+    /**
+     * @param initialHidden 新建成员时的 hidden；已存在记录不覆盖
+     */
+    private MsgDmMemberEntity getOrCreateMember(Long conversationId, Long userId, Long peerId, int initialHidden) {
         MsgDmMemberEntity existing = msgDmMemberMapper.selectOne(new LambdaQueryWrapper<MsgDmMemberEntity>()
                 .eq(MsgDmMemberEntity::getConversationId, conversationId)
                 .eq(MsgDmMemberEntity::getUserId, userId)
@@ -354,7 +372,7 @@ public class MsgDmServiceImpl implements MsgDmService {
         member.setConversationId(conversationId);
         member.setUserId(userId);
         member.setPeerId(peerId);
-        member.setHidden(0);
+        member.setHidden(initialHidden);
         member.setPinned(0);
         member.setUnreadCount(0);
         member.setLastReadMsgId(0L);
@@ -400,7 +418,7 @@ public class MsgDmServiceImpl implements MsgDmService {
             vo.setPeerAvatarId(peer.getAvatarId());
             vo.setPeerAvailable(peer.getStatus() != null && peer.getStatus() == 1);
             if (peer.getAvatarId() != null) {
-                vo.setPeerAvatarUrl(resolveAvatarUrl(peer.getAvatarId(), avatarUrlCache));
+                vo.setPeerAvatarUrl(avatarUrlCache.get(peer.getAvatarId()));
             }
         } else {
             vo.setPeerNickname("未知用户");
@@ -409,24 +427,30 @@ public class MsgDmServiceImpl implements MsgDmService {
         return vo;
     }
 
-    private String resolveAvatarUrl(Long avatarId, Map<Long, String> cache) {
-        if (avatarId == null) {
-            return null;
+    private Map<Long, String> resolveAvatarUrls(Set<Long> avatarIds) {
+        Map<Long, String> cache = new HashMap<>();
+        if (avatarIds == null || avatarIds.isEmpty()) {
+            return cache;
         }
-        if (cache.containsKey(avatarId)) {
-            return cache.get(avatarId);
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
+        for (Long avatarId : avatarIds) {
+            futures.add(CompletableFuture.runAsync(() -> {
+                String url = null;
+                try {
+                    Response<AttachmentVo> resp = attachmentFeign.getAttachmentById(avatarId);
+                    if (resp != null && Objects.equals(resp.getCode(), Response.SUCCESS_CODE) && resp.getData() != null) {
+                        url = resp.getData().getFileUrl();
+                    }
+                } catch (Exception e) {
+                    log.warn("解析私信对方头像失败 avatarId={}: {}", avatarId, e.getMessage());
+                }
+                synchronized (cache) {
+                    cache.put(avatarId, url);
+                }
+            }, AVATAR_RESOLVE_EXECUTOR));
         }
-        String url = null;
-        try {
-            Response<AttachmentVo> resp = attachmentFeign.getAttachmentById(avatarId);
-            if (resp != null && Objects.equals(resp.getCode(), Response.SUCCESS_CODE) && resp.getData() != null) {
-                url = resp.getData().getFileUrl();
-            }
-        } catch (Exception e) {
-            log.warn("解析私信对方头像失败 avatarId={}: {}", avatarId, e.getMessage());
-        }
-        cache.put(avatarId, url);
-        return url;
+        CompletableFuture.allOf(futures.toArray(CompletableFuture[]::new)).join();
+        return cache;
     }
 
     private Long requireUserId() {

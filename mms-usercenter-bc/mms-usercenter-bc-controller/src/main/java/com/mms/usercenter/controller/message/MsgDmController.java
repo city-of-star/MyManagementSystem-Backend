@@ -8,8 +8,10 @@ import com.mms.usercenter.common.message.dto.MsgDmConversationPageQueryDto;
 import com.mms.usercenter.common.message.dto.MsgDmMessagePageQueryDto;
 import com.mms.usercenter.common.message.dto.MsgDmOpenDto;
 import com.mms.usercenter.common.message.dto.MsgDmSendDto;
+import com.mms.usercenter.common.message.dto.MsgDmUserSearchDto;
 import com.mms.usercenter.common.message.vo.MsgDmConversationVo;
 import com.mms.usercenter.common.message.vo.MsgDmMessageVo;
+import com.mms.usercenter.common.message.vo.MsgDmUserVo;
 import com.mms.usercenter.service.message.service.MsgDmService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -60,6 +62,13 @@ public class MsgDmController {
     @PostMapping("/conversation/open")
     public Response<MsgDmConversationVo> openConversation(@RequestBody @Valid MsgDmOpenDto dto) {
         return Response.success(msgDmService.openConversation(dto));
+    }
+
+    @Operation(summary = "私信找人（启用用户轻量搜索）")
+    @RequiresPermission(PermissionConstants.MESSAGE_SEND_PRIVATE)
+    @PostMapping("/user/search")
+    public Response<Page<MsgDmUserVo>> searchUsers(@RequestBody @Valid MsgDmUserSearchDto dto) {
+        return Response.success(msgDmService.searchUsers(dto));
     }
 
     @Operation(summary = "私信消息分页")

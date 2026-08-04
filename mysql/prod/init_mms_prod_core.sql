@@ -957,13 +957,12 @@ VALUES
     (135, 130, 'button', '公告-撤回', 'MESSAGE_ANNOUNCE_RECALL', NULL, NULL, NULL, 91, 1, 1, 0, NOW(), NOW()),
     (136, 130, 'button', '公告-删除', 'MESSAGE_ANNOUNCE_DELETE', NULL, NULL, NULL, 92, 1, 1, 0, NOW(), NOW()),
 
-    -- 消息中心（目录 + 菜单 + 按钮；ID 避开记账种子 81~116）
-    (120, 0, 'catalog', '消息中心', 'MESSAGE', NULL, NULL, 'Bell', 150, 1, 1, 0, NOW(), NOW()),
-    (121, 120, 'menu', '消息中心', 'MESSAGE_CENTER', '/message/centerPage', '/message/MessageCenterPage.vue', 'ChatDotRound', 151, 1, 1, 0, NOW(), NOW()),
-    (122, 121, 'button', '消息-查看', 'MESSAGE_VIEW', NULL, NULL, NULL, 152, 1, 1, 0, NOW(), NOW()),
-    (123, 121, 'button', '消息-发私信', 'MESSAGE_SEND_PRIVATE', NULL, NULL, NULL, 153, 1, 1, 0, NOW(), NOW()),
-    (124, 121, 'button', '消息-已读', 'MESSAGE_READ', NULL, NULL, NULL, 154, 1, 1, 0, NOW(), NOW()),
-    (125, 121, 'button', '消息-删除', 'MESSAGE_DELETE', NULL, NULL, NULL, 155, 1, 1, 0, NOW(), NOW()),
+    -- 消息中心（顶层菜单 + 按钮；ID 避开记账种子 81~116）
+    (121, 0, 'menu', '消息中心', 'MESSAGE_CENTER', '/message/centerPage', '/message/MessageCenterPage.vue', 'Bell', 150, 1, 1, 0, NOW(), NOW()),
+    (122, 121, 'button', '消息-查看', 'MESSAGE_VIEW', NULL, NULL, NULL, 151, 1, 1, 0, NOW(), NOW()),
+    (123, 121, 'button', '消息-发私信', 'MESSAGE_SEND_PRIVATE', NULL, NULL, NULL, 152, 1, 1, 0, NOW(), NOW()),
+    (124, 121, 'button', '消息-已读', 'MESSAGE_READ', NULL, NULL, NULL, 153, 1, 1, 0, NOW(), NOW()),
+    (125, 121, 'button', '消息-删除', 'MESSAGE_DELETE', NULL, NULL, NULL, 154, 1, 1, 0, NOW(), NOW()),
 
     -- 个人账本（目录 + 菜单 + 按钮）
     (81, 0, 'catalog', '个人账本', 'FINANCE', NULL, NULL, 'Wallet', 5, 1, 1, 0, NOW(), NOW()),

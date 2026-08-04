@@ -194,12 +194,13 @@ public final class PermissionConstants {
     public static final String SECURITY_ONLINE_USER_FORCE_LOGOUT = "SECURITY_ONLINE_USER_FORCE_LOGOUT";
 
     /**
-     * 消息中心（目录）
+     * 消息中心旧目录码（已废弃：侧栏改为顶层单菜单 MESSAGE_CENTER，存量库由增量脚本软删）
      */
+    @Deprecated
     public static final String MESSAGE = "MESSAGE";
 
     /**
-     * 消息中心（菜单+按钮）
+     * 消息中心（顶层菜单+按钮）
      */
     public static final String MESSAGE_CENTER = "MESSAGE_CENTER";
     public static final String MESSAGE_VIEW = "MESSAGE_VIEW";

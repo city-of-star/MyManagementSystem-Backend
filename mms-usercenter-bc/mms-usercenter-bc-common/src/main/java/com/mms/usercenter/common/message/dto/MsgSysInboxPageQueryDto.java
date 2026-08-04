@@ -27,4 +27,7 @@ public class MsgSysInboxPageQueryDto {
 
     @Schema(description = "仅看收藏：1是")
     private Integer starred;
+
+    @Schema(description = "排序：unread（默认，未读优先）/ time（纯时间倒序）")
+    private String sortMode;
 }

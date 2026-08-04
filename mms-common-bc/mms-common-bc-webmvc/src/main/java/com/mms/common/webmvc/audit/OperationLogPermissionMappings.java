@@ -67,7 +67,6 @@ public final class OperationLogPermissionMappings {
         put(map, PermissionConstants.MESSAGE_ANNOUNCE_UPDATE, "公告管理", "update", "修改系统公告");
         put(map, PermissionConstants.MESSAGE_ANNOUNCE_RECALL, "公告管理", "update", "撤回系统公告");
         put(map, PermissionConstants.MESSAGE_ANNOUNCE_DELETE, "公告管理", "delete", "删除系统公告");
-        put(map, PermissionConstants.MESSAGE_ANNOUNCE_RETRY, "公告管理", "update", "重试发送公告");
         // 定时任务
         put(map, PermissionConstants.JOB_MANAGEMENT_CREATE, "定时任务", "create", "新增定时任务");
         put(map, PermissionConstants.JOB_MANAGEMENT_UPDATE, "定时任务", "update", "修改定时任务");

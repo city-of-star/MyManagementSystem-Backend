@@ -30,6 +30,14 @@ public interface UserMapper extends BaseMapper<UserEntity> {
     Page<UserPageVo> getUserPage(@Param("page") Page<UserPageVo> page, @Param("dto") UserPageQueryDto dto);
 
     /**
+     * 私信找人：仅启用用户，可按关键词搜用户名/昵称/实名/主部门，排除指定用户。
+     */
+    Page<com.mms.usercenter.common.message.vo.MsgDmUserVo> searchMsgDmUsers(
+            @Param("page") Page<com.mms.usercenter.common.message.vo.MsgDmUserVo> page,
+            @Param("keyword") String keyword,
+            @Param("excludeUserId") Long excludeUserId);
+
+    /**
      * 根据用户名查询用户
      *
      * @param username 用户名
