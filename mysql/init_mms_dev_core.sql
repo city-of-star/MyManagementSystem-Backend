@@ -1104,6 +1104,9 @@ VALUES
     (131, 130, 'button', '公告-查看', 'MESSAGE_ANNOUNCE_VIEW', NULL, NULL, NULL, 87, 1, 1, 0, NOW(), NOW()),
     (132, 130, 'button', '公告-发布', 'MESSAGE_ANNOUNCE_CREATE', NULL, NULL, NULL, 88, 1, 1, 0, NOW(), NOW()),
     (133, 130, 'button', '公告-重试发送', 'MESSAGE_ANNOUNCE_RETRY', NULL, NULL, NULL, 89, 1, 1, 0, NOW(), NOW()),
+    (134, 130, 'button', '公告-修改', 'MESSAGE_ANNOUNCE_UPDATE', NULL, NULL, NULL, 90, 1, 1, 0, NOW(), NOW()),
+    (135, 130, 'button', '公告-撤回', 'MESSAGE_ANNOUNCE_RECALL', NULL, NULL, NULL, 91, 1, 1, 0, NOW(), NOW()),
+    (136, 130, 'button', '公告-删除', 'MESSAGE_ANNOUNCE_DELETE', NULL, NULL, NULL, 92, 1, 1, 0, NOW(), NOW()),
 
     -- 定时任务（目录）
     (46, 0, 'catalog', '定时任务', 'JOB', NULL, NULL, 'Timer', 90, 1, 1, 0, NOW(), NOW()),

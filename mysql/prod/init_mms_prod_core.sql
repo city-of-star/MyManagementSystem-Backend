@@ -953,6 +953,9 @@ VALUES
     (131, 130, 'button', '公告-查看', 'MESSAGE_ANNOUNCE_VIEW', NULL, NULL, NULL, 87, 1, 1, 0, NOW(), NOW()),
     (132, 130, 'button', '公告-发布', 'MESSAGE_ANNOUNCE_CREATE', NULL, NULL, NULL, 88, 1, 1, 0, NOW(), NOW()),
     (133, 130, 'button', '公告-重试发送', 'MESSAGE_ANNOUNCE_RETRY', NULL, NULL, NULL, 89, 1, 1, 0, NOW(), NOW()),
+    (134, 130, 'button', '公告-修改', 'MESSAGE_ANNOUNCE_UPDATE', NULL, NULL, NULL, 90, 1, 1, 0, NOW(), NOW()),
+    (135, 130, 'button', '公告-撤回', 'MESSAGE_ANNOUNCE_RECALL', NULL, NULL, NULL, 91, 1, 1, 0, NOW(), NOW()),
+    (136, 130, 'button', '公告-删除', 'MESSAGE_ANNOUNCE_DELETE', NULL, NULL, NULL, 92, 1, 1, 0, NOW(), NOW()),
 
     -- 消息中心（目录 + 菜单 + 按钮；ID 避开记账种子 81~116）
     (120, 0, 'catalog', '消息中心', 'MESSAGE', NULL, NULL, 'Bell', 150, 1, 1, 0, NOW(), NOW()),

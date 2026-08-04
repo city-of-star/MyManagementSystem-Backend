@@ -275,6 +275,13 @@
                 <version>${jbcrypt.version}</version>
             </dependency>
 
+            <!-- HTML 净化（公告富文本） -->
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>1.17.2</version>
+            </dependency>
+
             <!-- Knife4j -->
             <dependency>
                 <groupId>com.github.xiaoymin</groupId>

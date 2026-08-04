@@ -11,6 +11,7 @@ import com.mms.usercenter.common.auth.entity.UserRoleEntity;
 import com.mms.usercenter.common.message.constants.MsgConstants;
 import com.mms.usercenter.common.message.dto.MsgAnnounceCreateDto;
 import com.mms.usercenter.common.message.dto.MsgAnnouncePageQueryDto;
+import com.mms.usercenter.common.message.dto.MsgAnnounceUpdateDto;
 import com.mms.usercenter.common.message.dto.MsgAnnounceUserPageQueryDto;
 import com.mms.usercenter.common.message.entity.MsgSysAnnounceEntity;
 import com.mms.usercenter.common.message.entity.MsgSysInboxEntity;
@@ -90,6 +91,9 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
         Page<MsgAnnounceVo> result = new Page<>(page.getCurrent(), page.getSize(), page.getTotal());
         List<MsgAnnounceVo> records = page.getRecords().stream().map(this::toListVo).collect(Collectors.toList());
         fillCreatorNames(records);
+        for (MsgAnnounceVo vo : records) {
+            fillReadStats(vo);
+        }
         result.setRecords(records);
         return result;
     }
@@ -136,6 +140,73 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
             runAfterCommit(() -> schedulerTaskExecutor.execute(() -> doFanout(announceId, targetUserIds)));
         }
         return getAnnounceById(announceId);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public MsgAnnounceVo updateAnnounce(Long id, MsgAnnounceUpdateDto dto) {
+        MsgSysAnnounceEntity entity = requireAnnounce(id);
+        Integer status = entity.getStatus();
+        if (status != null && status == MsgConstants.ANNOUNCE_RUNNING) {
+            throw new BusinessException("公告发送中，暂不可修改");
+        }
+        if (status != null && status == MsgConstants.ANNOUNCE_RECALLED) {
+            throw new BusinessException("已撤回的公告不可修改");
+        }
+        String html = MsgHtmlSanitizeUtils.sanitize(dto.getContentHtml());
+        if (!StringUtils.hasText(html)) {
+            throw new BusinessException("公告内容不能为空");
+        }
+        String title = dto.getTitle().trim();
+        String text = MsgHtmlSanitizeUtils.toPlainText(html, 500);
+        entity.setTitle(title);
+        entity.setContentHtml(html);
+        entity.setContentText(text);
+        msgSysAnnounceMapper.updateById(entity);
+
+        List<MsgSysInboxEntity> inboxes = msgSysInboxMapper.selectList(new LambdaQueryWrapper<MsgSysInboxEntity>()
+                .eq(MsgSysInboxEntity::getAnnounceId, id));
+        List<Long> notifyUserIds = new ArrayList<>();
+        for (MsgSysInboxEntity inbox : inboxes) {
+            inbox.setTitle(title);
+            inbox.setContentHtml(html);
+            inbox.setContentText(text);
+            msgSysInboxMapper.updateById(inbox);
+            if (inbox.getUserId() != null) {
+                notifyUserIds.add(inbox.getUserId());
+            }
+        }
+        msgUnreadSupport.pushUnreadBatch(notifyUserIds);
+        return getAnnounceById(id);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void recallAnnounce(Long id) {
+        MsgSysAnnounceEntity entity = requireAnnounce(id);
+        Integer status = entity.getStatus();
+        if (status != null && status == MsgConstants.ANNOUNCE_RUNNING) {
+            throw new BusinessException("公告发送中，暂不可撤回");
+        }
+        if (status != null && status == MsgConstants.ANNOUNCE_RECALLED) {
+            throw new BusinessException("公告已撤回");
+        }
+        softDeleteInboxByAnnounce(id);
+        entity.setStatus(MsgConstants.ANNOUNCE_RECALLED);
+        entity.setErrorMsg(null);
+        msgSysAnnounceMapper.updateById(entity);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteAnnounce(Long id) {
+        MsgSysAnnounceEntity entity = requireAnnounce(id);
+        Integer status = entity.getStatus();
+        if (status != null && status == MsgConstants.ANNOUNCE_RUNNING) {
+            throw new BusinessException("公告发送中，暂不可删除");
+        }
+        softDeleteInboxByAnnounce(id);
+        msgSysAnnounceMapper.deleteById(id);
     }
 
     @Override
@@ -255,6 +326,19 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
             }
             throw ex;
         }
+    }
+
+    private void softDeleteInboxByAnnounce(Long announceId) {
+        List<MsgSysInboxEntity> inboxes = msgSysInboxMapper.selectList(new LambdaQueryWrapper<MsgSysInboxEntity>()
+                .eq(MsgSysInboxEntity::getAnnounceId, announceId));
+        List<Long> notifyUserIds = new ArrayList<>();
+        for (MsgSysInboxEntity inbox : inboxes) {
+            if (inbox.getUserId() != null) {
+                notifyUserIds.add(inbox.getUserId());
+            }
+            msgSysInboxMapper.deleteById(inbox.getId());
+        }
+        msgUnreadSupport.pushUnreadBatch(notifyUserIds);
     }
 
     private void validateScope(MsgAnnounceCreateDto dto) {

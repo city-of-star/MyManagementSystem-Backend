@@ -19,6 +19,8 @@ public final class MsgConstants {
     public static final int ANNOUNCE_RUNNING = 1;
     public static final int ANNOUNCE_DONE = 2;
     public static final int ANNOUNCE_FAILED = 3;
+    /** 已撤回：收件箱不再展示 */
+    public static final int ANNOUNCE_RECALLED = 4;
 
     public static final String BIZ_TYPE_ANNOUNCE = "ANNOUNCE";
 

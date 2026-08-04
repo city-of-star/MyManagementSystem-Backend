@@ -27,6 +27,9 @@ public class MsgAnnounceUserVo {
     @Schema(description = "昵称")
     private String nickname;
 
+    @Schema(description = "主部门名称")
+    private String primaryDeptName;
+
     @Schema(description = "已读时间")
     private LocalDateTime readTime;
 }
