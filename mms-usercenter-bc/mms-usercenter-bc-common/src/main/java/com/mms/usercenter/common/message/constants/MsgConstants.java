@@ -44,6 +44,9 @@ public final class MsgConstants {
     /** 收件箱业务类型：系统公告 */
     public static final String BIZ_TYPE_ANNOUNCE = "ANNOUNCE";
 
+    /** 收件箱业务类型：记账快捷模板到期提醒 */
+    public static final String BIZ_TYPE_FINANCE_RECURRING_DUE = "FINANCE_RECURRING_DUE";
+
     /** WebSocket 推送类型：未读数变更 */
     public static final String WS_TYPE_MSG_UNREAD = "msg_unread";
 

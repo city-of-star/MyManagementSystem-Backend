@@ -55,4 +55,18 @@ public interface FinanceRecurringMapper extends BaseMapper<FinanceRecurringEntit
               AND r.category_id = #{categoryId}
             """)
     long countByCategoryId(@Param("categoryId") Long categoryId, @Param("userId") Long userId);
+
+    /**
+     * 扫描启用中的周期提醒模板（供定时任务）
+     */
+    @Select("""
+            SELECT id, user_id, name, cycle, day_of_month, weekday, remind_minute_of_day, enabled
+            FROM finance_recurring
+            WHERE deleted = 0
+              AND enabled = 1
+              AND cycle IS NOT NULL
+              AND cycle <> ''
+              AND cycle <> 'none'
+            """)
+    java.util.List<FinanceRecurringEntity> listEnabledRemindTemplates();
 }

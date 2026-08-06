@@ -66,4 +66,20 @@ public interface MsgSysInboxMapper extends BaseMapper<MsgSysInboxEntity> {
                             @Param("title") String title,
                             @Param("contentHtml") String contentHtml,
                             @Param("contentText") String contentText);
+
+    /**
+     * 含逻辑删除行（业务通知幂等：当日已投递过则跳过，含用户已删）
+     */
+    @Select("""
+            SELECT id, user_id, announce_id, biz_type, biz_id, title, content_html, content_text,
+                   starred, read_flag, read_time, deleted, create_by, create_time, update_by, update_time
+            FROM msg_sys_inbox
+            WHERE biz_type = #{bizType}
+              AND biz_id = #{bizId}
+              AND user_id = #{userId}
+            LIMIT 1
+            """)
+    MsgSysInboxEntity selectByBizUserIncludeDeleted(@Param("bizType") String bizType,
+                                                    @Param("bizId") String bizId,
+                                                    @Param("userId") Long userId);
 }

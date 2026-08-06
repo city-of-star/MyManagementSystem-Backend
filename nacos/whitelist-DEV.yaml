@@ -3,6 +3,7 @@ whitelist:
   common: # 公共白名单
     - /actuator/**
     - /internal/job/**
+    - /internal/msg/**
   services:
     # 用户中心服务
     usercenter:

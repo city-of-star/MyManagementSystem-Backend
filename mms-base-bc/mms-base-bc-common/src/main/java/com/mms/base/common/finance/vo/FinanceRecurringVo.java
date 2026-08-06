@@ -61,6 +61,9 @@ public class FinanceRecurringVo {
     @Schema(description = "星期几（1=周一 … 7=周日）")
     private Integer weekday;
 
+    @Schema(description = "提醒时刻：距当日0点分钟数，半小时一档")
+    private Integer remindMinuteOfDay;
+
     @Schema(description = "排序号")
     private Integer sortOrder;
 

@@ -109,6 +109,7 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
             entity.setFromAccountId(dto.getFromAccountId());
             entity.setToAccountId(dto.getToAccountId());
             applySchedule(entity, dto.getCycle(), dto.getDayOfMonth(), dto.getWeekday());
+            applyRemindTime(entity, entity.getCycle(), dto.getRemindMinuteOfDay());
             entity.setSortOrder(dto.getSortOrder() == null ? 0 : dto.getSortOrder());
             entity.setEnabled(dto.getEnabled() == null ? 1 : dto.getEnabled());
             entity.setNote(dto.getNote());
@@ -169,11 +170,16 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
             if (dto.getNote() != null) {
                 entity.setNote(dto.getNote());
             }
-            if (dto.getCycle() != null || dto.getDayOfMonth() != null || dto.getWeekday() != null) {
+            if (dto.getCycle() != null || dto.getDayOfMonth() != null || dto.getWeekday() != null
+                    || dto.getRemindMinuteOfDay() != null) {
                 String cycle = dto.getCycle() != null ? dto.getCycle() : entity.getCycle();
                 Integer dayOfMonth = dto.getDayOfMonth() != null ? dto.getDayOfMonth() : entity.getDayOfMonth();
                 Integer weekday = dto.getWeekday() != null ? dto.getWeekday() : entity.getWeekday();
                 applySchedule(entity, cycle, dayOfMonth, weekday);
+                Integer remind = dto.getRemindMinuteOfDay() != null
+                        ? dto.getRemindMinuteOfDay()
+                        : entity.getRemindMinuteOfDay();
+                applyRemindTime(entity, entity.getCycle(), remind);
             }
             validateDirectionFields(entity.getDirection(), entity.getCategoryId(), entity.getAccountId(),
                     entity.getFromAccountId(), entity.getToAccountId());
@@ -267,6 +273,7 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
             entity.setCycle("none");
             entity.setDayOfMonth(null);
             entity.setWeekday(null);
+            entity.setRemindMinuteOfDay(null);
             return;
         }
         entity.setCycle(cycle);
@@ -289,6 +296,21 @@ public class FinanceRecurringServiceImpl implements FinanceRecurringService {
         }
         entity.setDayOfMonth(dayOfMonth);
         entity.setWeekday(null);
+    }
+
+    /**
+     * 提醒时刻：距 00:00 的分钟数，须为 30 的倍数；无周期时清空。
+     */
+    private void applyRemindTime(FinanceRecurringEntity entity, String cycle, Integer remindMinuteOfDay) {
+        if (!StringUtils.hasText(cycle) || "none".equals(cycle)) {
+            entity.setRemindMinuteOfDay(null);
+            return;
+        }
+        int slot = remindMinuteOfDay != null ? remindMinuteOfDay : 480;
+        if (slot < 0 || slot > 1410 || slot % 30 != 0) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "提醒时刻须为半小时一档（0~1410）");
+        }
+        entity.setRemindMinuteOfDay(slot);
     }
 
     private void normalizeByDirection(FinanceRecurringEntity entity) {

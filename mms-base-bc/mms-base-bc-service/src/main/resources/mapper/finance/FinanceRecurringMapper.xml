@@ -18,6 +18,7 @@
         r.cycle,
         r.day_of_month AS dayOfMonth,
         r.weekday,
+        r.remind_minute_of_day AS remindMinuteOfDay,
         r.sort_order AS sortOrder,
         r.enabled,
         r.note,

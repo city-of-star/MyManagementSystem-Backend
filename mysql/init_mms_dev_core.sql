@@ -299,9 +299,10 @@ CREATE TABLE IF NOT EXISTS `finance_recurring` (
     `account_id` bigint DEFAULT NULL COMMENT '账户ID（收入/支出必填，转账可空）',
     `from_account_id` bigint DEFAULT NULL COMMENT '转出账户ID（转账模板）',
     `to_account_id` bigint DEFAULT NULL COMMENT '转入账户ID（转账模板）',
-    `cycle` varchar(16) DEFAULT NULL COMMENT '提醒标签（已废弃，业务层忽略）',
-    `day_of_month` int DEFAULT NULL COMMENT '每月第几天（已废弃）',
-    `weekday` int DEFAULT NULL COMMENT '星期几 1-7（已废弃）',
+    `cycle` varchar(16) DEFAULT NULL COMMENT '提醒周期：none/daily/weekly/monthly',
+    `day_of_month` int DEFAULT NULL COMMENT '每月第几天（cycle=monthly）',
+    `weekday` int DEFAULT NULL COMMENT '星期几 1-7（cycle=weekly）',
+    `remind_minute_of_day` int DEFAULT NULL COMMENT '提醒时刻：距当日0点分钟数，半小时一档，如480=08:00',
     `sort_order` int NOT NULL DEFAULT 0 COMMENT '排序号',
     `enabled` tinyint NOT NULL DEFAULT 1 COMMENT '是否启用：0-禁用，1-启用',
     `note` varchar(512) DEFAULT NULL COMMENT '备注',
@@ -922,6 +923,7 @@ CREATE TABLE IF NOT EXISTS `msg_sys_inbox` (
     `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_announce_user` (`announce_id`, `user_id`),
+    UNIQUE KEY `uk_biz_user` (`biz_type`, `biz_id`, `user_id`),
     KEY `idx_user_list` (`user_id`, `deleted`, `read_flag`, `create_time`),
     KEY `idx_user_star` (`user_id`, `deleted`, `starred`, `create_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='系统通知收件箱';
@@ -1411,6 +1413,7 @@ VALUES
     -- 定时任务类型
     (41, 12, '附件清理任务', 'ATTACHMENT_CLEAN', 1, 0, 1, '附件清理任务', 0, NOW(), NOW()),
     (89, 12, 'MySQL备份任务', 'MYSQL_BACKUP', 2, 0, 1, 'MySQL库备份并推送Git仓库', 0, NOW(), NOW()),
+    (90, 12, '记账快捷模板提醒', 'FINANCE_RECURRING_REMIND', 3, 0, 1, '扫描到期快捷模板并发系统通知', 0, NOW(), NOW()),
     -- 定时任务运行模式
     (42, 13, '集群单实例执行', 'single', 1, 1, 1, '集群单实例执行', 0, NOW(), NOW()),
     (43, 13, '全实例执行', 'all', 2, 0, 1, '全实例执行', 0, NOW(), NOW()),
@@ -1470,4 +1473,5 @@ VALUES
 INSERT IGNORE INTO `job_def` (`id`,`service_name`,`job_code`,`job_name`,`job_type`,`cron_expr`,`run_mode`,`enabled`,`timeout_ms`,`remark`,`params_json`,`deleted`,`create_by`,`create_time`,`update_by`,`update_time`)
 VALUES
     (1, 'base', 'ATTACHMENT_CLEAN', '附件清理任务', 'ATTACHMENT_CLEAN', '0 0 2 * * ?', 'single', 1, 0, '定期清理已逻辑删除的附件，物理删除文件和记录', '{"batchSize": 100, "deletePhysicalFile": true, "storageType": "local", "businessType": null, "fileType": null, "maxFileSize": 10485760, "minFileSize": 1024, "pathPattern": null, "retryCount": 2, "continueOnError": true, "orderBy": "id"}', 0, 1, NOW(), 1, NOW()),
-    (2, 'base', 'MYSQL_BACKUP', 'MySQL备份任务', 'MYSQL_BACKUP', '0 0 3 * * ?', 'single', 1, 900000, '每天凌晨3点备份核心库并推送到GitHub私有仓，保留最近30天', '{"retainDays": 30}', 0, 1, NOW(), 1, NOW());
+    (2, 'base', 'MYSQL_BACKUP', 'MySQL备份任务', 'MYSQL_BACKUP', '0 0 3 * * ?', 'single', 1, 900000, '每天凌晨3点备份核心库并推送到GitHub私有仓，保留最近30天', '{"retainDays": 30}', 0, 1, NOW(), 1, NOW()),
+    (3, 'base', 'FINANCE_RECURRING_REMIND', '记账快捷模板提醒', 'FINANCE_RECURRING_REMIND', '0 0/30 * * * ?', 'single', 1, 120000, '每半小时扫描到期快捷模板，按人发系统通知（不自动记账）', '{}', 0, 1, NOW(), 1, NOW());

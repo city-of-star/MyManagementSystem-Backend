@@ -22,7 +22,12 @@ public enum JobTypeEnum {
     /**
      * MySQL 库备份并推送到 Git 仓库
      */
-    MYSQL_BACKUP("MYSQL_BACKUP", "MySQL备份任务");
+    MYSQL_BACKUP("MYSQL_BACKUP", "MySQL备份任务"),
+
+    /**
+     * 记账快捷模板到期提醒（发系统通知）
+     */
+    FINANCE_RECURRING_REMIND("FINANCE_RECURRING_REMIND", "记账快捷模板提醒");
 
     /**
      * 任务类型

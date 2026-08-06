@@ -67,6 +67,10 @@ public class FinanceRecurringEntity extends BaseEntity {
     @Schema(description = "星期几（cycle=weekly，1=周一 … 7=周日）")
     private Integer weekday;
 
+    @TableField(value = "remind_minute_of_day", updateStrategy = FieldStrategy.ALWAYS)
+    @Schema(description = "提醒时刻：距当日0点分钟数，半小时一档，如480=08:00")
+    private Integer remindMinuteOfDay;
+
     @TableField("sort_order")
     @Schema(description = "排序号")
     private Integer sortOrder;

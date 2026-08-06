@@ -56,6 +56,9 @@ public class FinanceRecurringCreateDto {
     @Schema(description = "星期几（cycle=weekly 时 1=周一 … 7=周日）")
     private Integer weekday;
 
+    @Schema(description = "提醒时刻：距当日0点分钟数，半小时一档，默认480=08:00")
+    private Integer remindMinuteOfDay;
+
     @Schema(description = "排序号", example = "10")
     private Integer sortOrder;
 
