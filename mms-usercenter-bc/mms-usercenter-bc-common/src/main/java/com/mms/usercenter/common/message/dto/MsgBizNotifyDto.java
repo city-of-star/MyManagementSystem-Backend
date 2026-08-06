@@ -42,4 +42,8 @@ public class MsgBizNotifyDto {
     @Size(max = 2000, message = "正文长度不能超过2000个字符")
     @Schema(description = "纯文本正文", requiredMode = Schema.RequiredMode.REQUIRED)
     private String contentText;
+
+    @Size(max = 200, message = "跳转路径长度不能超过200个字符")
+    @Schema(description = "可选站内跳转路径，如 /finance/recurrings")
+    private String linkPath;
 }

@@ -36,6 +36,9 @@ public class MsgSysInboxVo {
     @Schema(description = "纯文本摘要")
     private String contentText;
 
+    @Schema(description = "可选站内跳转路径")
+    private String linkPath;
+
     @Schema(description = "是否收藏")
     private Integer starred;
 

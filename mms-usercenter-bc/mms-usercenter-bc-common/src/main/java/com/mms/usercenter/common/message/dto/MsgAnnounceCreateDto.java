@@ -3,6 +3,7 @@ package com.mms.usercenter.common.message.dto;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.util.List;
@@ -27,6 +28,10 @@ public class MsgAnnounceCreateDto {
     @NotBlank(message = "公告内容不能为空")
     @Schema(description = "公告富文本内容")
     private String contentHtml;
+
+    @Size(max = 200, message = "跳转路径长度不能超过200个字符")
+    @Schema(description = "可选站内跳转路径，如 /finance/recurrings")
+    private String linkPath;
 
     @NotNull(message = "发送范围不能为空")
     @Schema(description = "范围：1指定人 2角色 3全员", example = "3")

@@ -1,5 +1,6 @@
 package com.mms.usercenter.common.message.entity;
 
+import com.baomidou.mybatisplus.annotation.FieldStrategy;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.mms.common.datasource.entity.BaseEntity;
@@ -52,6 +53,10 @@ public class MsgSysInboxEntity extends BaseEntity {
     @TableField("content_text")
     @Schema(description = "纯文本或摘要")
     private String contentText;
+
+    @TableField(value = "link_path", updateStrategy = FieldStrategy.ALWAYS)
+    @Schema(description = "可选站内跳转路径")
+    private String linkPath;
 
     @Schema(description = "是否收藏：0否 1是")
     private Integer starred;

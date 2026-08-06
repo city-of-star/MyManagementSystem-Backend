@@ -7,6 +7,9 @@ import com.mms.usercenter.common.message.dto.MsgAnnounceUpdateDto;
 import com.mms.usercenter.common.message.dto.MsgAnnounceUserPageQueryDto;
 import com.mms.usercenter.common.message.vo.MsgAnnounceUserVo;
 import com.mms.usercenter.common.message.vo.MsgAnnounceVo;
+import com.mms.usercenter.common.message.vo.MsgLinkOptionVo;
+
+import java.util.List;
 
 /**
  * 实现功能【系统公告服务】
@@ -28,6 +31,11 @@ public interface MsgAnnounceService {
      * 根据公告ID获取公告详情
      */
     MsgAnnounceVo getAnnounceById(Long id);
+
+    /**
+     * 跳转页面选项（启用目录/菜单树，仅有 path 的菜单可选）
+     */
+    List<MsgLinkOptionVo> listLinkOptions();
 
     /**
      * 新建公告

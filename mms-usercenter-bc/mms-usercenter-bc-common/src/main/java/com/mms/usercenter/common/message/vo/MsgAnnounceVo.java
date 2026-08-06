@@ -30,6 +30,9 @@ public class MsgAnnounceVo {
     @Schema(description = "纯文本摘要")
     private String contentText;
 
+    @Schema(description = "可选站内跳转路径")
+    private String linkPath;
+
     @Schema(description = "范围类型")
     private Integer scopeType;
 

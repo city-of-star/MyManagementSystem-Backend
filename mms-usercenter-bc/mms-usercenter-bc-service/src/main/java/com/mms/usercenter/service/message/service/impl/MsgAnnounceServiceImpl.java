@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
+import com.mms.usercenter.common.auth.entity.PermissionEntity;
 import com.mms.usercenter.common.auth.entity.UserEntity;
 import com.mms.usercenter.common.auth.entity.UserRoleEntity;
 import com.mms.usercenter.common.message.constants.MsgConstants;
@@ -17,6 +18,8 @@ import com.mms.usercenter.common.message.entity.MsgSysAnnounceEntity;
 import com.mms.usercenter.common.message.entity.MsgSysInboxEntity;
 import com.mms.usercenter.common.message.vo.MsgAnnounceUserVo;
 import com.mms.usercenter.common.message.vo.MsgAnnounceVo;
+import com.mms.usercenter.common.message.vo.MsgLinkOptionVo;
+import com.mms.usercenter.service.auth.mapper.PermissionMapper;
 import com.mms.usercenter.service.auth.mapper.UserMapper;
 import com.mms.usercenter.service.auth.mapper.UserRoleMapper;
 import com.mms.usercenter.service.message.mapper.MsgSysAnnounceMapper;
@@ -24,6 +27,7 @@ import com.mms.usercenter.service.message.mapper.MsgSysInboxMapper;
 import com.mms.usercenter.service.message.service.MsgAnnounceService;
 import com.mms.usercenter.service.message.support.MsgUnreadSupport;
 import com.mms.usercenter.service.message.utils.MsgHtmlSanitizeUtils;
+import com.mms.usercenter.service.message.utils.MsgLinkPathUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -35,6 +39,7 @@ import org.springframework.util.StringUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -65,6 +70,9 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
 
     @Resource
     private UserRoleMapper userRoleMapper;
+
+    @Resource
+    private PermissionMapper permissionMapper;
 
     @Resource
     private MsgUnreadSupport msgUnreadSupport;
@@ -104,6 +112,23 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
     }
 
     @Override
+    public List<MsgLinkOptionVo> listLinkOptions() {
+        try {
+            List<PermissionEntity> permissions = permissionMapper.selectList(new LambdaQueryWrapper<PermissionEntity>()
+                    .in(PermissionEntity::getPermissionType, "catalog", "menu")
+                    .eq(PermissionEntity::getStatus, 1)
+                    .orderByAsc(PermissionEntity::getSortOrder)
+                    .orderByAsc(PermissionEntity::getId));
+            return buildLinkOptionTree(permissions);
+        } catch (BusinessException e) {
+            throw e;
+        } catch (Exception e) {
+            log.error("查询公告跳转页面选项失败：{}", e.getMessage(), e);
+            throw new ServerException("查询跳转页面选项失败", e);
+        }
+    }
+
+    @Override
     public MsgAnnounceVo createAnnounce(MsgAnnounceCreateDto dto) {
         try {
             log.info("创建系统公告，参数：{}", dto);
@@ -120,6 +145,7 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
             }
             String title = dto.getTitle().trim();
             String text = MsgHtmlSanitizeUtils.toPlainText(html, 500);
+            String linkPath = MsgLinkPathUtils.normalizeOptional(dto.getLinkPath());
             // 将发送范围序列化为 JSON 快照
             String scopePayload = writeScopePayload(dto);
             Integer scopeType = dto.getScopeType();
@@ -131,6 +157,7 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
                 entity.setTitle(title);
                 entity.setContentHtml(html);
                 entity.setContentText(text);
+                entity.setLinkPath(linkPath);
                 entity.setScopeType(scopeType);
                 entity.setScopePayload(scopePayload);
                 entity.setStatus(MsgConstants.ANNOUNCE_PENDING);
@@ -179,9 +206,11 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
             }
             String title = dto.getTitle().trim();
             String text = MsgHtmlSanitizeUtils.toPlainText(html, 500);
+            String linkPath = MsgLinkPathUtils.normalizeOptional(dto.getLinkPath());
             entity.setTitle(title);
             entity.setContentHtml(html);
             entity.setContentText(text);
+            entity.setLinkPath(linkPath);
             msgSysAnnounceMapper.updateById(entity);
 
             List<MsgSysInboxEntity> inboxes = msgSysInboxMapper.selectList(new LambdaQueryWrapper<MsgSysInboxEntity>()
@@ -191,6 +220,7 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
                 inbox.setTitle(title);
                 inbox.setContentHtml(html);
                 inbox.setContentText(text);
+                inbox.setLinkPath(linkPath);
                 // 修改正文后重新标未读，驱动铃铛提醒
                 inbox.setReadFlag(0);
                 inbox.setReadTime(null);
@@ -412,7 +442,8 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
                         existing.getId(),
                         announce.getTitle(),
                         announce.getContentHtml(),
-                        announce.getContentText());
+                        announce.getContentText(),
+                        announce.getLinkPath());
                 return true;
             }
             return false;
@@ -425,6 +456,7 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
         inbox.setTitle(announce.getTitle());
         inbox.setContentHtml(announce.getContentHtml());
         inbox.setContentText(announce.getContentText());
+        inbox.setLinkPath(announce.getLinkPath());
         inbox.setStarred(0);
         inbox.setReadFlag(0);
         inbox.setDeleted(0);
@@ -439,7 +471,8 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
                             again.getId(),
                             announce.getTitle(),
                             announce.getContentHtml(),
-                            announce.getContentText());
+                            announce.getContentText(),
+                            announce.getLinkPath());
                     return true;
                 }
                 return false;
@@ -620,6 +653,71 @@ public class MsgAnnounceServiceImpl implements MsgAnnounceService {
             throw new BusinessException(ErrorCode.RESOURCE_NOT_FOUND, "公告不存在");
         }
         return vo;
+    }
+
+    /**
+     * 将启用的目录/菜单编成树：仅有 path 的菜单可选；无可用菜单子树的目录剔除。
+     */
+    private List<MsgLinkOptionVo> buildLinkOptionTree(List<PermissionEntity> permissions) {
+        if (CollectionUtils.isEmpty(permissions)) {
+            return List.of();
+        }
+        Map<Long, PermissionEntity> byId = permissions.stream()
+                .filter(p -> p.getId() != null)
+                .collect(Collectors.toMap(PermissionEntity::getId, p -> p, (a, b) -> a));
+
+        Set<Long> keepIds = new HashSet<>();
+        for (PermissionEntity p : permissions) {
+            if (!"menu".equals(p.getPermissionType()) || !StringUtils.hasText(p.getPath())) {
+                continue;
+            }
+            Long cursor = p.getId();
+            while (cursor != null && cursor > 0 && keepIds.add(cursor)) {
+                PermissionEntity current = byId.get(cursor);
+                if (current == null) {
+                    break;
+                }
+                Long parentId = current.getParentId();
+                cursor = (parentId == null || parentId <= 0) ? null : parentId;
+            }
+        }
+        if (keepIds.isEmpty()) {
+            return List.of();
+        }
+
+        Map<Long, MsgLinkOptionVo> nodeMap = new HashMap<>();
+        for (PermissionEntity p : permissions) {
+            if (!keepIds.contains(p.getId())) {
+                continue;
+            }
+            MsgLinkOptionVo node = new MsgLinkOptionVo();
+            node.setLabel(p.getPermissionName());
+            node.setIcon(StringUtils.hasText(p.getIcon()) ? p.getIcon().trim() : null);
+            boolean selectable = "menu".equals(p.getPermissionType()) && StringUtils.hasText(p.getPath());
+            if (selectable) {
+                node.setValue(p.getPath().trim());
+                node.setDisabled(false);
+            } else {
+                node.setValue("c:" + p.getId());
+                node.setDisabled(true);
+            }
+            nodeMap.put(p.getId(), node);
+        }
+
+        List<MsgLinkOptionVo> roots = new ArrayList<>();
+        for (PermissionEntity p : permissions) {
+            if (!keepIds.contains(p.getId())) {
+                continue;
+            }
+            MsgLinkOptionVo node = nodeMap.get(p.getId());
+            Long parentId = p.getParentId();
+            if (parentId != null && parentId > 0 && nodeMap.containsKey(parentId)) {
+                nodeMap.get(parentId).getChildren().add(node);
+            } else {
+                roots.add(node);
+            }
+        }
+        return roots;
     }
 
     /**

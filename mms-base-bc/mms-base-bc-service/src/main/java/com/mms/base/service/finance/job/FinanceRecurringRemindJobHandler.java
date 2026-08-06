@@ -131,6 +131,7 @@ public class FinanceRecurringRemindJobHandler implements JobHandler {
         dto.setContentText(String.format(
                 "今日有 %d 项快捷模板到期：%s。请到「个人记账 → 快捷模板」点「记一笔」落账。",
                 total, preview));
+        dto.setLinkPath("/finance/recurrings");
         return dto;
     }
 }

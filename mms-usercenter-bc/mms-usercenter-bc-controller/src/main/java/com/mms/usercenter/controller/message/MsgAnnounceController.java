@@ -10,6 +10,7 @@ import com.mms.usercenter.common.message.dto.MsgAnnounceUpdateDto;
 import com.mms.usercenter.common.message.dto.MsgAnnounceUserPageQueryDto;
 import com.mms.usercenter.common.message.vo.MsgAnnounceUserVo;
 import com.mms.usercenter.common.message.vo.MsgAnnounceVo;
+import com.mms.usercenter.common.message.vo.MsgLinkOptionVo;
 import com.mms.usercenter.service.message.service.MsgAnnounceService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -23,6 +24,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.List;
 
 /**
  * 实现功能【系统公告管理 Controller】
@@ -46,6 +49,13 @@ public class MsgAnnounceController {
     @PostMapping("/page")
     public Response<Page<MsgAnnounceVo>> getAnnouncePage(@RequestBody @Valid MsgAnnouncePageQueryDto dto) {
         return Response.success(msgAnnounceService.getAnnouncePage(dto));
+    }
+
+    @Operation(summary = "跳转页面选项")
+    @RequiresPermission(PermissionConstants.MESSAGE_ANNOUNCE_VIEW)
+    @GetMapping("/link-options")
+    public Response<List<MsgLinkOptionVo>> listLinkOptions() {
+        return Response.success(msgAnnounceService.listLinkOptions());
     }
 
     @Operation(summary = "公告详情")

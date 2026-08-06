@@ -11,6 +11,7 @@ import com.mms.usercenter.service.auth.mapper.UserMapper;
 import com.mms.usercenter.service.message.mapper.MsgSysInboxMapper;
 import com.mms.usercenter.service.message.service.MsgBizNotifyService;
 import com.mms.usercenter.service.message.support.MsgUnreadSupport;
+import com.mms.usercenter.service.message.utils.MsgLinkPathUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -80,6 +81,7 @@ public class MsgBizNotifyServiceImpl implements MsgBizNotifyService {
             inbox.setTitle(title);
             inbox.setContentHtml(null);
             inbox.setContentText(contentText);
+            inbox.setLinkPath(MsgLinkPathUtils.normalizeOptional(dto.getLinkPath()));
             inbox.setStarred(0);
             inbox.setReadFlag(0);
             inbox.setDeleted(0);

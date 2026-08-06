@@ -40,7 +40,7 @@ public interface MsgSysInboxMapper extends BaseMapper<MsgSysInboxEntity> {
      * 含逻辑删除行（用于扇出幂等：用户删过收件后再扇出需恢复）
      */
     @Select("""
-            SELECT id, user_id, announce_id, biz_type, biz_id, title, content_html, content_text,
+            SELECT id, user_id, announce_id, biz_type, biz_id, title, content_html, content_text, link_path,
                    starred, read_flag, read_time, deleted, create_by, create_time, update_by, update_time
             FROM msg_sys_inbox
             WHERE announce_id = #{announceId}
@@ -59,19 +59,21 @@ public interface MsgSysInboxMapper extends BaseMapper<MsgSysInboxEntity> {
                 title = #{title},
                 content_html = #{contentHtml},
                 content_text = #{contentText},
+                link_path = #{linkPath},
                 update_time = NOW()
             WHERE id = #{id}
             """)
     int restoreDeletedInbox(@Param("id") Long id,
                             @Param("title") String title,
                             @Param("contentHtml") String contentHtml,
-                            @Param("contentText") String contentText);
+                            @Param("contentText") String contentText,
+                            @Param("linkPath") String linkPath);
 
     /**
      * 含逻辑删除行（业务通知幂等：当日已投递过则跳过，含用户已删）
      */
     @Select("""
-            SELECT id, user_id, announce_id, biz_type, biz_id, title, content_html, content_text,
+            SELECT id, user_id, announce_id, biz_type, biz_id, title, content_html, content_text, link_path,
                    starred, read_flag, read_time, deleted, create_by, create_time, update_by, update_time
             FROM msg_sys_inbox
             WHERE biz_type = #{bizType}
