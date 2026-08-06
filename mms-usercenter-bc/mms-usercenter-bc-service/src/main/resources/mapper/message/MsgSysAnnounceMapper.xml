@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mms.usercenter.service.message.mapper.MsgSysAnnounceMapper">
+
+    <sql id="AnnounceVoSelect">
+        a.id,
+        a.title,
+        a.content_html AS contentHtml,
+        a.content_text AS contentText,
+        a.scope_type AS scopeType,
+        a.status,
+        a.total_target AS totalTarget,
+        a.success_count AS successCount,
+        a.fail_count AS failCount,
+        a.error_msg AS errorMsg,
+        a.create_by AS createBy,
+        a.create_time AS createTime,
+        CASE
+            WHEN u.nickname IS NOT NULL AND u.nickname != '' THEN u.nickname
+            ELSE u.username
+        END AS createByName,
+        (
+            SELECT COUNT(1)
+            FROM msg_sys_inbox i
+            WHERE i.announce_id = a.id
+              AND i.deleted = 0
+              AND i.read_flag = 1
+        ) AS readCount,
+        (
+            SELECT COUNT(1)
+            FROM msg_sys_inbox i
+            WHERE i.announce_id = a.id
+              AND i.deleted = 0
+              AND i.read_flag = 0
+        ) AS unreadCount
+    </sql>
+
+    <select id="getAnnouncePage" resultType="com.mms.usercenter.common.message.vo.MsgAnnounceVo">
+        SELECT
+            <include refid="AnnounceVoSelect"/>
+        FROM msg_sys_announce a
+        LEFT JOIN system_user u ON u.id = a.create_by AND u.deleted = 0
+        <where>
+            a.deleted = 0
+            <if test="dto.keyword != null and dto.keyword != ''">
+                AND a.title LIKE CONCAT('%', #{dto.keyword}, '%')
+            </if>
+            <if test="dto.status != null">
+                AND a.status = #{dto.status}
+            </if>
+        </where>
+        ORDER BY a.create_time DESC
+    </select>
+
+    <select id="getAnnounceById" resultType="com.mms.usercenter.common.message.vo.MsgAnnounceVo">
+        SELECT
+            <include refid="AnnounceVoSelect"/>
+        FROM msg_sys_announce a
+        LEFT JOIN system_user u ON u.id = a.create_by AND u.deleted = 0
+        WHERE a.deleted = 0
+          AND a.id = #{id}
+    </select>
+
+    <update id="casStatus">
+        UPDATE msg_sys_announce
+        SET status = #{toStatus},
+            update_time = NOW()
+        WHERE id = #{id}
+          AND status = #{fromStatus}
+          AND deleted = 0
+    </update>
+</mapper>

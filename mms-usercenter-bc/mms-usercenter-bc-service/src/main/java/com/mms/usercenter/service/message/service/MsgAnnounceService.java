@@ -19,19 +19,43 @@ import com.mms.usercenter.common.message.vo.MsgAnnounceVo;
  */
 public interface MsgAnnounceService {
 
+    /**
+     * 分页查询公告列表
+     */
     Page<MsgAnnounceVo> getAnnouncePage(MsgAnnouncePageQueryDto dto);
 
+    /**
+     * 根据公告ID获取公告详情
+     */
     MsgAnnounceVo getAnnounceById(Long id);
 
+    /**
+     * 新建公告
+     */
     MsgAnnounceVo createAnnounce(MsgAnnounceCreateDto dto);
 
+    /**
+     * 修改公告
+     */
     MsgAnnounceVo updateAnnounce(Long id, MsgAnnounceUpdateDto dto);
 
+    /**
+     * 撤回公告（收件箱里面不会显示此公告，但是公告管理里面仍能看到）
+     */
     void recallAnnounce(Long id);
 
+    /**
+     * 删除公告（先撤回再逻辑删除）
+     */
     void deleteAnnounce(Long id);
 
+    /**
+     * 分页查询此公告的已阅读人员
+     */
     Page<MsgAnnounceUserVo> pageReadUsers(Long announceId, MsgAnnounceUserPageQueryDto dto);
 
+    /**
+     * 分页查询此公告的未阅读人员
+     */
     Page<MsgAnnounceUserVo> pageUnreadUsers(Long announceId, MsgAnnounceUserPageQueryDto dto);
 }
