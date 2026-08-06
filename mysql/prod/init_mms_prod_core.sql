@@ -739,6 +739,9 @@ VALUES
     (92, 87, 'button', '公告-撤回', 'MESSAGE_ANNOUNCE_RECALL', NULL, NULL, NULL, 91, 1, 1, 0, NOW(), NOW()),
     (93, 87, 'button', '公告-删除', 'MESSAGE_ANNOUNCE_DELETE', NULL, NULL, NULL, 92, 1, 1, 0, NOW(), NOW()),
 
+    -- 首页（顶层菜单；与消息中心同级，不套空目录）
+    (81, 0, 'menu', '首页', 'HOME', '/home', '/HomeView.vue', 'HomeFilled', 0, 1, 1, 0, NOW(), NOW()),
+
     -- 消息中心（顶层菜单 + 按钮；与首页同级，不套空目录）
     (82, 0, 'menu', '消息中心', 'MESSAGE_CENTER', '/message/centerPage', '/message/MessageCenterPage.vue', 'Bell', 150, 1, 1, 0, NOW(), NOW()),
     (83, 82, 'button', '消息-查看', 'MESSAGE_VIEW', NULL, NULL, NULL, 151, 1, 1, 0, NOW(), NOW()),
