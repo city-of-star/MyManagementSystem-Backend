@@ -1,6 +1,7 @@
 package com.mms.base.common.finance.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.DecimalMin;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -9,6 +10,8 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * 实现功能【工资条批量入账请求 DTO】
@@ -36,78 +39,19 @@ public class FinancePayrollBatchDto {
     @Schema(description = "备注")
     private String note;
 
-    // ----- 账户 -----
     @NotNull(message = "工资账户不能为空")
-    @Schema(description = "招商卡账户ID", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "工资到手账户ID（先记到手必用）", requiredMode = Schema.RequiredMode.REQUIRED)
     private Long salaryAccountId;
 
-    @Schema(description = "公司卡账户ID（明细模式必填）")
-    private Long companyCardAccountId;
-
-    @Schema(description = "医保卡账户ID（明细模式必填）")
-    private Long medicalAccountId;
-
-    @Schema(description = "公积金账户ID（明细模式必填）")
-    private Long housingFundAccountId;
-
-    // ----- 分类 -----
     @NotNull(message = "工资分类不能为空")
-    @Schema(description = "工资分类ID", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "工资分类ID（先记到手必用）", requiredMode = Schema.RequiredMode.REQUIRED)
     private Long salaryCategoryId;
 
-    @Schema(description = "电脑补贴分类ID")
-    private Long computerSubsidyCategoryId;
-
-    @Schema(description = "加班费分类ID")
-    private Long overtimeCategoryId;
-
-    @Schema(description = "餐补分类ID")
-    private Long mealAllowanceCategoryId;
-
-    @Schema(description = "社保其他分类ID")
-    private Long socialOtherCategoryId;
-
-    @Schema(description = "个税分类ID")
-    private Long taxCategoryId;
-
-    @Schema(description = "公司公积金分类ID")
-    private Long companyHousingFundCategoryId;
-
-    @Schema(description = "公司医保分类ID")
-    private Long companyMedicalCategoryId;
-
-    // ----- 金额 -----
     @Schema(description = "先记到手金额（net_only）")
     @DecimalMin(value = "0.01", message = "到手金额必须大于0")
     private BigDecimal netAmount;
 
-    @Schema(description = "基本工资", example = "7200.00")
-    private BigDecimal baseSalary;
-
-    @Schema(description = "电脑补贴", example = "100.00")
-    private BigDecimal computerSubsidy;
-
-    @Schema(description = "加班/绩效", example = "0.00")
-    private BigDecimal overtime;
-
-    @Schema(description = "餐补（入公司卡）", example = "0.00")
-    private BigDecimal mealAllowance;
-
-    @Schema(description = "个人医保（转账招商→医保）", example = "100.00")
-    private BigDecimal personalMedical;
-
-    @Schema(description = "社保其他（养老金等支出）", example = "425.00")
-    private BigDecimal socialOther;
-
-    @Schema(description = "个人公积金（转账招商→公积金）", example = "300.00")
-    private BigDecimal personalHousingFund;
-
-    @Schema(description = "公司公积金（入公积金）", example = "300.00")
-    private BigDecimal companyHousingFund;
-
-    @Schema(description = "公司医保（统筹，不计账，兼容旧客户端可传但忽略）", example = "320.00")
-    private BigDecimal companyMedical;
-
-    @Schema(description = "个税", example = "0.00")
-    private BigDecimal tax;
+    @Valid
+    @Schema(description = "明细行（detail 模式）；金额大于 0 的行才会入账")
+    private List<FinancePayrollBatchLineDto> lines = new ArrayList<>();
 }

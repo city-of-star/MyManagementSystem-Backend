@@ -3,6 +3,7 @@ package com.mms.base.service.finance.service.impl;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.mms.base.common.finance.dto.FinanceAdjustmentDto;
 import com.mms.base.common.finance.dto.FinancePayrollBatchDto;
+import com.mms.base.common.finance.dto.FinancePayrollBatchLineDto;
 import com.mms.base.common.finance.dto.FinanceTransactionBatchDeleteDto;
 import com.mms.base.common.finance.dto.FinanceTransactionCreateDto;
 import com.mms.base.common.finance.dto.FinanceTransactionFromRecurringDto;
@@ -366,33 +367,30 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
     }
 
     private List<FinanceTransactionVo> createDetailPayroll(FinancePayrollBatchDto dto) {
-        if (dto.getCompanyCardAccountId() == null || dto.getMedicalAccountId() == null
-                || dto.getHousingFundAccountId() == null) {
-            throw new BusinessException(ErrorCode.PARAM_INVALID, "明细入账须指定公司卡、医保卡与公积金账户");
-        }
+        List<FinancePayrollBatchLineDto> lines = dto.getLines() == null ? List.of() : dto.getLines();
         List<FinanceTransactionVo> created = new ArrayList<>();
         String notePrefix = StringUtils.hasText(dto.getNote()) ? dto.getNote() + " | " : "";
 
-        addIncomeIfPositive(created, dto, dto.getBaseSalary(), dto.getSalaryAccountId(),
-                dto.getSalaryCategoryId(), notePrefix + "基本工资");
-        addIncomeIfPositive(created, dto, dto.getComputerSubsidy(), dto.getSalaryAccountId(),
-                dto.getComputerSubsidyCategoryId(), notePrefix + "电脑补贴");
-        addIncomeIfPositive(created, dto, dto.getOvertime(), dto.getSalaryAccountId(),
-                dto.getOvertimeCategoryId(), notePrefix + "加班/绩效");
-        addIncomeIfPositive(created, dto, dto.getMealAllowance(), dto.getCompanyCardAccountId(),
-                dto.getMealAllowanceCategoryId(), notePrefix + "餐补");
-
-        addTransferIfPositive(created, dto, dto.getPersonalMedical(),
-                dto.getSalaryAccountId(), dto.getMedicalAccountId(), notePrefix + "个人医保");
-        addExpenseIfPositive(created, dto, dto.getSocialOther(), dto.getSalaryAccountId(),
-                dto.getSocialOtherCategoryId(), notePrefix + "社保其他");
-        addTransferIfPositive(created, dto, dto.getPersonalHousingFund(),
-                dto.getSalaryAccountId(), dto.getHousingFundAccountId(), notePrefix + "个人公积金");
-        addIncomeIfPositive(created, dto, dto.getCompanyHousingFund(), dto.getHousingFundAccountId(),
-                dto.getCompanyHousingFundCategoryId(), notePrefix + "公司公积金");
-        // 公司医保为统筹缴费，不入个人医保卡、不生成流水
-        addExpenseIfPositive(created, dto, dto.getTax(), dto.getSalaryAccountId(),
-                dto.getTaxCategoryId(), notePrefix + "个税");
+        for (FinancePayrollBatchLineDto line : lines) {
+            if (line == null || !isPositive(line.getAmount())) {
+                continue;
+            }
+            String lineType = line.getLineType() == null ? "" : line.getLineType().trim();
+            String label = StringUtils.hasText(line.getLabel()) ? line.getLabel().trim() : "工资明细";
+            String note = notePrefix + label;
+            if ("income".equals(lineType)) {
+                addIncomeIfPositive(created, dto, line.getAmount(), line.getAccountId(),
+                        line.getCategoryId(), note);
+            } else if ("expense".equals(lineType)) {
+                addExpenseIfPositive(created, dto, line.getAmount(), line.getAccountId(),
+                        line.getCategoryId(), note);
+            } else if ("transfer".equals(lineType)) {
+                addTransferIfPositive(created, dto, line.getAmount(),
+                        line.getFromAccountId(), line.getToAccountId(), note);
+            } else {
+                throw new BusinessException(ErrorCode.PARAM_INVALID, "明细行类型不合法：" + lineType);
+            }
+        }
 
         if (created.isEmpty()) {
             throw new BusinessException(ErrorCode.PARAM_INVALID, "没有可入账的金额项");
@@ -404,6 +402,9 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
                                      BigDecimal amount, Long accountId, Long categoryId, String note) {
         if (!isPositive(amount)) {
             return;
+        }
+        if (accountId == null) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, note + "账户不能为空");
         }
         if (categoryId == null) {
             throw new BusinessException(ErrorCode.PARAM_INVALID, note + "分类不能为空");
@@ -424,6 +425,9 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
         if (!isPositive(amount)) {
             return;
         }
+        if (accountId == null) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, note + "账户不能为空");
+        }
         if (categoryId == null) {
             throw new BusinessException(ErrorCode.PARAM_INVALID, note + "分类不能为空");
         }
@@ -442,6 +446,9 @@ public class FinanceTransactionServiceImpl implements FinanceTransactionService 
                                        BigDecimal amount, Long fromAccountId, Long toAccountId, String note) {
         if (!isPositive(amount)) {
             return;
+        }
+        if (fromAccountId == null || toAccountId == null) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, note + "须指定转出与转入账户");
         }
         FinanceTransactionCreateDto createDto = new FinanceTransactionCreateDto();
         createDto.setTxnDate(dto.getTxnDate());

@@ -18,6 +18,7 @@ import com.mms.base.service.finance.support.FinanceUserSupport;
 import com.mms.common.core.enums.error.ErrorCode;
 import com.mms.common.core.exceptions.BusinessException;
 import com.mms.common.core.exceptions.ServerException;
+import com.mms.common.core.utils.IdUtils;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -47,10 +48,6 @@ import java.util.stream.Collectors;
 public class FinancePayrollConfigServiceImpl implements FinancePayrollConfigService {
 
     private static final Set<String> LINE_TYPES = Set.of("income", "expense", "transfer");
-    private static final Set<String> LINE_KEYS = Set.of(
-            "base_salary", "computer_subsidy", "overtime", "meal_allowance",
-            "personal_medical", "social_other", "personal_housing_fund",
-            "company_housing_fund", "tax");
 
     @Resource
     private FinancePayrollProfileMapper financePayrollProfileMapper;
@@ -88,22 +85,32 @@ public class FinancePayrollConfigServiceImpl implements FinancePayrollConfigServ
         try {
             Long userId = FinanceUserSupport.requireUserId();
             validateSave(dto, userId);
-            normalizeLineAccounts(dto);
 
             FinancePayrollProfileEntity profile = getProfile(userId);
             if (profile == null) {
                 profile = new FinancePayrollProfileEntity();
                 profile.setUserId(userId);
             }
-            profile.setSalaryAccountId(dto.getSalaryAccountId());
-            profile.setCompanyCardAccountId(dto.getCompanyCardAccountId());
-            profile.setMedicalAccountId(dto.getMedicalAccountId());
-            profile.setHousingFundAccountId(dto.getHousingFundAccountId());
-            profile.setSalaryCategoryId(dto.getSalaryCategoryId());
             if (profile.getId() == null) {
+                profile.setSalaryAccountId(dto.getSalaryAccountId());
+                profile.setSalaryCategoryId(dto.getSalaryCategoryId());
+                profile.setCompanyCardAccountId(null);
+                profile.setMedicalAccountId(null);
+                profile.setHousingFundAccountId(null);
                 financePayrollProfileMapper.insert(profile);
             } else {
-                financePayrollProfileMapper.updateById(profile);
+                // 显式 set null，避免 updateById 忽略空字段导致旧头账户残留
+                financePayrollProfileMapper.update(
+                        null,
+                        new LambdaUpdateWrapper<FinancePayrollProfileEntity>()
+                                .eq(FinancePayrollProfileEntity::getId, profile.getId())
+                                .set(FinancePayrollProfileEntity::getSalaryAccountId, dto.getSalaryAccountId())
+                                .set(FinancePayrollProfileEntity::getSalaryCategoryId, dto.getSalaryCategoryId())
+                                .set(FinancePayrollProfileEntity::getCompanyCardAccountId, null)
+                                .set(FinancePayrollProfileEntity::getMedicalAccountId, null)
+                                .set(FinancePayrollProfileEntity::getHousingFundAccountId, null));
+                profile.setSalaryAccountId(dto.getSalaryAccountId());
+                profile.setSalaryCategoryId(dto.getSalaryCategoryId());
             }
 
             List<FinancePayrollLineEntity> existing = listLines(profile.getId(), userId);
@@ -111,17 +118,26 @@ public class FinancePayrollConfigServiceImpl implements FinancePayrollConfigServ
                 financePayrollLineMapper.deleteById(line.getId());
             }
             int sort = 10;
+            Set<String> seenKeys = new HashSet<>();
             for (FinancePayrollLineSaveDto lineDto : dto.getLines()) {
+                String lineKey = resolveLineKey(lineDto.getLineKey(), seenKeys);
                 FinancePayrollLineEntity line = new FinancePayrollLineEntity();
                 line.setUserId(userId);
                 line.setProfileId(profile.getId());
-                line.setLineKey(lineDto.getLineKey().trim());
+                line.setLineKey(lineKey);
                 line.setLabel(lineDto.getLabel().trim());
                 line.setLineType(lineDto.getLineType().trim());
-                line.setCategoryId(lineDto.getCategoryId());
-                line.setAccountId(lineDto.getAccountId());
-                line.setFromAccountId(lineDto.getFromAccountId());
-                line.setToAccountId(lineDto.getToAccountId());
+                if ("transfer".equals(line.getLineType())) {
+                    line.setCategoryId(null);
+                    line.setAccountId(null);
+                    line.setFromAccountId(lineDto.getFromAccountId());
+                    line.setToAccountId(lineDto.getToAccountId());
+                } else {
+                    line.setCategoryId(lineDto.getCategoryId());
+                    line.setAccountId(lineDto.getAccountId());
+                    line.setFromAccountId(null);
+                    line.setToAccountId(null);
+                }
                 line.setCountInNet(lineDto.getCountInNet());
                 line.setDefaultAmount(scaleMoney(lineDto.getDefaultAmount()));
                 line.setSortOrder(lineDto.getSortOrder() == null ? sort : lineDto.getSortOrder());
@@ -140,19 +156,11 @@ public class FinancePayrollConfigServiceImpl implements FinancePayrollConfigServ
 
     private void validateSave(FinancePayrollConfigSaveDto dto, Long userId) {
         ensureAccountOwned(dto.getSalaryAccountId(), userId, true);
-        ensureAccountOwned(dto.getCompanyCardAccountId(), userId, false);
-        ensureAccountOwned(dto.getMedicalAccountId(), userId, false);
-        ensureAccountOwned(dto.getHousingFundAccountId(), userId, false);
         ensureCategoryOwned(dto.getSalaryCategoryId(), userId, "income", true);
 
+        boolean hasEnabledIncome = false;
         Set<String> seen = new HashSet<>();
         for (FinancePayrollLineSaveDto line : dto.getLines()) {
-            if (!LINE_KEYS.contains(line.getLineKey())) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "不支持的明细行键：" + line.getLineKey());
-            }
-            if (!seen.add(line.getLineKey())) {
-                throw new BusinessException(ErrorCode.PARAM_INVALID, "明细行键重复：" + line.getLineKey());
-            }
             if (!LINE_TYPES.contains(line.getLineType())) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "明细行类型不合法：" + line.getLineType());
             }
@@ -162,59 +170,52 @@ public class FinancePayrollConfigServiceImpl implements FinancePayrollConfigServ
             if (!Integer.valueOf(0).equals(line.getEnabled()) && !Integer.valueOf(1).equals(line.getEnabled())) {
                 throw new BusinessException(ErrorCode.PARAM_INVALID, "enabled 仅支持 0/1");
             }
+            if (StringUtils.hasText(line.getLineKey())) {
+                String key = line.getLineKey().trim();
+                if (!seen.add(key)) {
+                    throw new BusinessException(ErrorCode.PARAM_INVALID, "明细行键重复：" + key);
+                }
+            }
+            boolean enabled = Integer.valueOf(1).equals(line.getEnabled());
             if ("transfer".equals(line.getLineType())) {
-                ensureAccountOwned(line.getFromAccountId(), userId, true);
-                ensureAccountOwned(line.getToAccountId(), userId, true);
-                if (Objects.equals(line.getFromAccountId(), line.getToAccountId())) {
-                    throw new BusinessException(ErrorCode.PARAM_INVALID, "转账行转出与转入不能相同：" + line.getLabel());
+                if (enabled) {
+                    ensureAccountOwned(line.getFromAccountId(), userId, true);
+                    ensureAccountOwned(line.getToAccountId(), userId, true);
+                    if (Objects.equals(line.getFromAccountId(), line.getToAccountId())) {
+                        throw new BusinessException(ErrorCode.PARAM_INVALID,
+                                "转账行转出与转入不能相同：" + line.getLabel());
+                    }
+                } else {
+                    ensureAccountOwned(line.getFromAccountId(), userId, false);
+                    ensureAccountOwned(line.getToAccountId(), userId, false);
                 }
             } else {
-                ensureCategoryOwned(line.getCategoryId(), userId, line.getLineType(), true);
-                ensureAccountOwned(line.getAccountId(), userId, true);
+                if (enabled) {
+                    ensureCategoryOwned(line.getCategoryId(), userId, line.getLineType(), true);
+                    ensureAccountOwned(line.getAccountId(), userId, true);
+                    if ("income".equals(line.getLineType())) {
+                        hasEnabledIncome = true;
+                    }
+                } else {
+                    ensureCategoryOwned(line.getCategoryId(), userId, line.getLineType(), false);
+                    ensureAccountOwned(line.getAccountId(), userId, false);
+                }
             }
         }
-        if (!seen.contains("base_salary")) {
-            throw new BusinessException(ErrorCode.PARAM_INVALID, "必须包含基本工资行（base_salary）");
+        if (!hasEnabledIncome) {
+            throw new BusinessException(ErrorCode.PARAM_INVALID, "请至少保留一条启用的收入明细");
         }
     }
 
-    /**
-     * 入账接口仍按配置头账户拆流水，保存时把明细行账户对齐到头，避免前后端理解不一致。
-     */
-    private void normalizeLineAccounts(FinancePayrollConfigSaveDto dto) {
-        for (FinancePayrollLineSaveDto line : dto.getLines()) {
-            switch (line.getLineKey()) {
-                case "base_salary", "computer_subsidy", "overtime", "social_other", "tax" -> {
-                    line.setAccountId(dto.getSalaryAccountId());
-                    line.setFromAccountId(null);
-                    line.setToAccountId(null);
-                }
-                case "meal_allowance" -> {
-                    line.setAccountId(dto.getCompanyCardAccountId());
-                    line.setFromAccountId(null);
-                    line.setToAccountId(null);
-                }
-                case "company_housing_fund" -> {
-                    line.setAccountId(dto.getHousingFundAccountId());
-                    line.setFromAccountId(null);
-                    line.setToAccountId(null);
-                }
-                case "personal_medical" -> {
-                    line.setAccountId(null);
-                    line.setCategoryId(null);
-                    line.setFromAccountId(dto.getSalaryAccountId());
-                    line.setToAccountId(dto.getMedicalAccountId());
-                }
-                case "personal_housing_fund" -> {
-                    line.setAccountId(null);
-                    line.setCategoryId(null);
-                    line.setFromAccountId(dto.getSalaryAccountId());
-                    line.setToAccountId(dto.getHousingFundAccountId());
-                }
-                default -> {
-                }
-            }
+    private String resolveLineKey(String raw, Set<String> seenKeys) {
+        String key = StringUtils.hasText(raw) ? raw.trim() : IdUtils.uuid32();
+        if (key.length() > 32) {
+            key = key.substring(0, 32);
         }
+        while (!seenKeys.add(key)) {
+            key = IdUtils.uuid32();
+        }
+        return key;
     }
 
     private FinancePayrollProfileEntity getProfile(Long userId) {
@@ -250,10 +251,10 @@ public class FinancePayrollConfigServiceImpl implements FinancePayrollConfigServ
         FinancePayrollProfileEntity profile = new FinancePayrollProfileEntity();
         profile.setUserId(userId);
         profile.setSalaryAccountId(salaryAccountId);
-        profile.setCompanyCardAccountId(companyCardId);
-        profile.setMedicalAccountId(medicalId);
-        profile.setHousingFundAccountId(housingId);
         profile.setSalaryCategoryId(salaryCategoryId);
+        profile.setCompanyCardAccountId(null);
+        profile.setMedicalAccountId(null);
+        profile.setHousingFundAccountId(null);
         financePayrollProfileMapper.insert(profile);
 
         List<DefaultLine> defaults = defaultLines(
@@ -274,7 +275,7 @@ public class FinancePayrollConfigServiceImpl implements FinancePayrollConfigServ
             line.setCountInNet(def.countInNet);
             line.setDefaultAmount(def.defaultAmount);
             line.setSortOrder(sort);
-            line.setEnabled(1);
+            line.setEnabled(def.enabled);
             financePayrollLineMapper.insert(line);
             sort += 10;
         }
@@ -285,34 +286,51 @@ public class FinancePayrollConfigServiceImpl implements FinancePayrollConfigServ
                                            Long salaryCategoryId, Map<String, Long> incomeCat,
                                            Map<String, Long> expenseCat) {
         List<DefaultLine> list = new ArrayList<>();
-        list.add(income("base_salary", "基本工资", salaryCategoryId, salaryAccountId, true, "7200"));
-        list.add(income("computer_subsidy", "电脑补贴", incomeCat.get("电脑补贴"), salaryAccountId, true, "100"));
-        list.add(income("overtime", "加班/绩效", incomeCat.get("加班费"), salaryAccountId, true, "0"));
-        list.add(income("meal_allowance", "餐补", incomeCat.get("餐补"), companyCardId, false, "0"));
-        list.add(transfer("personal_medical", "个人医保", salaryAccountId, medicalId, true, "100"));
-        list.add(expense("social_other", "社保其他", expenseCat.get("社保其他"), salaryAccountId, true, "425"));
-        list.add(transfer("personal_housing_fund", "个人公积金", salaryAccountId, housingId, true, "300"));
-        list.add(income("company_housing_fund", "公司公积金", incomeCat.get("公司公积金"), housingId, false, "300"));
-        list.add(expense("tax", "个税", expenseCat.get("个税"), salaryAccountId, true, "0"));
+        list.add(income("base_salary", "基本工资", salaryCategoryId, salaryAccountId, true, "7200",
+                readyIncome(salaryCategoryId, salaryAccountId)));
+        list.add(income("computer_subsidy", "电脑补贴", incomeCat.get("电脑补贴"), salaryAccountId, true, "100",
+                readyIncome(incomeCat.get("电脑补贴"), salaryAccountId)));
+        list.add(income("overtime", "加班/绩效", incomeCat.get("加班费"), salaryAccountId, true, "0",
+                readyIncome(incomeCat.get("加班费"), salaryAccountId)));
+        list.add(income("meal_allowance", "餐补", incomeCat.get("餐补"), companyCardId, false, "0",
+                readyIncome(incomeCat.get("餐补"), companyCardId)));
+        list.add(transfer("personal_medical", "个人医保", salaryAccountId, medicalId, true, "100",
+                readyTransfer(salaryAccountId, medicalId)));
+        list.add(expense("social_other", "社保其他", expenseCat.get("社保其他"), salaryAccountId, true, "425",
+                readyIncome(expenseCat.get("社保其他"), salaryAccountId)));
+        list.add(transfer("personal_housing_fund", "个人公积金", salaryAccountId, housingId, true, "300",
+                readyTransfer(salaryAccountId, housingId)));
+        list.add(income("company_housing_fund", "公司公积金", incomeCat.get("公司公积金"), housingId, false, "300",
+                readyIncome(incomeCat.get("公司公积金"), housingId)));
+        list.add(expense("tax", "个税", expenseCat.get("个税"), salaryAccountId, true, "0",
+                readyIncome(expenseCat.get("个税"), salaryAccountId)));
         return list;
     }
 
+    private boolean readyIncome(Long categoryId, Long accountId) {
+        return categoryId != null && accountId != null;
+    }
+
+    private boolean readyTransfer(Long fromAccountId, Long toAccountId) {
+        return fromAccountId != null && toAccountId != null && !Objects.equals(fromAccountId, toAccountId);
+    }
+
     private DefaultLine income(String key, String label, Long categoryId, Long accountId,
-                               boolean countInNet, String amount) {
+                               boolean countInNet, String amount, boolean ready) {
         return new DefaultLine(key, label, "income", categoryId, accountId, null, null,
-                countInNet ? 1 : 0, new BigDecimal(amount));
+                countInNet ? 1 : 0, new BigDecimal(amount), ready ? 1 : 0);
     }
 
     private DefaultLine expense(String key, String label, Long categoryId, Long accountId,
-                                boolean countInNet, String amount) {
+                                boolean countInNet, String amount, boolean ready) {
         return new DefaultLine(key, label, "expense", categoryId, accountId, null, null,
-                countInNet ? 1 : 0, new BigDecimal(amount));
+                countInNet ? 1 : 0, new BigDecimal(amount), ready ? 1 : 0);
     }
 
     private DefaultLine transfer(String key, String label, Long from, Long to,
-                                 boolean countInNet, String amount) {
+                                 boolean countInNet, String amount, boolean ready) {
         return new DefaultLine(key, label, "transfer", null, null, from, to,
-                countInNet ? 1 : 0, new BigDecimal(amount));
+                countInNet ? 1 : 0, new BigDecimal(amount), ready ? 1 : 0);
     }
 
     private FinancePayrollConfigVo toVo(FinancePayrollProfileEntity profile, List<FinancePayrollLineEntity> lines) {
@@ -325,12 +343,6 @@ public class FinancePayrollConfigServiceImpl implements FinancePayrollConfigServ
         vo.setId(profile.getId());
         vo.setSalaryAccountId(profile.getSalaryAccountId());
         vo.setSalaryAccountName(nameOf(accountMap, profile.getSalaryAccountId()));
-        vo.setCompanyCardAccountId(profile.getCompanyCardAccountId());
-        vo.setCompanyCardAccountName(nameOf(accountMap, profile.getCompanyCardAccountId()));
-        vo.setMedicalAccountId(profile.getMedicalAccountId());
-        vo.setMedicalAccountName(nameOf(accountMap, profile.getMedicalAccountId()));
-        vo.setHousingFundAccountId(profile.getHousingFundAccountId());
-        vo.setHousingFundAccountName(nameOf(accountMap, profile.getHousingFundAccountId()));
         vo.setSalaryCategoryId(profile.getSalaryCategoryId());
         FinanceCategoryEntity salaryCat = categoryMap.get(profile.getSalaryCategoryId());
         vo.setSalaryCategoryName(salaryCat == null ? null : salaryCat.getName());
@@ -432,6 +444,7 @@ public class FinancePayrollConfigServiceImpl implements FinancePayrollConfigServ
     }
 
     private record DefaultLine(String lineKey, String label, String lineType, Long categoryId, Long accountId,
-                               Long fromAccountId, Long toAccountId, Integer countInNet, BigDecimal defaultAmount) {
+                               Long fromAccountId, Long toAccountId, Integer countInNet, BigDecimal defaultAmount,
+                               Integer enabled) {
     }
 }

@@ -1,4 +1,6 @@
 -- 创建 mms_prod_core 数据库
+-- 说明：本文件为生产全量初始化（新环境用）。历史 YYYYMMDD_*.sql 增量已于 2026-08-08 并入本文件后删除；
+-- 已上线库无需重跑；后续若有已上线库改造再另开新增量。
 CREATE DATABASE IF NOT EXISTS `mms_side_income_prod_core` CHARACTER SET utf8mb4 COLLATE utf8mb4_bin;
 
 -- 使用该数据库
@@ -11,7 +13,7 @@ CREATE TABLE IF NOT EXISTS `system_user` (
     `password` varchar(255) NOT NULL COMMENT '密码（加密后）',
     `nickname` varchar(64) DEFAULT NULL COMMENT '昵称',
     `real_name` varchar(64) DEFAULT NULL COMMENT '真实姓名',
-    `avatar` varchar(1024) DEFAULT NULL COMMENT '头像URL',
+    `avatar_id` bigint DEFAULT NULL COMMENT '头像附件ID',
     `email` varchar(128) DEFAULT NULL COMMENT '邮箱（可为空，但填写后必须唯一）',
     `phone` varchar(32) DEFAULT NULL COMMENT '手机号（可为空，但填写后必须唯一）',
     `gender` tinyint DEFAULT 0 COMMENT '性别：0-未知，1-男，2-女',
@@ -187,6 +189,27 @@ CREATE TABLE IF NOT EXISTS `system_user_post` (
     KEY `idx_is_primary` (`is_primary`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='用户岗位关联表';
 
+-- 用户偏好配置表
+CREATE TABLE IF NOT EXISTS `system_user_preference` (
+    `id` bigint NOT NULL COMMENT '主键ID',
+    `user_id` bigint NOT NULL COMMENT '用户ID',
+    `pref_key` varchar(128) NOT NULL COMMENT '偏好键',
+    `pref_value` text COMMENT '偏好值',
+    `value_type` varchar(16) NOT NULL DEFAULT 'string' COMMENT '值类型：string/number/boolean/json',
+    `remark` varchar(512) DEFAULT NULL COMMENT '备注',
+    `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除',
+    `create_by` bigint DEFAULT NULL COMMENT '创建人ID',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by` bigint DEFAULT NULL COMMENT '更新人ID',
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_user_pref_key` (`user_id`, `pref_key`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_pref_key` (`pref_key`),
+    KEY `idx_deleted` (`deleted`),
+    KEY `idx_user_deleted` (`user_id`, `deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='用户偏好配置表';
+
 -- 系统配置表
 CREATE TABLE IF NOT EXISTS `system_config` (
     `id` bigint NOT NULL COMMENT '配置ID',
@@ -210,7 +233,7 @@ CREATE TABLE IF NOT EXISTS `system_config` (
     KEY `idx_status_deleted` (`status`, `deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='系统配置表';
 
--- 记账账户表（按用户隔离；存量迁移见 mysql/prod/20260731_1200_finance_user_isolation_and_tpl.sql）
+-- 记账账户表（按用户隔离）
 CREATE TABLE IF NOT EXISTS `finance_account` (
     `id` bigint NOT NULL COMMENT '主键ID',
     `user_id` bigint NOT NULL COMMENT '归属用户ID',
@@ -324,6 +347,51 @@ CREATE TABLE IF NOT EXISTS `finance_recurring` (
     KEY `idx_deleted` (`deleted`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='快捷记账模板表（手动点一次生成流水，不自动扣款）';
 
+CREATE TABLE IF NOT EXISTS `finance_payroll_profile` (
+    `id` bigint NOT NULL COMMENT '主键ID',
+    `user_id` bigint NOT NULL COMMENT '归属用户ID',
+    `salary_account_id` bigint DEFAULT NULL COMMENT '工资到手账户ID',
+    `company_card_account_id` bigint DEFAULT NULL COMMENT '公司卡账户ID',
+    `medical_account_id` bigint DEFAULT NULL COMMENT '医保账户ID',
+    `housing_fund_account_id` bigint DEFAULT NULL COMMENT '公积金账户ID',
+    `salary_category_id` bigint DEFAULT NULL COMMENT '先记到手/基本工资分类ID',
+    `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除',
+    `create_by` bigint DEFAULT NULL COMMENT '创建人ID',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by` bigint DEFAULT NULL COMMENT '更新人ID',
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_user_id` (`user_id`),
+    KEY `idx_deleted` (`deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='个人工资录入配置（账户绑定）';
+
+CREATE TABLE IF NOT EXISTS `finance_payroll_line` (
+    `id` bigint NOT NULL COMMENT '主键ID',
+    `user_id` bigint NOT NULL COMMENT '归属用户ID',
+    `profile_id` bigint NOT NULL COMMENT '配置头ID',
+    `line_key` varchar(32) NOT NULL COMMENT '稳定键',
+    `label` varchar(64) NOT NULL COMMENT '展示名称',
+    `line_type` varchar(16) NOT NULL COMMENT 'income/expense/transfer',
+    `category_id` bigint DEFAULT NULL COMMENT '分类ID（收入/支出）',
+    `account_id` bigint DEFAULT NULL COMMENT '账户ID（收入/支出）',
+    `from_account_id` bigint DEFAULT NULL COMMENT '转出账户（转账）',
+    `to_account_id` bigint DEFAULT NULL COMMENT '转入账户（转账）',
+    `count_in_net` tinyint NOT NULL DEFAULT 1 COMMENT '是否计入预估到手：1/0',
+    `default_amount` decimal(12, 2) NOT NULL DEFAULT 0.00 COMMENT '默认金额',
+    `sort_order` int NOT NULL DEFAULT 0 COMMENT '排序号',
+    `enabled` tinyint NOT NULL DEFAULT 1 COMMENT '是否启用：1/0',
+    `deleted` tinyint NOT NULL DEFAULT 0 COMMENT '是否删除：0-未删除，1-已删除',
+    `create_by` bigint DEFAULT NULL COMMENT '创建人ID',
+    `create_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `update_by` bigint DEFAULT NULL COMMENT '更新人ID',
+    `update_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+    PRIMARY KEY (`id`),
+    KEY `idx_user_id` (`user_id`),
+    KEY `idx_profile_id` (`profile_id`),
+    KEY `idx_line_key` (`line_key`),
+    KEY `idx_deleted` (`deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='个人工资录入明细行配置';
+
 CREATE TABLE IF NOT EXISTS `finance_user_init` (
     `user_id` bigint NOT NULL COMMENT '用户ID',
     `init_time` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '初始化时间',
@@ -400,9 +468,10 @@ VALUES
     (1001, '现金', 'cash', '现金账户', 10, 1, 0, NOW(), NOW()),
     (1002, '微信', 'wechat', '微信零钱', 20, 1, 0, NOW(), NOW()),
     (1003, '支付宝', 'alipay', '支付宝/余额宝', 30, 1, 0, NOW(), NOW()),
-    (1004, '银行卡', 'bank', '常用银行卡', 40, 1, 0, NOW(), NOW()),
+    (1004, '银行卡', 'bank', '常用银行卡（工资到手默认可匹配）', 40, 1, 0, NOW(), NOW()),
     (1005, '公积金', 'housing_fund', '住房公积金', 50, 1, 0, NOW(), NOW()),
-    (1006, '医保', 'medical', '医保个人账户', 60, 1, 0, NOW(), NOW());
+    (1006, '医保', 'medical', '医保个人账户', 60, 1, 0, NOW(), NOW()),
+    (1007, '公司卡', 'company_card', '餐补等到账，可再转出', 70, 1, 0, NOW(), NOW());
 
 INSERT IGNORE INTO `finance_tpl_category`
 (`id`, `name`, `direction`, `icon`, `sort_order`, `enabled`, `deleted`, `create_time`, `update_time`)
@@ -412,6 +481,10 @@ VALUES
     (2003, '理财利息', 'income', NULL, 30, 1, 0, NOW(), NOW()),
     (2004, '红包转账', 'income', NULL, 40, 1, 0, NOW(), NOW()),
     (2005, '其他收入', 'income', NULL, 90, 1, 0, NOW(), NOW()),
+    (2010, '电脑补贴', 'income', NULL, 12, 1, 0, NOW(), NOW()),
+    (2011, '加班费', 'income', NULL, 13, 1, 0, NOW(), NOW()),
+    (2012, '餐补', 'income', NULL, 14, 1, 0, NOW(), NOW()),
+    (2013, '公司公积金', 'income', NULL, 15, 1, 0, NOW(), NOW()),
     (2101, '餐饮', 'expense', NULL, 10, 1, 0, NOW(), NOW()),
     (2102, '交通', 'expense', NULL, 20, 1, 0, NOW(), NOW()),
     (2103, '住房房租', 'expense', NULL, 30, 1, 0, NOW(), NOW()),
@@ -420,7 +493,9 @@ VALUES
     (2106, '医疗健康', 'expense', NULL, 60, 1, 0, NOW(), NOW()),
     (2107, '个税社保', 'expense', NULL, 70, 1, 0, NOW(), NOW()),
     (2108, '大额支出', 'expense', NULL, 80, 1, 0, NOW(), NOW()),
-    (2109, '其他支出', 'expense', NULL, 90, 1, 0, NOW(), NOW());
+    (2109, '其他支出', 'expense', NULL, 90, 1, 0, NOW(), NOW()),
+    (2110, '社保其他', 'expense', NULL, 71, 1, 0, NOW(), NOW()),
+    (2111, '个税', 'expense', NULL, 72, 1, 0, NOW(), NOW());
 
 INSERT IGNORE INTO `finance_tpl_recurring`
 (`id`, `name`, `direction`, `category_id`, `account_id`, `from_account_id`, `to_account_id`, `sort_order`, `enabled`, `note`, `deleted`, `create_time`, `update_time`)
@@ -679,6 +754,7 @@ CREATE TABLE IF NOT EXISTS `msg_sys_announce` (
     `title` varchar(200) NOT NULL COMMENT '公告标题',
     `content_html` mediumtext NOT NULL COMMENT '净化后的富文本',
     `content_text` varchar(500) DEFAULT NULL COMMENT '纯文本摘要',
+    `link_path` varchar(200) DEFAULT NULL COMMENT '可选站内跳转路径，如 /finance/recurrings',
     `scope_type` tinyint NOT NULL COMMENT '范围：1指定人 2角色 3全员',
     `scope_payload` json DEFAULT NULL COMMENT '用户ID/角色ID列表快照',
     `status` tinyint NOT NULL DEFAULT 0 COMMENT '状态：0待发送 1发送中 2已完成 3失败 4已撤回',
@@ -707,6 +783,7 @@ CREATE TABLE IF NOT EXISTS `msg_sys_inbox` (
     `title` varchar(200) NOT NULL COMMENT '标题',
     `content_html` mediumtext DEFAULT NULL COMMENT '富文本正文',
     `content_text` varchar(2000) NOT NULL COMMENT '纯文本或摘要',
+    `link_path` varchar(200) DEFAULT NULL COMMENT '可选站内跳转路径，如 /finance/recurrings',
     `starred` tinyint NOT NULL DEFAULT 0 COMMENT '是否收藏：0否 1是',
     `read_flag` tinyint NOT NULL DEFAULT 0 COMMENT '是否已读：0未读 1已读',
     `read_time` datetime DEFAULT NULL COMMENT '已读时间',
@@ -988,11 +1065,14 @@ VALUES
     (96, 94, 'button', '分类-新增', 'FINANCE_CATEGORY_CREATE', NULL, NULL, NULL, 42, 1, 1, 0, NOW(), NOW()),
     (97, 94, 'button', '分类-编辑', 'FINANCE_CATEGORY_UPDATE', NULL, NULL, NULL, 43, 1, 1, 0, NOW(), NOW()),
     (98, 94, 'button', '分类-删除', 'FINANCE_CATEGORY_DELETE', NULL, NULL, NULL, 44, 1, 1, 0, NOW(), NOW()),
-    (99, 81, 'menu', '固定账单', 'FINANCE_RECURRING', '/finance/recurrings', '/finance/RecurringPage.vue', 'Calendar', 50, 1, 1, 0, NOW(), NOW()),
-    (100, 99, 'button', '固定账单-查看', 'FINANCE_RECURRING_VIEW', NULL, NULL, NULL, 51, 1, 1, 0, NOW(), NOW()),
-    (101, 99, 'button', '固定账单-新增', 'FINANCE_RECURRING_CREATE', NULL, NULL, NULL, 52, 1, 1, 0, NOW(), NOW()),
-    (102, 99, 'button', '固定账单-编辑', 'FINANCE_RECURRING_UPDATE', NULL, NULL, NULL, 53, 1, 1, 0, NOW(), NOW()),
+    (99, 81, 'menu', '快捷模板', 'FINANCE_RECURRING', '/finance/recurrings', '/finance/RecurringPage.vue', 'Calendar', 50, 1, 1, 0, NOW(), NOW()),
+    (100, 99, 'button', '快捷模板-查看', 'FINANCE_RECURRING_VIEW', NULL, NULL, NULL, 51, 1, 1, 0, NOW(), NOW()),
+    (101, 99, 'button', '快捷模板-新增', 'FINANCE_RECURRING_CREATE', NULL, NULL, NULL, 52, 1, 1, 0, NOW(), NOW()),
+    (102, 99, 'button', '快捷模板-编辑', 'FINANCE_RECURRING_UPDATE', NULL, NULL, NULL, 53, 1, 1, 0, NOW(), NOW()),
     (103, 99, 'button', '快捷模板-删除', 'FINANCE_RECURRING_DELETE', NULL, NULL, NULL, 54, 1, 1, 0, NOW(), NOW()),
+    (114, 81, 'menu', '工资录入配置', 'FINANCE_PAYROLL_CONFIG', '/finance/payrollConfig', '/finance/PayrollConfigPage.vue', 'Wallet', 55, 1, 1, 0, NOW(), NOW()),
+    (115, 114, 'button', '工资录入配置-查看', 'FINANCE_PAYROLL_CONFIG_VIEW', NULL, NULL, NULL, 56, 1, 1, 0, NOW(), NOW()),
+    (116, 114, 'button', '工资录入配置-编辑', 'FINANCE_PAYROLL_CONFIG_UPDATE', NULL, NULL, NULL, 57, 1, 1, 0, NOW(), NOW()),
 
     -- 记账初始化配置（系统管理下，仅超管/管理员）
     (104, 1, 'menu', '记账初始化配置', 'SYSTEM_FINANCE_SETUP', '/system/financeSetupPage', '/system/financeSetup/FinanceSetupPage.vue', 'Setting', 75, 1, 1, 0, NOW(), NOW()),
@@ -1136,6 +1216,9 @@ VALUES
     (12, 'job_type', '定时任务类型', 1, 18, '定时任务类型', 0, NOW(), NOW()),
     (13, 'Job_run_mode', '定时任务运行模式', 1, 19, '定时任务运行模式', 0, NOW(), NOW()),
     (14, 'job_status', '定时任务状态', 1, 20, '定时任务状态', 0, NOW(), NOW()),
+    (20, 'preference_value_type', '偏好值类型', 1, 21, '用户偏好配置值类型', 0, NOW(), NOW()),
+    (21, 'operation_type', '操作类型', 1, 22, '用户操作日志的操作类型', 0, NOW(), NOW()),
+    (22, 'operation_status', '操作状态', 1, 23, '用户操作日志的操作结果状态', 0, NOW(), NOW()),
     -- 个人记账
     (15, 'finance_account_type', '记账账户类型', 1, 30, '个人记账账户类型', 0, NOW(), NOW()),
     (16, 'finance_txn_type', '记账流水类型', 1, 31, '个人记账流水类型', 0, NOW(), NOW()),
@@ -1221,6 +1304,7 @@ VALUES
     (56, 15, '公司卡', 'company_card', 8, 0, 1, '公司卡', 0, NOW(), NOW()),
     (57, 15, '医保', 'medical', 9, 0, 1, '医保账户', 0, NOW(), NOW()),
     (58, 15, '基金', 'fund', 10, 0, 1, '基金账户', 0, NOW(), NOW()),
+    (59, 15, '其他', 'other', 99, 0, 1, '其他账户类型', 0, NOW(), NOW()),
     -- 记账流水类型
     (60, 16, '收入', 'income', 1, 0, 1, '收入流水', 0, NOW(), NOW()),
     (61, 16, '支出', 'expense', 2, 1, 1, '支出流水', 0, NOW(), NOW()),
@@ -1235,7 +1319,23 @@ VALUES
     -- 记账模板方向
     (68, 19, '收入', 'income', 1, 0, 1, '收入模板', 0, NOW(), NOW()),
     (69, 19, '支出', 'expense', 2, 1, 1, '支出模板', 0, NOW(), NOW()),
-    (70, 19, '转账', 'transfer', 3, 0, 1, '转账模板', 0, NOW(), NOW());
+    (70, 19, '转账', 'transfer', 3, 0, 1, '转账模板', 0, NOW(), NOW()),
+    -- 偏好值类型
+    (71, 20, '字符串', 'string', 1, 1, 1, '偏好值为字符串', 0, NOW(), NOW()),
+    (72, 20, '数字', 'number', 2, 0, 1, '偏好值为数字', 0, NOW(), NOW()),
+    (73, 20, '布尔', 'boolean', 3, 0, 1, '偏好值为布尔值', 0, NOW(), NOW()),
+    (74, 20, 'JSON', 'json', 4, 0, 1, '偏好值为JSON字符串', 0, NOW(), NOW()),
+    -- 操作类型
+    (75, 21, '新增', 'create', 1, 0, 1, '新增操作', 0, NOW(), NOW()),
+    (76, 21, '修改', 'update', 2, 0, 1, '修改操作', 0, NOW(), NOW()),
+    (77, 21, '删除', 'delete', 3, 0, 1, '删除操作', 0, NOW(), NOW()),
+    (78, 21, '导出', 'export', 4, 0, 1, '导出操作', 0, NOW(), NOW()),
+    (79, 21, '分配', 'assign', 5, 0, 1, '分配操作', 0, NOW(), NOW()),
+    (80, 21, '登录', 'login', 6, 0, 1, '登录操作', 0, NOW(), NOW()),
+    (81, 21, '登出', 'logout', 7, 0, 1, '登出操作', 0, NOW(), NOW()),
+    -- 操作状态
+    (82, 22, '失败', '0', 1, 0, 1, '操作失败', 0, NOW(), NOW()),
+    (83, 22, '成功', '1', 2, 1, 1, '操作成功', 0, NOW(), NOW());
 
 -- 初始化定时任务数据
 INSERT IGNORE INTO `job_def` (`id`,`service_name`,`job_code`,`job_name`,`job_type`,`cron_expr`,`run_mode`,`enabled`,`timeout_ms`,`remark`,`params_json`,`deleted`,`create_by`,`create_time`,`update_by`,`update_time`)

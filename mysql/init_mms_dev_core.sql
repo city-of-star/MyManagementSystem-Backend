@@ -583,9 +583,10 @@ VALUES
     (1001, '现金', 'cash', '现金账户', 10, 1, 0, NOW(), NOW()),
     (1002, '微信', 'wechat', '微信零钱', 20, 1, 0, NOW(), NOW()),
     (1003, '支付宝', 'alipay', '支付宝/余额宝', 30, 1, 0, NOW(), NOW()),
-    (1004, '银行卡', 'bank', '常用银行卡', 40, 1, 0, NOW(), NOW()),
+    (1004, '银行卡', 'bank', '常用银行卡（工资到手默认可匹配）', 40, 1, 0, NOW(), NOW()),
     (1005, '公积金', 'housing_fund', '住房公积金', 50, 1, 0, NOW(), NOW()),
-    (1006, '医保', 'medical', '医保个人账户', 60, 1, 0, NOW(), NOW());
+    (1006, '医保', 'medical', '医保个人账户', 60, 1, 0, NOW(), NOW()),
+    (1007, '公司卡', 'company_card', '餐补等到账，可再转出', 70, 1, 0, NOW(), NOW());
 
 INSERT IGNORE INTO `finance_tpl_category`
 (`id`, `name`, `direction`, `icon`, `sort_order`, `enabled`, `deleted`, `create_time`, `update_time`)
@@ -595,6 +596,10 @@ VALUES
     (2003, '理财利息', 'income', NULL, 30, 1, 0, NOW(), NOW()),
     (2004, '红包转账', 'income', NULL, 40, 1, 0, NOW(), NOW()),
     (2005, '其他收入', 'income', NULL, 90, 1, 0, NOW(), NOW()),
+    (2010, '电脑补贴', 'income', NULL, 12, 1, 0, NOW(), NOW()),
+    (2011, '加班费', 'income', NULL, 13, 1, 0, NOW(), NOW()),
+    (2012, '餐补', 'income', NULL, 14, 1, 0, NOW(), NOW()),
+    (2013, '公司公积金', 'income', NULL, 15, 1, 0, NOW(), NOW()),
     (2101, '餐饮', 'expense', NULL, 10, 1, 0, NOW(), NOW()),
     (2102, '交通', 'expense', NULL, 20, 1, 0, NOW(), NOW()),
     (2103, '住房房租', 'expense', NULL, 30, 1, 0, NOW(), NOW()),
@@ -603,7 +608,9 @@ VALUES
     (2106, '医疗健康', 'expense', NULL, 60, 1, 0, NOW(), NOW()),
     (2107, '个税社保', 'expense', NULL, 70, 1, 0, NOW(), NOW()),
     (2108, '大额支出', 'expense', NULL, 80, 1, 0, NOW(), NOW()),
-    (2109, '其他支出', 'expense', NULL, 90, 1, 0, NOW(), NOW());
+    (2109, '其他支出', 'expense', NULL, 90, 1, 0, NOW(), NOW()),
+    (2110, '社保其他', 'expense', NULL, 71, 1, 0, NOW(), NOW()),
+    (2111, '个税', 'expense', NULL, 72, 1, 0, NOW(), NOW());
 
 INSERT IGNORE INTO `finance_tpl_recurring`
 (`id`, `name`, `direction`, `category_id`, `account_id`, `from_account_id`, `to_account_id`, `sort_order`, `enabled`, `note`, `deleted`, `create_time`, `update_time`)
@@ -1456,6 +1463,7 @@ VALUES
     (74, 20, '公司卡', 'company_card', 8, 0, 1, '公司卡', 0, NOW(), NOW()),
     (75, 20, '医保', 'medical', 9, 0, 1, '医保账户', 0, NOW(), NOW()),
     (76, 20, '基金', 'fund', 10, 0, 1, '基金账户', 0, NOW(), NOW()),
+    (77, 20, '其他', 'other', 99, 0, 1, '其他账户类型', 0, NOW(), NOW()),
     -- 记账流水类型
     (78, 21, '收入', 'income', 1, 0, 1, '收入流水', 0, NOW(), NOW()),
     (79, 21, '支出', 'expense', 2, 1, 1, '支出流水', 0, NOW(), NOW()),

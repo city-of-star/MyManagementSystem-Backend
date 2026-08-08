@@ -25,24 +25,6 @@ public class FinancePayrollConfigVo {
     @Schema(description = "工资到手账户名称")
     private String salaryAccountName;
 
-    @Schema(description = "公司卡账户ID")
-    private Long companyCardAccountId;
-
-    @Schema(description = "公司卡账户名称")
-    private String companyCardAccountName;
-
-    @Schema(description = "医保账户ID")
-    private Long medicalAccountId;
-
-    @Schema(description = "医保账户名称")
-    private String medicalAccountName;
-
-    @Schema(description = "公积金账户ID")
-    private Long housingFundAccountId;
-
-    @Schema(description = "公积金账户名称")
-    private String housingFundAccountName;
-
     @Schema(description = "先记到手/基本工资分类ID")
     private Long salaryCategoryId;
 

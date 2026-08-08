@@ -19,9 +19,8 @@ import java.math.BigDecimal;
 @Schema(description = "工资录入明细行保存参数")
 public class FinancePayrollLineSaveDto {
 
-    @NotBlank(message = "行键不能为空")
     @Size(max = 32, message = "行键长度不能超过32")
-    @Schema(description = "稳定键", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "稳定键；为空时由服务端生成")
     private String lineKey;
 
     @NotBlank(message = "展示名称不能为空")
@@ -33,16 +32,16 @@ public class FinancePayrollLineSaveDto {
     @Schema(description = "income/expense/transfer", requiredMode = Schema.RequiredMode.REQUIRED)
     private String lineType;
 
-    @Schema(description = "分类ID")
+    @Schema(description = "分类ID（收入/支出；启用时必填）")
     private Long categoryId;
 
-    @Schema(description = "账户ID")
+    @Schema(description = "账户ID（收入/支出；启用时必填）")
     private Long accountId;
 
-    @Schema(description = "转出账户ID")
+    @Schema(description = "转出账户ID（转账；启用时必填）")
     private Long fromAccountId;
 
-    @Schema(description = "转入账户ID")
+    @Schema(description = "转入账户ID（转账；启用时必填）")
     private Long toAccountId;
 
     @NotNull(message = "是否计入到手不能为空")

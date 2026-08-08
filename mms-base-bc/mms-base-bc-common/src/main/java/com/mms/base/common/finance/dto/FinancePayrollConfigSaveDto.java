@@ -22,15 +22,6 @@ public class FinancePayrollConfigSaveDto {
     @Schema(description = "工资到手账户ID", requiredMode = Schema.RequiredMode.REQUIRED)
     private Long salaryAccountId;
 
-    @Schema(description = "公司卡账户ID")
-    private Long companyCardAccountId;
-
-    @Schema(description = "医保账户ID")
-    private Long medicalAccountId;
-
-    @Schema(description = "公积金账户ID")
-    private Long housingFundAccountId;
-
     @NotNull(message = "工资分类不能为空")
     @Schema(description = "先记到手/基本工资分类ID", requiredMode = Schema.RequiredMode.REQUIRED)
     private Long salaryCategoryId;
